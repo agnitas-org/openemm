@@ -1,0 +1,36 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-references: true
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: streamable-mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: "Provides tools to manage EMM data: mailings, recipients, mailinglists, target groups, etc."
+        resource-change-notification: true
+        tool-change-notification: true
+        prompt-change-notification: true
+        streamable-http:
+          mcp-endpoint: /mcp
+          keep-alive-interval: 30s
+
+logging:
+  level:
+    root: ${emm.log.level:info}
+    org:
+      springframework:
+        aop:
+          framework:
+            CglibAopProxy: ERROR
+        beans:
+          factory:
+            support:
+              DefaultListableBeanFactory: WARN
+    io:
+      modelcontextprotocol:
+        util:
+          KeepAliveScheduler: ERROR

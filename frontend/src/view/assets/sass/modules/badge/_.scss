@@ -115,6 +115,11 @@ $badge-colors: (
   flex: none;
 
   border: 1px solid var(--badge-border-color);
+
+  &--sm {
+    @include size(12px);
+    border-radius: 3px;
+  }
 }
 
 @include color-mode(light-contrast) {

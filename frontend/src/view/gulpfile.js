@@ -50,7 +50,7 @@ gulp.task('compile_forms_css', buildFormCSS);
 
 gulp.task('svg_sprite', gulp.series(sprite, workflow, dashboard, wysiwyg));
 
-gulp.task('styleguide', gulp.series('svg_sprite', buildBirtJs, buildJs, buildCssForStyleguide, cleanStyleguide, copyAssetsForStyleguide, buildStyleguide, cleanStyleguideSourceAssets));
+gulp.task('styleguide', gulp.series('svg_sprite', buildBirtJs, buildJs, buildCssForStyleguide, cleanStyleguide, copyAssetsForStyleguide, buildStyleguide, cleanStyleguideSourceAssets, 'compile_css'));
 
 gulp.task('watch', () => {
   gulp.watch(`assets/js/**/*.js`, gulp.series('compile_js'));

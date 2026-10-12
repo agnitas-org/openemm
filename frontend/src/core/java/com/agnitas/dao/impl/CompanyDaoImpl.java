@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -815,7 +815,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				(
 				    customer_id INTEGER   NOT NULL,
 				    mailing_id  INTEGER   NOT NULL,
-				    send_date   TIMESTAMP NOT NULL
+				    send_date   TIMESTAMPTZ NOT NULL
 				)
 				""".formatted(tableName);
 
@@ -833,7 +833,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				(
 				    maildrop_status_id INTEGER,
 				    customer_id        INTEGER,
-				    timestamp          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    timestamp          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    mailing_id         INTEGER,
 				    mediatype          INTEGER
 				)
@@ -860,11 +860,11 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    mailing_id   INTEGER,
 				    company_id   INTEGER,
 				    ip_adr       VARCHAR(50),
-				    timestamp    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    timestamp    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    open_count   INTEGER,
 				    mobile_count INTEGER,
-				    first_open   TIMESTAMP,
-				    last_open    TIMESTAMP
+				    first_open   TIMESTAMPTZ,
+				    last_open    TIMESTAMPTZ
 				)
 				""".formatted(tableName);
 
@@ -886,7 +886,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    customer_id     INTEGER NOT NULL,
 				    device_class_id INTEGER,
 				    device_id       INTEGER,
-				    creation        TIMESTAMP,
+				    creation        TIMESTAMPTZ,
 				    client_id       INTEGER
 				)
 				""".formatted(tableName);
@@ -905,7 +905,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    customer_id     INTEGER,
 				    url_id          INTEGER,
 				    company_id      INTEGER,
-				    timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    timestamp       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    ip_adr          VARCHAR(50),
 				    mailing_id      INTEGER,
 				    device_class_id INTEGER,
@@ -931,7 +931,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    customer_id     INTEGER,
 				    url_id          INTEGER,
 				    company_id      INTEGER,
-				    timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    timestamp       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    ip_adr          VARCHAR(50),
 				    mailing_id      INTEGER,
 				    device_class_id INTEGER,
@@ -951,7 +951,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				(
 				    customer_id INTEGER,
 				    mailing_id  INTEGER,
-				    timestamp   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+				    timestamp   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 				)
 				""".formatted(tableName);
 		executeWithTableSpace(query, TABLESPACE_DATA_SUCCESS);
@@ -968,7 +968,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    mailing_id   INTEGER,
 				    content_name VARCHAR(3000),
 				    content_size INTEGER,
-				    demand_date  TIMESTAMP
+				    demand_date  TIMESTAMPTZ
 				)
 				""".formatted(companyId);
 		executeWithTableSpace(query, TABLESPACE_DATA_CUSTOMER_TABLE);
@@ -981,7 +981,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    mailing_id   INTEGER,
 				    content_name VARCHAR(3000),
 				    content_size INTEGER,
-				    demand_date  TIMESTAMP,
+				    demand_date  TIMESTAMPTZ,
 				    amount       INTEGER
 				)
 				""".formatted(companyId);
@@ -1109,7 +1109,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 					    ip_adr        VARCHAR(50),
 					    mailing_id    INTEGER,
 					    session_id    INTEGER,
-					    timestamp     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+					    timestamp     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 					    num_parameter DOUBLE PRECISION,
 					    page_tag      VARCHAR(30)
 					)
@@ -1240,7 +1240,9 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				executeWithRetry(sql);
 				sql = "CREATE INDEX cust" + newCompanyId + "b$cuid_ustat_mlid$idx ON customer_" + newCompanyId + "_binding_tbl (customer_id, user_status, mailinglist_id)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(sql);
-				
+				sql = "CREATE INDEX cust" + newCompanyId + "b$exmid_ustat_uty$idx ON customer_" + newCompanyId + "_binding_tbl (exit_mailing_id, user_status, user_type)" + tablespaceClauseCustomerBindIndex;
+				executeWithRetry(sql);
+
 				// Oracle Standard Edition does not support bitmap index. But a simple index might be worse than no index because of the few different values of bounceload.
 
 	        	if (!DbUtilities.checkIfTableExists(getDataSource(), "cust" + newCompanyId + "_ban_tbl")) {
@@ -1321,7 +1323,9 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				}
 				sql = "CREATE INDEX cust" + newCompanyId + "b$cuid_ustat_mlid$idx ON customer_" + newCompanyId + "_binding_tbl (customer_id, user_status, mailinglist_id)";
 				executeWithRetry(sql);
-				
+				sql = "CREATE INDEX cust" + newCompanyId + "b$exmid_ustat_uty$idx ON customer_" + newCompanyId + "_binding_tbl (exit_mailing_id, user_status, user_type)";
+				executeWithRetry(sql);
+
 				sql = "CREATE TABLE cust" + newCompanyId + "_ban_tbl (email VARCHAR(150) COLLATE utf8mb4_bin NOT NULL, timestamp timestamp DEFAULT CURRENT_TIMESTAMP, reason varchar(500), PRIMARY KEY (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(sql);
 				if (createPreventConstraint) {
@@ -1357,14 +1361,14 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    title                 VARCHAR(100),
 				    bounceload            INTEGER   DEFAULT 0 NOT NULL,
 				    datasource_id         INTEGER,
-				    timestamp             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-				    creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-				    lastopen_date         TIMESTAMP,
-				    lastclick_date        TIMESTAMP,
+				    timestamp             TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+				    creation_date         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+				    lastopen_date         TIMESTAMPTZ,
+				    lastclick_date        TIMESTAMPTZ,
 				    latest_datasource_id  INTEGER,
-				    lastsend_date         TIMESTAMP,
+				    lastsend_date         TIMESTAMPTZ,
 				    sys_tracking_veto     SMALLINT,
-				    cleaned_date          TIMESTAMP,
+				    cleaned_date          TIMESTAMPTZ,
 				    sys_encrypted_sending INTEGER   DEFAULT 1
 				)
 				""".formatted(tableName);
@@ -1402,9 +1406,9 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				    user_type        CHAR(1),
 				    user_status      INTEGER,
 				    user_remark      VARCHAR(150),
-				    timestamp        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    timestamp        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    exit_mailing_id  INTEGER,
-				    creation_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    creation_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    mediatype        INTEGER   DEFAULT 0,
 				    referrer         VARCHAR(4000),
 				    entry_mailing_id INTEGER
@@ -1424,6 +1428,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 		executeWithTableSpace("CREATE INDEX cust%db$tmst$idx ON %s (timestamp)".formatted(companyId, tableName), indexTableSpace);
 		executeWithTableSpace("CREATE INDEX cust%db$cuid_utype_mlid$idx ON %s (customer_id, user_type, mailinglist_id)".formatted(companyId, tableName), indexTableSpace);
 		executeWithTableSpace("CREATE INDEX cust%db$cuid_ustat_mlid$idx ON %s (customer_id, user_status, mailinglist_id)".formatted(companyId, tableName), indexTableSpace);
+		executeWithTableSpace("CREATE INDEX cust%db$exmid_ustat_uty$idx ON %s (exit_mailing_id, user_status, user_type)".formatted(companyId, tableName), indexTableSpace);
 	}
 
 	private void createCustomerBanTable(int companyId, boolean createPreventConstraint) {
@@ -1433,7 +1438,7 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 				CREATE TABLE %s
 				(
 				    email     VARCHAR(100) PRIMARY KEY,
-				    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 				    reason    VARCHAR(500)
 				)
 				""".formatted(tableName);
@@ -1597,12 +1602,12 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 						    user_type        CHAR(1),
 						    user_status      INTEGER,
 						    user_remark      VARCHAR(150),
-						    timestamp        TIMESTAMP,
-						    creation_date    TIMESTAMP,
+						    timestamp        TIMESTAMPTZ,
+						    creation_date    TIMESTAMPTZ,
 						    exit_mailing_id  INTEGER,
 						    mediatype        INTEGER,
 						    change_type      INTEGER,
-						    timestamp_change TIMESTAMP,
+						    timestamp_change TIMESTAMPTZ,
 						    client_info      VARCHAR(150),
 						    email            VARCHAR(100),
 						    referrer         VARCHAR(4000),
@@ -1856,16 +1861,18 @@ public class CompanyDaoImpl extends PaginatedBaseDaoImpl implements CompanyDao {
 		List<String> rightsToSet = select("SELECT permission_name FROM permission_tbl WHERE feature_package = ?", StringRowMapper.INSTANCE, featureName);
 
 		for (String rightToCheck : rightsToSet) {
-			if (Permission.getPermissionByToken(rightToCheck) != null) {
+			Permission permission = Permission.getPermissionByToken(rightToCheck);
+
+			if (permission != null) {
 				if (activate) {
-					createCompanyPermission(companyID, Permission.getPermissionByToken(rightToCheck), comment);
+					createCompanyPermission(companyID, permission, comment);
 					for (int subCompanyID : subCompanyIDs) {
-						createCompanyPermission(subCompanyID, Permission.getPermissionByToken(rightToCheck), comment);
+						createCompanyPermission(subCompanyID, permission, comment);
 					}
 				} else {
-					deleteCompanyPermission(companyID, Permission.getPermissionByToken(rightToCheck));
+					deleteCompanyPermission(companyID, permission);
 					for (int subCompanyID : subCompanyIDs) {
-						deleteCompanyPermission(subCompanyID, Permission.getPermissionByToken(rightToCheck));
+						deleteCompanyPermission(subCompanyID, permission);
 					}
 				}
 			}

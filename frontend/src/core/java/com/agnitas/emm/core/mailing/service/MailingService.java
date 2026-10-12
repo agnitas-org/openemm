@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -43,8 +43,12 @@ import org.springframework.context.ApplicationContext;
 public interface MailingService {
 	
 	int addMailing(MailingModel model);
-	
-	int addMailingFromTemplate(MailingModel model);
+
+    boolean isActiveOrSent(Mailing mailing);
+
+    int createMailingFromTemplate(int templateId, int companyId);
+
+    int addMailingFromTemplate(MailingModel model);
 
 	Mailing getMailing(MailingModel model);
 
@@ -59,6 +63,12 @@ public interface MailingService {
     void deleteMailing(MailingModel model);
 	
 	List<Mailing> getMailings(MailingModel model);
+
+	void validateMailingExists(int id, int companyId);
+
+	void validateTemplateExists(int id, int companyId);
+
+	boolean exists(int mailingID, int companyID, boolean isTemplate);
 
 	boolean exists(int mailingID, int companyID);
 
@@ -129,6 +139,10 @@ public interface MailingService {
 	Map<Integer, List<LightweightMailingWithMailingList>> findActionBasedMailingsForMailinglists(List<Mailinglist> mailinglists, int companyId);
 
 	List<LightweightMailingWithMailingList> listAllActionBasedMailingsForMailinglist(final int companyID, final int mailinglistID);
+
+	LightweightMailing getMailingLight(int mailingId, int companyId);
+
+	LightweightMailing getTemplateLight(int templateId, int companyId);
 
 	LightweightMailing getLightweightMailing(int companyID, int mailingId);
 
@@ -202,6 +216,8 @@ public interface MailingService {
 
     ServiceResult<List<Mailing>> getMailingsForDeletion(Collection<Integer> mailingIds, Admin admin);
 
+	List<UserAction> deleteMailing(int mailingId, Admin admin, boolean isTemplate);
+
     ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> ids, Admin admin);
 
     void bulkRestore(Collection<Integer> mailingIds, Admin admin);
@@ -215,6 +231,14 @@ public interface MailingService {
 	void writeRemoveApprovalLog(int mailingId, Admin admin);
 
     Mailing getMailing(int mailingId, int companyId, boolean includeDependencies);
+
+	Mailing getMailingOnly(int id, int companyId);
+
+	Mailing getTemplate(int id, int companyId);
+
+	Optional<Mailing> findMailingOnly(int id, int companyId);
+
+	Optional<Mailing> findTemplate(int id, int companyId);
 
     Map<Integer, Mediatype> getMediatypes(int mailingId, int companyId);
 
@@ -250,6 +274,10 @@ public interface MailingService {
 
 	Map<Integer, MailingBase> getMailingsInfoForComparison(Set<Integer> mailingIds, int companyId);
 
+	String getThumbnailDataUri(int mailingId, int companyId);
+
+	String getThumbnailDataUri(Mailing mailing);
+
     Optional<Integer> getThumbnailComponentId(Mailing mailing);
 
 	boolean isPostMailing(Mailing mailing);
@@ -258,4 +286,7 @@ public interface MailingService {
 
 	boolean isOfflineHtmlFormat(Mailing mailing);
 
+    boolean isStandaloneSmsMailing(int mailingId, int companyId);
+
+	boolean isStandaloneSmsMailing(Mailing mailing);
 }

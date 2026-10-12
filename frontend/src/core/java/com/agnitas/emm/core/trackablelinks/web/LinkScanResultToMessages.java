@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.trackablelinks.web;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.agnitas.messages.Message;
@@ -112,6 +113,26 @@ public final class LinkScanResultToMessages {
   			}
   		}
   	}
+
+	public static Optional<Message> insecureLinksAsMessage(final LinkScanResult result) {
+		final List<LinkWarning> list = filterWarningsByType(result, WarningType.INSECURE);
+
+		if (list.isEmpty()) {
+			return Optional.empty();
+		}
+		final int numMoreLinks = Math.max(0, list.size() - MAX_LINKS_PER_WARNING);
+		final List<LinkWarning> listToView = list.subList(0, Math.min(list.size(), MAX_LINKS_PER_WARNING));
+
+		final String links = listToView
+				.stream()
+				.map(LinkWarning::getLink)
+				.collect(Collectors.joining("</li><li>", "<ul><li>", "</li></ul>"));
+
+		if (numMoreLinks == 0) {
+			return Optional.of(Message.of(MESSAGE_KEY_INSECURE_LINKS, links));
+		}
+		return Optional.of(Message.of(MESSAGE_KEY_INSECURE_LINKS_WITH_MORE, links, numMoreLinks));
+	}
 	
 	/**
 	 * Filters warnings by warning type.

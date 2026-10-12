@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+    <info organisation="com.agnitas" module="core"/>
+
+    <configurations>
+        <conf name="compile"/>
+        <conf name="test"/>
+        <conf name="sources" visibility="public"/>
+    </configurations>
+
+    <dependencies>
+        <dependency org="org.antlr" name="antlr-runtime" rev="3.5.2" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.antlr" name="antlr4-runtime" rev="4.4-jakarta" conf="compile->default;sources->sources(*)"/>
+
+        <!-- Spring Framework -->
+        <dependency org="org.springframework" name="spring-aop" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-aspects" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-beans" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-context" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-context-support" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-core" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-expression" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-jdbc" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-orm" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-oxm" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-tx" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-web" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework" name="spring-webmvc" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+
+        <!-- This one is separate from Spring Framework -->
+        <dependency org="org.springframework.ws" name="spring-xml" rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+
+        <!-- commons -->
+        <dependency org="org.apache.commons" name="commons-lang3" rev="3.18.0" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.commons" name="commons-dbcp2" rev="2.12.0" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.commons" name="commons-collections4" rev="4.4" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.commons" name="commons-text" rev="1.12.0" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.commons" name="commons-compress" rev="1.27.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="commons-beanutils" name="commons-beanutils" rev="1.11.0" conf="compile->default;sources->sources(*)" />
+        <dependency org="commons-net" name="commons-net" rev="3.11.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="commons-io" name="commons-io" rev="2.20.0" conf="compile->default;sources->sources(*)" />
+
+        <!-- log4j -->
+        <dependency org="org.apache.logging.log4j" name="log4j-core" rev="2.25.4" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.logging.log4j" name="log4j-slf4j-impl" rev="2.25.4" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.logging.log4j" name="log4j-jcl" rev="2.25.4" conf="compile->default;sources->sources(*)"/>
+
+        <!-- Jackson 2.x -->
+        <dependency org="com.fasterxml.jackson.core" name="jackson-annotations" rev="2.22"   conf="compile->default;sources->sources(*)" />
+        <dependency org="com.fasterxml.jackson.core" name="jackson-core"        rev="2.22.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.fasterxml.jackson.core" name="jackson-databind"    rev="2.22.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.fasterxml.jackson.datatype" name="jackson-datatype-jsr310" rev="2.22.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.fasterxml.jackson.datatype" name="jackson-datatype-jdk8"   rev="2.22.1" conf="compile->default;sources->sources(*)" />
+
+        <!-- Jackson 3.x (tools.jackson package; used alongside 2.x in RecipientImportServiceImpl) -->
+        <dependency org="tools.jackson.core" name="jackson-core" rev="3.1.4" conf="compile->default;sources->sources(*)" />
+        <dependency org="tools.jackson.core" name="jackson-databind" rev="3.1.4" conf="compile->default;sources->sources(*)" />
+
+        <!-- AspectJ (used directly via @Aspect annotations; also transitive from spring-aspects) -->
+        <dependency org="org.aspectj" name="aspectjrt"      rev="1.9.22" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.aspectj" name="aspectjweaver"  rev="1.9.22" conf="compile->default;sources->sources(*)"/>
+
+        <!-- others-->
+        <dependency org="net.objecthunter" name="exp4j" rev="0.4.8" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.json" name="json" rev="20240303" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.bouncycastle" name="bcprov-jdk18on" rev="1.78.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="net.lingala.zip4j" name="zip4j" rev="2.10.0" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.github.mwiede" name="jsch" rev="2.27.7" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.xmlrpc" name="xmlrpc-client" rev="3.1.3" conf="compile->default;sources->sources(*)">
+            <exclude org="junit" module="junit"/>
+        </dependency>
+        <dependency org="org.apache.xmlrpc" name="xmlrpc-common" rev="3.1.3-jakarta" conf="compile->default;sources->sources(*)" transitive="false"/>
+        <dependency org="org.apache.xmlrpc" name="xmlrpc-server" rev="3.1.3-jakarta" conf="compile->default;sources->sources(*)" transitive="false"/>
+
+        <dependency org="com.sun.mail" name="jakarta.mail" rev="2.0.2" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.poi" name="poi" rev="5.2.3" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.poi" name="poi-ooxml" rev="5.2.3" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.poi" name="poi-ooxml-full" rev="5.2.3" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="net.sf.cssbox" name="jstyleparser" rev="1.20"  conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.mapstruct" name="mapstruct" rev="1.6.3" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.httpcomponents.client5" name="httpclient5" rev="5.6.2" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.jsoup" name="jsoup" rev="1.14.3" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="com.helger" name="ph-css" rev="6.5.0" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="net.htmlparser.jericho" name="jericho-html" rev="3.4" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.github.vladimir-bukhtoyarov" name="bucket4j-core" rev="6.0.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="redis.clients" name="jedis" rev="4.3.1" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.velocity" name="velocity-engine-core" rev="2.3" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="dnsjava" name="dnsjava" rev="3.6.1" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="net.sourceforge.htmlcleaner" name="htmlcleaner" rev="2.29" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.tika" name="tika-core" rev="3.2.3" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.tika" name="tika-parsers-standard-package" rev="3.2.3" conf="compile->master" />
+
+        <dependency org="org.msgpack" name="msgpack-core" rev="0.9.11" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="net.sf.trove4j" name="trove4j" rev="3.0.3" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="com.helger.commons" name="ph-collection" rev="10.1.6" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.helger.commons" name="ph-commons" rev="10.1.6" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="com.lowagie" name="itext" rev="1.3.1" conf="compile->default;sources->sources(*)" />
+        <dependency org="jakarta.validation" name="jakarta.validation-api" rev="3.1.1" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.bval" name="bval-jsr" rev="3.0.2" conf="compile->default;sources->sources(*)" />
+        <dependency org="com.google.zxing" name="core" rev="3.5.0" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.apache.santuario" name="xmlsec" rev="4.0.4" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="4.0.6" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="com.auth0" name="java-jwt" rev="3.8.3" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="bsh" name="bsh" rev="1.3.0-jakarta" conf="compile->default;sources->sources(*)" />
+
+        <dependency org="org.eclipse.birt.runtime" name="viewservlets" rev="4.4.1-jakarta" conf="compile->master" />
+
+        <dependency org="com.google.code.gson" name="gson" rev="2.10.1" conf="compile->default;sources->sources(*)"/>
+
+        <!--
+          push-postman-api: private artifact — NOT on Maven Central.
+          Committed to git at libs/ivy-local/com/agnitas/push-postman-api/1.4.3/.
+        -->
+        <dependency org="com.agnitas" name="push-postman-api" rev="1.4.3" conf="compile->default;sources->sources(*)" transitive="false"/>
+
+        <!-- Test dependencies — transitive=false: each artifact is declared explicitly, no extras pulled in -->
+        <dependency org="org.junit.jupiter"  name="junit-jupiter-api"            rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.jupiter"  name="junit-jupiter-engine"         rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.jupiter"  name="junit-jupiter-params"         rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.platform" name="junit-platform-commons"       rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.platform" name="junit-platform-engine"        rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.platform" name="junit-platform-launcher"      rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.platform" name="junit-platform-suite-api"     rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.platform" name="junit-platform-suite-commons" rev="1.14.2" conf="test->default" transitive="false"/>
+        <dependency org="org.junit.platform" name="junit-platform-suite-engine"  rev="6.0.2" conf="test->default" transitive="false"/>
+        <dependency org="org.hamcrest"       name="hamcrest"                     rev="3.0"   conf="test->default" transitive="false"/>
+        <dependency org="org.opentest4j"     name="opentest4j"                   rev="1.3.0" conf="test->default" transitive="false"/>
+        <dependency org="org.easymock"       name="easymock"                     rev="5.2.0" conf="test->default" transitive="false"/>
+        <dependency org="org.objenesis"      name="objenesis"                    rev="3.3"   conf="test->default" transitive="false"/>
+        <dependency org="org.skyscreamer"    name="jsonassert"                   rev="1.5.0" conf="test->default" transitive="false"/>
+        <dependency org="org.springframework" name="spring-test"                 rev="7.0.8" conf="test->default" transitive="false"/>
+        <dependency org="com.samskivert"     name="jmustache"                    rev="1.16"  conf="test->default" transitive="false"/>
+
+        <!-- Angus Activation (org.eclipse.angus) is the runtime implementation; exclude the old Sun impl -->
+        <exclude org="com.sun.activation" module="jakarta.activation"/>
+        <!-- junit leaks in via ws-commons-util (a compile-scope dep of ws-commons-util 1.0.2) -->
+        <exclude org="junit" module="junit"/>
+        <!-- pulled by ws-commons-util -->
+        <exclude org="xml-apis" module="xml-apis"/>
+
+        <override org="org.antlr" module="antlr4-runtime"         rev="4.4-jakarta"/>
+        <override org="org.apache.xmlrpc" module="xmlrpc-common" rev="3.1.3-jakarta"/>
+        <override org="org.apache.logging.log4j"       rev="2.25.4"/>
+        <override org="com.fasterxml.jackson.core" module="jackson-annotations" rev="2.22"/>
+        <override org="com.fasterxml.jackson.core" module="jackson-core"        rev="2.22.1"/>
+        <override org="com.fasterxml.jackson.core" module="jackson-databind"    rev="2.22.1"/>
+        <override org="com.fasterxml.jackson.datatype"   rev="2.22.1"/>
+        <override org="com.fasterxml.jackson.dataformat" rev="2.22.1"/>
+        <override org="com.fasterxml.jackson.module"     rev="2.22.1"/>
+        <override org="tools.jackson.core"               rev="3.1.4"/>
+        <override org="tools.jackson.module"             rev="3.1.4"/>
+        <override org="io.micrometer"                    rev="1.17.0"/>
+        <override org="org.springframework"              rev="7.0.8"/>
+        <override org="org.slf4j"                        rev="2.0.18"/>
+        <override org="org.apache.commons" module="commons-compress"  rev="1.27.1"/>
+        <override org="org.apache.commons" module="commons-text"      rev="1.12.0"/>
+        <override org="commons-beanutils"  module="commons-beanutils" rev="1.11.0"/>
+
+    </dependencies>
+</ivy-module>

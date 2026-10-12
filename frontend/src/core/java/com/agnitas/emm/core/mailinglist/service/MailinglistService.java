@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -18,9 +18,14 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
+import com.agnitas.emm.core.mailinglist.MailinglistSortCriteria;
+import com.agnitas.emm.core.mailinglist.dto.CreateMailinglistDTO;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.dto.PatchMailinglistCommand;
+import com.agnitas.emm.core.mailinglist.model.MailinglistRecipientsDeletionResult;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.web.forms.PaginationForm;
+import com.agnitas.service.SimpleServiceResult;
 import org.json.JSONArray;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +33,7 @@ public interface MailinglistService {
 
 	List<Mailinglist> getMailinglists(int companyId);
 
-    PaginatedList<Mailinglist> findAll(PaginationForm form, int companyId);
+	PaginatedList<Mailinglist> findAll(PaginatedFilter<MailinglistSortCriteria> pagination, int companyId);
 
     Mailinglist getMailinglist(int id, int companyId);
 
@@ -44,18 +49,29 @@ public interface MailinglistService {
 
 	ServiceResult<List<Mailinglist>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
 
+	SimpleServiceResult checkCanBeDeleted(int id, Admin admin);
+
 	List<Integer> delete(Set<Integer> ids, Admin admin);
 
 	List<Mailinglist> getAllMailingListsNames(int companyId);
 	
 	int saveMailinglist(int companyId, MailinglistDto mailinglist);
-	
+
+	MailinglistDto create(CreateMailinglistDTO createDTO, int companyId);
+
+	Mailinglist update(PatchMailinglistCommand patchCommand);
+
 	boolean isShortnameUnique(String newShortname, int mailinglistId, int companyId);
     
     @Transactional
     boolean deleteMailinglist(int mailinglistId, int companyId);
 
-    void deleteMailinglistBindingRecipients(int companyId, int mailinglistId, boolean onlyActiveUsers, boolean withoutAdminAndTestUsers);
+	MailinglistRecipientsDeletionResult deleteMailinglistBindingRecipients(
+			int companyId,
+			int mailinglistId,
+			boolean onlyActiveUsers,
+			boolean withoutAdminAndTestUsers
+	);
 
 	JSONArray getMailingListsJson(Admin admin);
 

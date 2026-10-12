@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -41,6 +41,7 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     private static final Pattern WIDGET__PATTERN = Pattern.compile("^.*/widget/.*$");
     private static final Pattern MAILING_LOCK_PATTERN = Pattern.compile("^.*/mailing/ajax/\\d+/lock\\.action$");
     private static final Pattern SSO_PATTERN = Pattern.compile("^.*/sso(?:Select)?.action$");
+    private static final Pattern REPORT_GENERATE_PATTERN = Pattern.compile("^.*/statistics/reports/\\d+/generate\\.action$");
 
     private static final String ERROR_PAGE_URL = "/csrf/error.action";
 
@@ -111,7 +112,7 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
 
     private boolean shouldSkipTokenComparison(HttpServletRequest req) {
         return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req)
-                || isSsoRequest(req) || isSentFromWidget(req);
+                || isSsoRequest(req) || isSentFromWidget(req) || isReportGenerateRequest(req);
     }
 
     private boolean isSentFromUserWebForm(HttpServletRequest req) {
@@ -132,6 +133,10 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
 
     private boolean isSsoRequest(final HttpServletRequest request) {
         return SSO_PATTERN.matcher(request.getRequestURI()).matches();
+    }
+
+    private boolean isReportGenerateRequest(HttpServletRequest req) {
+        return REPORT_GENERATE_PATTERN.matcher(req.getRequestURI()).matches();
     }
 
     private boolean isAllowedHttpMethod(HttpServletRequest req) {

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,7 +12,6 @@ package com.agnitas.emm.core.webhooks.settings.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
@@ -28,17 +27,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 public class WebhookSettingsServiceImpl implements WebhookSettingsService {
 
-	private WebhookRegistrationService registrationService;
-	private WebhookProfileFieldsService profileFieldService;
-	
-	@Transactional
-	@Override
-	public WebhookSettings findRegisteredWebhookSettings(int companyID, WebhookEventType eventType) {
-		final WebhookRegistryEntry webhook = this.registrationService.findWebhookEntry(companyID, eventType);
-		final Set<String> profileFields = this.profileFieldService.listProfileFieldNamesForWebhook(companyID, eventType);
-		
-		return new WebhookSettings(eventType, webhook.getUrl(), new ArrayList<>(profileFields));
-	}
+	private final WebhookRegistrationService registrationService;
+	private final WebhookProfileFieldsService profileFieldService;
+
+    public WebhookSettingsServiceImpl(
+			WebhookRegistrationService registrationService,
+			WebhookProfileFieldsService profileFieldService
+	) {
+        this.registrationService = registrationService;
+        this.profileFieldService = profileFieldService;
+    }
 
 	@Transactional
 	@Override
@@ -76,14 +74,6 @@ public class WebhookSettingsServiceImpl implements WebhookSettingsService {
 		}
 		
 		this.profileFieldService.updateIncludedProfileField(companyID, eventType, profileFields);
-	}
-	
-	public void setWebhookRegistrationService(WebhookRegistrationService service) {
-		this.registrationService = Objects.requireNonNull(service, "WebhookRegistrationService is null");
-	}
-	
-	public void setWebhookProfileFieldsService(WebhookProfileFieldsService service) {
-		this.profileFieldService = Objects.requireNonNull(service, "WebhookProfileFieldsService is null");
 	}
 
 }

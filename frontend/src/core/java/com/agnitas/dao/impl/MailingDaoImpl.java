@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -89,8 +90,7 @@ import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.MailingDataException;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.MailingSortCriteria;
 import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
 import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
@@ -113,6 +113,7 @@ import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.agnitas.util.AgnUtils;
@@ -140,6 +141,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
  */
 public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
+    private static final String DELIVERED_COL = "delivered";
     private static Boolean FULLTEXTSEARCHSUPPORTED_CACHE = null;
     private static Boolean BASICFULLTEXTSEARCHSUPPORTED_CACHE = null;
 
@@ -171,7 +173,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         "clickaction_id",
         "plan_date",
         "priority",
-        "is_prioritization_allowed"
+        "is_prioritization_allowed",
+        DELIVERED_COL
     );
 
     private static final MailingRowMapper MAILING_ROW_MAPPER = new MailingRowMapper();
@@ -699,6 +702,50 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return getMailing(mailingID, companyID, true, true);
     }
 
+    @Override
+    public Optional<Mailing> findTemplate(int mailingId, int companyId) {
+        return findMailing(mailingId, companyId, true, true);
+    }
+
+    @Override
+    public Optional<Mailing> findMailing(int mailingId, int companyId) {
+        return findMailing(mailingId, companyId, true, false);
+    }
+
+    public Optional<Mailing> findMailing(
+            int mailingId,
+            int companyId,
+            boolean includeDependencies,
+            Boolean isTemplate
+    ) {
+        if (companyId <= 0 || mailingId <= 0) {
+            return Optional.empty();
+        }
+        List<Object> params = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder()
+                .append("SELECT ")
+                .append(getMailingSqlSelectFields(""))
+                .append(", send_date AS senddate")
+                .append(" FROM mailing_tbl")
+                .append(" WHERE company_id = ? AND mailing_id = ? AND deleted <= 0");
+        params.add(companyId);
+        params.add(mailingId);
+
+        if (isTemplate != null) {
+            sql.append(" AND is_template = ?");
+            params.add(isTemplate ? 1 : 0);
+        }
+        sql.append(" ORDER BY send_date");
+
+        Optional<Mailing> mailing = findObject(sql.toString(), getRowMapper(), params.toArray());
+
+        if (mailing.isPresent() && includeDependencies) {
+            setMailingDependencies(mailing.get(), false);
+        }
+        return mailing;
+    }
+
 	private Mailing getMailing(int mailingID, int companyID, boolean includeDependencies, boolean includeDeletedDynTags) {
 		if (companyID <= 0 || mailingID <= 0) {
 			throw new MailingNotExistException(companyID, mailingID);
@@ -713,33 +760,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 				if (mailing == null) {
 					throw new MailingNotExistException(companyID, mailingID);
 				} else if (includeDependencies) {
-					mailing.setMediatypes(mediatypesDao.loadMediatypes(mailingID, companyID));
-
-					final Map<String, DynamicTag> dynamicTagMap = new LinkedHashMap<>();
-					for (final DynamicTag tag : dynamicTagDao.getDynamicTags(mailingID, companyID, includeDeletedDynTags)) {
-						dynamicTagMap.put(tag.getDynName(), tag);
-					}
-					mailing.setDynTags(dynamicTagMap);
-
-					final Map<String, MailingComponent> mailingComponentMap = new TreeMap<>();
-					List<MailingComponent> mailingComponents = mailingComponentDao.getMailingComponents(mailingID, companyID);
-					List<Integer> linkIds = mailingComponents.stream().map(MailingComponent::getUrlID).filter(linkID -> linkID != 0).collect(Collectors.toList());
-					Map<Integer, String> trackableLinkUrls = trackableLinkDao.getTrackableLinkUrl(companyID, mailingID, linkIds);
-					for (final MailingComponent mailingComponent : mailingComponents) {
-						String url = trackableLinkUrls.get(mailingComponent.getUrlID());
-						if (url != null) {
-							mailingComponent.setLink(url);
-						}
-						mailingComponentMap.put(mailingComponent.getComponentName(), mailingComponent);
-					}
-					mailing.setComponents(mailingComponentMap);
-					mailing.setTrackableLinks(trackableLinkDao.getTrackableLinksMap(mailingID, companyID, false));
-
-					mailing.setParameters(this.mailingParameterDao.getMailingParameters(companyID, mailingID));
-
-					final List<MaildropEntry> maildropEntryList = maildropService.getMaildropStatusEntriesForMailing(companyID, mailingID);
-					mailing.setMaildropStatus(new HashSet<>(maildropEntryList));
-				}
+                    setMailingDependencies(mailing, includeDeletedDynTags);
+                }
                 return mailing;
             } catch (MailingNotExistException e) {
 				throw e;
@@ -749,6 +771,41 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 			}
 		}
 	}
+
+    private void setMailingDependencies(Mailing mailing, boolean includeDeletedDynTags) {
+        int mailingID = mailing.getId();
+        int companyID = mailing.getCompanyID();
+        mailing.setMediatypes(mediatypesDao.loadMediatypes(mailingID, companyID));
+
+        final Map<String, DynamicTag> dynamicTagMap = new LinkedHashMap<>();
+        for (final DynamicTag tag : dynamicTagDao.getDynamicTags(mailingID, companyID, includeDeletedDynTags)) {
+            dynamicTagMap.put(tag.getDynName(), tag);
+        }
+        mailing.setDynTags(dynamicTagMap);
+
+        final Map<String, MailingComponent> mailingComponentMap = new TreeMap<>();
+        List<MailingComponent> mailingComponents = mailingComponentDao.getMailingComponents(mailingID, companyID);
+        List<Integer> linkIds = mailingComponents.stream().map(MailingComponent::getUrlID).filter(linkID -> linkID != 0).collect(Collectors.toList());
+        Map<Integer, String> trackableLinkUrls = trackableLinkDao.getTrackableLinkUrl(companyID, mailingID, linkIds);
+        for (final MailingComponent mailingComponent : mailingComponents) {
+            String url = trackableLinkUrls.get(mailingComponent.getUrlID());
+            if (url != null) {
+                mailingComponent.setLink(url);
+            }
+            mailingComponentMap.put(mailingComponent.getComponentName(), mailingComponent);
+        }
+        mailing.setComponents(mailingComponentMap);
+        mailing.setTrackableLinks(trackableLinkDao.getTrackableLinksMap(mailingID, companyID, false));
+
+        mailing.setParameters(this.mailingParameterDao.getMailingParameters(companyID, mailingID));
+
+        final List<MaildropEntry> maildropEntryList = maildropService.getMaildropStatusEntriesForMailing(
+                companyID,
+                mailingID
+        );
+        mailing.setMaildropStatus(new HashSet<>(maildropEntryList));
+        mailing.setWorkflowId(getWorkflowId(mailingID, companyID));
+    }
 
     private void saveComponents(int companyID, int mailingID, Map<String, MailingComponent> components, boolean errorTolerant) {
         if (MapUtils.isEmpty(components)) {
@@ -798,11 +855,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     @DaoUpdateReturnValueCheck
     private int saveMailingWithoutTransaction(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) {
         if (!validateTargetExpression(mailing.getTargetExpression())) {
-            throw new TooManyTargetGroupsInMailingException(mailing.getId());
+            throw new ValidationException("error.mailing.tooManyTargetGroups");
         }
 
         if (StringUtils.isBlank(mailing.getShortname())) {
-            final MailingDataException mde = new MailingDataException("Invalid empty mailing shortname");
+            final RuntimeException mde = new RuntimeException("Invalid empty mailing shortname");
             logger.error("Invalid empty mailing shortname", mde);
             // Send an email to developers, because this is a critical problem (BAUR-545)
             javaMailService.sendExceptionMail(0, mde.getMessage(), mde);
@@ -810,7 +867,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
 
         if (mailing.getMailinglistID() <= 0) {
-            final MailingDataException mde = new MailingDataException("Invalid missing mailinglist");
+            final RuntimeException mde = new RuntimeException("Invalid missing mailinglist");
             logger.error("Invalid missing mailinglist", mde);
             // Send an email to developers, because this is a critical problem (BAUR-545)
             javaMailService.sendExceptionMail(0, mde.getMessage(), mde);
@@ -1011,7 +1068,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                         AND mt.status = ? AND mt.priority = (SELECT MIN(priority) FROM mailing_mt_tbl mt2 WHERE mt2.mailing_id = m.mailing_id AND mt2.status = ?)
                         AND m.plan_date %s %s
                     %s
-                     """.formatted(
+                """.formatted(
                 planned ? "IS NOT NULL" : "IS NULL",
                 getAdditionalSqlRestrictions(admin, params, "m"),
                 isOracleDB() ? " ORDER BY mailingId DESC) WHERE rownum <= 10" : ") res ORDER BY mailingId DESC LIMIT 10"),
@@ -1019,8 +1076,18 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             params.toArray());
     }
 
+    private static String getSortDbColumn(MailingSortCriteria criteria) {
+        return switch (criteria) {
+            case null -> "";
+            case MAILING_ID -> "mailing_id";
+        };
+    }
+
     @Override
     public PaginatedList<Map<String, Object>> getMailingList(Admin admin, MailingsListProperties props) {
+        if (props.getSortCriteria() != null) {
+            props.setSort(getSortDbColumn(props.getSortCriteria()));
+        }
         List<Object> selectParameters = new ArrayList<>();
         String selectSql = generateMailingsSelectQuery(props, selectParameters, admin);
 
@@ -1522,7 +1589,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                         SELECT a.mailing_id, a.shortname, a.description, MIN(c.mintime) send_date
                         FROM mailing_tbl a
                                  LEFT JOIN mailing_account_sum_tbl c ON (a.mailing_id = c.mailing_id)
-                        WHERE a.mailing_id IN (%s) AND a.company_id = ?
+                        WHERE a.mailing_id IN (%s) AND a.company_id = ? AND c.status_field NOT IN ('A', 'T', 'V')
                         GROUP BY a.mailing_id, a.shortname, a.description
                         ORDER BY a.mailing_id
                         """.formatted(joinedIds),
@@ -2088,7 +2155,14 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 params.addAll(List.of(String.valueOf(getStatusField(mailingType)), mailingType.getCode())));
 
         String query = """
-                SELECT *
+                SELECT
+                        status_field,
+                        mailing_type,
+                        mailing_id,
+                        shortname,
+                        senddate,
+                        change_date,
+                        isOnlyPostType
                 FROM (
                          SELECT
                              c.status_field,
@@ -2105,7 +2179,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                          FROM mailing_account_tbl c
                                   JOIN mailing_tbl a ON a.mailing_id = c.mailing_id
                          WHERE c.company_id = ?
-                           AND (c.status_field, a.mailing_type) IN (%s)
+                           AND (%s)
                            AND a.deleted = 0
                            %s
                          GROUP BY
@@ -2122,8 +2196,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 """
                 .formatted(
                         IntStream.range(0, mailingTypes.size())
-                                .mapToObj(i -> "(?, ?)")
-                                .collect(Collectors.joining(", ")),
+                                .mapToObj(i -> "(c.status_field = ? AND a.mailing_type = ?)")
+                                .collect(Collectors.joining(" OR ")),
                         getTargetRestrictionsForReports(companyId, targetId, adminAltgIds, params, "a")
                 );
 
@@ -2503,7 +2577,9 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             if (resultsetHasColumn(resultSet, "senddate")) {
                 mailing.setSenddate(resultSet.getTimestamp("senddate"));
             }
-
+            if (resultsetHasColumn(resultSet, DELIVERED_COL)) {
+                mailing.setSentEmails(resultSet.getLong(DELIVERED_COL));
+            }
             return mailing;
         }
     }
@@ -3273,7 +3349,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     @Override
     public boolean setTargetExpression(int mailingId, int companyId, String targetExpression) {
         if (!validateTargetExpression(targetExpression)) {
-            throw new TooManyTargetGroupsInMailingException(mailingId);
+            throw new ValidationException("error.mailing.tooManyTargetGroups");
         }
 
         targetExpression = checkTargetExpressionForALTG(companyId, targetExpression);

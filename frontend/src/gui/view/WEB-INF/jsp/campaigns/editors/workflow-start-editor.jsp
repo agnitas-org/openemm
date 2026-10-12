@@ -50,7 +50,7 @@
 <%@include file="fragments/workflow-view-bigdata-settings.jspf"%>
 
 <%-- Editor main container should have id="<icon type>-editor" - in that case the campaign manager will be able to find it --%>
-<div id="start-editor" title="Define Start of a Campaign" data-initializer="start-editor-initializer">
+<div id="start-editor" title="<mvc:message code="workflow.start.title" />" data-initializer="start-editor-initializer">
 
     <mvc:form action="" id="startForm" name="startForm" cssClass="form-column">
         <input name="id" type="hidden">

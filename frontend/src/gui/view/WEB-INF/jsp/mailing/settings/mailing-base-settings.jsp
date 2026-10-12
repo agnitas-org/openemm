@@ -13,7 +13,7 @@
 <%--@elvariable id="isGridMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTemplate" type="java.lang.Boolean"--%>
 <%--@elvariable id="emailPlaceholder" type="java.lang.String"--%>
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 <%--@elvariable id="selectedRemovedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
 <%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="parentMailings" type="java.util.List<com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList>"--%>
@@ -137,18 +137,10 @@
                     </div>
                 </c:if>
 
-                <c:if test="${mediaType eq 4}">
+                <c:if test="${mediaType eq 4 or mediaType eq 5}">
                     <div data-field="validator">
                         <label class="form-label" for="mediaSmsSender"><mvc:message code="mailing.Sender_Adress"/></label>
                         <mvc:text path="smsMediatype.fromAdr" id="mediaSmsSender" cssClass="form-control" maxlength="50"
-                                  data-field-validator="length" data-validator-options="required: true, min: 3, max: 50" />
-                    </div>
-                </c:if>
-
-                <c:if test="${mediaType eq 5}">
-                    <div data-field="validator">
-                        <label class="form-label" for="mediaRcsSender"><mvc:message code="mailing.Sender_Adress"/></label>
-                        <mvc:text path="rcsMediatype.fromAdr" id="mediaRcsSender" cssClass="form-control" maxlength="50"
                                   data-field-validator="length" data-validator-options="required: true, min: 3, max: 50" />
                     </div>
                 </c:if>

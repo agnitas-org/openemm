@@ -125,7 +125,16 @@ AGN.Lib.Controller.new('progress-stat', function () {
       categoryPercentage: 1
     }];
 
-    drawProgressBarChart($canvas, datasets, getTimeBarChartOptions());
+    const options = getTimeBarChartOptions(window.adminDateTimeFormat, {
+      scales: {
+        x: {
+          min: config.from,
+          max: config.to
+        }
+      }
+    });
+
+    drawProgressBarChart($canvas, datasets, options);
   }
 
   function drawEventProgressTiles(entries, metrics) {
@@ -193,7 +202,7 @@ AGN.Lib.Controller.new('progress-stat', function () {
   }
 
   function drawEventsProgressChart($canvas, datasets) {
-    const options = getTimeBarChartOptions(window.adminDateFormat,{
+    const options = getTimeBarChartOptions(window.adminDateFormat, {
       plugins: {
         legend: {
           display: true,
@@ -227,7 +236,7 @@ AGN.Lib.Controller.new('progress-stat', function () {
     });
   }
 
-  function getTimeBarChartOptions(dateFormat = window.adminDateTimeFormat, customOptions = {}) {
+  function getTimeBarChartOptions(dateFormat, customOptions = {}) {
     return _.merge({}, {
       layout: {
         padding: {
@@ -242,15 +251,13 @@ AGN.Lib.Controller.new('progress-stat', function () {
             unit: config.isHourScale ? 'hour' : 'day',
             displayFormats: {
               day: config.isHourScale ? '' : dateFormat,
-              hour: config.isHourScale ? 'hh:mm' : ''
+              hour: config.isHourScale ? 'HH:mm' : ''
             },
             tooltipFormat: dateFormat
           },
           ticks: {
             maxRotation: 0
-          },
-          min: config.from,
-          max: config.to
+          }
         },
         y: {
           display: false

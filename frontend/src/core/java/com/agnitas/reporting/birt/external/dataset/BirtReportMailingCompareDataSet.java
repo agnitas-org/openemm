@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -27,7 +27,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.reporting.birt.external.beans.BirtReportCompareStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import com.agnitas.reporting.birt.external.utils.FormatTools;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.importvalues.MailType;
@@ -98,7 +98,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
     public int prepareReport(String mailingIdsStr, int companyId, String targetsStr, String hiddenTargetIdStr,
                              String figuresOptions) {
-		List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
+		List<BirtReportUtils.BirtReportFigure> figures = BirtReportUtils.unpackFigures(figuresOptions);
 		List<Integer> mailingIds = parseCommaSeparatedIds(mailingIdsStr);
 		int ownTempTableId = createTempTable();
 		MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
@@ -115,25 +115,25 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
 			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
             mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, dateFormats);
-            if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS)) {
+            if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKS_ANONYMOUS)) {
                 mailingSummaryDataSet.insertClicksAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
             }
-            if (figures.contains(BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS)) {
+            if (figures.contains(BirtReportUtils.BirtReportFigure.OPENINGS_ANONYMOUS)) {
                 mailingSummaryDataSet.insertOpenedAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
             }
-            if (figures.contains(BirtReporUtils.BirtReportFigure.HARDBOUNCES)) {
+            if (figures.contains(BirtReportUtils.BirtReportFigure.HARDBOUNCES)) {
                 mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, false, dateFormats);
             }
-            if (figures.contains(BirtReporUtils.BirtReportFigure.SIGNED_OFF)) {
+            if (figures.contains(BirtReportUtils.BirtReportFigure.SIGNED_OFF)) {
                 mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
             }
-            if (figures.contains(BirtReporUtils.BirtReportFigure.REVENUE)) {
+            if (figures.contains(BirtReportUtils.BirtReportFigure.REVENUE)) {
                 mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, dateFormats);
             }
         	mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, false, dateFormats);
 			mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, false, dateFormats);
 
-            if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
+            if (!figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_MOBILE_INDEX);
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_PC_INDEX);
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_PC_AND_MOBILE_INDEX);
@@ -141,7 +141,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_SMARTTV_INDEX);
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_TRACKED_INDEX);
             }
-            if (!figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
+            if (!figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.CLICKER_MOBILE_INDEX);
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.CLICKER_PC_INDEX);
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.CLICKER_PC_AND_MOBILE_INDEX);
@@ -171,13 +171,13 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
 		addSentMailsByMailtypeData(mailingIds, companyId, ownTempTableId, figures);
 
-        if (!figures.contains(BirtReporUtils.BirtReportFigure.HTML)) {
+        if (!figures.contains(BirtReportUtils.BirtReportFigure.HTML)) {
             mailingSummaryDataSet.removeCategoryData(ownTempTableId, CommonKeys.SENT_HTML_INDEX);
         }
-        if (!figures.contains(BirtReporUtils.BirtReportFigure.TEXT)) {
+        if (!figures.contains(BirtReportUtils.BirtReportFigure.TEXT)) {
             mailingSummaryDataSet.removeCategoryData(ownTempTableId, CommonKeys.SENT_TEXT_INDEX);
         }
-        if (!figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML)) {
+        if (!figures.contains(BirtReportUtils.BirtReportFigure.OFFLINE_HTML)) {
             mailingSummaryDataSet.removeCategoryData(ownTempTableId, CommonKeys.SENT_OFFLINE_HTML_INDEX);
         }
 
@@ -225,9 +225,9 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 	/**
 	 * Count values sentHtml, sentText, sentOfflineHTML if needed
 	 */
-	private void addSentMailsByMailtypeData(List<Integer> mailingIds, int companyId, int tempTableID, List<BirtReporUtils.BirtReportFigure> figures) {
-		if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
-				figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML))) {
+	private void addSentMailsByMailtypeData(List<Integer> mailingIds, int companyId, int tempTableID, List<BirtReportUtils.BirtReportFigure> figures) {
+		if (!(figures.contains(BirtReportUtils.BirtReportFigure.HTML) || figures.contains(BirtReportUtils.BirtReportFigure.TEXT) ||
+				figures.contains(BirtReportUtils.BirtReportFigure.OFFLINE_HTML))) {
 			return;
 		}
         if (CollectionUtils.isEmpty(mailingIds)) {
@@ -245,13 +245,13 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 			int mailtype = toInt(map.get("mailtype"));
 			int categoryIndex = 0;
 			String category = "";
-			if (mailtype == MailType.HTML.getIntValue() && figures.contains(BirtReporUtils.BirtReportFigure.HTML)) {
+			if (mailtype == MailType.HTML.getIntValue() && figures.contains(BirtReportUtils.BirtReportFigure.HTML)) {
 				categoryIndex = CommonKeys.SENT_HTML_INDEX;
 				category = CommonKeys.SENT_HTML;
-			} else if (mailtype == MailType.TEXT.getIntValue() && figures.contains(BirtReporUtils.BirtReportFigure.TEXT)) {
+			} else if (mailtype == MailType.TEXT.getIntValue() && figures.contains(BirtReportUtils.BirtReportFigure.TEXT)) {
 				categoryIndex = CommonKeys.SENT_TEXT_INDEX;
 				category = CommonKeys.SENT_TEXT;
-			} else if ((mailtype == MailType.HTML_OFFLINE.getIntValue() || mailtype == 3) && figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML)) {
+			} else if ((mailtype == MailType.HTML_OFFLINE.getIntValue() || mailtype == 3) && figures.contains(BirtReportUtils.BirtReportFigure.OFFLINE_HTML)) {
 				categoryIndex = CommonKeys.SENT_OFFLINE_HTML_INDEX;
 				category = CommonKeys.SENT_OFFILE_HTML;
             }

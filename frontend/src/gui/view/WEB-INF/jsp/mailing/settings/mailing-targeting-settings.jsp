@@ -16,7 +16,7 @@
 <%--@elvariable id="TARGET_MODE_TOGGLE_DISABLED" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 <%--@elvariable id="selectedRemovedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
 <%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="wmSplit" type="java.lang.Boolean"--%>

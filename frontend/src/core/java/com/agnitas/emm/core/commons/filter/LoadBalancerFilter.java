@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -115,22 +115,18 @@ public class LoadBalancerFilter implements Filter {
 						HttpServletResponse resp = (HttpServletResponse) response;
 						resp.sendRedirect( systemUrl);
 					} else {
-						
 						// The session ID seems to be valid for the current node, so processing will continue.
-						logger.info("Requested session is valid. Proceeding with request.");
-
+						logger.debug("Requested session is valid. Proceeding with request.");
 						filterChain.doFilter( request, response);
 					}
-						
 				} catch( ClassCastException e) {
 					// We had some problem with the request. It may be no HTTP request. Processing will continue without further checks.
 					logger.warn( "No HttpServletRequest?", e);
-					
 					filterChain.doFilter( request, response);
 				}
 			} else {
 				// The node is either active or stopped.
-				logger.info("Node not disabled.");
+				logger.debug("Node not disabled.");
 				filterChain.doFilter( request, response);
 			}
 		} else {
@@ -139,7 +135,7 @@ public class LoadBalancerFilter implements Filter {
 			 *  that the node is not behind a load balancer and is active all the time.
 			 */
 			
-			logger.info("No information about load balancer activation found.");
+			logger.debug("No information about load balancer activation found.");
 			filterChain.doFilter( request, response);
 		}
 	}

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -529,7 +529,7 @@ public class BC {
 	}
 
 	private String getTemporary(String tableName) {
-		if (data.dbase.isOracle()) {
+		if (data.dbase.isOracle() || data.dbase.isPostgreSQL()) {
 			String ts = data.tempTablespace();
 
 			if (ts != null) {
@@ -675,7 +675,7 @@ public class BC {
 		if (tableCreated) {
 			String query = "CREATE INDEX TMP_CUID_" + data.maildropStatus.id() + "_IDX ON " + table + " (customer_id)";
 
-			if (data.dbase.isOracle()) {
+			if (data.dbase.isOracle() || data.dbase.isPostgreSQL()) {
 				String ts = data.tempTablespace();
 
 				if (ts != null) {
@@ -781,7 +781,7 @@ public class BC {
 					   data.maildropStatus.isRuleMailing () ||
 					   data.maildropStatus.isOnDemandMailing () ||
 					   data.maildropStatus.isWorldMailing ()) {
-					if (data.dbase.isOracle()) {
+					if (data.dbase.isOracle() || data.dbase.isPostgreSQL()) {
 						query += "EXISTS (SELECT 1 FROM " + table + " cust WHERE bind.customer_id = cust.customer_id)";
 					} else {
 						query += "customer_id IN (SELECT customer_id FROM " + table + ")";
@@ -804,6 +804,7 @@ public class BC {
 						"UPDATE " + bindingTable + " " +
 						"SET timestamp = current_timestamp, user_status = :userStatus, exit_mailing_id = :exitMailingID, user_remark = :userRemark " +
 						"WHERE customer_id = :customerID AND mailinglist_id = :mailinglistID AND mediatype = :mediatype";
+					int	count = 0;
 					for (Map <String, Object> row : data.dbase.query (with.cursor (),
 											  query,
 											  "userStatus", UserStatus.Bounce.getStatusCode (),
@@ -829,9 +830,12 @@ public class BC {
 								   "customerID", customerID,
 								   "mailinglistID", data.mailinglist.id (),
 								   "mediatype", mediatype);
+						if ((++count % 500) == 0) {
+							data.dbase.flush (with.cursor ());
+						}
 						data.logging (Log.DEBUG, "bc", "Bleed bounce from mailinglist " + mailinglistID + " to " + data.mailinglist.id () + " for media type " + mediatype + " using exit mailing id " + exitMailingID + " for customer " + customerID);
 					}
-					data.dbase.flush ();
+					data.dbase.flush (with.cursor ());
 				}
 			} catch (SQLException e) {
 				data.logging (Log.WARNING, "bc", "Failed to bleed bounce: " + e.toString ());
@@ -850,6 +854,8 @@ public class BC {
 
 				if (data.dbase.isOracle()) {
 					stmt = "CREATE TABLE " + ctable + " (customer_id NUMBER)";
+				} else if (data.dbase.isPostgreSQL()) {
+					stmt = "CREATE TABLE " + ctable + " (customer_id INTEGER)";
 				} else {
 					stmt = "CREATE TABLE " + ctable + " (customer_id INTEGER UNSIGNED)";
 				}
@@ -903,7 +909,7 @@ public class BC {
 		if (ok && data.shouldRemoveDuplicateEMails () && (splitExpression != null)) {
 			String	query;
 			
-			if (data.dbase.isOracle ()) {
+			if (data.dbase.isOracle () || data.dbase.isPostgreSQL ()) {
 				query = "DELETE FROM " + table + " self " +
 					"WHERE NOT EXISTS (SELECT 1 FROM " + table + " cust WHERE self.customer_id = cust.customer_id AND (" + splitExpression + "))";
 			} else {
@@ -954,6 +960,14 @@ public class BC {
 							  "\tSENDDATE NUMBER NOT NULL,\n" +
 							  "\tSTATUS_FIELD VARCHAR2(1) NOT NULL,\n" +
 							  "\tMAILCOUNT NUMBER NOT NULL\n" +
+							  ")";
+					} else if (data.dbase.isPostgreSQL ()) {
+						mktable = "CREATE TABLE " + limitTable + "(\n" +
+							  "\tCOMPANY_ID INTEGER NOT NULL,\n" +
+							  "\tCUSTOMER_ID INTEGER NOT NULL,\n" +
+							  "\tSENDDATE INTEGER NOT NULL,\n" +
+							  "\tSTATUS_FIELD VARCHAR(1) NOT NULL,\n" +
+							  "\tMAILCOUNT INTEGER NOT NULL\n" +
 							  ")";
 					} else {
 						mktable = "CREATE TABLE " + limitTable + "(\n" +
@@ -1035,6 +1049,8 @@ public class BC {
 
 					if (data.dbase.isOracle()) {
 						stmt = "CREATE TABLE " + ctable + " (customer_id) AS SELECT distinct customer_id FROM " + table + " WHERE user_type = 'W' ORDER BY dbms_random.value";
+					} else if (data.dbase.isPostgreSQL()) {
+						stmt = "CREATE TABLE " + ctable + " (customer_id) AS SELECT distinct customer_id FROM " + table + " WHERE user_type = 'W' ORDER BY random()";
 					} else {
 						stmt = "CREATE TABLE " + ctable + " (customer_id INTEGER UNSIGNED) AS SELECT distinct customer_id FROM " + table + " WHERE user_type = 'W' ORDER BY rand()";
 					}
@@ -1086,7 +1102,7 @@ public class BC {
 			long	cnt;
 			String	stmt;
 			
-			if (data.dbase.isOracle ()) {
+			if (data.dbase.isOracle () || data.dbase.isPostgreSQL ()) {
 				stmt =	"DELETE FROM " + table + " recv " +
 					"WHERE user_type = 'W' AND NOT EXISTS (" +
 					"  SELECT 1 FROM " + data.priorityTable + " prio WHERE prio.customer_id = recv.customer_id AND prio.mailing_id = :mailingID AND prio.status_id = :statusID AND time_id = :timeID" +
@@ -1210,8 +1226,8 @@ public class BC {
 							int		vsize = vouchers.size ();
 							int		vposition = 0;
 							if (vsize == 0) {
-								data.logging (Log.WARNING, "bc", r.name () + ": no more free vouchers available, still expecting " + (size - position));
 								vouchersMandatory (r);
+								data.logging (Log.INFO, "bc", r.name () + ": no more free vouchers available, still expecting " + (size - position));
 								break;
 							}
 								
@@ -1303,8 +1319,8 @@ public class BC {
 								"WHERE customer_id IS NULL " + (data.dbase.isOracle () ? " AND rownum = 1" : "LIMIT 1");
 							cnt = data.dbase.update (stmt, "customerID", customerID, "mailingID", data.mailing.id ());
 							if (cnt != 1) {
-								data.logging(Log.WARNING, "bc", r.name() + ": no new voucher found (" + cnt + ") for " + r.table());
 								vouchersMandatory (r);
+								data.logging(Log.INFO, "bc", r.name() + ": no new voucher found (" + cnt + ") for " + r.table());
 							} else {
 								data.logging(Log.DEBUG, "bc", r.name() + ": new voucher assigned");
 								if (current != null) {

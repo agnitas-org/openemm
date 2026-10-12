@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -27,8 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.LightProfileField;
-import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.factory.ActionOperationFactory;
 import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.action.bean.EmmActionImpl;
@@ -43,11 +42,12 @@ import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.exception.BadRequestException;
 import com.agnitas.exception.ForbiddenException;
-import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.service.UserActivityLogService;
@@ -92,13 +92,12 @@ public class EmmActionController implements XssCheckAware {
 	private final EmmActionValidationServiceImpl validationService;
 	private final ActionOperationFactory actionOperationFactory;
 	private final MailinglistApprovalService mailinglistApprovalService;
-	private final ColumnInfoService columnInfoService;
+	private final RecipientFieldService recipientFieldService;
 
 	public EmmActionController(EmmActionService emmActionService, MailingService mailingService, ConfigService configService,
 							   WorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService,
 							   ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService,
-							   ActionOperationFactory actionOperationFactory, MailinglistApprovalService mailinglistApprovalService,
-							   ColumnInfoService columnInfoService) {
+							   ActionOperationFactory actionOperationFactory, MailinglistApprovalService mailinglistApprovalService, RecipientFieldService recipientFieldService) {
 
 		this.emmActionService = emmActionService;
 		this.mailingService = mailingService;
@@ -110,7 +109,7 @@ public class EmmActionController implements XssCheckAware {
 		this.validationService = validationService;
 		this.actionOperationFactory = actionOperationFactory;
         this.mailinglistApprovalService = mailinglistApprovalService;
-        this.columnInfoService = Objects.requireNonNull(columnInfoService, "columnInfoService");
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "recipientFieldService");
     }
 
 	@RequestMapping("/list.action")
@@ -319,15 +318,13 @@ public class EmmActionController implements XssCheckAware {
 		model.addAttribute("isForceSendingEnabled", configService.getBooleanValue(ConfigValue.ForceSending, admin.getCompanyID()));
 
 		try {
-            Map<Boolean, List<ProfileField>> profileFields = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), false)
-					.stream()
-                    .collect(Collectors.partitioningBy(emmActionService::isReadonlyOperationRecipientField));
-
-            model.addAttribute("AVAILABLE_PROFILE_FIELDS", profileFields.get(false));
-            model.addAttribute("HIDDEN_PROFILE_FIELDS", getHiddenFields(profileFields));
+			model.addAttribute("AVAILABLE_PROFILE_FIELDS", recipientFieldService.listVisibleFields(admin.getCompanyID(), admin.getAdminID()).stream()
+					.filter(field -> field.getAdminPermission(admin.getAdminID()) == ProfileFieldMode.Editable)
+					.toList());
+			model.addAttribute("HIDDEN_PROFILE_FIELDS", getHiddenFields(recipientFieldService.getHiddenFields(admin.getCompanyID(), admin.getAdminID())));
 		} catch(final Exception e) {
 			model.addAttribute("AVAILABLE_PROFILE_FIELDS", Collections.emptyList());
-            model.addAttribute("HIDDEN_PROFILE_FIELDS", Collections.emptyList());
+			model.addAttribute("HIDDEN_PROFILE_FIELDS", Collections.emptyMap());
 		}
 
 		model.addAttribute("ACTION_READONLY", emmActionService.containsReadonlyOperations(actionId, admin));
@@ -337,9 +334,9 @@ public class EmmActionController implements XssCheckAware {
 		}
 	}
 
-    private Map<String, String> getHiddenFields(Map<Boolean, List<ProfileField>> profileFields) {
-        return profileFields.get(true).stream()
-                .collect(Collectors.toMap(LightProfileField::getColumn, LightProfileField::getShortname));
+    private Map<String, String> getHiddenFields(Map<String, RecipientFieldDescription> fields) {
+        return fields.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getShortName()));
     }
 
 	private void writeUserActivityLog(Admin admin, UserAction userAction) {

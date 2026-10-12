@@ -1,0 +1,19 @@
+
+<script id="recipient-status-stats-template" type="text/x-mustache-template">
+    <div class="d-flex gap-3">
+
+        <div class="tile tile--highlighted tile--xs" style="flex: 1">
+            <div class="tile-header">
+                <h3 class="tile-title fs-3 fw-semibold"><mvc:message code="recipient.RecipientStatus"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="recipient-status-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="recipient-status-table" class="table-wrapper" style="flex: 1"></div>
+
+    </div>
+</script>

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -20,6 +20,7 @@ import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.isUnpausi
 import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -53,6 +54,7 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
@@ -435,7 +437,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return icon;
     }
 
-    private WorkflowIconType createReplacementMailingIconType(StartType startType) {
+    protected WorkflowIconType createReplacementMailingIconType(StartType startType) {
         return switch (startType) {
             case REGULAR -> WorkflowIconType.MAILING;
             case REACTION -> WorkflowIconType.ACTION_BASED_MAILING;
@@ -883,7 +885,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return minDate;
     }
 
-    private MailingType getMailingType(WorkflowMailingAware mailingIcon, MailingType defaultType) {
+    protected MailingType getMailingType(WorkflowMailingAware mailingIcon, MailingType defaultType) {
         return switch (mailingIcon.getType()) {
             case WorkflowIconType.Constants.MAILING_ID -> MailingType.NORMAL;
             case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID -> MailingType.FOLLOW_UP;
@@ -990,16 +992,16 @@ public class WorkflowServiceImpl implements WorkflowService {
                     WorkflowDeadline deadlineIcon = (WorkflowDeadline) workflowIcon;
 
                     switch (deadlineIcon.getDeadlineType()) {
-                        case TYPE_FIXED_DEADLINE:
+                        case TYPE_FIXED_DEADLINE -> {
                             aCalendar.setTime(deadlineIcon.getDate());
                             aCalendar.add(Calendar.HOUR_OF_DAY, deadlineIcon.getHour());
                             aCalendar.add(Calendar.MINUTE, deadlineIcon.getMinute());
                             aCalendar.setTimeZone(aZone);
                             mailing.setPlanDate(aCalendar.getTime());
                             haveStartingTime = true;
-                            break;
+                        }
 
-                        case TYPE_DELAY:
+                        case TYPE_DELAY -> {
                             if (haveStartingTime) {
                                 switch (deadlineIcon.getTimeUnit()) {
                                     case TIME_UNIT_MINUTE:
@@ -1015,8 +1017,6 @@ public class WorkflowServiceImpl implements WorkflowService {
                                             aCalendar.add(Calendar.MINUTE, deadlineIcon.getMinute());
                                         }
                                         break;
-									case TIME_UNIT_MONTH, TIME_UNIT_WEEK:
-										break;
 									default:
 										break;
                                 }
@@ -1024,10 +1024,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                                 aCalendar.setTimeZone(aZone);
                                 mailing.setPlanDate(aCalendar.getTime());
                             }
-                            break;
-
-						default:
-							break;
+                        }
                     }
                     break;
 
@@ -1299,7 +1296,8 @@ public class WorkflowServiceImpl implements WorkflowService {
         }));
     }
 
-    private ServiceResult<ChangingWorkflowStatusResult> activateWorkflow(Workflow workflow, Admin admin) {
+    @Override
+    public ServiceResult<ChangingWorkflowStatusResult> activateWorkflow(Workflow workflow, Admin admin) {
         WorkflowStatus newStatus = WorkflowStatus.STATUS_ACTIVE;
 
         try {
@@ -1324,7 +1322,8 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
     }
 
-    private ServiceResult<ChangingWorkflowStatusResult> deactivateWorkflow(Workflow workflow, Admin admin) {
+    @Override
+    public ServiceResult<ChangingWorkflowStatusResult> deactivateWorkflow(Workflow workflow, Admin admin) {
         WorkflowStatus oldStatus = workflow.getStatus();
 
         if (WorkflowStatus.STATUS_ACTIVE.equals(oldStatus)) {
@@ -1344,6 +1343,11 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
 
         return new ServiceResult<>(ChangingWorkflowStatusResult.notChanged(Message.of(ERROR_MSG)), false);
+    }
+
+    @Override
+    public PaginatedList<Workflow> paginatedList(int page, int size, Admin admin) {
+        return workflowDao.find(page, size, admin);
     }
 
     @Override
@@ -1665,9 +1669,6 @@ public class WorkflowServiceImpl implements WorkflowService {
                     } else {
                         return null;
                     }
-
-                default:
-                    return null;
             }
         }
 
@@ -1819,7 +1820,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             chains.add(Collections.singletonList(graph.getNodeByIcon(icon)));
         } else {
             for (List<WorkflowNode> chain : chains) {
-                chain.add(0, graph.getNodeByIcon(icon));
+                chain.addFirst(graph.getNodeByIcon(icon));
             }
         }
         return chains;
@@ -2277,8 +2278,6 @@ public class WorkflowServiceImpl implements WorkflowService {
                         deactivated = mailingDao.updateStatus(companyId, mailingId, MailingStatus.DISABLE, null);
                     }
                     break;
-				case ARCHIVE, DEADLINE, DECISION, EXPORT, FORM, IMPORT, PARAMETER, RECIPIENT, START, STOP:
-					break;
 				default:
 					break;
             }
@@ -2418,7 +2417,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     	this.selfReference = Objects.requireNonNull(service, "Self reference is null");
     }
 
-    public final WorkflowService getSelfReference() {
+    public WorkflowService getSelfReference() {
     	return this.selfReference;
     }
 
@@ -2442,16 +2441,10 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         @Override
         public boolean equals(Object o) {
-            if (o == null) {
+            if (!(o instanceof ReactionId other)) {
                 return false;
             }
-
-            if (ReactionId.class == o.getClass()) {
-                ReactionId other = (ReactionId) o;
-                return companyId == other.companyId && reactionId == other.reactionId;
-            }
-
-            return false;
+            return companyId == other.companyId && reactionId == other.reactionId;
         }
 
         @Override
@@ -2730,6 +2723,16 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Override
     public Date getPauseDate(int workflowId, int companyId) {
         return workflowDao.getPauseDate(workflowId, companyId);
+    }
+
+    @Override
+    public Optional<Instant> getPauseTime(Workflow workflow, int companyId) {
+        if (workflow.getStatus() != Workflow.WorkflowStatus.STATUS_PAUSED) {
+            return Optional.empty();
+        }
+
+        return Optional.of(getPauseDate(workflow.getWorkflowId(), companyId))
+                .map(Date::toInstant);
     }
 
     @Override

@@ -61,11 +61,7 @@
 
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${dropDownItems}" property="1" value="${option}"/>
-
-            <c:set target="${option}" property="url">
-                <c:url value="${birtStatisticUrlWithoutFormat}&__format=csv"/>
-            </c:set>
-            <c:set target="${option}" property="extraAttributes" value="data-prevent-load=''"/>
+            <c:set target="${option}" property="extraAttributes" value="data-action='export-csv'"/>
             <c:set target="${option}" property="name">
                 <mvc:message code="report.download.csv"/>
             </c:set>

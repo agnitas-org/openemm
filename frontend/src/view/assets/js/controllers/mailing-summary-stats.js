@@ -27,6 +27,8 @@ AGN.Lib.Controller.new('mailing-summary-stats', function () {
     });
   };
 
+  const getSummaryTable$ = () => $('#key-figures-table');
+
   this.addDomInitializer("mailing-summary-stats", function () {
     form = Form.get($('#stat-form'));
     loader = new ProcessingLoader($('#overview-tile .tile-body'), '#stat-form');
@@ -162,7 +164,7 @@ AGN.Lib.Controller.new('mailing-summary-stats', function () {
 
   function renderKeyFiguresTable() {
     new Table(
-      $('#key-figures-table').empty(),
+      getSummaryTable$().empty(),
       getKeyFiguresColumnDefinitions(),
       toAgGridRows(data.keyFigures),
       getDefaultTableOptions()
@@ -211,14 +213,17 @@ AGN.Lib.Controller.new('mailing-summary-stats', function () {
     );
   }
 
-  function renderEventByDeviceTypeChart(stat, metirc) {
-    new Chart($(`#${metirc}-by-device-chart`)[0].getContext('2d'), {
+  function renderEventByDeviceTypeChart(stat, metric) {
+    const meta = _.values(_.omit(metadata.deviceTypes, 'TOTAL'));
+    const data = _.values(_.omit(stat[1], 'TOTAL')).map(({ val }) => val);
+
+    new Chart($(`#${metric}-by-device-chart`)[0].getContext('2d'), {
       type: 'agnDoughnut',
       data: {
-        labels: _.values(metadata.deviceTypes).map(({ label }) => label),
+        labels: meta.map(({ label }) => label),
         datasets: [{
-          data: _.values(stat[1]).map(({ val }) => val),
-          backgroundColor: _.values(metadata.deviceTypes).map(({ color }) => Helpers.getStatColorHexByName(color)),
+          data,
+          backgroundColor: meta.map(({ color }) => Helpers.getStatColorHexByName(color)),
           borderWidth: 0,
         }]
       },
@@ -270,12 +275,10 @@ AGN.Lib.Controller.new('mailing-summary-stats', function () {
     }
   }
 
-  this.addAction({click: 'export-csv'}, function () {
-    const table = AGN.Lib.Table.get($('#key-figures-table'));
-    if (table && table.api) {
-      table.api.exportDataAsCsv({ fileName: 'mailing-stats.csv' });
-    }
-  });
+  this.addAction(
+    { click: 'export-csv' },
+    () => Table.get(getSummaryTable$()).exportUnsortedCsv({ fileName: 'mailing-stats.csv' })
+  );
 
   function showNetto() {
     return $('#showNetto').prop('checked');

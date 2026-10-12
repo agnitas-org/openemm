@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -35,7 +35,7 @@ public class ReferencedItemsServiceImpl implements ReferencedItemsService {
 	
 	@Transactional
 	@Override
-	public void saveReferencedItems(final ReferencedItemsCollection referencedObject, final int companyID, final int targetID) {
+	public void saveReferencedItems(ReferencedItemsCollection referencedObject, int companyID, int targetID) {
 		removeReferencedItems(companyID, targetID);
 
 		this.referencedItemsDao.saveReferencedProfileFields(companyID, targetID, toReferencedProfileFieldNameList(referencedObject));
@@ -45,51 +45,51 @@ public class ReferencedItemsServiceImpl implements ReferencedItemsService {
 	}
 
 	@Override
-	public final void removeReferencedItems(final int companyID, final int targetID) {
+	public void removeReferencedItems(int companyID, int targetID) {
 		this.referencedItemsDao.removeAllReferencedObjects(companyID, targetID);
 	}
 
-	private static List<String> toReferencedProfileFieldNameList(final ReferencedItemsCollection items) {
+	private static List<String> toReferencedProfileFieldNameList(ReferencedItemsCollection items) {
 		return new ArrayList<>(items.getReferencedProfileFields());
 	}
 	
-	private static List<Integer> toReferencedMailingIdList(final ReferencedItemsCollection items) {
+	private static List<Integer> toReferencedMailingIdList(ReferencedItemsCollection items) {
 		return new ArrayList<>(items.getReferencedMailingIds());
 	}
 	
-	private static List<Integer> toReferencedLinkIdList(final ReferencedItemsCollection items) {
+	private static List<Integer> toReferencedLinkIdList(ReferencedItemsCollection items) {
 		return items.getReferencedLinkIds()
 				.stream()
 				.map(ReferencedItemsCollection.Link::getLinkId)
 				.collect(Collectors.toList());
 	}
 	
-	private static List<Integer> toReferencedAutoImportIdsList(final ReferencedItemsCollection items) {
+	private static List<Integer> toReferencedAutoImportIdsList(ReferencedItemsCollection items) {
 		return new ArrayList<>(items.getReferencedAutoImportIds());
 	}
 	
 	@Override
-	public final List<TargetLight> listTargetGroupsReferencingProfileFieldByVisibleName(final int companyID, final String visibleShortname) {
+	public List<TargetLight> listTargetGroupsReferencingProfileFieldByVisibleName(int companyID, String visibleShortname) {
 		return referencedItemsDao.listTargetGroupsReferencingProfileField(companyID, visibleShortname);
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsReferencingMailing(final int companyID, final int mailingID) {
+	public List<TargetLight> listTargetGroupsReferencingMailing(int companyID, int mailingID) {
 		return referencedItemsDao.listTargetGroupsReferencingMailing(companyID, mailingID);
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsReferencingAutoImport(final int companyID, final int autoImportID) {
+	public List<TargetLight> listTargetGroupsReferencingAutoImport(int companyID, int autoImportID) {
 		return referencedItemsDao.listTargetGroupsReferencingAutoImport(companyID, autoImportID);
 	}
 
 	@Override
-	public List<TargetLight> listTargetGroupsReferencingReferenceTable(final int companyID, final int tableID) {
+	public List<TargetLight> listTargetGroupsReferencingReferenceTable(int companyID, int tableID) {
 		return Collections.emptyList();
 	}
 
 	@Override
-	public List<TargetLight> listTargetGroupsReferencingReferenceTableColumn(final int companyID, final int tableID, final String columnName) {
+	public List<TargetLight> listTargetGroupsReferencingReferenceTableColumn(int companyID, int tableID, String columnName) {
 		return Collections.emptyList();
 	}
 
@@ -98,7 +98,7 @@ public class ReferencedItemsServiceImpl implements ReferencedItemsService {
 	 * 
 	 * @param dao DAO persisting information on referenced items
 	 */
-	public final void setReferencedItemsDao(final ReferencedItemsDao dao) {
+	public void setReferencedItemsDao(ReferencedItemsDao dao) {
 		this.referencedItemsDao = Objects.requireNonNull(dao, "ReferencedItemsDao is null");
 	}
 }

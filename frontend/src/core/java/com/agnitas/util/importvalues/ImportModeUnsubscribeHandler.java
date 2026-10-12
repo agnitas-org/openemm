@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -23,6 +23,7 @@ import com.agnitas.beans.ImportStatus;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.imports.exception.ImportValidationException;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.service.ImportException;
@@ -71,7 +72,7 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 					}
 				}
 				if (!notNullColumnIsSet) {
-					throw new ImportException(false, "error.import.missingNotNullableColumnInMapping", columnEntry.getKey());
+					throw new ImportValidationException("error.import.missingNotNullableColumnInMapping", columnEntry.getKey());
 				}
 			}
 		}
@@ -79,11 +80,11 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 		for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 			if ("gender".equalsIgnoreCase(mapping.getDatabaseColumn())) {
 				if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
-					throw new ImportException(false, "error.import.missingNotNullableColumnInMapping", "gender");
+					throw new ImportValidationException("error.import.missingNotNullableColumnInMapping", "gender");
 				}
 			} else if ("mailtype".equalsIgnoreCase(mapping.getDatabaseColumn())) {
 				if (StringUtils.isBlank(mapping.getFileColumn()) && (StringUtils.isBlank(mapping.getDefaultValue()) || mapping.getDefaultValue().trim().equals("''") || mapping.getDefaultValue().trim().equalsIgnoreCase("null"))) {
-					throw new ImportException(false, "error.import.missingNotNullableColumnInMapping", "mailtype");
+					throw new ImportValidationException("error.import.missingNotNullableColumnInMapping", "mailtype");
 				}
 			}
 		}

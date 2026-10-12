@@ -1,17 +1,16 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.velocity;
 
 import com.agnitas.emm.core.velocity.event.MessageEventHandlerImpl;
-import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import org.springframework.context.i18n.LocaleContextHolder;
 
@@ -65,9 +64,7 @@ class VelocityResultImpl implements VelocityResult {
 		}
 
 		return eventHandler.getErrors().stream()
-				.map(msg -> msg.isResolvable()
-						? I18nString.getLocaleString(msg.getCode(), LocaleContextHolder.getLocale(), msg.getArguments())
-						: msg.getCode())
+				.map(msg -> msg.resolve(LocaleContextHolder.getLocale()))
 				.collect(Collectors.toList());
 	}
 }

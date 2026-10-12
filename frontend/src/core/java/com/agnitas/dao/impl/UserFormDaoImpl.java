@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -16,11 +16,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
@@ -44,6 +47,33 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	@Override
 	public List<UserForm> getUserForms(int companyID) {
 		return getUserForms(companyID, false);
+	}
+
+	@Override
+	public PaginatedList<UserForm> getPaginatedList(PaginatedFilter<String> filter, int companyId) {
+		return selectPaginatedList("""
+				SELECT
+				  form_id,
+				  company_id,
+				  formname,
+				  description,
+				  creation_date,
+				  change_date,
+				  active,
+				  startaction_id,
+				  endaction_id,
+				  deleted
+				FROM userform_tbl
+				WHERE company_id = ?
+				  AND deleted = 0
+				ORDER BY lower(formname)
+				""", filter.page(), filter.size(), new UserFormLightRowMapper(), companyId
+		);
+	}
+
+	@Override
+	public Optional<UserForm> findForm(int formId, int companyId) {
+		return Optional.ofNullable(getUserForm(formId, companyId));
 	}
 
     private List<UserForm> getUserForms(int companyID, boolean includeDeleted) {

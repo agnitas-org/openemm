@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="all" name="OpenEMM">
+<project basedir="." default="all" name="OpenEMM" xmlns:ivy="antlib:org.apache.ivy.ant">
 	<tstamp />
 
 	<taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask" classpath="lib_ant/ant-xmltask-1.17.jar" />
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="lib_ant/ant-contrib-1.0b3.jar" />
 	<taskdef name="mergexml" classname="com.agnitas.ant.MergeXml" classpath="lib_ant/mergexml.jar" />
+
+	<property file="ivy.properties"/>
+
+	<taskdef uri="antlib:org.apache.ivy.ant" resource="org/apache/ivy/ant/antlib.xml">
+		<classpath>
+			<fileset dir="lib_ant" includes="ivy-*.jar"/>
+		</classpath>
+	</taskdef>
 
 	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MariaDB, createMandatoryDbChanges_MariaDB, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
 		<echo message="Application built." />
@@ -15,6 +23,23 @@
 
 		<property file="build.properties" />
 		<property file="build.properties.default" />
+		<property name="use.ivy" value="false"/>
+
+		<available file="ivy.properties" property="isIvyPropertiesAvailable"/>
+		<fail message="Missing ivy.properties: copy ivy.properties.default to ivy.properties and adjust the settings">
+			<condition>
+				<and>
+					<istrue value="${use.ivy}"/>
+					<not><isset property="isIvyPropertiesAvailable"/></not>
+				</and>
+			</condition>
+		</fail>
+
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then><property name="libs.dir" value="libs_ivy"/></then>
+			<else><property name="libs.dir" value="libs"/></else>
+		</if>
 
 		<if>
 			<not>
@@ -76,18 +101,52 @@
 		</if>
 	</target>
 
-	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
+	<target name="resolve-if-ivy" depends="checkForPropertiesFile">
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then>
+				<echo message="[ivy] use.ivy=true — resolving core + gui dependencies..."/>
+				<ivy:settings file="${ivy.settings.file}"/>
+				<ivy:resolve file="./src/core/ivy.xml" conf="compile"/>
+				<ivy:retrieve pattern="${libs.dir}/core/[artifact]-[revision].[ext]" conf="compile" sync="true"/>
+				<ivy:resolve file="./src/gui/ivy.xml" conf="compile"/>
+				<ivy:retrieve pattern="${libs.dir}/gui/[artifact]-[revision].[ext]" conf="compile" sync="true"/>
+			</then>
+			<else>
+				<echo message="[ivy] use.ivy=false — using manual libs/core and libs/gui."/>
+			</else>
+		</if>
+	</target>
+
+	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget, resolve-if-ivy" description="Setting up the needed paths">
 		<path id="build.core.classpath">
-			<fileset dir="${basecss}/libs/core">
+			<fileset dir="${basecss}/${libs.dir}/core">
 				<include name="*.jar" />
 			</fileset>
 		</path>
 
-		<path id="build.gui.classpath">
-			<fileset dir="${basecss}/libs/gui">
-				<include name="*.jar" />
-			</fileset>
-		</path>
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then>
+				<!-- use.ivy=true: gui libs are self-contained (core inherited via <extends>) -->
+				<path id="build.gui.classpath">
+					<fileset dir="${basecss}/${libs.dir}/gui">
+						<include name="*.jar"/>
+					</fileset>
+				</path>
+			</then>
+			<else>
+				<!-- use.ivy=false: core libs needed on compile classpath separately -->
+				<path id="build.gui.classpath">
+					<fileset dir="${basecss}/${libs.dir}/core">
+						<include name="*.jar"/>
+					</fileset>
+					<fileset dir="${basecss}/${libs.dir}/gui">
+						<include name="*.jar"/>
+					</fileset>
+				</path>
+			</else>
+		</if>
 
 		<path id="build.containerPath">
 			<fileset dir="${CATALINA_HOME}/lib">
@@ -122,7 +181,7 @@
 
 		<property name="emmSourcePath" value="src" />
 		<property name="emmEtcPath" value="etc" />
-		<property name="emmLibsPath" value="libs" />
+		<property name="emmLibsPath" value="${libs.dir}" />
 
 		<fail message="Invalid deploytarget: ${deploytarget} (Invalid applicationtype)">
 			<condition>
@@ -341,13 +400,14 @@
 			<classpath refid="build.containerPath" />
 
 			<compilerarg line="-processorpath ${basecss}/lib_tools/mapstruct-processor-1.6.3.jar:${basecss}/lib_tools/agn-anno-whitelist-processor.jar"/>
-			<compilerarg line="-s ${deploydir}${appname}/WEB-INF/classes"/>
+			<compilerarg line="-s ${deploydir}${appname}/generated-sources"/>
 			<compilerarg line="-Xlint:-unchecked -Xpkginfo:always" />
 			<compilerarg value="-parameters"/>
 		</javac>
 
 		<jar destfile="${deploydir}${appname}/WEB-INF/lib/emm-core.jar" basedir="${deploydir}${appname}/WEB-INF/core-classes"/>
 		<delete dir="${deploydir}${appname}/WEB-INF/core-classes"/>
+		<delete dir="${deploydir}${appname}/generated-sources"/>
 	</target>
 
 	<target name="compile" depends="setupBuildPaths, createPropertiesFiles, compile-core" description="Build EMM">
@@ -370,7 +430,7 @@
 			</classpath>
 
 			<compilerarg line="-processorpath ${basecss}/lib_tools/mapstruct-processor-1.6.3.jar:${basecss}/lib_tools/agn-anno-whitelist-processor.jar"/>
-			<compilerarg line="-s ${deploydir}${appname}/WEB-INF/classes"/>
+			<compilerarg line="-s ${deploydir}${appname}/generated-sources"/>
 
 			<compilerarg line="-Xlint:-unchecked -Xpkginfo:always" />
 			<compilerarg value="-parameters"/>
@@ -383,6 +443,8 @@
 				<exclude name="**/WebservicePasswordEncryptor.class" />
 			</fileset>
 		</delete>
+
+		<delete dir="${deploydir}${appname}/generated-sources"/>
 	</target>
 
 	<target name="copyAdditionalPiwikFile" depends="setDeploytarget">
@@ -588,8 +650,15 @@
 			</fileset>
 		</copy>
 
+		<if>
+			<isfalse value="${use.ivy}"/>
+			<then>
+				<copy todir="${deploydir}${appname}/WEB-INF/lib" overwrite="true">
+					<fileset dir="${emmLibsPath}/core" />
+				</copy>
+			</then>
+		</if>
 		<copy todir="${deploydir}${appname}/WEB-INF/lib" overwrite="true">
-			<fileset dir="${emmLibsPath}/core" />
 			<fileset dir="${emmLibsPath}/gui" />
 		</copy>
 

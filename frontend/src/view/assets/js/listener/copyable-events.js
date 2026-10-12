@@ -99,6 +99,8 @@ This option is even easier. You only need to add `[data-copyable-value]` attribu
           this.el.data('tooltip-timeout-id', timeoutId);
         }
       });
+
+      this.event.stopPropagation();
     }
   });
 })();

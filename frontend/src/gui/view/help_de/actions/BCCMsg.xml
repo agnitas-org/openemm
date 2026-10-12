@@ -1,4 +1,8 @@
 <HelpBalloon>
 	<title><![CDATA[BCC-Empf&#xE4;nger]]></title>
-	<content><![CDATA[Tragen Sie eine oder mehrere BCC-Adressen (kommagetrennt) ein, an die jede versendete E-Mail zus&#xE4;tzlich geschickt werden soll. Nutzen Sie dieses Feature, um E-Mails zu archivieren, die an Empf&#xE4;nger versendet wurden.]]></content>
+	<content><![CDATA[Tragen Sie eine oder mehrere BCC-Adressen (kommagetrennt) ein, an die jede versendete E-Mail zus&#xE4;tzlich geschickt werden soll.
+				Nutzen Sie dieses Feature, um E-Mails zu archivieren, die an Empf&#xE4;nger versendet wurden.
+				<br><br>
+                <b>Hinweis:</b> Mit dieser Funktion erh&#xF6;ht sich Ihr Mailvolumen. Bitte achten Sie immer auf ausreichend Kapazit&#xE4;ten im empfangenden Postfach.
+]]></content>
 </HelpBalloon>

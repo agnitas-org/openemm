@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -50,6 +50,7 @@ import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.Tuple;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
@@ -75,6 +76,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -97,16 +99,20 @@ public class RestfulUserController implements XssCheckAware {
     private final CSVService csvService;
     private final PdfService pdfService;
     private final ConversionService conversionService;
+    private final UserUiMapper userUiMapper;
 
-    public RestfulUserController(ConfigService configService,
-                                 AdminService adminService,
-                                 CompanyService companyService,
-                                 AdminGroupService adminGroupService, WebStorage webStorage,
-                                 UserActivityLogService userActivityLogService,
-                                 AdminChangesLogService adminChangesLogService,
-                                 CSVService csvService, PdfService pdfService,
-                                 ConversionService conversionService,
-                                 LogonService logonService) {
+    public RestfulUserController(
+            ConfigService configService,
+            AdminService adminService,
+            CompanyService companyService,
+            AdminGroupService adminGroupService, WebStorage webStorage,
+            UserActivityLogService userActivityLogService,
+            AdminChangesLogService adminChangesLogService,
+            CSVService csvService, PdfService pdfService,
+            ConversionService conversionService,
+            LogonService logonService,
+            UserUiMapper userUiMapper
+    ) {
         this.configService = configService;
         this.adminService = adminService;
         this.companyService = companyService;
@@ -118,6 +124,7 @@ public class RestfulUserController implements XssCheckAware {
         this.pdfService = pdfService;
         this.conversionService = conversionService;
         this.logonService = logonService;
+        this.userUiMapper = userUiMapper;
     }
 
     @InitBinder
@@ -131,8 +138,8 @@ public class RestfulUserController implements XssCheckAware {
                                        @RequestParam(required = false) Boolean restoreSort,
                                        @ModelAttribute AdminListFormSearchParams adminListSearchParams) {
         FormUtils.syncPaginationData(webStorage, WebStorage.ADMIN_OVERVIEW, form, restoreSort);
+        syncAdditionalColumns(form);
         adminListSearchParams.restoreParams(form);
-
         model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedList<>());
         int companyID = admin.getCompanyID();
 
@@ -151,6 +158,25 @@ public class RestfulUserController implements XssCheckAware {
         ModelAndView modelAndView = new ModelAndView(REDIRECT_TO_LIST, form.toMap());
 
         return new Pollable<>(pollingUid, Pollable.DEFAULT_TIMEOUT, modelAndView, worker);
+    }
+
+    private void syncAdditionalColumns(AdminListForm form) {
+        webStorage.access(WebStorage.ADMIN_OVERVIEW, storage -> {
+            if (form.getNumberOfRows() == 0 || !form.isInEditColumnsMode()) {
+                form.setAdditionalColumns(storage.getSelectedFields());
+            }
+        });
+    }
+
+    @PostMapping("/list/setAdditionalColumns.action")
+    @RequiredPermission("admin.show")
+    public @ResponseBody BooleanResponseDto updateSelectedFields(
+            @RequestParam(required = false) List<String> additionalColumns,
+            Popups popups
+    ) {
+        webStorage.access(WebStorage.ADMIN_OVERVIEW, storage -> storage.setSelectedFields(additionalColumns));
+        popups.changesSaved();
+        return new BooleanResponseDto(popups, !popups.hasAlertPopups());
     }
 
     @GetMapping("/search.action")
@@ -352,22 +378,8 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     private PaginatedList<AdminEntry> getRestfulUserListFromAdminListForm(Admin admin, AdminListForm form, int numberOfRows) {
-        return adminService.getRestfulUserList(admin.getCompanyID(),
-                form.getSearchFirstName(),
-                form.getSearchLastName(),
-                form.getSearchEmail(),
-                form.getSearchCompany(),
-                form.getFilterCompanyId(),
-                form.getFilterAdminGroupId(),
-                form.getFilterMailinglistId(),
-                form.getFilterLanguage(),
-                form.getFilterCreationDate(),
-                form.getFilterLastLoginDate(),
-                form.getFilterUsername(),
-                form.getSort(),
-                form.getDir(),
-                form.getPage(),
-                numberOfRows);
+        form.setNumberOfRows(numberOfRows);
+        return adminService.getRestfulUserList(userUiMapper.toListOpts(form, admin.getCompanyID(), admin.getLocale()));
     }
 
     private String saveAdminAndGetView(AdminForm form, Admin admin, Popups popups) {

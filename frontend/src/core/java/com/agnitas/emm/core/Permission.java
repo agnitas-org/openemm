@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -46,6 +46,10 @@ public class Permission {
 	public static final Permission RESTFULUSER_DELETE = new Permission("restfulUser.delete", true, PermissionType.System);
 	public static final Permission RESTFULUSER_NEW = new Permission("restfulUser.new", true, PermissionType.System);
 	public static final Permission RESTFULUSER_SHOW = new Permission("restfulUser.show", true, PermissionType.System);
+
+	public static final Permission REST_API_SPRING = new Permission("restful.api.spring", false, PermissionType.Standard);
+	public static final Permission REST_API_LEGACY = new Permission("restful.api.legacy", false, PermissionType.Premium);
+	public static final Permission MCP_ENABLE = new Permission("restful.mcp.enable", false, PermissionType.Standard);
 
 	public static final Permission ALWAYS_ALLOWED = new Permission("always.allowed", false, PermissionType.Standard);
 	public static final Permission ALWAYS_DISALLOWED = new Permission("always.disallowed", false, PermissionType.Standard);
@@ -258,22 +262,13 @@ public class Permission {
 
 	// Special migration and rollback permissions
     public static final Permission DASHBOARD_ADD_ONS_TILE = new Permission("dashboard.add-ons.tile", false, PermissionType.Migration);
-	public static final Permission CLICK_PER_LINK_STAT_MIGRATION = new Permission("migration.mailing.click.stat", false, PermissionType.Migration);
-	public static final Permission MAILING_END_DEVICE_STAT_MIGRATION = new Permission("migration.mailing.enddevice.stat", false, PermissionType.Migration);
-	public static final Permission MAILING_PROGRESS_STAT_MIGRATION = new Permission("migration.mailing.progress.stat", false, PermissionType.Migration);
-	public static final Permission MONTHLY_OVERVIEW_STAT_MIGRATION = new Permission("migration.monthly.overview.stat", false, PermissionType.Migration);
-	public static final Permission REST_V2_MIGRATION = new Permission("restful.api.use.latest", false, PermissionType.Migration);
-    public static final Permission MAILING_SUMMARY_STAT_MIGRATION = new Permission("migration.mailing.summary.stat", false, PermissionType.Migration);
-    public static final Permission DISTRIBUTION_STAT_MIGRATION = new Permission("migration.distribution.stat", false, PermissionType.Migration);
-    public static final Permission TOP_DOMAINS_STAT_MIGRATION = new Permission("migration.mailing.topdomains.stat", false, PermissionType.Migration);
-    public static final Permission BOUNCES_STAT_MIGRATION = new Permission("migration.mailing.bounces.stat", false, PermissionType.Migration);
-    public static final Permission ALPHA_TRACKING_POINTS_STAT_MIGRATION = new Permission("migration.mailing.alphanumerictracking.stat", false, PermissionType.Migration);
-    public static final Permission RECIPIENT_STAT_MIGRATION = new Permission("migration.recipients.stat", false, PermissionType.Migration);
+    public static final Permission SIMPLE_TRACKING_POINTS_STAT_MIGRATION = new Permission("migration.simple.point.stat", false, PermissionType.Migration);
+    public static final Permission WORKFLOW_STAT_MIGRATION = new Permission("migration.campaigns.stat", false, PermissionType.Migration);
 
 	private final String tokenString;
 	private final boolean visible;
 	private final PermissionType permissionType;
-	
+
 	protected Permission(String tokenString, boolean visible, PermissionType permissionType) {
 		this.tokenString = tokenString;
 		this.visible = visible;

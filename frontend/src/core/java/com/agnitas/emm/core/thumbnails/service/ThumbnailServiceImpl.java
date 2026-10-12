@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -21,8 +21,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import javax.imageio.ImageIO;
 
 import com.agnitas.beans.MailingComponent;
@@ -90,11 +90,8 @@ public class ThumbnailServiceImpl implements ThumbnailService, ServletContextAwa
 	 * @return mailing component for thumbnails
 	 */
 	private MailingComponent readOrCreateThumbnailComponent(int companyID, int mailingID) {
-		final List<MailingComponent> list = this.componentDao.getMailingComponentsByType(companyID, mailingID, List.of(MailingComponentType.ThumbnailImage));
-		
-		return list.isEmpty()
-				? createEmptyComponent(companyID, mailingID)
-				: list.get(0);
+		return Optional.ofNullable(componentDao.getComponent(companyID, mailingID, MailingComponentType.ThumbnailImage))
+				.orElseGet(() -> createEmptyComponent(companyID, mailingID));
 	}
 	
 	/**

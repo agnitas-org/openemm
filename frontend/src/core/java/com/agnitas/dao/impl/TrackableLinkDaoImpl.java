@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -54,6 +54,28 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+
+	@Override
+	public Optional<TrackableLink> findLink(int linkId, int mailingId, int companyId) {
+		if (linkId <= 0 || companyId <= 0) {
+			return Optional.empty();
+		}
+		return findObject(
+				"""
+                SELECT *
+                FROM rdir_url_tbl
+                WHERE url_id = ?
+                  AND mailing_id = ?
+                  AND company_id = ?
+                  AND deleted <= 0
+                """,
+				new TrackableLinkRowMapper(),
+				linkId, mailingId, companyId
+		).map(link -> {
+			link.setProperties(getLinkProperties(link));
+			return link;
+		});
 	}
 
 	@Override

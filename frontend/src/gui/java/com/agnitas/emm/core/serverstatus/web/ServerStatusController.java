@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -71,6 +71,7 @@ import com.agnitas.util.ServerCommand.Server;
 import com.agnitas.util.TextTableBuilder;
 import com.agnitas.util.Version;
 import com.agnitas.util.ZipUtilities;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
@@ -108,7 +109,8 @@ import org.springframework.web.util.UriUtils;
 public class ServerStatusController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(ServerStatusController.class);
-	
+
+	private static final String REDIRECT_TO_VIEW = "redirect:/serverstatus/view.action";
 	private static final String FILE_NAME_DATE_FORMAT = DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES;
 
 	protected final LogonService logonService;
@@ -171,7 +173,7 @@ public class ServerStatusController implements XssCheckAware {
 	public String onDbSchemaSnapshotWriteException(DbSchemaSnapshotWriteException e, Popups popups) {
 		logger.error("Error while writing DB schema snapshot to file!", e);
 		popups.exactAlert(e.getMessage());
-		return "redirect:/serverstatus/view.action";
+		return REDIRECT_TO_VIEW;
 	}
 
 	@RequestMapping(value = "/view.action", method = { RequestMethod.GET, RequestMethod.POST })
@@ -179,11 +181,20 @@ public class ServerStatusController implements XssCheckAware {
 	public String view(HttpServletRequest request, Admin admin, Model model, ServerStatusForm form) {
 		model.addAttribute("serverStatus", serverStatusService.getServerStatus(request.getServletContext(), admin));
 		model.addAttribute("checkDbSchemaAllowed", dbSchemaSnapshotService.exists());
+		model.addAttribute("canToggleCsrfProtection", serverStatusService.canToggleCsrfProtection(admin));
+		model.addAttribute("csrfProtectionEnabled", serverStatusService.isCsrfProtectionEnabled());
 		model.addAttribute("isVersionUpdateExists", serverStatusService.isVersionUpdateExists());
 		model.addAttribute("isEOLReached", serverStatusService.isEOLReached());
 		model.addAttribute("eolDate", serverStatusService.getEOLDate(admin));
 
 		return "server_status_view";
+	}
+
+	@PostMapping("/csrf/toggle.action")
+	@RequiredPermission("server.status")
+	public ResponseEntity<BooleanResponseDto> toggleCsrfProtection(@RequestParam boolean enable, Admin admin, Popups popups) {
+		serverStatusService.toggleCsrfProtection(enable, admin);
+		return ResponseEntity.ok(new BooleanResponseDto(popups.changesSaved()));
 	}
 
 	@PostMapping("/config/save.action")
@@ -240,7 +251,7 @@ public class ServerStatusController implements XssCheckAware {
 
 		model.addFlashAttribute("serverStatusForm", form);
 
-		return "redirect:/serverstatus/view.action";
+		return REDIRECT_TO_VIEW;
 	}
 
 	@RequestMapping(value = "/config/download.action", method = {RequestMethod.GET, RequestMethod.POST}, produces = "application/zip")
@@ -274,7 +285,7 @@ public class ServerStatusController implements XssCheckAware {
 
 		model.addFlashAttribute(form);
 
-		return "redirect:/serverstatus/view.action";
+		return REDIRECT_TO_VIEW;
 	}
 
 	@RequestMapping(value = "/testemail/send.action", method = { RequestMethod.GET, RequestMethod.POST })
@@ -293,7 +304,7 @@ public class ServerStatusController implements XssCheckAware {
 
 		popups.addPopups(mailSendResult);
 
-		return "redirect:/serverstatus/view.action";
+		return REDIRECT_TO_VIEW;
 	}
 
 	@RequestMapping(value = "/diagnosis/show.action", method = { RequestMethod.GET, RequestMethod.POST })
@@ -310,7 +321,7 @@ public class ServerStatusController implements XssCheckAware {
 		model.addFlashAttribute(form);
 		popups.addPopups(diagnosisSendResult);
 
-		return "redirect:/serverstatus/view.action";
+		return REDIRECT_TO_VIEW;
 	}
 
 	@RequestMapping(value = "/logfile/download.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -631,12 +642,11 @@ public class ServerStatusController implements XssCheckAware {
 			boolean hasUnlimited = licenseContent.contains("<maximumVersion>Unlimited</maximumVersion>");
 
 			Version currentVersion = new Version(configService.getValue(ConfigValue.ApplicationVersion));
-			String majorMinorVersion = String.format("%d.%02d", currentVersion.getMajorVersion(), currentVersion.getMinorVersion());
+			Version majorMinorVersion = currentVersion.truncateToMinor();
 			Matcher licenseVersionMatcher = Pattern.compile(".*?([0-9]+[.][0-9]+).*").matcher(file.getOriginalFilename());
 
-			if (!hasUnlimited && (!licenseVersionMatcher.find() || !majorMinorVersion.equals(licenseVersionMatcher.group(1))
+			if (!hasUnlimited && (!licenseVersionMatcher.find() || majorMinorVersion.compareTo(new Version(licenseVersionMatcher.group(1))) > 0
 					|| !licenseContent.contains("<maximumVersion>" + licenseVersionMatcher.group(1) + "</maximumVersion>")) ) {
-				logger.error(majorMinorVersion.equals(licenseVersionMatcher.group(1)));
 				throw new BadRequestException(Message.exact("License version does not match maximum version or application version"));
 			}
 
@@ -653,7 +663,7 @@ public class ServerStatusController implements XssCheckAware {
 			redirectAttributes.addFlashAttribute("message", "You successfully uploaded new license data '" + file.getOriginalFilename() + "'");
 			reloadLicenseData(admin);
 
-			return "redirect:/serverstatus/view.action";
+			return REDIRECT_TO_VIEW;
 		} catch (Exception e) {
 			if (e instanceof UiMessageException uiMessageException) {
 				throw uiMessageException;
@@ -693,7 +703,7 @@ public class ServerStatusController implements XssCheckAware {
 		dbSchemaSnapshotService.overwriteSnapshot(file);
 		popups.changesSaved();
 
-		return "redirect:/serverstatus/view.action";
+		return REDIRECT_TO_VIEW;
 	}
 
 	@RequestMapping(value = "/updatecheck.action", method = { RequestMethod.GET, RequestMethod.POST })

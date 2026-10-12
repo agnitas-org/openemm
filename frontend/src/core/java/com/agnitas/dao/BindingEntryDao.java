@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,11 +19,33 @@ import com.agnitas.beans.BindingEntry;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
 import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.binding.BindingIdentifier;
+import com.agnitas.emm.core.binding.CreateBindingCommand;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 
 public interface BindingEntryDao {
+
+	record ListBindingsFilter(
+			Set<Integer> recipientIds,
+			Set<String> emails,
+			Set<Integer> mailinglistIds,
+			Set<MediaTypes> mediatypes,
+			Set<UserStatus> userStatuses,
+			String date,
+			int page,
+			int size
+	) {
+	}
+
+	record BulkDeleteBindingsFilter(
+			int companyId,
+			List<Integer> recipientIds,
+			Set<Integer> mailinglistIds,
+			Set<MediaTypes> mediatypes
+	) {
+	}
 
     /**
 	 * Loads a binding from database. Uses recipientID, mailinglistID and
@@ -174,6 +196,8 @@ public interface BindingEntryDao {
 
 	PaginatedList<BindingEntry> getBindings(Integer mailinglistId, int companyID, UserStatus status, String timestamp, int page, int size);
 
+	PaginatedList<BindingEntry> find(ListBindingsFilter filter, int companyId);
+
 	List<CompositeBindingEntry> getCompositeBindings(int companyID, int recipientID);
 
 	void updateBindingStatusByEmailPattern(int companyId, String emailPattern, UserStatus userStatus, String remark);
@@ -184,7 +208,21 @@ public interface BindingEntryDao {
 
 	int bulkDelete(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, List<Integer> customerIDs);
 
+	/**
+	 * Bulk delete binding entries.
+	 *
+	 * @param filter options to filter with
+	 * @return recipient IDs for which some entries have been removed
+	 */
+	List<Integer> delete(BulkDeleteBindingsFilter filter);
+
 	int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs);
+
+	void batchInsertBindings(List<CreateBindingCommand> inserts, int companyId);
+
+	void batchUpdateBindings(List<CreateBindingCommand> updates, int companyId);
+
+	Map<BindingIdentifier, UserStatus> getExistingState(ListBindingsFilter filter, int companyId);
 
     Map<String, Integer> getRecipientStatusStat(int mailinglistId, int targetId, int companyId);
 

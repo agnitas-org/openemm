@@ -6,6 +6,8 @@
     }
 </script>
 
+<div id="top-domains-container"></div>
+
 <script id="top-domain-stats-template" type="text/x-mustache-template">
 
     <div class="gap-3" style="display: grid; grid-template-columns: 1fr 2fr;">
@@ -22,32 +24,6 @@
         </div>
 
         <div id="sentEmails-table" class="table-wrapper h-auto"></div>
-
-        <div class="tile tile--highlighted tile--xs">
-            <div class="tile-header">
-                <h3 class="tile-title"><mvc:message code="statistic.bounces.hardbounce"/></h3>
-            </div>
-            <div class="tile-body p-3">
-                <canvas id="hardBounces-chart" class="h-100">
-                    <%-- Loads by JS --%>
-                </canvas>
-            </div>
-        </div>
-
-        <div id="hardBounces-table" class="table-wrapper h-auto"></div>
-
-        <div class="tile tile--highlighted tile--xs">
-            <div class="tile-header">
-                <h3 class="tile-title"><mvc:message code="statistic.bounces.softbounce"/></h3>
-            </div>
-            <div class="tile-body p-3">
-                <canvas id="softBounces-chart" class="h-100">
-                    <%-- Loads by JS --%>
-                </canvas>
-            </div>
-        </div>
-
-        <div id="softBounces-table" class="table-wrapper h-auto"></div>
 
         <div class="tile tile--highlighted tile--xs">
             <div class="tile-header">
@@ -74,6 +50,33 @@
         </div>
 
         <div id="clickers-table" class="table-wrapper h-auto"></div>
+
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title"><mvc:message code="statistic.bounces.softbounce"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="softBounces-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="softBounces-table" class="table-wrapper h-auto"></div>
+
+
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title"><mvc:message code="statistic.bounces.hardbounce"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="hardBounces-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="hardBounces-table" class="table-wrapper h-auto"></div>
 
     </div>
 </script>

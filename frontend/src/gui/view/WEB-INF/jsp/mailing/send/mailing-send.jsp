@@ -48,7 +48,7 @@
     </script>
 
     <div class="tiles-block flex-column">
-        <c:if test="${not isTemplate}">
+        <c:if test="${not isTemplate and !(isActionBasedMailing && isStandaloneSmsMailing)}">
             <%@ include file="fragments/tiles/delivery-info-tile.jspf" %>
         </c:if>
         <%@ include file="fragments/tiles/send-test-mailing-tile.jspf" %>

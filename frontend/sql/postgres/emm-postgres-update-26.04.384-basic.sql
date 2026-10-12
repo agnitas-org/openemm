@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS webservice_usage_log_tbl
 (
-    timestamp  TIMESTAMP     NOT NULL,
+    timestamp  TIMESTAMPTZ     NOT NULL,
     endpoint   VARCHAR(1000) NOT NULL,
     company_id INTEGER       NOT NULL,
     username   VARCHAR(200)  NOT NULL,

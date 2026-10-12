@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -23,12 +23,15 @@ import com.agnitas.emm.core.calendar.form.DashboardCalendarForm;
 import com.agnitas.emm.core.calendar.service.CalendarService;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
+import com.agnitas.emm.core.dashboard.dto.ClickersStatisticsResponse;
+import com.agnitas.emm.core.dashboard.dto.DashboardStatisticsResponse;
+import com.agnitas.emm.core.dashboard.dto.OpenersStatisticsResponse;
 import com.agnitas.emm.core.dashboard.enums.DashboardMode;
 import com.agnitas.emm.core.dashboard.form.DashboardForm;
 import com.agnitas.emm.core.dashboard.service.DashboardService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.DateUtilities;
-import com.agnitas.util.HttpUtils;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.AlwaysAllowed;
@@ -42,7 +45,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 public class DashboardController implements XssCheckAware {
 	
@@ -142,16 +144,31 @@ public class DashboardController implements XssCheckAware {
             .addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
     }
 
-    @GetMapping(value = "/dashboard/statistics.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
+    @GetMapping("/dashboard/statistic/openers.action")
     @RequiredPermission("stats.mailing")
-    public @ResponseBody
-    Map<String, Object> getStatistics(Admin admin, @RequestParam(name = "mailingId") int mailingId) {
-        return dashboardService.getStatisticsInfo(mailingId, admin.getLocale(), admin).toMap();
+    public ResponseEntity<OpenersStatisticsResponse> getOpenersStatistics(@RequestParam int mailingId, Admin admin) {
+        return ResponseEntity.ok(dashboardService.getOpenersStatistics(mailingId, admin.getCompanyID()));
+    }
+
+    @GetMapping("/dashboard/statistic/clickers.action")
+    @RequiredPermission("stats.mailing")
+    public ResponseEntity<ClickersStatisticsResponse> getClickersStatistics(@RequestParam int mailingId, Admin admin) {
+        return ResponseEntity.ok(dashboardService.getClickersStatistics(mailingId, admin.getCompanyID()));
+    }
+
+    @GetMapping("/dashboard/statistics.action")
+    @RequiredPermission("stats.mailing")
+    public ResponseEntity<DashboardStatisticsResponse> getStatistics(@RequestParam int mailingId, Admin admin) {
+        return ResponseEntity.ok(dashboardService.getStatistics(mailingId, admin.getCompanyID()));
     }
 
     @GetMapping("/dashboard/scheduledMailings.action")
     @AlwaysAllowed
-    public @ResponseBody ResponseEntity<?> getScheduledMailings(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) throws ParseException {
+    public ResponseEntity<List<ScheduledMailing>> getScheduledMailings(
+            @RequestParam("startDate") String start,
+            @RequestParam("endDate") String end,
+            Admin admin
+    ) throws ParseException {
         if (StringUtils.isBlank(start) || StringUtils.isBlank(end)) {
             return ResponseEntity.badRequest().build();
         }

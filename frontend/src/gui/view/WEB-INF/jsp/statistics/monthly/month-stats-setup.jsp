@@ -11,8 +11,6 @@
 <c:set var="agnHelpKey" 			value="monthlyOverview"     scope="request" />
 <c:set var="agnEditViewKey" 	    value="monthly-overview" 	scope="request" />
 
-<%--@elvariable id="birtStatisticUrlCsvReport" type="java.lang.String"--%>
-
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
@@ -32,20 +30,20 @@
             <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
         </emm:instantiate>
 
-        <c:set var="csvUrl" value="${birtStatisticUrlCsvReport}&__format=csv"/>
-
         <%-- Items for dropdown --%>
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${optionList}" property="0" value="${option}"/>
-            <c:set target="${option}" property="url">${csvUrl}</c:set>
-            <c:set target="${option}" property="name"><mvc:message code="export.message.csv"/></c:set>
+            <c:set target="${option}" property="extraAttributes" value="data-form-target='#stat-form' data-form-submit-static='' data-prevent-load" />
+            <c:set target="${option}" property="name">
+                <mvc:message code="user.export.csv"/>
+            </c:set>
         </emm:instantiate>
     </emm:instantiate>
 
     <emm:instantiate var="element" type="java.util.LinkedHashMap">
         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-        <c:set target="${element}" property="extraAttributes" value="data-form-target='#stat-form' data-form-submit"/>
+        <c:set target="${element}" property="extraAttributes" value="data-action='refresh-data'"/>
         <c:set target="${element}" property="iconBefore" value="icon icon-sync"/>
         <c:set target="${element}" property="name">
             <mvc:message code="button.Refresh" />

@@ -62,6 +62,10 @@ AGN.Lib.Controller.new('login', function () {
     setSettings(settings);
   }
 
+  this.addAction({change: 'toggle-password'}, function () {
+    $('#password').attr('type', this.el.is(':checked') ? 'text' : 'password');
+  });
+
   this.addAction({keydown: 'password-change'}, function () {
     if (isCapsLockEnabled(this.event)) {
       Form.showFieldError$(this.el, t('login.error.capslock'));

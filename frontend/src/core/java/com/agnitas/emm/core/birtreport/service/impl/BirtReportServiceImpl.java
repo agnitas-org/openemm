@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -40,10 +40,14 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.MAILI
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.MAILING_FORMATS_GROUP;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.MAILING_GENERAL_GROUP;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.MAILING_OPENER_GROUP;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.REPORT_SIMPLE_DATE_FORMAT;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.mailingStatisticProps;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -58,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -93,7 +98,10 @@ import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.dto.DateTimeRange;
 import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
@@ -164,9 +172,9 @@ public class BirtReportServiceImpl implements BirtReportService {
 
     protected List<MailingBase> getPredefinedMailingsForReports(int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, Map<String, LocalDate> datesRestriction, int targetId, Set<Integer> adminAltgIds) {
         if (number == 0) {
-            Date from = DateUtilities.toDate(datesRestriction.get(KEY_START_DATE), AgnUtils.getSystemTimeZoneId());
+            Date from = DateUtilities.toDate(datesRestriction.get(KEY_START_DATE), ZoneId.systemDefault());
             // Include the defined day completely, so use limit of next day 00:00
-            Date to = DateUtilities.toDate(datesRestriction.get(KEY_END_DATE).plus(1, ChronoUnit.DAYS), AgnUtils.getSystemTimeZoneId());
+            Date to = DateUtilities.toDate(datesRestriction.get(KEY_END_DATE).plus(1, ChronoUnit.DAYS), ZoneId.systemDefault());
 
             return mailingDao.getPredefinedNormalMailingsForReports(companyId, from, to, filterType, filterValue, orderKey, targetId, adminAltgIds);
         } else {
@@ -516,15 +524,20 @@ public class BirtReportServiceImpl implements BirtReportService {
         BirtReportDownload birtReportDownload = new BirtReportDownload();
         birtReportDownload.setReportId(report.getId());
 
-        BirtReportStatisticDto statisticDto = conversionService.convert(report, BirtReportStatisticDto.class);
-        String reportUrl = birtStatisticsService.getReportStatisticsUrl(admin, statisticDto);
+        if (configService.getBooleanValue(ConfigValue.Development.BirtReportsMigration, admin.getCompanyID())) {
+            birtReportDownload.setReportRequest(birtStatisticsService.getReportRequest(report, settings, admin));
+        } else {
+            BirtReportStatisticDto statisticDto = conversionService.convert(report, BirtReportStatisticDto.class);
+            String reportUrl = birtStatisticsService.getReportStatisticsUrl(admin, statisticDto);
 
-        logger.info("Birt report statistic evaluation, report URL: {}", reportUrl);
+            logger.info("Birt report statistic evaluation, report URL: {}", reportUrl);
 
-        birtReportDownload.setBirtFileUrl(reportUrl);
+            birtReportDownload.setBirtFileUrl(reportUrl);
+        }
 
         String localizedFileName = birtReportFileService.buildLocalizedFileName(
-            settings, admin.getCompanyID(), admin.getLocale(), report.getFormatName());
+            settings, admin.getCompanyID(), admin.getLocale(), report.getFormat()
+        );
 
         birtReportDownload.setFileName(localizedFileName);
         birtReportDownload.setShortname(report.getShortname());
@@ -696,7 +709,7 @@ public class BirtReportServiceImpl implements BirtReportService {
         return ids.stream()
                 .filter(id -> isReportExist(companyID, id))
                 .map(id -> getReportName(companyID, id))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -704,7 +717,7 @@ public class BirtReportServiceImpl implements BirtReportService {
         List<Integer> deletedIds = ids.stream()
                 .filter(id -> isReportExist(companyID, id))
                 .filter(id -> markDeleted(id, companyID))
-                .collect(Collectors.toList());
+                .toList();
 
         return ServiceResult.success(
                 new UserAction(
@@ -729,18 +742,21 @@ public class BirtReportServiceImpl implements BirtReportService {
     }
 
     private Map<String, Object> getParamsForSingleMailingStatisticReport(Mailing mailing) {
-        int mailingType = MAILING_NORMAL;
-        if (mailing.getMailingType().equals(MailingType.ACTION_BASED)) {
-            mailingType = MAILING_ACTION_BASED;
-        } else if (mailing.getMailingType().equals(MailingType.DATE_BASED)) {
-            mailingType = MAILING_DATE_BASED;
-        } else if (mailing.getMailingType().equals(MailingType.INTERVAL)) {
-            mailingType = MAILING_INTERVAL_BASED;
-        } else if (mailing.getMailingType().equals(MailingType.FOLLOW_UP)) {
-            mailingType = MAILING_FOLLOW_UP;
-        }
+        int mailingType = switch (mailing.getMailingType()) {
+            case NORMAL -> MAILING_NORMAL;
+            case ACTION_BASED -> MAILING_ACTION_BASED;
+            case DATE_BASED -> MAILING_DATE_BASED;
+            case INTERVAL -> MAILING_INTERVAL_BASED;
+            case FOLLOW_UP -> MAILING_FOLLOW_UP;
+        };
 
-        Map<String, Object> params = Stream.of(mailingStatisticProps.get(GENERAL_INFO_GROUP), MAILING_FORMATS_GROUP, MAILING_GENERAL_GROUP, MAILING_OPENER_GROUP, MAILING_DEVICES_GROUP)
+        Map<String, Object> params = Stream.of(
+                        mailingStatisticProps.get(GENERAL_INFO_GROUP),
+                        MAILING_FORMATS_GROUP,
+                        MAILING_GENERAL_GROUP,
+                        MAILING_OPENER_GROUP,
+                        MAILING_DEVICES_GROUP
+                )
                 .flatMap(Collection::stream)
                 .collect(Collectors.toMap(BirtReportSettingsUtils.Properties::getPropName, p -> true));
 
@@ -748,7 +764,27 @@ public class BirtReportServiceImpl implements BirtReportService {
         params.put(MAILING_TYPE_KEY, mailingType);
         params.put(MAILING_GENERAL_TYPES_KEY, mailingType);
 
+        getDateRangeForSingleMailingStatisticReport(mailing)
+                .ifPresent(dateRange -> {
+                    params.put(PERIOD_TYPE_KEY, BirtReportMailingSettings.DATE_RANGE_CUSTOM);
+                    params.put(BirtReportSettingsUtils.START_DATE, REPORT_SIMPLE_DATE_FORMAT.format(dateRange.getFrom()));
+                    params.put(BirtReportSettingsUtils.END_DATE, REPORT_SIMPLE_DATE_FORMAT.format(dateRange.getTo()));
+                });
+
         return params;
+    }
+
+    private Optional<DateRange> getDateRangeForSingleMailingStatisticReport(Mailing mailing) {
+        if (mailing.getMailingType() == MailingType.NORMAL) {
+            return Optional.empty();
+        }
+
+        YearMonth month = YearMonth.now();
+
+        LocalDateTime startDate = month.atDay(1).atStartOfDay();
+        LocalDateTime stopDate = month.plusMonths(1).atDay(1).atStartOfDay();
+
+        return Optional.of(DateRange.from(new DateTimeRange(startDate, stopDate), ZoneId.systemDefault()));
     }
 
     @Override

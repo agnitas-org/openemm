@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -36,12 +36,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.impl.RecipientLiteImpl;
 import com.agnitas.dao.EmmActionDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
 import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.commons.util.ConfigService;
@@ -54,9 +56,13 @@ import com.agnitas.emm.core.userform.dto.ResultSettings;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.exception.UserFormCopyException;
 import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.emm.core.userform.service.CreateFormCommand;
+import com.agnitas.emm.core.userform.service.PatchFormCommand;
+import com.agnitas.emm.core.userform.service.UserFormMapper;
 import com.agnitas.emm.core.userform.service.UserFormTestUrl;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
 import com.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
 import com.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
@@ -104,6 +110,11 @@ public class UserformServiceImpl implements UserformService {
     private CompanyTokenService companyTokenService;
     private VelocityDirectiveScriptValidator velocityValidator;
     private LinkService linkService;
+    private final UserFormMapper userFormMapper;
+
+    public UserformServiceImpl(UserFormMapper userFormMapper) {
+        this.userFormMapper = userFormMapper;
+    }
 
     @Override
     public boolean isFormNameInUse(String formName, int companyId) {
@@ -148,15 +159,17 @@ public class UserformServiceImpl implements UserformService {
             errors.add(Message.of("error.userform." + (settings.isSuccess() ? "success" : "error") + ".html.missing"));
         }
 
-        try {
-            velocityValidator.validateScript(settings.getTemplate());
-        } catch (IllegalVelocityDirectiveException e) {
-            errors.add(Message.of("error.form.illegal_directive", e.getDirective()));
-        }
+        if (StringUtils.isNotBlank(settings.getTemplate())) {
+            try {
+                velocityValidator.validateScript(settings.getTemplate());
+            } catch (IllegalVelocityDirectiveException e) {
+                errors.add(Message.of("error.form.illegal_directive", e.getDirective()));
+            }
 
-        int invalidLineNumber = linkService.getLineNumberOfFirstInvalidLink(settings.getTemplate());
-        if (invalidLineNumber != -1) {
-            errors.add(Message.of("error.invalid_link", settings.isSuccess() ? "SUCCESS" : "ERROR", invalidLineNumber));
+            int invalidLineNumber = linkService.getLineNumberOfFirstInvalidLink(settings.getTemplate());
+            if (invalidLineNumber != -1) {
+                errors.add(Message.of("error.invalid_link", settings.isSuccess() ? "SUCCESS" : "ERROR", invalidLineNumber));
+            }
         }
         return errors;
     }
@@ -284,11 +297,23 @@ public class UserformServiceImpl implements UserformService {
     }
 
     @Override
+    public void updateActiveness(int formId, int companyId, boolean active) {
+        UserForm form = getForm(formId, companyId);
+        if (form.isActive() == active) {
+            return;
+        }
+        ServiceResult<List<UserForm>> result = setActiveness(Set.of(formId), companyId, active);
+        if (!result.isSuccess()) {
+            throw new ValidationException(result.getErrorMessages());
+        }
+    }
+
+    @Override
     public JSONArray getUserFormsJson(Admin admin) {
     	final String placeholder = "{%FORMNAME%}";
 
         final Optional<String> companyTokenOpt = companyTokenService.getCompanyToken(admin.getCompanyID());
-    	
+
         final JSONArray actionsJson = new JSONArray();
 		final List<UserForm> userForms = userFormDao.overview(admin.getCompanyID());
 
@@ -304,7 +329,7 @@ public class UserformServiceImpl implements UserformService {
         final Map<Integer, String> actionNames = emmActionDao.getEmmActionNames(admin.getCompanyID(), usedActionIds);
 
         final String userFormUrlPattern = getUserFormUrlPattern(admin, placeholder, false, companyTokenOpt);
-        
+
 		for (final UserForm userForm: userForms) {
             final JSONObject entry = new JSONObject();
 
@@ -344,7 +369,75 @@ public class UserformServiceImpl implements UserformService {
         }
         return null;
 	}
-	
+
+    @Override
+    public PaginatedList<UserForm> getPaginatedList(PaginatedFilter<String> filter, int companyId) {
+        return userFormDao.getPaginatedList(filter, companyId);
+    }
+
+    @Override
+    public UserForm getForm(int formId, int companyId) {
+        return userFormDao.findForm(formId, companyId).orElseThrow(() -> new FormNotFoundException(formId));
+	}
+
+    @Override
+    public int create(CreateFormCommand command, Admin admin) {
+        UserFormDto dto = userFormMapper.toDto(command);
+        validateForSave(dto, admin);
+        ServiceResult<Integer> result = saveUserForm(admin, dto);
+        if (!result.isSuccess()) {
+            throw new IllegalStateException("Failed to save user form");
+        }
+        return result.getResult();
+    }
+
+    @Override
+    public void patchForm(int formId, PatchFormCommand command, Admin admin) {
+        UserFormDto form = getUserForm(admin.getCompanyID(), formId);
+        if (form == null) {
+            throw new FormNotFoundException(formId);
+        }
+
+        command.name().ifPresent(form::setName);
+        command.description().ifPresent(form::setDescription);
+        command.successSettings().ifPresent(form::setSuccessSettings);
+        command.errorSettings().ifPresent(form::setErrorSettings);
+        command.startTriggerId().ifPresent(id -> form.getSuccessSettings().setStartActionId(id != null ? id : 0));
+        command.endTriggerId().ifPresent(id -> form.getSuccessSettings().setFinalActionId(id != null ? id : 0));
+
+        validateForSave(form, admin);
+
+        ServiceResult<Integer> result = saveUserForm(admin, form);
+        if (!result.isSuccess()) {
+            throw new IllegalStateException("Failed to save user form");
+        }
+    }
+
+    private void validateForSave(UserFormDto form, Admin admin) {
+        if (!isValidFormName(form.getName())) {
+            throw new ValidationException("error.form.invalid_name");
+        }
+        if (!isFormNameUnique(form.getName(), form.getId(), admin.getCompanyID())) {
+            throw new ValidationException("error.form.name_in_use");
+        }
+        List<Message> errors = new ArrayList<>();
+        List<Message> warnings = new ArrayList<>();
+        try {
+            errors.addAll(validateSettings(form.getSuccessSettings()));
+            errors.addAll(validateSettings(form.getErrorSettings()));
+        } catch (Exception e) {
+            throw ValidationException.exact("Invalid input");
+        }
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+        trackableLinkService.validateLinks(form.getSuccessSettings(), admin, errors, warnings);
+        trackableLinkService.validateLinks(form.getErrorSettings(), admin, errors, warnings);
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+    }
+
 	@Override
 	public ServiceResult<Integer> saveUserForm(Admin admin, UserFormDto userFormDto) {
         int companyId = admin.getCompanyID();
@@ -453,7 +546,7 @@ public class UserformServiceImpl implements UserformService {
 
         return urls;
 	}
-	
+
     @Override
 	public String getUserFormUrlWithoutUID(Admin admin, String formName, Optional<String> companyToken) {
         return WebFormUrlBuilder.from(admin.getCompany(), formName)
@@ -507,7 +600,7 @@ public class UserformServiceImpl implements UserformService {
     public void setEmmActionDao(EmmActionDao emmActionDao) {
         this.emmActionDao = emmActionDao;
     }
-    
+
     public void setConversionService(ExtendedConversionService conversionService) {
         this.conversionService = conversionService;
     }
@@ -515,7 +608,7 @@ public class UserformServiceImpl implements UserformService {
     public void setTrackableLinkService(FormTrackableLinkService trackableLinkService) {
         this.trackableLinkService = trackableLinkService;
     }
-    
+
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }

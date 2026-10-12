@@ -15,7 +15,6 @@
 <%--@elvariable id="isMailingGrid" type="java.lang.Boolean"--%>
 <%--@elvariable id="allowBenchmark" type="java.lang.Boolean"--%>
 <%--@elvariable id="birtUrl" type="java.lang.String"--%>
-<%--@elvariable id="localDatePattern" type="java.lang.String"--%>
 <%--@elvariable id="reports" type="java.util.Map"--%>
 <%--@elvariable id="monthlist" type="java.util.List<java.lang.String[]>"--%>
 <%--@elvariable id="yearlist" type="java.util.List<java.lang.Integer>"--%>
@@ -46,7 +45,7 @@
         }
     </script>
 
-    <c:if test="${mailingId > 0 and not isBenchmarkStat}">
+    <c:if test="${(isTotalAutoOpt or mailingId > 0) and not isBenchmarkStat}">
         <div id="filter-tile" class="tile h-auto flex-none" data-editable-tile data-toggle-tile>
             <div class="tile-header">
                 <h1 class="tile-title">
@@ -55,36 +54,25 @@
                 </h1>
             </div>
             <div class="tile-body js-scrollable">
-                <c:if test="${isTotalAutoOpt}">
-                    <mvc:hidden path="selectedTargets"/>
-                </c:if>
-
                 <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label" for="targetGroupSelect"><mvc:message code="Targetgroups"/></label>
+                        <c:set var="addTargetGroupMessage" scope="page">
+                            <mvc:message code="addTargetGroup" />
+                        </c:set>
+                        <mvc:select path="selectedTargets" id="targetGroupSelect" cssClass="form-control"  multiple="multiple" data-placeholder="${addTargetGroupMessage}">
+                            <mvc:options items="${targetlist}" itemValue="id" itemLabel="targetName"/>
+                        </mvc:select >
+                    </div>
+
                     <c:if test="${not isTotalAutoOpt}">
-                        <div class="${isSummaryStatMigration ? 'col-12' : 'col'}">
-                            <label class="form-label" for="targetGroupSelect"><mvc:message code="Targetgroups"/></label>
-                            <c:set var="addTargetGroupMessage" scope="page">
-                                <mvc:message code="addTargetGroup" />
-                            </c:set>
-                            <mvc:select path="selectedTargets" id="targetGroupSelect" cssClass="form-control"  multiple="multiple" data-placeholder="${addTargetGroupMessage}">
-                                <mvc:options items="${targetlist}" itemValue="id" itemLabel="targetName"/>
-                            </mvc:select >
+                        <div class="col-12" data-show-by-select="#statisticType" data-show-by-select-values="SUMMARY">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="showNetto" path="showNetto" cssClass="form-check-input" role="switch" data-action="show-netto"/>
+                                <label class="form-label form-check-label" for="showNetto"><mvc:message code="mailing.statistics.show.netto"/></label>
+                            </div>
                         </div>
                     </c:if>
-
-                    <div class="${isSummaryStatMigration ? 'col-12' : 'col'}" data-show-by-select="#statisticType" data-show-by-select-values="SUMMARY">
-                        <div class="form-check form-switch" style="${isSummaryStatMigration ? '' : 'margin-top: 2rem'}">
-                            <c:choose>
-                                <c:when test="${isSummaryStat and isSummaryStatMigration}">
-                                    <mvc:checkbox id="showNetto" path="showNetto" cssClass="form-check-input" role="switch" data-action="show-netto"/>
-                                </c:when>
-                                <c:otherwise>
-                                    <mvc:checkbox id="showNetto" path="showNetto" cssClass="form-check-input" role="switch" data-form-submit=""/>
-                                </c:otherwise>
-                            </c:choose>
-                            <label class="form-label form-check-label" for="showNetto"><mvc:message code="mailing.statistics.show.netto"/></label>
-                        </div>
-                    </div>
 
                     <c:if test="${mailingStatisticForm.statisticType eq 'TOP_DOMAINS'}">
                         <div class="col">
@@ -126,18 +114,7 @@
                         <mvc:option value=""><mvc:message code="statistic.load.specific"/></mvc:option>
                         <mvc:option value="${SUMMARY_TYPE}"><mvc:message code="report.summary"/></mvc:option>
                         <mvc:option value="${CLICK_PER_LINK_TYPE}"><mvc:message code="Clickstats_Linkclicks"/></mvc:option>
-                        <c:choose>
-                            <c:when test="${emm:permissionAllowed('migration.mailing.progress.stat', pageContext.request)}">
-                                <mvc:option value="${PROGRESS_TYPE}">
-                                    <mvc:message code="statistics.progress"/>
-                                </mvc:option>
-                            </c:when>
-                            <c:otherwise>
-                                <mvc:option value="${StatisticType.PROGRESS_OF_DELIVERY}"><mvc:message code="statistic.delivery_progress"/></mvc:option>
-                                <mvc:option value="${StatisticType.PROGRESS_OF_OPENINGS}"><mvc:message code="Clickstats_Openings"/></mvc:option>
-                                <mvc:option value="${StatisticType.PROGRESS_OF_CLICKS}"><mvc:message code="statistic.clicks_progress"/></mvc:option>
-                            </c:otherwise>
-                        </c:choose>
+                        <mvc:option value="${PROGRESS_TYPE}"><mvc:message code="statistics.progress"/></mvc:option>
                         <mvc:option value="${TOP_DOMAINS_TYPE}"><mvc:message code="statistic.TopDomains"/></mvc:option>
                         <mvc:option value="${BOUNCES_TYPE}"><mvc:message code="statistic.Bounces"/></mvc:option>
                         <%@ include file="fragments/statistic-type-extended-options.jspf" %>
@@ -174,15 +151,15 @@
 
                     <c:if test="${mailingStatisticForm.dateSelectMode eq SELECT_MONTH}">
                         <div class="d-flex gap-inherit">
-                            <mvc:select path="month" size="1" cssClass="form-control">
+                            <mvc:select path="month" size="1" cssClass="form-control" data-select-options="dropdownAutoWidth: true, width: 'auto'">
                                 <c:forEach var="mon" items="${monthlist}">
                                     <mvc:option value="${mon[0]}"><mvc:message code="${mon[1]}"/></mvc:option>
                                 </c:forEach>
                             </mvc:select>
                             
                             <mvc:select path="year" size="1" cssClass="form-control">
-                                <c:forEach var="yea" items="${yearlist}">
-                                    <mvc:option value="${yea}"><c:out value="${yea}"/></mvc:option>
+                                <c:forEach var="year" items="${yearlist}">
+                                    <mvc:option value="${year}"><c:out value="${year}"/></mvc:option>
                                 </c:forEach>
                             </mvc:select>
                         </div>
@@ -210,12 +187,12 @@
             </div>
         </div>
 
-        <div class="tile-body flex-column gap-3 ${(isClickPerLinkStat && emm:permissionAllowed('migration.mailing.click.stat', pageContext.request)) || isProgressStat || (isEndDeviceStat && emm:permissionAllowed('migration.mailing.enddevice.stat', pageContext.request)) || (isAlphaTrackingPointStat && emm:permissionAllowed('migration.mailing.alphanumerictracking.stat', pageContext.request)) ? 'js-scrollable' : ''}"
-             ${isSummaryStat and isSummaryStatMigration ? 'data-controller="mailing-summary-stats" data-initializer="mailing-summary-stats"' : ''}
-             ${isTopDomainStats and isTopDomainStatsMigration ? 'data-controller="mailing-top-domain-stats" data-initializer="mailing-top-domain-stats"' : ''}
-             ${isBounceStats and isBounceStatsMigration ? 'data-controller="mailing-bounce-stats" data-initializer="mailing-bounce-stats"' : ''}
+        <div class="tile-body flex-column gap-3 js-scrollable"
+             ${isSummaryStat ? 'data-controller="mailing-summary-stats" data-initializer="mailing-summary-stats"' : ''}
+             ${isTopDomainStats ? 'data-controller="mailing-top-domain-stats" data-initializer="mailing-top-domain-stats"' : ''}
+             ${isBounceStats ? 'data-controller="mailing-bounce-stats" data-initializer="mailing-bounce-stats"' : ''}
              style="display: flex">
-            <c:if test="${fn:contains([SUMMARY, CLICK_STATISTICS_PER_LINK, StatisticType.PROGRESS_OF_OPENINGS, StatisticType.PROGRESS_OF_CLICKS, PROGRESS_TYPE], mailingStatisticForm.statisticType) }">
+            <c:if test="${fn:contains([SUMMARY, CLICK_STATISTICS_PER_LINK, PROGRESS_TYPE], mailingStatisticForm.statisticType) }">
                 <c:set var="endDeviceAndModelsNotification">
                     <div class="notification-simple notification-simple--info mx-2 w-auto">
                         <i class="icon icon-state-info"></i>
@@ -254,26 +231,38 @@
                 <c:when test="${allowBenchmark && isBenchmarkStat}">
                     <div id="benchmark-stat" class="flex-grow-1 d-flex flex-column gap-3"></div>
                 </c:when>
-                <c:when test="${isSummaryStat && isSummaryStatMigration}">
+                <c:when test="${isSummaryStat}">
                     <%@ include file="fragments/mailing-summary-stats.jspf" %>
                 </c:when>
-                <c:when test="${isTopDomainStats && isTopDomainStatsMigration}">
+                <c:when test="${isTopDomainStats}">
                     <%@ include file="fragments/mailing-top-domain-stats.jspf" %>
                 </c:when>
-                <c:when test="${isBounceStats && isBounceStatsMigration}">
+                <c:when test="${isBounceStats}">
                     <%@ include file="fragments/mailing-bounce-stats.jspf" %>
                 </c:when>
-                <c:when test="${isClickPerLinkStat && emm:permissionAllowed('migration.mailing.click.stat', pageContext.request)}">
+                <c:when test="${isClickPerLinkStat}">
                     <%@ include file="fragments/click-stat-per-link.jspf" %>
                 </c:when>
                 <c:when test="${isProgressStat}">
                     <%@ include file="fragments/progress-stat.jspf" %>
                 </c:when>
-                <c:when test="${isEndDeviceStat && emm:permissionAllowed('migration.mailing.enddevice.stat', pageContext.request)}">
+                <c:when test="${isEndDeviceStat}">
                     <%@ include file="fragments/end-device-stat.jspf" %>
                 </c:when>
-                <c:when test="${isAlphaTrackingPointStat && emm:permissionAllowed('migration.mailing.alphanumerictracking.stat', pageContext.request)}">
+                <c:when test="${isAlphaTrackingPointStat}">
                     <%@ include file="fragments/alpha-tracking-points-stat.jspf" %>
+                </c:when>
+                <c:when test="${isRevenueStat}">
+                    <%@ include file="fragments/revenue-stat.jspf" %>
+                </c:when>
+                <c:when test="${isNumTrackingPointStat}">
+                    <%@ include file="fragments/num-tracking-points-stat.jspf" %>
+                </c:when>
+                <c:when test="${isSimpleTrackingPointStat && emm:permissionAllowed('migration.simple.point.stat', pageContext.request)}">
+                    <%@ include file="fragments/simple-tracking-points-stat.jspf" %>
+                </c:when>
+                <c:when test="${forCampaign and mailingId eq null and emm:permissionAllowed('migration.campaigns.stat', pageContext.request)}">
+                    <%@ include file="fragments/workflow-stat.jspf" %>
                 </c:when>
                 <c:when test="${birtUrl ne null && isReportCanBeShown}">
                     <div class="position-relative js-scrollable overflow-auto hide-scroll">

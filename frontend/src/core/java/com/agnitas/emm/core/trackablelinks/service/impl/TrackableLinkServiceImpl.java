@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.BaseTrackableLink;
@@ -32,13 +33,19 @@ import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+import com.agnitas.emm.core.trackablelinks.dto.PatchLinkCommand;
 import com.agnitas.emm.core.trackablelinks.exceptions.ClearMailingLinkExtensionsException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.validator.LinkValidationField;
+import com.agnitas.web.perm.FieldChangeNotAllowedException;
+import com.agnitas.web.perm.NotAllowedActionException;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -61,6 +68,7 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
     /** Service dealing with mailings. */
     private MailingService mailingService;
     private ConfigService configService;
+    private EmmActionService triggerService;
 
     @Override
     public void addExtensions(Mailing aMailing, Set<Integer> bulkIds, List<LinkProperty> extensions, List<UserAction> userActions) {
@@ -143,6 +151,17 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
     @Override
     public TrackableLink getTrackableLink(int companyId, int linkId) {
         return trackableLinkDao.getTrackableLink(linkId, companyId);
+    }
+
+    @Override
+    public TrackableLink getLink(int linkId, int mailingId, int companyId) {
+        return findLink(linkId, mailingId, companyId)
+                .orElseThrow(() -> new TrackableLinkUnknownLinkIdException(linkId, mailingId));
+    }
+
+    @Override
+    public Optional<TrackableLink> findLink(int linkId, int mailingId, int companyId) {
+        return trackableLinkDao.findLink(linkId, mailingId, companyId);
     }
 
     @Override
@@ -285,6 +304,69 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
         return trackableLinkDao.getTrackableLinks(companyId, mailingId, includeDeleted);
     }
 
+    @Override
+    public void patch(int linkId, int mailingId, PatchLinkCommand command, Admin admin) {
+        if (mailingService.isSettingsReadonly(admin, mailingId)) {
+            throw new NotAllowedActionException();
+        }
+        TrackableLink link = getLink(linkId, mailingId, admin.getCompanyID());
+
+        command.url().ifPresent(url -> updateLinkUrl(link, url, admin));
+        command.description().ifPresent(link::setShortname);
+        command.administrative().ifPresent(link::setAdminLink);
+        command.triggerId().ifPresent(link::setActionID);
+        command.staticLink().ifPresent(link::setStaticValue);
+        command.tracking().ifPresent(t -> patchLinkUsage(t, link));
+        command.retargeting().ifPresent(patchLinkRetargeting(admin, link));
+        command.extensions().ifPresent(extensions -> patchLinkExtensions(admin, extensions, link));
+
+        validateForSave(link, admin);
+        saveTrackableLink(link);
+    }
+
+    private void validateForSave(TrackableLink link, Admin admin) {
+        if (link.getActionID() > 0) {
+            triggerService.validateSelectionForMailing(link.getActionID(), LinkValidationField.TRIGGER, admin);
+        }
+    }
+
+    private static void patchLinkExtensions(Admin admin, List<LinkProperty> extensions, TrackableLink link) {
+        if (admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
+            link.setProperties(CollectionUtils.emptyIfNull(extensions).stream()
+                    .filter(extension -> StringUtils.isNotBlank(extension.getPropertyName()))
+                    .toList()
+            );
+        }
+    }
+
+    private static Consumer<Integer> patchLinkRetargeting(Admin admin, TrackableLink link) {
+        return retargeting -> {
+            if (!admin.permissionAllowed(Permission.STATS_REVENUE)) {
+                throw new FieldChangeNotAllowedException(LinkValidationField.RETARGETING);
+            }
+            link.setDeepTracking(retargeting);
+        };
+    }
+
+    private static void patchLinkUsage(Integer t, TrackableLink link) {
+        link.setUsage(
+                StringUtils.defaultString(link.getFullUrl()).contains("##")
+                        ? LinkTrackingMode.TEXT_AND_HTML.getMode()
+                        : t
+        );
+    }
+
+    private void updateLinkUrl(TrackableLink link, String newUrl, Admin admin) {
+        if (link.getFullUrl().equals(newUrl)) {
+            return;
+        }
+        if (!isUrlEditingAllowed(admin, link.getMailingID())) {
+            logger.warn("Admin {} (ID {}) has no permission to edit link URLs", admin.getUsername(), admin.getAdminID());
+            throw new FieldChangeNotAllowedException(LinkValidationField.URL);
+        }
+        updateLinkTarget(link, newUrl);
+    }
+
     private TrackableLink mergeTrackableLinkData(TrackableLinkModel trackableLinkModel) {
         TrackableLink trackableLink = trackableLinkDao.getTrackableLink(trackableLinkModel.getId(), trackableLinkModel.getCompanyID());
 
@@ -363,5 +445,9 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
 
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
+    }
+
+    public void setTriggerService(EmmActionService triggerService) {
+        this.triggerService = triggerService;
     }
 }

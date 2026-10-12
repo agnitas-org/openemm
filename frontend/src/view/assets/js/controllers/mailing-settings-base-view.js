@@ -3,11 +3,6 @@ AGN.Lib.Controller.new('mailing-settings-base-view', function () {
   const Messaging = AGN.Lib.Messaging;
   const Messages = AGN.Lib.Messages;
   const Form = AGN.Lib.Form;
-  const EMAIL_CHANGED_MSG_KEYS = {
-    '11': 'mailing.default.sender_and_reply_emails_changed',
-    '10': 'mailing.default.sender_email_changed',
-    '01': 'mailing.default.reply_email_changed'
-  };
   let selectedRemovedMailinglistId;
   let mailinglists = [];
 
@@ -48,33 +43,32 @@ AGN.Lib.Controller.new('mailing-settings-base-view', function () {
       Form.get($(this.el)).cleanFieldError('mailinglistId');
       selectedRemovedMailinglistId = null;
     }
-
-    const mailinglistData = mailinglists.find(data => data.id == mailinglistId);
-
-    if (mailinglistData) {
-      const $senderEmail = $('#emailSenderMail');
-      const $replyEmail = $('#emailReplyEmail');
-
-      if (!$senderEmail.exists() && !$replyEmail.exists()) {
-        return;
-      }
-
-      const changeSenderEmail = mailinglistData.senderEmail && $senderEmail.val() !== mailinglistData.senderEmail;
-      const changeReplyEmail = mailinglistData.replyEmail && $replyEmail.val() !== mailinglistData.replyEmail;
-
-      if (changeSenderEmail) {
-        $senderEmail.val(mailinglistData.senderEmail).trigger('change');
-      }
-      if (changeReplyEmail) {
-        $replyEmail.val(mailinglistData.replyEmail);
-      }
-
-      const msgKey = _.result(EMAIL_CHANGED_MSG_KEYS, `${+!!changeSenderEmail}${+!!changeReplyEmail}`);
-      if (msgKey) {
-        Messages.info(msgKey);
-      }
-    }
+    updateSenderAndReplyToFields(mailinglistId);
   });
+
+  function updateSenderAndReplyToFields(mailinglistId) {
+    const mailinglist = mailinglists.find(data => data.id === +mailinglistId);
+
+    if (!mailinglist) {
+      return;
+    }
+
+    const changedLabels = [
+      {value: mailinglist.senderEmail, $field: $('#emailSenderMail')},
+      {value: mailinglist.replyEmail, $field: $('#emailReplyEmail')},
+      {value: mailinglist.senderName, $field: $('#emailSenderName')},
+      {value: mailinglist.replyToName, $field: $('#emailReplyName')}
+    ]
+      .filter(({value, $field}) => value && $field.val() !== value)
+      .map(({value, $field}) => {
+        $field.val(value).trigger('change');
+        return $(`label[for="${$field.attr('id')}"]`).text().trim().replaceAll(/\s*\*/g, '');
+      });
+
+    if (changedLabels.length) {
+      Messages.info('mailing.default.sender_and_reply_emails_changed');
+    }
+  }
 
   this.addAction({'change input': 'change-mailing-base-info'}, function () {
     updateGenerateButton();

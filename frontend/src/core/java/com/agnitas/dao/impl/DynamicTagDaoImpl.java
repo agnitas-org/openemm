@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -193,6 +193,11 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         }
 
         return tag;
+    }
+
+    @Override
+    public List<DynamicTag> getDynamicTags(int mailingId, int companyId) {
+        return getDynamicTags(mailingId, companyId, false);
     }
 
     @Override
@@ -431,22 +436,23 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
     @Override
     public void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
-        List<Integer> idForRemoving = getIdForRemoving(oldDynamicTag, newDynamicTag);
-        idForRemoving.forEach(contentId -> {
-            dynamicTagContentDao.deleteContentFromMailing(oldDynamicTag.getCompanyID(), oldDynamicTag.getMailingID(), contentId);
-        });
-    }
+        if (oldDynamicTag.getId() <= 0) {
+            return;
+        }
 
-    private List<Integer> getIdForRemoving(DynamicTag oldDynamicTag, DynamicTag newDynamicTag) {
-        Set<Integer> oldIds = oldDynamicTag.getDynContent().values().stream()
+        Set<Integer> idsToKeep = newDynamicTag.getDynContent()
+                .values()
+                .stream()
                 .map(DynamicTagContent::getId)
+                .filter(id -> id > 0)
                 .collect(Collectors.toSet());
 
-        Set<Integer> newIds = newDynamicTag.getDynContent().values().stream()
-                .map(DynamicTagContent::getId)
-                .collect(Collectors.toSet());
-
-        return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).toList();
+        dynamicTagContentDao.deleteContentOfDynNameExcept(
+                oldDynamicTag.getCompanyID(),
+                oldDynamicTag.getMailingID(),
+                oldDynamicTag.getId(),
+                idsToKeep
+        );
     }
 
     private void validateDynName(String dynName) {

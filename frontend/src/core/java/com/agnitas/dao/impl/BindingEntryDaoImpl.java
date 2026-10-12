@@ -1,14 +1,18 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.dao.impl;
+
+import static java.util.Collections.emptyList;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,6 +42,8 @@ import com.agnitas.dao.TargetDao;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.binding.BindingIdentifier;
+import com.agnitas.emm.core.binding.CreateBindingCommand;
 import com.agnitas.emm.core.binding.service.event.OnBindingChangedHandler;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientStatus;
@@ -45,7 +51,9 @@ import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryImpl;
 import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryImpl;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -74,7 +82,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 			String sql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 			List<BindingEntry> list = select(sql, new BindingEntryRowMapper(this), recipientID, mailinglistID, mediaType);
 			if (!list.isEmpty()) {
-				return list.get(0);
+				return list.getFirst();
 			}
 
 			return null;
@@ -95,7 +103,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 					""".formatted(getBindingTableName(companyId));
 			return select(query, new PlainBindingEntryRowMapper(), recipientId, mailingId);
 		} catch (Exception e) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 	}
 
@@ -433,7 +441,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 			params.add(status.getStatusCode());
 		}
 
-		if (StringUtils.isNotBlank(timestamp)) {
+		if (isNotBlank(timestamp)) {
 			if (isOracleDB() || isPostgreSQL()) {
 				query.append(" AND TO_CHAR(timestamp, 'YYYY-MM-DD') LIKE ?");
 			} else {
@@ -443,6 +451,51 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 		}
 
 		return selectPaginatedList(query.toString(), page, size, new BindingEntryRowMapper(this), params.toArray());
+	}
+
+	@Override
+	public PaginatedList<BindingEntry> find(ListBindingsFilter filter, int companyId) {
+		List<Object> params = new ArrayList<>();
+		StringBuilder sql = new StringBuilder(
+				"SELECT * FROM customer_%d_binding_tbl WHERE 1 = 1".formatted(companyId)
+		);
+		List<String> orConditions = new ArrayList<>(2);
+		if (isNotEmpty(filter.recipientIds())) {
+			orConditions.add(makeBulkInClauseForInteger("customer_id", filter.recipientIds()));
+		}
+		if (isNotEmpty(filter.emails())) {
+			orConditions.add("customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl"
+					+ " WHERE email IN (" + AgnUtils.csvQMark(filter.emails().size()) + "))");
+			params.addAll(filter.emails());
+		}
+		if (!orConditions.isEmpty()) {
+			sql.append(andClause("(" + String.join(" OR ", orConditions) + ")"));
+		}
+		if (isNotEmpty(filter.mailinglistIds())) {
+			sql.append(andClause(makeBulkInClauseForInteger("mailinglist_id", filter.mailinglistIds())));
+		}
+		if (isNotEmpty(filter.mediatypes())) {
+			List<Integer> mediatypes = filter.mediatypes().stream().map(MediaTypes::getMediaCode).toList();
+			sql.append(andClause(makeBulkInClauseForInteger("mediatype", mediatypes)));
+		}
+		if (isNotEmpty(filter.userStatuses())) {
+			List<Integer> userStatuses = filter.userStatuses().stream().map(UserStatus::getStatusCode).toList();
+			sql.append(andClause(makeBulkInClauseForInteger("user_status", userStatuses)));
+		}
+		if (isNotBlank(filter.date())) {
+			sql.append(isOracleDB() || isPostgreSQL()
+					? " AND TO_CHAR(timestamp, 'YYYY-MM-DD') LIKE ?"
+					: " AND DATE_FORMAT(timestamp, '%Y-%m-%d') LIKE ?"
+			);
+			params.add(filter.date().replace("_", "%"));
+		}
+		return selectPaginatedList(
+				sql.toString(),
+				filter.page(),
+				filter.size(),
+				new BindingEntryRowMapper(this),
+				params.toArray()
+		);
 	}
 
 	@Override
@@ -488,7 +541,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 	
 	@Override
 	public void lockBindings(int companyId, List<SimpleEntry<Integer, Integer>> cmPairs) {
-		if (CollectionUtils.isNotEmpty(cmPairs)) {
+		if (isNotEmpty(cmPairs)) {
 			String customerAndMailinglistInClause = cmPairs.stream()
 					.map(pair -> "("  + pair.getKey() + "," + pair.getValue() + ")")
 					.collect(Collectors.joining(","));
@@ -661,6 +714,34 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 	}
 
 	@Override
+	public List<Integer> delete(BulkDeleteBindingsFilter filter) {
+		if (filter.recipientIds().isEmpty()) {
+			return emptyList();
+		}
+		List<String> filters = new ArrayList<>();
+		filters.add(makeBulkInClauseForInteger("customer_id", filter.recipientIds()));
+
+		if (isNotEmpty(filter.mailinglistIds())) {
+			filters.add(makeBulkInClauseForInteger("mailinglist_id", filter.mailinglistIds()));
+		}
+		if (isNotEmpty(filter.mediatypes())) {
+			List<Integer> mediatypeIds = filter.mediatypes().stream().map(MediaTypes::getMediaCode).toList();
+			filters.add(makeBulkInClauseForInteger("mediatype", mediatypeIds));
+		}
+
+		String whereSql = " WHERE %s".formatted(String.join(" AND ", filters));
+
+		List<Integer> existingIds = select(
+				"SELECT DISTINCT(customer_id) FROM customer_%d_binding_tbl %s".formatted(filter.companyId(), whereSql),
+				IntegerRowMapper.INSTANCE
+		);
+		if (!existingIds.isEmpty()) {
+			update("DELETE FROM customer_%d_binding_tbl %s".formatted(filter.companyId(), whereSql));
+		}
+		return existingIds;
+	}
+
+	@Override
 	public int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs) {
 		/*
 		 * Note: batchupdate() cannot be used here.
@@ -689,6 +770,105 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 		}
 
 		return touchedLinesSum;
+	}
+
+	@Override
+	public void batchInsertBindings(List<CreateBindingCommand> bindings, int companyId) {
+		if (CollectionUtils.isEmpty(bindings)) {
+			return;
+		}
+		List<Object[]> batchArgs = bindings.stream()
+				.map(cmd -> new Object[]{
+						cmd.recipientId(),
+						cmd.mailinglistId(),
+						cmd.mediatype().getMediaCode(),
+						cmd.userType().getTypeCode(),
+						cmd.userStatus().getStatusCode(),
+						cmd.userRemark()
+				})
+				.toList();
+		batchupdate("""
+						INSERT INTO customer_%d_binding_tbl (
+						  customer_id,
+						  mailinglist_id,
+						  mediatype,
+						  user_type,
+						  user_status,
+						  user_remark,
+						  creation_date,
+						  timestamp
+						) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+						""".formatted(companyId),
+				batchArgs
+		);
+		bindings.forEach(cmd -> fireBindingUpdated(
+				companyId,
+				cmd.recipientId(),
+				cmd.mailinglistId(),
+				cmd.mediatype(),
+				cmd.userStatus()
+		));
+	}
+
+	@Override
+	public void batchUpdateBindings(List<CreateBindingCommand> bindings, int companyId) {
+		if (CollectionUtils.isEmpty(bindings)) {
+			return;
+		}
+		List<Object[]> batchArgs = bindings.stream()
+				.map(cmd -> new Object[]{
+						cmd.userStatus().getStatusCode(),
+						cmd.userRemark(),
+						cmd.mailinglistId(),
+						cmd.recipientId(),
+						cmd.mediatype().getMediaCode(),
+				})
+				.toList();
+		batchupdate("""
+						UPDATE customer_%d_binding_tbl SET
+						  user_status = ?,
+						  user_remark = ?,
+						  timestamp = CURRENT_TIMESTAMP
+						WHERE mailinglist_id = ?
+						  AND customer_id = ?
+						  AND mediatype = ?
+						""".formatted(companyId),
+				batchArgs
+		);
+		bindings.forEach(cmd -> fireBindingUpdated(
+				companyId,
+				cmd.recipientId(),
+				cmd.mailinglistId(),
+				cmd.mediatype(),
+				cmd.userStatus()
+		));
+	}
+
+	@Override
+	public Map<BindingIdentifier, UserStatus> getExistingState(ListBindingsFilter filter, int companyId) {
+		List<Integer> mediatypeCodes = filter.mediatypes().stream().map(MediaTypes::getMediaCode).toList();
+		return selectMap("""
+						SELECT
+						  mailinglist_id,
+						  customer_id,
+						  mediatype,
+						  user_status
+						FROM customer_%d_binding_tbl
+						WHERE %s AND %s AND %s""".formatted(
+						companyId,
+						makeBulkInClauseForInteger("mailinglist_id", filter.mailinglistIds()),
+						makeBulkInClauseForInteger("mediatype", mediatypeCodes),
+						makeBulkInClauseForInteger("customer_id", filter.recipientIds())
+				),
+				(rs, rowNum) -> Tuple.of(
+						new BindingIdentifier(
+								rs.getInt("customer_id"),
+								rs.getInt("mailinglist_id"),
+								MediaTypes.getMediaTypeForCode(rs.getInt("mediatype"))
+						),
+						UserStatus.getByCode(rs.getInt("user_status"))
+				)
+		);
 	}
 
     @Override

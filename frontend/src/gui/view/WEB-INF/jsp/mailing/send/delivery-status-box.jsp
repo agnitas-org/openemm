@@ -1,10 +1,10 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.maildrop.MaildropStatus" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="MAILDROP_STATUS_ADMIN" value="<%= MaildropStatus.ADMIN.getCodeString() %>"/>
 <c:set var="MAILDROP_STATUS_TEST" value="<%= MaildropStatus.TEST.getCodeString() %>"/>
@@ -16,6 +16,7 @@
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="copyCancelledMailingEnabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTransmissionRunning" type="java.lang.Boolean"--%>
 <%--@elvariable id="targetGroupsNames" type="java.util.List<java.lang.String>"--%>
 <%--@elvariable id="deliveryStat" type="com.agnitas.beans.DeliveryStat"--%>
@@ -76,7 +77,7 @@
                             </c:if>
                         </div>
 
-                        <p><mvc:message code="statistic.TotalMails"/></p>
+                        <p><mvc:message code="statistic.recipients.total"/></p>
                         <p><fmt:formatNumber type="number" pattern="###,###,###,###,##0" value="${deliveryStat.lastTotal}"/></p>
                     </div>
                 </div>
@@ -109,7 +110,7 @@
                         </c:if>
 
                         <c:if test="${deliveryStatus gt 1}">
-                            <p><mvc:message code="mailing.GeneratedMails"/></p>
+                            <p><mvc:message code="${isStandaloneSmsMailing ? 'mailing.status.generation-finished' : 'mailing.GeneratedMails'}"/></p>
                             <p><fmt:formatNumber type="number" pattern="###,###,###,###,##0" value="${deliveryStat.generatedMails}"/></p>
                         </c:if>
                     </div>
@@ -177,6 +178,14 @@
                 <div class="col-12">
                     <div class="notification-simple notification-simple--lg notification-simple--info">
                         <span><mvc:message code="mailing.ResumeDelivery.info" /></span>
+                    </div>
+                </div>
+            </c:if>
+
+            <c:if test="${isDeliveryThrottled}">
+                <div class="col-12">
+                    <div class="notification-simple notification-simple--lg notification-simple--info">
+                        <span><mvc:message code="info.mailing.send.resume"/></span>
                     </div>
                 </div>
             </c:if>

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -14,13 +14,20 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
+import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Recipient;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.action.service.EmmActionOperation;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.velocity.VelocityResult;
 import com.agnitas.emm.core.velocity.VelocityWrapper;
 import com.agnitas.emm.core.velocity.VelocityWrapperFactory;
@@ -29,44 +36,43 @@ import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.beans.BeanLookupFactory;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationType;
-import com.agnitas.emm.core.action.service.EmmActionOperation;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
-import com.agnitas.emm.core.service.RecipientFieldService;
 
-public class ActionOperationServiceMailImpl implements EmmActionOperation {
+public class ActionOperationServiceMailImpl implements EmmActionOperation<ActionOperationServiceMailParameters> {
 
 	private static final Logger logger = LogManager.getLogger(ActionOperationServiceMailImpl.class);
 
-	private JavaMailService javaMailService;
-	private ConfigService configService;
+	private final JavaMailService javaMailService;
+	private final ConfigService configService;
+	private final BeanLookupFactory beanLookupFactory;
+	private final BlacklistService blacklistService;
+	private final RecipientService recipientService;
+	private final RecipientFieldService recipientFieldService;
 
-	private BeanLookupFactory beanLookupFactory;
-	
-	private BlacklistService blacklistService;
-	private RecipientService recipientService;
-	private RecipientFieldService recipientFieldService;
+	public ActionOperationServiceMailImpl(
+			JavaMailService javaMailService,
+			ConfigService configService,
+			BeanLookupFactory beanLookupFactory,
+			BlacklistService blacklistService,
+			RecipientService recipientService,
+			RecipientFieldService recipientFieldService
+	) {
+		this.javaMailService = javaMailService;
+		this.configService = configService;
+		this.beanLookupFactory = beanLookupFactory;
+		this.blacklistService = blacklistService;
+		this.recipientService = recipientService;
+		this.recipientFieldService = recipientFieldService;
+	}
 
 	@Override
-	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
-		ActionOperationServiceMailParameters op = (ActionOperationServiceMailParameters) operation;
+	public boolean execute(
+			ActionOperationServiceMailParameters op,
+			Map<String, Object> params,
+			EmmActionOperationErrors actionOperationErrors
+	) {
 		int companyID = op.getCompanyId();
 
-		if (getRequestParameter(params, "sendServiceMail") != null && getRequestParameter(params, "sendServiceMail").equals("no")) {
-			/*
-			 * TODO Introduce info flags
-			 * 
-			 * Cannot use actionOperationErrors.addErrorCode(ErrorCode.SERVICE_MAIL_MANUALLY_BLOCKED);
-			 * Adding an error results in a failed execution.
-			 * 
-			 * Info flags can be used to indicate something like this (blocked sending service mail)
-			 * without signaling a failed execution of an action step
-			 */
+		if ("no".equals(getRequestParameter(params, "sendServiceMail"))) {
 			return true; // do nothing, manually blocked
 		}
 
@@ -81,8 +87,15 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				fromCustomer.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
 			}
 
-			Integer tmpNum = Integer.parseInt(getRequestParameter(params, "customerID"));
-			fromCustomer.setCustomerID(tmpNum.intValue());
+			Integer customerId;
+			try {
+                customerId = parseIntegerParam(getRequestParameter(params, "customerID"));
+            } catch (Exception e) {
+				actionOperationErrors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
+				return false;
+			}
+
+			fromCustomer.setCustomerID(customerId);
 			if (fromCustomer.getCustomerID() != 0) {
             	fromCustomer.setCustParameters(recipientService.getCustomerDataFromDb(companyID, fromCustomer.getCustomerID(), fromCustomer.getDateFormat()));
 			}
@@ -263,27 +276,4 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		}
 	}
 
-	public void setJavaMailService(JavaMailService javaMailService) {
-		this.javaMailService = javaMailService;
-	}
-
-	public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
-		this.beanLookupFactory = beanLookupFactory;
-	}
-
-	public void setBlacklistService(BlacklistService blacklistService) {
-		this.blacklistService = blacklistService;
-	}
-
-	public void setRecipientService(RecipientService recipientService) {
-		this.recipientService = recipientService;
-	}
-	
-	public void setConfigService(ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "ConfigService is null");
-	}
-	
-	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
-		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
-	}
 }

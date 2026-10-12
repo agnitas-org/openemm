@@ -71,6 +71,10 @@ public enum MediaTypes {
 	public int getMediaCode() {
 		return code;
 	}
+
+	public int getDefaultTypePriority() {
+		return defaultTypePriority;
+	}
 	
 	/**
 	 * Returns the media type for a given code or <code>null</code> if code is unknown.

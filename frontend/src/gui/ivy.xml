@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+    <info organisation="com.agnitas" module="gui">
+        <extends organisation="com.agnitas" module="core" revision="working@localhost"
+                 location="../../src/core/ivy.xml" extendType="all"/>
+    </info>
+
+    <configurations>
+        <conf name="compile"/>
+    </configurations>
+
+    <dependencies>
+        <dependency org="org.apache.tiles" name="tiles-jsp"                  rev="3.0.8-jakarta" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.tiles" name="tiles-servlet"              rev="3.0.8-jakarta" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.tiles" name="tiles-compat"               rev="3.0.8-jakarta" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.tiles" name="tiles-template"             rev="3.0.8-jakarta" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.tiles" name="tiles-autotag-core-runtime" rev="1.2-jakarta"   conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="org.apache.taglibs" name="taglibs-standard-spec" rev="1.2.5-jakarta" conf="compile->default;sources->sources(*)" transitive="false"/>
+        <dependency org="org.apache.taglibs" name="taglibs-standard-impl" rev="1.2.5-jakarta" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="org.quartz-scheduler" name="quartz" rev="2.3.2" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="com.openai" name="openai-java" rev="4.43.0" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="de.larsgrefer.sass" name="sass-embedded-host"         rev="4.4.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="de.larsgrefer.sass" name="sass-embedded-bundled-ia32" rev="4.2.0" conf="compile->default;sources->sources(*)" transitive="false"/>
+
+        <dependency org="commons-fileupload" name="commons-fileupload" rev="1.6.0-jakarta" conf="compile->default;sources->sources(*)"/>
+
+        <!--
+          barbecue: barcode library — custom build (2.0-dev), NOT on Maven Central.
+          Committed to git at libs/ivy-local/net/sourceforge/barbecue/barbecue/2.0-jakarta/.
+        -->
+        <dependency org="net.sourceforge.barbecue" name="barbecue" rev="2.0-jakarta" conf="compile->default;sources->sources(*)" transitive="false"/>
+
+        <dependency org="org.springframework.security" name="spring-security-config"                      rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-oauth2-jose"                 rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-oauth2-client"               rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-taglibs"                     rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-oauth2-resource-server"      rev="7.1.0" conf="compile->default;sources->sources(*)" transitive="false"/>
+        <dependency org="org.springframework.security" name="spring-security-oauth2-authorization-server" rev="7.1.0" conf="compile->default;sources->sources(*)" transitive="false"/>
+
+        <!-- okhttp/okio ship with openai-java-client-okhttp (transitive from openai-java) -->
+        <exclude org="com.squareup.okhttp3"/>
+        <exclude org="com.squareup.okio"/>
+        <!-- jcl-over-slf4j (from Tiles) conflicts with core's log4j-jcl — both implement JCL LogFactory -->
+        <exclude org="org.slf4j" module="jcl-over-slf4j"/>
+
+        <!-- 2.x Jackson Kotlin module pulled transitively from openai-java; not needed in gui -->
+        <exclude org="com.fasterxml.jackson.module" module="jackson-module-kotlin"/>
+
+        <!-- pure annotation JARs / unused connection pools from transitive deps -->
+        <exclude org="io.swagger.core.v3"    module="swagger-annotations"/>
+        <exclude org="com.google.errorprone" module="error_prone_annotations"/>
+        <exclude org="com.zaxxer"            module="HikariCP-java7"/>
+        <exclude org="com.mchange"/>
+        <exclude org="com.github.victools"/>
+
+        <override org="org.apache.tiles"   module="tiles-api"                  rev="3.0.8-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-core"                 rev="3.0.8-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-compat"               rev="3.0.8-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-jsp"                  rev="3.0.8-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-servlet"              rev="3.0.8-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-template"             rev="3.0.8-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-autotag-core-runtime" rev="1.2-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-request-api"          rev="1.0.7-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-request-jsp"          rev="1.0.7-jakarta"/>
+        <override org="org.apache.tiles"   module="tiles-request-servlet"      rev="1.0.7-jakarta"/>
+        <override org="org.apache.taglibs" module="taglibs-standard-spec"      rev="1.2.5-jakarta"/>
+        <override org="org.apache.taglibs" module="taglibs-standard-impl"      rev="1.2.5-jakarta"/>
+
+        <override org="org.apache.xmlrpc" module="xmlrpc-common"               rev="3.1.3-jakarta"/>
+        <override org="org.springframework"                                    rev="7.0.8"/>
+        <override org="org.springframework.security"                           rev="7.1.0"/>
+        <override org="com.nimbusds"       module="nimbus-jose-jwt"            rev="10.9"/>
+        <override org="com.google.protobuf"                                    rev="4.33.2"/>
+        <override org="commons-digester"   module="commons-digester"           rev="2.1"/>
+        <override org="commons-io"         module="commons-io"                 rev="2.20.0"/>
+
+        <override org="org.jetbrains.kotlin"                                   rev="2.4.10"/>
+    </dependencies>
+</ivy-module>

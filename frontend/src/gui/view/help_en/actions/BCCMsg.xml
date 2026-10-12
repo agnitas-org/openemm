@@ -1,4 +1,8 @@
 <HelpBalloon>
 	<title><![CDATA[BCC recipient]]></title>
-	<content><![CDATA[You may insert one or more BCC addresses (separated by comma). Every sent e-mail will be sent to this address(es) as well. Use this feature to archive e-mails sent to recipients.]]></content>
+	<content><![CDATA[You may insert one or more BCC addresses (separated by comma).
+			Every sent e-mail will be sent to this address(es) as well. Use this feature to archive e-mails sent to recipients.
+			<br><br>
+            <b>Note:</b>This feature will increase your email volume. Please always ensure that the receiving mailbox has sufficient storage capacity.
+]]></content>
 </HelpBalloon>

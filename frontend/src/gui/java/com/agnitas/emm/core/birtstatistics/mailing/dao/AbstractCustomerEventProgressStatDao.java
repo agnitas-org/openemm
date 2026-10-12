@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -67,9 +67,9 @@ public abstract class AbstractCustomerEventProgressStatDao extends BaseDaoImpl {
 
         switch (deviceFilterType) {
             case SINGLE ->
-                    appendSingleDeviceFilter(query, params, filter.getDeviceClass(), filter.getDateRange(), tableName, timestampColumnName);
+                    appendSingleDeviceFilter(query, params, filter.getEntityId(), filter.getDeviceClass(), filter.getDateRange(), tableName, timestampColumnName);
             case MULTI ->
-                    appendMultiDeviceFilter(query, params, filter.getDateRange(), tableName, timestampColumnName);
+                    appendMultiDeviceFilter(query, params, filter.getEntityId(), filter.getDateRange(), tableName, timestampColumnName);
         }
 
         query.append(getRangeFilterWithAnd("t." + timestampColumnName, filter.getDateRange(), params));
@@ -84,53 +84,43 @@ public abstract class AbstractCustomerEventProgressStatDao extends BaseDaoImpl {
     private void appendMultiDeviceFilter(
             StringBuilder sql,
             List<Object> params,
+            int entityId,
             DateRange dateRange,
             String tableName,
             String timestampColumnName
     ) {
         sql.append("""
-         AND (
-             SELECT COUNT(DISTINCT device_class_id)
+         AND t.customer_id IN (
+             SELECT t2.customer_id
              FROM %s t2
-             WHERE t.%s = t2.%s
-               AND t.customer_id = t2.customer_id
-        """.formatted(tableName, getKeyColumnName(), getKeyColumnName()));
+             WHERE t2.%s = ?
+        """.formatted(tableName, getKeyColumnName()));
+        params.add(entityId);
 
         sql.append(getRangeFilterWithAnd("t2." + timestampColumnName, dateRange, params));
-        sql.append(") > 1");
+        sql.append(" GROUP BY t2.customer_id HAVING COUNT(DISTINCT t2.device_class_id) > 1)");
     }
 
     private void appendSingleDeviceFilter(
             StringBuilder sql,
             List<Object> params,
+            int entityId,
             DeviceClass deviceClass,
             DateRange dateRange,
             String tableName,
             String timestampColumnName
     ) {
         sql.append("""
-         AND EXISTS (
-            SELECT 1 FROM %s t2
-            WHERE t.%s = t2.%s
-              AND t.customer_id = t2.customer_id
-              AND t2.device_class_id = ?
-        """.formatted(tableName, getKeyColumnName(), getKeyColumnName()));
+         AND t.customer_id IN (
+             SELECT t2.customer_id
+             FROM %s t2
+             WHERE t2.%s = ?
+        """.formatted(tableName, getKeyColumnName()));
+        params.add(entityId);
 
-        params.add(deviceClass.getId());
         sql.append(getRangeFilterWithAnd("t2." + timestampColumnName, dateRange, params));
-        sql.append(")");
-
-        sql.append("""
-         AND NOT EXISTS (
-             SELECT 1 FROM %s t3
-             WHERE t.%s = t3.%s
-               AND t.customer_id = t3.customer_id
-               AND t3.device_class_id != ?
-        """.formatted(tableName, getKeyColumnName(), getKeyColumnName()));
-
+        sql.append(" GROUP BY t2.customer_id HAVING COUNT(DISTINCT t2.device_class_id) = 1 AND MAX(t2.device_class_id) = ?)");
         params.add(deviceClass.getId());
-        sql.append(getRangeFilterWithAnd("t3." + timestampColumnName, dateRange, params));
-        sql.append(")");
     }
 
     private static boolean containsCustomerCondition(String targetSql) {

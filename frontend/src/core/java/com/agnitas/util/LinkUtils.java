@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -134,6 +134,16 @@ public class LinkUtils {
      * @return full url with extensions
      */
 	public static String getFullUrlWithExtensions(String linkString, List<LinkProperty> properties) {
+		return StringEscapeUtils.escapeHtml4(getPlainFullUrlWithExtensions(linkString, properties));
+	}
+
+	/**
+	 * Same as {@link #getFullUrlWithExtensions(String, List)}, but the result is not HTML-escaped.
+	 * Use it where the url is not rendered as HTML (e.g. in APIs), so that "&" is not returned as "&amp;".
+	 *
+	 * @return full url with extensions
+	 */
+	public static String getPlainFullUrlWithExtensions(String linkString, List<LinkProperty> properties) {
 		String directLink = linkString;
 
 		for (LinkProperty linkProperty : properties) {
@@ -145,7 +155,7 @@ public class LinkUtils {
 			}
 		}
 
-		return StringEscapeUtils.escapeHtml4(directLink);
+		return directLink;
 	}
 	
     public static String getFullUrlWithDtoExtensions(String linkString, List<ExtensionProperty> extensions) {

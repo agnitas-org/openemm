@@ -1,4 +1,4 @@
--- Exported at 2026.04.01 10:00:38
+-- Exported at 2026.10.05 10:00:15
 DELETE FROM admin_to_group_tbl WHERE admin_id = 1 AND admin_group_id = 1;
 INSERT INTO admin_to_group_tbl (admin_id, admin_group_id) VALUES (1, 1);
 
@@ -41,6 +41,8 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'import.mode.duplicates' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'import.mode.only_update' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'import.mode.unsubscribe' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'inbox.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'inbox.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'mailing.attachments.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'mailing.can_send_always' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'mailing.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
@@ -118,7 +120,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'workflow.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'workflow.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'workflow.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
-INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'inbox.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 
 -- User/Admin: EMM-Master
 DELETE FROM admin_permission_tbl WHERE admin_id = 1 AND permission_name NOT LIKE '%.migration';
@@ -159,6 +160,8 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'import.
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'import.mode.duplicates');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'import.mode.only_update');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'import.mode.unsubscribe');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'inbox.delete');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'inbox.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.attachments.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.can_send_always');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.change');
@@ -236,5 +239,3 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'workflo
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'workflow.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'workflow.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'workflow.show');
-INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'inbox.show');
-INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'inbox.delete');

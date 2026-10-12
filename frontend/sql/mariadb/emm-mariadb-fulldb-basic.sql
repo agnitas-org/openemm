@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -39,7 +39,7 @@ CREATE TABLE prevent_table_drop (
 
 CREATE TABLE auto_optimization_tbl (
 	company_id                 INT(11) DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
-	campaign_id                INT(11) DEFAULT 0 COMMENT 'ID of the mailing-archive',
+	bk_campaign_id                INT(11) DEFAULT 0 COMMENT 'ID of the mailing-archive',
 	description                VARCHAR(1000) DEFAULT '' COMMENT 'description on auto-optimization',
 	shortname                  VARCHAR(100) DEFAULT '' COMMENT 'auto-optimization name',
 	eval_type                  INT(11) DEFAULT 0 COMMENT 'threshold - evaluation type: 1 = open rate, 2 = clicks, 3 = sales volume',
@@ -70,17 +70,6 @@ CREATE TABLE auto_optimization_tbl (
 	PRIMARY KEY (optimization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'processing table for auto-optimization';
 
-CREATE TABLE bk_workflow_def_mailing_tbl (
-	id                         INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
-	company_id                 INT(11) NOT NULL COMMENT 'tenant - ID (company_tbl)',
-	reaction_id                INT(11) NOT NULL COMMENT 'reaction - ID (workflow_reaction_tbl)',
-	customer_id                INTEGER UNSIGNED NOT NULL COMMENT 'customer who has to receive deferred mailing - ID (customer_<cid>_tbl)',
-	mailing_id                 INT(11) NOT NULL COMMENT 'mailing - ID (mailing_tbl)',
-	send_date                  TIMESTAMP NOT NULL COMMENT 'calculated date when deferred mailing should be sent',
-	sent                       INT(1) NOT NULL COMMENT 'whether or not deferred mailing is already sent, 1 = yes, 0 = no',
-	PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores deferred mailings to be triggered by action-based workflow when specified date is reached, deprecated and must be removed from java code first';
-
 CREATE TABLE workflow_dependency_tbl (
 	company_id                 INT(11) NOT NULL COMMENT 'tenant - ID (company_tbl)',
 	workflow_id                INT(11) NOT NULL COMMENT 'workflow - ID (workflow_tbl)',
@@ -88,11 +77,6 @@ CREATE TABLE workflow_dependency_tbl (
 	entity_id                  INT(11) NOT NULL COMMENT 'identifier of an entity that a workflow depends on',
 	entity_name                VARCHAR(200) COMMENT 'name of an entity that a workflow depends on'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'lists the entities (mailings, archives, profile fields, etc) that a workflow depends on';
-
-CREATE TABLE bk_workflow_reaction_cust_tbl (
-	customer_id                INTEGER UNSIGNED,
-	PRIMARY KEY (customer_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'a temporary storage for filtering customers of action-based workflow, deprecated and must be removed from java code first';
 
 CREATE TABLE workflow_reaction_decl_tbl (
 	step_id                    INT(11) NOT NULL COMMENT 'identifies a step of campaign execution plan, unique within each campaign/reaction',
@@ -108,19 +92,6 @@ CREATE TABLE workflow_reaction_decl_tbl (
 	UNIQUE (step_id, reaction_id, company_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT 'contains the generic (declaration) action-based execution plan for campaigns (represents decisions and mailings), more: http://wiki.agnitas.local/doku.php?id=abteilung:technik:entwicklung:workflowmanager_workflow';
-
-CREATE TABLE bk_workflow_reaction_log_tbl (
-	reaction_id                INT(10) COMMENT 'reaction - ID (workflow_reaction_tbl)',
-	company_id                 INT(10) COMMENT 'tenant - ID (company_tbl)',
-	customer_id                INTEGER UNSIGNED COMMENT 'customer whose reaction has been registered and handled - ID (customer_<cid>_tbl)',
-	reaction_date              TIMESTAMP NULL COMMENT 'date when reaction has been handled'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores handled events watched by action-based workflow, deprecated and must be removed from java code first';
-
-CREATE TABLE bk_workflow_reaction_mailing_tbl (
-	company_id                 INTEGER NOT NULL COMMENT 'tenant - ID (company_tbl)',
-	reaction_id                INTEGER NOT NULL COMMENT 'reaction - ID (workflow_reaction_tbl)',
-	send_mailing_id            INTEGER NOT NULL COMMENT 'mailing - ID (mailing_tbl)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores list of scheduled mailings to be triggered by action-based workflow, deprecated and must be removed from java code first';
 
 CREATE TABLE workflow_reaction_out_tbl (
 	case_id                    INT(11) NOT NULL COMMENT 'references (along with step_id) a step (workflow_reaction_step_tbl)',
@@ -162,7 +133,6 @@ CREATE TABLE workflow_reaction_tbl (
 	mailinglist_id             INT(11) NOT NULL DEFAULT 0 COMMENT 'mailinglist that the reaction watching should be limited to - ID (mailinglist_tbl)',
 	PRIMARY KEY (reaction_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores customer reactions to be watched (core mechanism of action-based workflow)';
-CREATE INDEX workfl_react_l$cuid_rid$idx ON bk_workflow_reaction_log_tbl (customer_id, reaction_id);
 
 CREATE TABLE workflow_reminder_tbl (
 	reminder_id                INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
@@ -189,9 +159,6 @@ CREATE TABLE workflow_tbl (
 	company_id                 INT(11) NOT NULL COMMENT 'tenant - ID (company_tbl)',
 	shortname                  VARCHAR(100) NOT NULL COMMENT 'shortname of a workflow',
 	description                VARCHAR(1000) NOT NULL COMMENT 'description of a workflow',
-	bk_editor_position_left       INT(11) DEFAULT 0 COMMENT 'scroll offset of the workflow editor viewport, X-axis; pixels',
-	bk_editor_position_top        INT(11) DEFAULT 0 COMMENT 'scroll offset of the workflow editor viewport, Y-axis; pixels',
-	bk_is_inner                   INT(1) DEFAULT 0 COMMENT 'deprecated, must be removed from java code first',
 	status                     INT(1) DEFAULT 1 NOT NULL COMMENT 'current state of a workflow, 1 = open, 2 = active, 3 = deactivated, 4 = complete, 5 = testing, 6 = tested',
 	general_start_date         TIMESTAMP NULL COMMENT 'The earliest date configured by start icon(s)',
 	general_end_date           TIMESTAMP NULL NULL COMMENT 'The latest date configured by stop icon(s), set if a workflow is configured to end at specific date (end_type = 2)',
@@ -850,7 +817,6 @@ CREATE TABLE job_queue_tbl (
 	nextstart                  TIMESTAMP NULL COMMENT 'next execution is sheduled for this time',
 	hostname                   VARCHAR(64) COMMENT 'host to run this job on - wont be executed on other hosts with a running EMM - applikation',
     job_name                   VARCHAR(64) NOT NULL COMMENT 'Name of the job',
-	runClass                   VARCHAR(128) DEFAULT '' COMMENT 'java class to be executed',
 	runOnlyOnHosts             VARCHAR(64) COMMENT 'Optionally restricts execution of this job to a hostname list of servers like beta. If empty, then any server configured by config_tbl to execute jobs, will execute',
 	emailOnError               VARCHAR(64) COMMENT '[private_data] email - recipient for and error-reports',
 	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT '1 = yes',
@@ -941,6 +907,7 @@ CREATE TABLE mailing_account_tbl (
 	KEY mailing_acc$coid_mid_mdid$idx (company_id, mailing_id, maildrop_id),
 	KEY mailing_acc$mltp_nofm$idx (mailtype, no_of_mailings)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'logs detailinformation about sending-process';
+CREATE INDEX mailing_acc$coid_sf_mid$idx ON mailing_account_tbl (company_id, status_field,mailing_id);
 
 CREATE TABLE mailing_backend_log_tbl (
 	mailing_id                 INT(10) NOT NULL COMMENT 'references mailing (mailing_tbl)',
@@ -1034,7 +1001,9 @@ CREATE TABLE mailinglist_tbl (
 	company_id                 INT(10) UNSIGNED COMMENT 'tenant - ID (company_tbl)',
 	description                TEXT COMMENT 'comment on mailinglist',
 	shortname                  VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'mailinglist name',
-	auto_url                   VARCHAR(200) COMMENT 'legacy',
+    sender_name                VARCHAR(200) COMMENT 'Default sender name',
+    reply_to_name              VARCHAR(200) COMMENT 'Default reply-to name',
+    auto_url                   VARCHAR(200) COMMENT 'legacy',
 	remove_data                INT(10) DEFAULT 0 COMMENT 'legacy?',
 	rdir_domain                VARCHAR(200) COMMENT '(default) ridir domain for this mailinglist, overwrites company_id.rdir_domain, if NOT NULL',
 	creation_date              TIMESTAMP NULL COMMENT 'mailinglist creation date',
@@ -1181,6 +1150,7 @@ CREATE TABLE rdir_url_tbl (
 	static_value               INT(1) COMMENT 'If this value is 1 then the current value of referenced database columns are passed for redirect requests',
 	measured_separately        INT(1) NOT NULL DEFAULT 0 COMMENT 'track link on every position mode activated 1=yes, 0=no',
 	create_substitute_link     INTEGER(1) COMMENT '1 = create substitute link on link resolution (see LTS-376)',
+    emm_trigger                INT(1) DEFAULT 0 COMMENT 'Flag indicating whether the link originates from a tag with the emm-trigger-name or emm-trigger-id attribute.',
 	PRIMARY KEY (url_id),
 	KEY rdir_url$coid_mid$idx (company_id, mailing_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores links in mailings';
@@ -1765,12 +1735,6 @@ CREATE TABLE calendar_custom_recipients_tbl (
 	notified                   INT DEFAULT 0 NOT NULL COMMENT 'Was recipient notified yet'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Send comments on calendar dates to email addresses';
 
-CREATE TABLE sessionhijackingprevention_tbl (
-	ip_group                   INT(2) COMMENT 'Reference key',
-	ip                         VARCHAR(50) COMMENT 'IP entry for a whitelist group',
-	comments                   VARCHAR(200) COMMENT 'Description of this group'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Definition of groups which may change their request IP on an EMM without being blocked';
-
 CREATE TABLE landingpage_tbl (
 	domain                     VARCHAR(64) COMMENT 'Domain used in rdir request',
 	landingpage                VARCHAR(64) COMMENT 'Landingpage for redirect of rdir requests without any parameter',
@@ -1895,7 +1859,6 @@ CREATE TABLE recipients_report_tbl (
 	admin_id                   INTEGER NOT NULL COMMENT 'admin which executed the import or export',
 	company_id                 INTEGER NOT NULL COMMENT 'Referenced client',
 	report                     TEXT COMMENT 'Report text (HTML)',
-	type                       VARCHAR(15) NULL COMMENT '(Deprecated) Import or export',
 	download_id                INTEGER COMMENT 'Id of downloadable export file',
 	error                      INTEGER COMMENT 'Flag to show if this report contains description of an data error',
 	content                    LONGBLOB COMMENT 'Report data as file',
@@ -1906,7 +1869,6 @@ CREATE TABLE recipients_report_tbl (
 	PRIMARY KEY (recipients_report_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Report on executed recipient imports and exports';
 CREATE INDEX recrep$cidrepdate$idx ON recipients_report_tbl(report_date, company_id);
-CREATE INDEX recrep$cidaidty$idx ON recipients_report_tbl (admin_id, company_id, type);
 CREATE INDEX recrep$cid$idx ON recipients_report_tbl(company_id);
 
 CREATE TABLE birtreport_tbl (
@@ -2509,6 +2471,45 @@ CREATE TABLE ui_message_tbl(
 
 ALTER TABLE ui_message_tbl ADD CONSTRAINT uimessage$admin$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id);
 
+CREATE TABLE hp_clickranking_tbl
+(
+    url_id          INT(10) UNSIGNED NOT NULL COMMENT 'References rdir_url_tbl.url_id',
+    company_id      INT(11) UNSIGNED NOT NULL COMMENT 'ID of company',
+    url             TEXT             NOT NULL COMMENT 'References rdir_url_tbl.full_url',
+    topic           VARCHAR(50)      NOT NULL COMMENT 'References rdir_action_tbl.shortname. One of the keywords (given in attribute emm-trigger-name or - if former attribute does not exist - emm-trigger-id)',
+    count           INTEGER UNSIGNED NOT NULL COMMENT 'Total number of link clicks',
+    rank            INTEGER          NOT NULL COMMENT 'Position of the link in the hit list for the respective topic (keyword)',
+    first_clickdate TIMESTAMP        NOT NULL COMMENT 'First click on this link'
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT 'Stores the number of clicks per topic item to support ranking.';
+
+CREATE TABLE oauth2_auth_req_tbl
+(
+    state         VARCHAR(128) PRIMARY KEY COMMENT 'OAuth2 state parameter - used as PK and CSRF protection token',
+    request_json  TEXT      NOT NULL COMMENT 'Serialized OAuth2 authorization request (JSON)',
+    admin_id      INT       NOT NULL COMMENT 'Admin user initiating the OAuth2 binding flow - ID (admin_tbl)',
+    company_id    INT(11) UNSIGNED NOT NULL COMMENT 'Tenant ID (company_tbl)',
+    creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation timestamp',
+    expiry_date   TIMESTAMP NOT NULL COMMENT 'Expiry timestamp - request must be completed before this time'
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='Temporary store for OAuth2 authorization requests during binding flow';
+ALTER TABLE oauth2_auth_req_tbl
+    ADD CONSTRAINT oauth2authreq$adminid$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id) ON DELETE CASCADE;
+ALTER TABLE oauth2_auth_req_tbl
+    ADD CONSTRAINT oauth2authreq$cid$fk FOREIGN KEY (company_id) REFERENCES company_tbl (company_id);
+
+CREATE TABLE oauth2_ext_identity_tbl
+(
+    id            INT          NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT 'Unique record ID',
+    admin_id      INT          NOT NULL COMMENT 'EMM admin linked to the external identity - ID (admin_tbl)',
+    company_id    INT(11) UNSIGNED NOT NULL COMMENT 'Tenant ID (company_tbl)',
+    issuer        VARCHAR(300) NOT NULL COMMENT 'OAuth2/OIDC issuer URL identifying the identity provider',
+    subject       VARCHAR(300) NOT NULL COMMENT 'Subject identifier from the identity provider (unique user ID within issuer)',
+    creation_date TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation timestamp',
+    UNIQUE (issuer, subject)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='Maps EMM user accounts to external OAuth2/OIDC identities';
+ALTER TABLE oauth2_ext_identity_tbl
+    ADD CONSTRAINT oauth2extid$adminid$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id) ON DELETE CASCADE;
+ALTER TABLE oauth2_ext_identity_tbl
+    ADD CONSTRAINT oauth2extid$cid$fk FOREIGN KEY (company_id) REFERENCES company_tbl (company_id);
 
 INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'Settings', 1, CURRENT_TIMESTAMP);
 INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'mailing.searchContent', 2, CURRENT_TIMESTAMP);
@@ -3336,48 +3337,44 @@ INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, targe
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 	VALUES (1, 'EMM Target Group: Untouched', '(to_char(cust.timestamp, ''YYYYMMDD'') < to_char((SYSDATE) - (180), ''YYYYMMDD''))', '`timestamp` < TODAY-180 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('BirtReports', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'BirtReports', 'com.agnitas.emm.core.birtreport.service.BirtReportJobWorker', 0, 4);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('BirtReports', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'BirtReports',  0, 4);
 
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'LoginTrackTableCleaner','com.agnitas.util.quartz.LoginTrackTableCleanerJobWorker', 0, 3);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'LoginTrackTableCleaner', 0, 3);
 INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'retentionTime', '14');
 INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'deleteBlockSize', '1000');
 
-INSERT INTO job_queue_tbl ( description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, job_comment, criticality)
-	VALUES ('DBCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '0000', CURRENT_TIMESTAMP, NULL, 'DBCleaner', 'com.agnitas.util.quartz.DBCleanerJobWorker', 0, 'DbCleaner running from 0-3am, Do not change intervalpattern Except ISMF has ordered changing!', 2);
-INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) (SELECT id, 'maxNumberOfCompanyCleaningWorkers', '3' FROM job_queue_tbl WHERE description = 'DBCleaner');
-
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'CalendarCommentMailingService', 'com.agnitas.emm.core.calendar.service.CalendarCommentMailingServiceJobWorker', 0, 3);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '0130', CURRENT_TIMESTAMP, NULL, 'UndoRelictCleaner', 'com.agnitas.service.job.UndoRelictCleanerJobWorker', 0, 2);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('AutoOptimization', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'AutoOptimization', 'com.agnitas.mailing.autooptimization.service.OptimizationJobWorker', 0, 5);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'DBErrorCheck','com.agnitas.util.quartz.DBErrorCheckJobWorker', 0, 3);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('WebserviceLoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'WebserviceLoginTrackTableCleaner', 'com.agnitas.util.quartz.WebserviceLoginTrackTableCleanerJobWorker', 0, 1);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted)
-	VALUES ('RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'RefreshUserLastLogin', 'com.agnitas.service.job.RefreshUserLastLoginJobWorker', 0);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, criticality, deleted)
-	VALUES ('AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '0000', CURRENT_TIMESTAMP, null, 'AnonymizeStatistics', 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 1, 0);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('WorkflowReminderService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'WorkflowReminderService', 'com.agnitas.emm.core.workflow.service.WorkflowReminderServiceJobWorker', 0, 4);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('WorkflowReactionHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'WorkflowReactionHandler','com.agnitas.emm.core.workflow.service.jobs.WorkflowReactionJobWorker', 0, 5);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	VALUES ('WorkflowStateHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'WorkflowStateHandler', 'com.agnitas.emm.core.workflow.service.jobs.WorkflowStateTransitionJobWorker', 0, 5);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-    VALUES ('DiskSpaceCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'DiskSpaceCheck', 'com.agnitas.emm.core.serverstatus.service.job.DiskSpaceCheckJobWorker', 0, 3);
-INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-	(SELECT MAX(id) + 1, 'MigrationJobWorker', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, 'MoTuWeThFr:1500', CURRENT_TIMESTAMP, null, 'MigrationJobWorker', 'com.agnitas.service.job.MigrationJobWorker', 0, 4  FROM job_queue_tbl);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, runclass, deleted, criticality)
-    VALUES ('UpdatePasswordReminder', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '0800', CURRENT_TIMESTAMP, NULL, 'UpdatePasswordReminder', 'com.agnitas.service.job.UpdatePasswordReminderJobWorker', 0, 1);
-INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, job_name, criticality)
-    VALUES ('WebhookMessageDelivery', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.webhooks.jobqueue.WebhookMessageSenderJobWorker', 0, 'WebhookMessageDelivery', 5);
-INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, job_name, criticality)
-    VALUES ('WebhookBackendDataMessageGenerator', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.webhooks.jobqueue.WebhookBackendDataMessageGeneratorJobWorker', 0, 'WebhookBackendDataMessageGenerator', 5);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'CalendarCommentMailingService', 0, 3);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '0130', CURRENT_TIMESTAMP, NULL, 'UndoRelictCleaner',  0, 2);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('AutoOptimization', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'AutoOptimization',  0, 5);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'DBErrorCheck', 0, 3);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('WebserviceLoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'WebserviceLoginTrackTableCleaner', 0, 1);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted)
+	VALUES ('RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'RefreshUserLastLogin',  0);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, criticality, deleted)
+	VALUES ('AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '0000', CURRENT_TIMESTAMP, null, 'AnonymizeStatistics', 1, 0);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('WorkflowReminderService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'WorkflowReminderService', 0, 4);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('WorkflowReactionHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'WorkflowReactionHandler', 0, 5);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	VALUES ('WorkflowStateHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'WorkflowStateHandler',  0, 5);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+    VALUES ('DiskSpaceCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'DiskSpaceCheck', 0, 3);
+INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+	(SELECT MAX(id) + 1, 'MigrationJobWorker', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, 'MoTuWeThFr:1500', CURRENT_TIMESTAMP, null, 'MigrationJobWorker', 0, 4  FROM job_queue_tbl);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted, criticality)
+    VALUES ('UpdatePasswordReminder', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '0800', CURRENT_TIMESTAMP, NULL, 'UpdatePasswordReminder',  0, 1);
+INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, deleted, job_name, criticality)
+    VALUES ('WebhookMessageDelivery', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 0, 'WebhookMessageDelivery', 5);
+INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, deleted, job_name, criticality)
+    VALUES ('WebhookBackendDataMessageGenerator', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 0, 'WebhookBackendDataMessageGenerator', 5);
 
 
 INSERT INTO mailinglist_tbl (company_id, description, shortname, auto_url, remove_data, rdir_domain, creation_date, change_date)
@@ -3927,5 +3924,25 @@ INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timesta
     VALUES ('25.10.315', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
     VALUES ('25.10.428', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.01.093', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.01.263', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.01.313', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.04.107', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.04.139', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.04.259', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.04.389', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.04.401', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('26.04.405', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

@@ -56,10 +56,10 @@ function getVersionNumber {
 }
 
 echo "Droping database ${dbname}"
-echo "DROP DATABASE IF EXISTS ${dbname};" | MYSQL_PWD=${password} mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --default-character-set=utf8
+echo "DROP DATABASE IF EXISTS ${dbname};" | mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --password="${password}" --default-character-set=utf8
 
 echo "Creating database ${dbname}"
-echo "CREATE DATABASE ${dbname} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | MYSQL_PWD=${password} mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --default-character-set=utf8
+echo "CREATE DATABASE ${dbname} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --password="${password}" --default-character-set=utf8
 
 sqlScriptsToDo=""
 
@@ -73,7 +73,7 @@ if [ -e "${scriptDir}/emm-mariadb-test.sql" ]; then {
 for sqlfilename in ${sqlScriptsToDo}; do
 	echo "Executing ${sqlfilename}"
 	
-	MYSQL_PWD=${password} mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
+	mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --password="${password}" --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 
 	if [ $? != 0 ]; then {
 		echo "Error in sql script ${sqlfilename}"
@@ -86,7 +86,7 @@ sqlScriptsToDo=""
 for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mariadb-update-*.sql" | sort`;do
 	updatefileVersion=$(getVersionNumber ${sqlfilename})
 	
-	versionAlreadyInDb=`echo "SELECT version_number FROM agn_dbversioninfo_tbl WHERE version_number = '${updatefileVersion}';" | MYSQL_PWD=${password} mariadb -h ${hostname} -P ${port} --protocol=TCP -u ${username} --database=${dbname} --default-character-set=utf8`
+	versionAlreadyInDb=`echo "SELECT version_number FROM agn_dbversioninfo_tbl WHERE version_number = '${updatefileVersion}';" | mariadb -h ${hostname} -P ${port} --protocol=TCP -u ${username} --password="${password}" --database=${dbname} --default-character-set=utf8`
 
 	if [[ ${versionAlreadyInDb} == *${updatefileVersion}* ]]; then {
 		if [ "${updatefileVersion}" == "" ]; then {
@@ -117,7 +117,7 @@ sqlScriptsToDo+=" ${scriptDir}/emm-mariadb-migration.sql"
 for sqlfilename in ${sqlScriptsToDo}; do
 	echo "Executing ${sqlfilename}"
 	
-	MYSQL_PWD=${password} mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
+	mariadb -h ${hostname} -P ${port} --protocol tcp -u ${username} --password="${password}" --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 
 	if [ $? != 0 ]; then {
 		echo "Error in sql script ${sqlfilename}"

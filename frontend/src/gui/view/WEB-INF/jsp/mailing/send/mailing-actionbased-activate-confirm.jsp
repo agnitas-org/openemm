@@ -6,6 +6,7 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
 <%--@elvariable id="mailingSubject" type="java.lang.String"--%>
 <%--@elvariable id="thumbnailComponentId" type="java.lang.Integer"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.String"--%>
 
 <div class="modal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -20,8 +21,6 @@
                 </button>
             </div>
             <div class="modal-body">
-                <%@ include file="fragments/mailing-size-message-initialize.jspf" %>
-
                 <div class="d-flex gap-3 align-items-center">
                     <c:choose>
                         <c:when test="${not empty thumbnailComponentId and thumbnailComponentId gt 0}">
@@ -35,30 +34,33 @@
                         </c:otherwise>
                     </c:choose>
 
-                    <div class="bordered-box-xs min-w-0" style="flex: 210">
+                    <div class="bordered-box-xs min-w-0 flex-center" style="flex: 210">
                         <img src="${previewUrl}" alt="Mailing thumbnail" class="img-fluid">
                     </div>
 
-                    <div class="d-flex flex-column gap-3 min-w-0" style="flex: 360">
-                        <div>
-                            <label class="form-label">
-                                <i class="icon icon-pen"></i>
-                                <mvc:message code="mailing.Subject"/>
-                            </label>
+                    <c:if test="${not isStandaloneSmsMailing}">
+                        <div class="d-flex flex-column gap-3 min-w-0" style="flex: 360">
+                            <div>
+                                <label class="form-label">
+                                    <i class="icon icon-pen"></i>
+                                    <mvc:message code="mailing.Subject"/>
+                                </label>
 
-                            <p class="text-truncate">${mailingSubject}</p>
+                                <p class="text-truncate">${mailingSubject}</p>
+                            </div>
+
+                            <div>
+                                <label class="form-label">
+                                    <i class="icon icon-weight-hanging"></i>
+                                    <mvc:message code="default.Size"/>
+                                </label>
+
+                                <%@ include file="fragments/mailing-size-message-initialize.jspf" %>
+                                <%-- Show the size value at least in KB since the byte number is inaccurate anyway --%>
+                                <p class="text-truncate">${sizeMessage}</p>
+                            </div>
                         </div>
-
-                        <div>
-                            <label class="form-label">
-                                <i class="icon icon-weight-hanging"></i>
-                                <mvc:message code="default.Size"/>
-                            </label>
-
-                            <%-- Show the size value at least in KB since the byte number is inaccurate anyway --%>
-                            <p class="text-truncate">${sizeMessage}</p>
-                        </div>
-                    </div>
+                    </c:if>
                 </div>
             </div>
 

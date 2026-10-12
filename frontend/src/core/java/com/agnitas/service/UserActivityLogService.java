@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -15,10 +15,13 @@ import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.useractivitylog.bean.McpToolAction;
+import com.agnitas.emm.core.useractivitylog.bean.McpUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
+import com.agnitas.emm.core.useractivitylog.forms.McpUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.SoapUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
@@ -30,7 +33,7 @@ import org.apache.logging.log4j.Logger;
 public interface UserActivityLogService {
 
 	enum UserType {
-		GUI, SOAP, REST
+		GUI, SOAP, REST, MCP
 	}
 
 	void deleteActivity(List<Admin> admins);
@@ -39,9 +42,13 @@ public interface UserActivityLogService {
 
 	Set<String> getAvailableUsernames(Admin admin, UserType userType);
 
+	Set<String> getAvailableMcpSources(Admin admin);
+
 	PaginatedList<LoggedUserAction> getUserActivityLogByFilter(UserActivityLogFilter filter, Admin admin);
 
 	PaginatedList<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(RestfulUserActivityLogFilter filter, Admin admin);
+
+	PaginatedList<McpUserActivityAction> getMcpUserActivityLogByFilter(McpUserActivityLogFilter filter, Admin admin);
 
 	PaginatedList<SoapUserActivityAction> getSoapUserActivityLogByFilter(SoapUserActivityLogFilter filter, Admin admin);
 
@@ -57,6 +64,8 @@ public interface UserActivityLogService {
 	void writeUserActivityLog(Admin admin, String action, String description);
 
 	void writeRestUserActivityLog(RestUserAction action, Admin admin);
+
+	void writeMcpUserActivityLog(McpToolAction action, Admin admin);
 
 	/**
 	 * Write user activity log for given {@link Admin}.

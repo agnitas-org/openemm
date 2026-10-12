@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -25,6 +25,7 @@ import com.agnitas.emm.core.components.entity.MailGenerationOptimizationMode;
 import com.agnitas.backend.dao.MaildropStatusDAO;
 import com.agnitas.backend.exceptions.CancelException;
 import com.agnitas.util.Log;
+import com.agnitas.util.Systemconfig;
 
 public class MaildropStatus {
 	/**
@@ -47,6 +48,10 @@ public class MaildropStatus {
 	 * maildrop status table senddate
 	 */
 	private Date sendDate;
+	/**
+	 * the origin of this record
+	 */
+	private String origin;
 	/**
 	 * maildrop status table max_recipients
 	 */
@@ -95,6 +100,7 @@ public class MaildropStatus {
 			id = nId;
 			statusField = null;
 			sendDate = null;
+			origin (Systemconfig.fqdn);
 			maildrop = new MaildropStatusDAO(data.dbase, id);
 			if (maildrop.statusID() == 0L) {
 				maildrop = null;
@@ -124,6 +130,14 @@ public class MaildropStatus {
 
 	public void sendDate(Date nSendDate) {
 		sendDate = nSendDate;
+	}
+	
+	public String origin () {
+		return origin;
+	}
+	
+	public void origin (String nOrigin) {
+		origin = nOrigin != null ? nOrigin : "-";
 	}
 
 	public long limitReceivers() {
@@ -166,6 +180,7 @@ public class MaildropStatus {
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.id = " + id);
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.statusField = " + statusField);
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.sendDate = " + sendDate);
+		data.logging(Log.DEBUG, "init", "\tmaildropStatus.origin = " + origin);
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.limitReceivers = " + limitReceivers);
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.adminTestTargetID = " + adminTestTargetID);
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.adminTestTargetSQL = " + (adminTestTargetSQL == null ? "*unset*" : adminTestTargetSQL.getSQL(true)));
@@ -231,6 +246,7 @@ public class MaildropStatus {
 		data.mailing.id (maildrop.mailingID ());
 		statusField (maildrop.statusField ());
 		sendDate (maildrop.sendDate ());
+		origin (maildrop.origin ());
 		limitReceivers = maildrop.maxRecipients ();
 		adminTestTargetID = maildrop.adminTestTargetID ();
 		optimizeMailGeneration = maildrop.optimizeMailGeneration ();
@@ -373,15 +389,6 @@ public class MaildropStatus {
 			}
 		} else {
 			throw new Exception ("status entry for id " + id + " does not exist");
-		}
-	}
-
-	public void removeEntry() throws SQLException{
-		if (exists()) {
-			if (!maildrop.remove(data.dbase)) {
-				data.logging(Log.WARNING, "remove", "Tried to remove non existing entry in maildrop status table for " + id);
-			}
-			maildrop = null;
 		}
 	}
 }

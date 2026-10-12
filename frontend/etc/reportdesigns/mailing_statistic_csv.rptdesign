@@ -113,10 +113,10 @@ function tr(key) {
 ReportProperties = Packages.com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties;
 BirtReportSettingsUtils = Packages.com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils
 
-showSoftbounces = BirtReporUtils.isOptionAllowed("softbounces", params["figures"]);
-showHardbounces = BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]);
+showSoftbounces = BirtReportUtils.isOptionAllowed("softbounces", params["figures"]);
+showHardbounces = BirtReportUtils.isOptionAllowed("hardbounces", params["figures"]);
 
-if (!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value)) {
+if (!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value)) {
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksHeader").drop();
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksContent").drop();
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("LinkClicksTotals").drop();
@@ -138,7 +138,11 @@ if (params["startDate"] != null) {
 	dateFormats = mailingStatisticDataSet.getDateFormatsInstance(params["startDate"], params["stopDate"], false);
 }
 mailingSummaryData = mailingStatisticDataSet.getSummaryData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, params["figures"], dateFormats);
-mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, dateFormats);
+if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value)) {
+	mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, dateFormats);
+} else {
+	mailingClicksData = new Packages.java.util.ArrayList();
+}
 
 deviceStatistic = devicesStatDataSet.getMailingReportDevicesStat(params["companyID"], targetGroups, hiddenTargetGroup, params["selectedMailings"], params["figures"], 10, params["language"]);
 
@@ -1540,41 +1544,45 @@ return false;
             </structure>
             <property name="dataSource">DummyDataSource</property>
             <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+importPackage(Packages.com.agnitas.reporting.birt.external.utils);
 importPackage(Packages.java.lang);
 
-var mailingIds = (new String(params["selectedMailings"])).split(",").map(function(item) {
-    return parseInt(item);
-});
+if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value)) {
+	var mailingIds = (new String(params["selectedMailings"])).split(",").map(function(item) {
+	    return parseInt(item);
+	});
 
-logger = Packages.org.apache.logging.log4j.LogManager.getLogger('birt logger');
+	logger = Packages.org.apache.logging.log4j.LogManager.getLogger('birt logger');
 
-var companyID = params['companyID'].value;
-var selectedTargets = params["targetGroups"].value;
-var maxDomains = 15;
-var language = params['language'].value;
-var topLevelDomain = false;
+	var companyID = params['companyID'].value;
+	var selectedTargets = params["targetGroups"].value;
+	var maxDomains = 15;
+	var language = params['language'].value;
+	var topLevelDomain = false;
 
-var topDomainsDataSet = new TopDomainsDataSet();
+	var topDomainsDataSet = new TopDomainsDataSet();
 
-var tempTableID = topDomainsDataSet.prepareReport(mailingIds[0], companyID, selectedTargets, maxDomains, language, topLevelDomain);
-dataTopDomainsSentEmails = topDomainsDataSet.getResultsFromTempTable(tempTableID);
+	var tempTableID = topDomainsDataSet.prepareReport(mailingIds[0], companyID, selectedTargets, maxDomains, language, topLevelDomain);
+	dataTopDomainsSentEmails = topDomainsDataSet.getResultsFromTempTable(tempTableID);
 
-for (var i = 0; i < dataTopDomainsSentEmails.size(); i++) {
-	dataTopDomainsSentEmails.get(i).setMailingId(mailingIds[0]);				
-}	
+	for (var i = 0; i < dataTopDomainsSentEmails.size(); i++) {
+		dataTopDomainsSentEmails.get(i).setMailingId(mailingIds[0]);
+	}
 
-for (var i = 1; i < mailingIds.length; i++) {
-	var tempTableID = topDomainsDataSet.prepareReport(mailingIds[i], companyID, selectedTargets, maxDomains, language, topLevelDomain);
-	
-	var mailingDomainsStat = topDomainsDataSet.getResultsFromTempTable(tempTableID)
+	for (var i = 1; i < mailingIds.length; i++) {
+		var tempTableID = topDomainsDataSet.prepareReport(mailingIds[i], companyID, selectedTargets, maxDomains, language, topLevelDomain);
 
-	for (var j = 0; j < mailingDomainsStat.size(); j++) {
-		mailingDomainsStat.get(j).setMailingId(mailingIds[i]);				
-	}	
-	
-	dataTopDomainsSentEmails.addAll(mailingDomainsStat);
+		var mailingDomainsStat = topDomainsDataSet.getResultsFromTempTable(tempTableID)
+
+		for (var j = 0; j < mailingDomainsStat.size(); j++) {
+			mailingDomainsStat.get(j).setMailingId(mailingIds[i]);
+		}
+
+		dataTopDomainsSentEmails.addAll(mailingDomainsStat);
+	}
+} else {
+	dataTopDomainsSentEmails = new Packages.java.util.ArrayList();
 }
-
 
 currentRow = 0;
 ]]></method>
@@ -2252,23 +2260,23 @@ this.text = "\"" + namesList + "\"";
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([
 	
-BirtReporUtils.BirtReportFigure.MAILING_NAME.value,
-BirtReporUtils.BirtReportFigure.MAILING_ID.value,
-BirtReporUtils.BirtReportFigure.DESCRIPTION.value,
-BirtReporUtils.BirtReportFigure.ARCHIVE.value,
-BirtReporUtils.BirtReportFigure.MAIL_FORMAT.value,
+BirtReportUtils.BirtReportFigure.MAILING_NAME.value,
+BirtReportUtils.BirtReportFigure.MAILING_ID.value,
+BirtReportUtils.BirtReportFigure.DESCRIPTION.value,
+BirtReportUtils.BirtReportFigure.ARCHIVE.value,
+BirtReportUtils.BirtReportFigure.MAIL_FORMAT.value,
 
-BirtReporUtils.BirtReportFigure.AVERAGE_SIZE.value,
-BirtReporUtils.BirtReportFigure.SUBJECT.value,
-BirtReporUtils.BirtReportFigure.MAILING_LIST.value,
-BirtReporUtils.BirtReportFigure.TARGET_GROUPS.value,
-BirtReporUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO.value,
-BirtReporUtils.BirtReportFigure.SENDING_STARTED.value,
-BirtReporUtils.BirtReportFigure.SENDING_FINISHED.value,
-BirtReporUtils.BirtReportFigure.SENDER_INFO.value,
-BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
+BirtReportUtils.BirtReportFigure.AVERAGE_SIZE.value,
+BirtReportUtils.BirtReportFigure.SUBJECT.value,
+BirtReportUtils.BirtReportFigure.MAILING_LIST.value,
+BirtReportUtils.BirtReportFigure.TARGET_GROUPS.value,
+BirtReportUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO.value,
+BirtReportUtils.BirtReportFigure.SENDING_STARTED.value,
+BirtReportUtils.BirtReportFigure.SENDING_FINISHED.value,
+BirtReportUtils.BirtReportFigure.SENDER_INFO.value,
+BirtReportUtils.BirtReportFigure.REPLY_TO_INFO.value
 
 ], params["figures"].value);</expression>
                         </structure>
@@ -2303,7 +2311,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_NAME, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAILING_NAME, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3290">
@@ -2325,7 +2333,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_ID, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAILING_ID, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="4640">
@@ -2347,7 +2355,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.DESCRIPTION, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.DESCRIPTION, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3295">
@@ -2368,7 +2376,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ARCHIVE, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ARCHIVE, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3300">
@@ -2389,7 +2397,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAIL_FORMAT, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAIL_FORMAT, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3305">
@@ -2410,7 +2418,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.AVERAGE_SIZE, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.AVERAGE_SIZE, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3310">
@@ -2431,7 +2439,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SUBJECT, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SUBJECT, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3315">
@@ -2452,7 +2460,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_LIST, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAILING_LIST, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3320">
@@ -2473,7 +2481,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TARGET_GROUPS, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TARGET_GROUPS, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3325">
@@ -2494,7 +2502,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3334">
@@ -2515,7 +2523,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_STARTED, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENDING_STARTED, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3339">
@@ -2536,7 +2544,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_FINISHED, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENDING_FINISHED, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3344">
@@ -2557,7 +2565,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDER_INFO, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENDER_INFO, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3822">
@@ -2578,7 +2586,7 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.REPLY_TO_INFO, params["figures"]);</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.REPLY_TO_INFO, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3825">
@@ -2600,20 +2608,20 @@ BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([
 	
-BirtReporUtils.BirtReportFigure.SENT_MAILS.value,
-BirtReporUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
-BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value,
-BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
-BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value,
-BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
-BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value,
-BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
-BirtReporUtils.BirtReportFigure.SIGNED_OFF.value,
-BirtReporUtils.BirtReportFigure.SOFTBOUNCES.value,
-BirtReporUtils.BirtReportFigure.HARDBOUNCES.value,
-BirtReporUtils.BirtReportFigure.REVENUE.value
+BirtReportUtils.BirtReportFigure.SENT_MAILS.value,
+BirtReportUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
+BirtReportUtils.BirtReportFigure.OPENERS_MEASURED.value,
+BirtReportUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
+BirtReportUtils.BirtReportFigure.OPENERS_TOTAL.value,
+BirtReportUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
+BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL.value,
+BirtReportUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
+BirtReportUtils.BirtReportFigure.SIGNED_OFF.value,
+BirtReportUtils.BirtReportFigure.SOFTBOUNCES.value,
+BirtReportUtils.BirtReportFigure.HARDBOUNCES.value,
+BirtReportUtils.BirtReportFigure.REVENUE.value
 
 ], params["figures"].value);</expression>
                         </structure>
@@ -2724,7 +2732,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                             <property name="level">CategoryIndexGroup/category_index</property>
                                             <property name="filter">
                                                 <filter-condition-element>
-                                                    <expression name="expr" type="javascript">BirtReporUtils.isCategoryAllowed(data["category_index"], params["figures"])</expression>
+                                                    <expression name="expr" type="javascript">BirtReportUtils.isCategoryAllowed(data["category_index"], params["figures"])</expression>
                                                     <property name="operator">is-true</property>
                                                     <property name="updateAggregation">true</property>
                                                 </filter-condition-element>
@@ -2802,20 +2810,20 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([
 	
-BirtReporUtils.BirtReportFigure.SENT_MAILS.value,
-BirtReporUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
-BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value,
-BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
-BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value,
-BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
-BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value,
-BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
-BirtReporUtils.BirtReportFigure.SIGNED_OFF.value,
-BirtReporUtils.BirtReportFigure.SOFTBOUNCES.value,
-BirtReporUtils.BirtReportFigure.HARDBOUNCES.value,
-BirtReporUtils.BirtReportFigure.REVENUE.value
+BirtReportUtils.BirtReportFigure.SENT_MAILS.value,
+BirtReportUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
+BirtReportUtils.BirtReportFigure.OPENERS_MEASURED.value,
+BirtReportUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
+BirtReportUtils.BirtReportFigure.OPENERS_TOTAL.value,
+BirtReportUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
+BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL.value,
+BirtReportUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
+BirtReportUtils.BirtReportFigure.SIGNED_OFF.value,
+BirtReportUtils.BirtReportFigure.SOFTBOUNCES.value,
+BirtReportUtils.BirtReportFigure.HARDBOUNCES.value,
+BirtReportUtils.BirtReportFigure.REVENUE.value
 
 ], params["figures"].value);</expression>
                         </structure>
@@ -2895,7 +2903,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.HTML.value, BirtReportUtils.BirtReportFigure.TEXT.value, BirtReportUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
                         </structure>
                     </list-property>
                     <column id="4643"/>
@@ -3038,7 +3046,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.HTML.value, BirtReportUtils.BirtReportFigure.TEXT.value, BirtReportUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -3088,7 +3096,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                         </structure>
                     </list-property>
                     <column id="4628"/>
@@ -3264,7 +3272,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -4829,7 +4837,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("softbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
                     <column id="4659"/>
@@ -4846,7 +4854,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("softbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5017,7 +5025,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["bouncesExpired"] == false &amp;&amp; row._outer["softbouncesDataExists"] == true)</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["bouncesExpired"] == false &amp;&amp; row._outer["softbouncesDataExists"] == true)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5083,7 +5091,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["bouncesExpired"] == true || row._outer["softbouncesDataExists"] == false)</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["bouncesExpired"] == true || row._outer["softbouncesDataExists"] == false)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5173,7 +5181,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("softbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
                     <column id="9817"/>
@@ -5188,7 +5196,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || ((row._outer["undeliveredCount"] &lt; 1) || (reportContext.getPersistentGlobalVariable("successTableActivated") == false))</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("softbounces", params["figures"]) || ((row._outer["undeliveredCount"] &lt; 1) || (reportContext.getPersistentGlobalVariable("successTableActivated") == false))</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5300,7 +5308,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
                     <column id="4634"/>
@@ -5319,7 +5327,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5457,7 +5465,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]) || (row._outer["bouncesExpired"] == false &amp;&amp; row._outer["hardbouncesDataExists"] == true)</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("hardbounces", params["figures"]) || (row._outer["bouncesExpired"] == false &amp;&amp; row._outer["hardbouncesDataExists"] == true)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5523,7 +5531,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]) || (row._outer["bouncesExpired"] == true || row._outer["hardbouncesDataExists"] == false)</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed("hardbounces", params["figures"]) || (row._outer["bouncesExpired"] == true || row._outer["hardbouncesDataExists"] == false)</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -5613,7 +5621,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
                         </structure>
                     </list-property>
                     <column id="3684"/>
@@ -5626,7 +5634,7 @@ isShowLink = true;	]]></method>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">

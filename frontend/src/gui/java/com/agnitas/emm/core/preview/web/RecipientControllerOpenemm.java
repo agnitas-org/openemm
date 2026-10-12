@@ -2,6 +2,7 @@ package com.agnitas.emm.core.recipient.web;
 
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.blacklist.service.BlacklistService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.delivery.service.DeliveryService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
@@ -18,7 +19,6 @@ import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
-import com.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,43 +29,32 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 @SessionAttributes(types = RecipientsFormSearchParams.class)
 public class RecipientControllerOpenemm extends RecipientController {
 
-	public RecipientControllerOpenemm(RecipientService recipientService,
-									  RecipientLogService recipientLogService,
-									  MailinglistApprovalService mailinglistApprovalService,
-									  TargetService targetService,
-									  UserActivityLogService userActivityLogService,
-									  DeliveryService deliveryService,
-									  MailingBaseService mailingBaseService,
-									  WebStorage webStorage,
-									  ConversionService conversionService,
-									  QueryBuilderFilterListBuilder filterListBuilder,
-									  ColumnInfoService columnInfoService,
-									  ConfigService configService,
-									  BlacklistService blacklistService,
-									  EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
-									  QueryBuilderToEqlConverter queryBuilderToEqlConverter,
-									  CompanyDao companyDao,
-									  EqlValidatorService eqlValidatorService,
-									  SubscriberLimitCheck subscriberLimitCheck,
-									  DataSourceService dataSourceService) {
-		super(recipientService,
-				recipientLogService,
-				mailinglistApprovalService,
-				targetService,
-				userActivityLogService,
-				deliveryService,
-				mailingBaseService,
-				webStorage,
-				conversionService,
-				filterListBuilder,
-				columnInfoService,
-				configService,
-				blacklistService,
-				eqlToQueryBuilderConverter,
-				queryBuilderToEqlConverter,
-				companyDao,
-				eqlValidatorService,
-				subscriberLimitCheck,
-				dataSourceService);
+	public RecipientControllerOpenemm(
+			RecipientService recipientService,
+			RecipientUiService recipientUiService,
+			RecipientLogService recipientLogService,
+			MailinglistApprovalService mailinglistApprovalService,
+			TargetService targetService,
+			UserActivityLogService userActivityLogService,
+			DeliveryService deliveryService,
+			MailingBaseService mailingBaseService,
+			WebStorage webStorage,
+			ConversionService conversionService,
+			QueryBuilderFilterListBuilder filterListBuilder,
+			ColumnInfoService columnInfoService,
+			ConfigService configService,
+			BlacklistService blacklistService,
+			EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
+			QueryBuilderToEqlConverter queryBuilderToEqlConverter,
+			CompanyDao companyDao,
+			EqlValidatorService eqlValidatorService,
+			SubscriberLimitCheck subscriberLimitCheck,
+			DataSourceService dataSourceService
+	) {
+		super(recipientService, recipientUiService, recipientLogService, mailinglistApprovalService, targetService,
+				userActivityLogService, deliveryService, mailingBaseService, webStorage, conversionService,
+				filterListBuilder, columnInfoService, configService, blacklistService, eqlToQueryBuilderConverter,
+				queryBuilderToEqlConverter, companyDao, eqlValidatorService, subscriberLimitCheck, dataSourceService);
 	}
+
 }

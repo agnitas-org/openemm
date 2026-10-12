@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -20,22 +20,28 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.EmmActionDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.action.ActionNotFoundException;
 import com.agnitas.emm.core.action.EmmActionCopyException;
+import com.agnitas.emm.core.action.TriggerMapper;
 import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.action.bean.EmmActionDependency;
+import com.agnitas.emm.core.action.bean.EmmActionType;
 import com.agnitas.emm.core.action.component.EmmActionChangesCollector;
 import com.agnitas.emm.core.action.dao.EmmActionOperationDao;
+import com.agnitas.emm.core.action.dto.CreateTriggerCommand;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
+import com.agnitas.emm.core.action.dto.PatchTriggerCommand;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
@@ -44,14 +50,20 @@ import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParam
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationService;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.action.service.EmmActionValidationService;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.userform.service.UserformService;
+import com.agnitas.emm.core.validator.ValidationException;
+import com.agnitas.emm.core.validator.ValidationField;
+import com.agnitas.exception.ForbiddenException;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
 import com.agnitas.json.JsonWriter;
 import com.agnitas.messages.I18nString;
-import com.agnitas.service.ColumnInfoService;
+import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.impl.ActionExporter;
@@ -71,7 +83,9 @@ public class EmmActionServiceImpl implements EmmActionService {
 	
 	private static final Logger LOGGER = LogManager.getLogger(EmmActionServiceImpl.class);
 	
-	private final ColumnInfoService columnInfoService;
+    private final RecipientFieldService recipientFieldService;
+    private final EmmActionValidationService validationService;
+    private final TriggerMapper triggerMapper;
     private UserformService userformService;
     private MailingService mailingService;
     private BulkActionValidationService<Integer, EmmAction> bulkActionValidationService;
@@ -84,8 +98,14 @@ public class EmmActionServiceImpl implements EmmActionService {
     private ActionImporter actionImporter;
     private EmmActionChangesCollector changesCollector;
 
-    public EmmActionServiceImpl(ColumnInfoService columnInfoService) {
-		this.columnInfoService = Objects.requireNonNull(columnInfoService);
+    public EmmActionServiceImpl(
+            RecipientFieldService recipientFieldService,
+            EmmActionValidationService validationService,
+            TriggerMapper triggerMapper
+    ) {
+        this.recipientFieldService = Objects.requireNonNull(recipientFieldService);
+        this.validationService = validationService;
+        this.triggerMapper = triggerMapper;
     }
 
     @Override
@@ -349,8 +369,9 @@ public class EmmActionServiceImpl implements EmmActionService {
 
     private boolean isReadonlyOperationRecipientField(String column, Admin admin) {
         try {
-            ProfileField field = columnInfoService.getColumnInfo(admin.getCompanyID(), column, admin.getAdminID());
-            return isReadonlyOperationRecipientField(field);
+            RecipientFieldDescription field = recipientFieldService.getRecipientField(admin.getCompanyID(), column);
+            ProfileFieldMode permission = field.getAdminPermission(admin.getAdminID());
+            return permission == ProfileFieldMode.ReadOnly || permission == ProfileFieldMode.NotVisible;
         } catch (Exception e) {
             LOGGER.warn("Error reading meta data for profile field '{}' (company ID {}, admin ID {})",
                     column, admin.getCompanyID(), admin.getAdminID(), e);
@@ -359,8 +380,8 @@ public class EmmActionServiceImpl implements EmmActionService {
     }
 
     @Override
-    public boolean isReadonlyOperationRecipientField(ProfileField field) {
-        return field.getModeEdit() == ProfileFieldMode.ReadOnly || field.getModeEdit() == ProfileFieldMode.NotVisible;
+    public boolean isReadonlyOperationRecipientField(RecipientFieldDescription field) {
+        return field.getDefaultPermission() == ProfileFieldMode.ReadOnly || field.getDefaultPermission() == ProfileFieldMode.NotVisible;
     }
 
     @Override
@@ -412,6 +433,97 @@ public class EmmActionServiceImpl implements EmmActionService {
     @Override
     public List<Integer> getTriggerIds(int companyId) {
         return emmActionDao.getTriggerIds(companyId);
+    }
+
+    @Override
+    public PaginatedList<EmmAction> paginatedList(int companyId, int page, int size) {
+        return emmActionDao.find(companyId, page, size);
+    }
+
+    @Override
+    public void validateSelectionForMailing(int triggerId, ValidationField field, Admin admin) {
+        EmmAction trigger = findTrigger(triggerId, admin, false)
+                .orElseThrow(() -> ValidationException.notFound(field, triggerId));
+        if (trigger.getType() == EmmActionType.Form.getActionTypeCode()) {
+            throw ValidationException.invalidValue(field, Message.exact("Provided trigger can only be used in forms"));
+        }
+        if (!trigger.getIsActive()) {
+            throw ValidationException.invalidValue(field, Message.exact("Trigger is not activated"));
+        }
+    }
+
+    @Override
+    public EmmAction getTrigger(int triggerId, Admin admin) {
+        return findTrigger(triggerId, admin).orElseThrow(() -> new ActionNotFoundException(triggerId));
+    }
+
+    @Override
+    public Optional<EmmAction> findTrigger(int triggerId, Admin admin) {
+        return findTrigger(triggerId, admin, true);
+    }
+
+    @Override
+    public Optional<EmmAction> findTrigger(int triggerId, Admin admin, boolean includeOperations) {
+        int companyId = admin.getCompanyID();
+        Optional<EmmAction> action = emmActionDao.find(triggerId, companyId);
+        if (action.isPresent()) {
+            List<AbstractActionOperationParameters> operations = emmActionOperationDao.getOperations(triggerId, companyId);
+            operations.forEach(operation -> operation.setReadonly(isReadonlyOperation(operation, admin)));
+            action.get().setActionOperations(operations);
+        }
+        return action;
+    }
+
+    @Transactional
+    @Override
+    public EmmAction create(CreateTriggerCommand command, Admin admin) {
+        EmmAction trigger = triggerMapper.toEmmAction(command);
+        trigger.setCompanyID(admin.getCompanyID());
+        save(trigger, admin);
+        replaceOperations(trigger.getId(), admin.getCompanyID(), trigger.getActionOperations());
+        return trigger;
+    }
+
+    private void save(EmmAction trigger, Admin admin) {
+        if (containsReadonlyOperations(trigger.getId(), admin)) {
+            throw new ForbiddenException();
+        }
+        validationService.validate(trigger, admin);
+        if (emmActionDao.saveEmmAction(trigger) <= 0) {
+            throw new IllegalStateException("Can't create trigger");
+        }
+    }
+
+    private void replaceOperations(
+            int triggerId,
+            int companyId,
+            List<AbstractActionOperationParameters> operations
+    ) {
+        emmActionOperationDao.deleteByActionId(triggerId, companyId);
+        if (operations == null) {
+            return;
+        }
+
+        for (AbstractActionOperationParameters operation : operations) {
+            operation.setActionId(triggerId);
+            operation.setCompanyId(companyId);
+            emmActionOperationDao.saveOperation(operation);
+        }
+    }
+
+    @Transactional
+    @Override
+    public void patch(PatchTriggerCommand command, Admin admin) {
+        EmmAction trigger = getTrigger(command.id(), admin);
+        command.name().ifPresent(trigger::setShortname);
+        command.description().ifPresent(trigger::setDescription);
+        command.type().ifPresent(t -> trigger.setType(t.getActionTypeCode()));
+        command.isActive().ifPresent(active -> trigger.setIsActive(active != null && active));
+        command.isAdvertising().ifPresent(advertising -> trigger.setAdvertising(advertising != null && advertising));
+        save(trigger, admin);
+
+        command.operations()
+                .ifPresent(operations -> replaceOperations(trigger.getId(), admin.getCompanyID(), operations));
     }
 
     public void setUserformService(UserformService userformService) {

@@ -33,14 +33,7 @@ DELETE FROM job_queue_tbl WHERE description = 'AggregateRdirTrafficStatisticJobW
 
 UPDATE admin_group_tbl SET shortname = 'OpenEMM', description = 'OpenEMM' WHERE company_id = 1 AND admin_group_id = 1;
 
-
-DELETE FROM job_queue_result_tbl WHERE job_id IN (SELECT id FROM job_queue_tbl WHERE runclass = 'com.agnitas.emm.core.workflow.service.jobs.ComWorkflowStopJobWorker');
-DELETE FROM job_queue_parameter_tbl WHERE job_id IN (SELECT id FROM job_queue_tbl WHERE runclass = 'com.agnitas.emm.core.workflow.service.jobs.ComWorkflowStopJobWorker');
-DELETE FROM job_queue_tbl where runclass = 'com.agnitas.emm.core.workflow.service.jobs.ComWorkflowStopJobWorker';
 UPDATE job_queue_tbl SET runOnlyOnHosts = NULL WHERE description = 'WebhookBackendDataMessageGenerator';
-
-
-
 
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)

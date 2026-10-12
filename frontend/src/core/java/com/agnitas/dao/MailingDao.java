@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +33,6 @@ import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter
 import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
 import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
@@ -98,7 +98,11 @@ public interface MailingDao {
 	 */
 	Timestamp getLastSendDate(int mailingID) ;
 
-    int saveUndoMailing(int mailingId, int adminId);
+	Optional<Mailing> findTemplate(int mailingId, int companyId);
+
+	Optional<Mailing> findMailing(int mailingId, int companyId);
+
+	int saveUndoMailing(int mailingId, int adminId);
 
     int getCompanyIdForMailingId(int mailingId);
 	
@@ -256,7 +260,6 @@ public interface MailingDao {
 	 * @param companyId an identifier of current user's company.
 	 * @param targetExpression a new target expression.
 	 * @return {@code true} if succeeded or {@code false} if mailing doesn't exist (or marked as deleted).
-	 * @throws TooManyTargetGroupsInMailingException if a target expression is too long.
 	 */
 	boolean setTargetExpression(int mailingId, int companyId, String targetExpression);
 

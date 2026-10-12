@@ -76,7 +76,7 @@ fi
 
 for sqlfilename in ${sqlScriptsToDo}; do
 	echo "Executing ${sqlfilename}"
-	psql -h ${hostname} -p ${port} -U ${username} -d ${dbname} -f ${sqlfilename} > /dev/null
+	psql -h ${hostname} -p ${port} -U ${username} -d ${dbname} -v ON_ERROR_STOP=1 -f ${sqlfilename} > /dev/null
 	if [ $? -ne 0 ]; then
 		echo "Error in sql script ${sqlfilename}"
 		exit 1
@@ -112,7 +112,7 @@ fi
 
 for sqlfilename in ${sqlScriptsToDo}; do
 	echo "Executing ${sqlfilename}"
-	psql -h ${hostname} -p ${port} -U ${username} -d ${dbname} -f ${sqlfilename} > /dev/null
+	psql -h ${hostname} -p ${port} -U ${username} -d ${dbname} -v ON_ERROR_STOP=1 -f ${sqlfilename} > /dev/null
 	if [ $? -ne 0 ]; then
 		echo "Error in sql script ${sqlfilename}"
 		exit 1

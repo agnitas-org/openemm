@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -64,12 +64,9 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 
-	private static final String TEMPTABLECACHE_TABLENAME = "temp_cache_tbl";
-
 	public static final String DATE_PARAMETER_FORMAT = "yyyy-MM-dd";
 	public static final String DATE_PARAMETER_FORMAT_WITH_HOUR = "yyyy-MM-dd:H";
 	public static final String DATE_PARAMETER_FORMAT_WITH_HOUR2 = "yyyy-MM-dd:HH";
-	public static final String DATE_PARAMETER_FORMAT_WITH_SECOND = "yyyy-MM-dd HH:mm:ss.SSS";
 
 	// mobile/PC clicks
 	protected static final List<Integer> CLICKER_INDEXES = List.of(
@@ -98,77 +95,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return getDataSource().getConnection();
 	}
 
-	protected int getCachedTempTable(String statisticsType, String parameterString) {
-		try {
-			if (!checkEmbeddedTableExists(TEMPTABLECACHE_TABLENAME)) {
-				executeEmbedded("CREATE TABLE " + TEMPTABLECACHE_TABLENAME + " ("
-					+ "type VARCHAR(50),"
-					+ " parameter VARCHAR(400),"
-					+ " temptableid INTEGER,"
-					+ " table_name VARCHAR(50),"
-					+ " creation_date TIMESTAMP,"
-					+ " validity_date TIMESTAMP,"
-					+ " cleanup_date TIMESTAMP"
-					+")");
-			}
-
-			List<Map<String, Object>> result = selectEmbedded("SELECT table_name FROM " + TEMPTABLECACHE_TABLENAME + " WHERE cleanup_date < ?", new Date());
-			for (Map<String, Object> row : result) {
-				String tableNameToDelete = (String) row.get("table_name");
-				updateEmbedded("DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE table_name = ?", tableNameToDelete);
-				try {
-					executeEmbedded("DROP TABLE " + tableNameToDelete);
-				} catch (Exception e) {
-					logger.error("Cannot drop embedded table: {}", tableNameToDelete);
-				}
-			}
-			
-			boolean blockingEntryExists = true;
-			while (blockingEntryExists) {
-				int tempTableID = selectEmbeddedIntWithDefault("SELECT MAX(temptableid) FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date IS NULL AND creation_date <= ?", 0, statisticsType, parameterString, DateUtilities.addMinutesToDate(new Date(), 60));
-				blockingEntryExists = tempTableID > 0;
-				if (blockingEntryExists) {
-					Thread.sleep(10000);
-				}
-			}
-			
-			int tempTableID = selectEmbeddedIntWithDefault("SELECT MAX(temptableid) FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date >= ?", 0, statisticsType, parameterString, new Date());
-			List<Map<String, Object>> resultTables = selectEmbedded("SELECT table_name FROM " + TEMPTABLECACHE_TABLENAME + " WHERE temptableid = ?", tempTableID);
-			if (!resultTables.isEmpty()) {
-				String tableName = (String) resultTables.get(0).get("table_name");
-				if (checkEmbeddedTableExists(tableName)) {
-					return tempTableID;
-				} else {
-					updateEmbedded("DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE table_name = ?", tableName);
-					return 0;
-				}
-			} else {
-				updateEmbedded("DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE temptableid = ?", tempTableID);
-				return 0;
-			}
-		} catch (Exception e) {
-			logger.error("Cannot getCachedTempTable: {}", e.getMessage(), e);
-			return 0;
-		}
-	}
-
-	protected void createBlockEntryInTempTableCache(String statisticsType, String parameterString) {
-		try {
-			updateEmbedded("INSERT INTO " + TEMPTABLECACHE_TABLENAME + " (type, parameter, creation_date, cleanup_date) VALUES (?, ?, ?, ?)", statisticsType, parameterString, new Date(), DateUtilities.addMinutesToDate(new Date(), 60));
-		} catch (Exception e) {
-			logger.error("Cannot createBlockEntryInTempTableCache: {}", e.getMessage(), e);
-		}
-	}
-
-	protected void storeTempTableInCache(String statisticsType, String parameterString, int tempTableID, String tempTableName) {
-		try {
-			updateEmbedded("INSERT INTO " + TEMPTABLECACHE_TABLENAME + " (type, parameter, temptableid, table_name, creation_date, validity_date, cleanup_date) VALUES (?, ?, ?, ?, ?, ?, ?)", statisticsType, parameterString, tempTableID, tempTableName, new Date(), DateUtilities.addMinutesToDate(new Date(), 10), DateUtilities.addMinutesToDate(new Date(), 15));
-			updateEmbedded("DELETE FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date IS NULL", statisticsType, parameterString);
-		} catch (Exception e) {
-			logger.error("Cannot storeTempTableInCache: {}", e.getMessage(), e);
-		}
-	}
-	
 	public static String getOnePixelLogDeviceTableName(int companyID) {
 		return "onepixellog_device_" + companyID + "_tbl";
 	}

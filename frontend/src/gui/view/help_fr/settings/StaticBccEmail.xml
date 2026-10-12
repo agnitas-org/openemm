@@ -3,7 +3,7 @@
     <content><![CDATA[Saisissez une ou plusieurs adresses BCC (s&#xE9;par&#xE9;es par des virgules) qui recevront une copie en aveugle pour chaque envoi.
             Cela vous permet d'archiver tous les e-mails envoy&#xE9;s &#xE0; vos destinataires, quel que soit le type d'envoi.
             <br><br>
-            <b>Remarque:</b> Cette fonctionnalit&eacute; double votre volume de courrier &eacute;lectronique ; il convient donc de l'utiliser avec parcimonie.
+            <b>Remarque:</b> Cette fonctionnalit&eacute; double votre volume de courrier &eacute;lectronique ; il convient donc de l'utiliser avec parcimonie. Veillez &#xE0; ce que la bo&#xEE;te de r&#xE9;ception dispose toujours d'un espace suffisant.
         ]]></content>
 </HelpBalloon>
     

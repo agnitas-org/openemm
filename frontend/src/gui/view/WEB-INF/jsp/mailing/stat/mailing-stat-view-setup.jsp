@@ -8,6 +8,7 @@
 <%--@elvariable id="mailingStatisticForm" type="com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm"--%>
 <%--@elvariable id="isActiveMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailinglistDisabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="downloadBirtUrl" type="java.lang.String"--%>
 <%--@elvariable id="workflowName" type="java.lang.String"--%>
@@ -46,13 +47,13 @@
 <c:set var="isEndDeviceStat"            value="${mailingStatisticForm.statisticType eq DEVICES_TYPE}"  scope="request"/>
 <c:set var="isBenchmarkStat"            value="${mailingStatisticForm.statisticType eq BENCHMARK_TYPE}" scope="request"/>
 <c:set var="isClickPerLinkStat"         value="${mailingStatisticForm.statisticType eq CLICK_PER_LINK_TYPE}" scope="request"/>
+<c:set var="isRevenueStat"              value="${mailingStatisticForm.statisticType eq TRACKING_POINT_TYPE}" scope="request" />
 <c:set var="isAlphaTrackingPointStat"   value="${mailingStatisticForm.statisticType eq ALPHA_TRACKING_POINT_TYPE}" scope="request" />
-<c:set var="isSummaryStat"              value="${mailingStatisticForm.statisticType eq StatisticType.SUMMARY or mailingStatisticForm.statisticType eq StatisticType.SUMMARY_AUTO_OPT}" scope="request"/>
-<c:set var="isSummaryStatMigration"     value="${emm:permissionAllowed('migration.mailing.summary.stat', pageContext.request)}" scope="request"/>
+<c:set var="isSimpleTrackingPointStat"  value="${mailingStatisticForm.statisticType eq SIMPLE_TRACKING_POINT_TYPE}" scope="request" />
+<c:set var="isNumTrackingPointStat"     value="${mailingStatisticForm.statisticType eq NUM_TRACKING_POINT_TYPE}" scope="request" />
+<c:set var="isSummaryStat"              value="${mailingStatisticForm.statisticType eq StatisticType.SUMMARY}" scope="request"/>
 <c:set var="isTopDomainStats"           value="${mailingStatisticForm.statisticType eq TOP_DOMAINS_TYPE}"  scope="request"/>
-<c:set var="isTopDomainStatsMigration"  value="${emm:permissionAllowed('migration.mailing.topdomains.stat', pageContext.request)}"  scope="request"/>
-<c:set var="isBounceStats"           value="${mailingStatisticForm.statisticType eq BOUNCES_TYPE}"  scope="request"/>
-<c:set var="isBounceStatsMigration"  value="${emm:permissionAllowed('migration.mailing.bounces.stat', pageContext.request)}"  scope="request"/>
+<c:set var="isBounceStats"              value="${mailingStatisticForm.statisticType eq BOUNCES_TYPE}"  scope="request"/>
 
 <c:url var="summaryStatsUrl" value="/statistics/mailing/${mailingId}/summary.action" scope="request"/>
 
@@ -82,24 +83,16 @@
 </c:choose>
 
 <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
-    <c:set target="${agnNavConditionsParams}" property="isActiveMailing" value="${isActiveMailing}" />
-    <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
-    <c:set target="${agnNavConditionsParams}" property="isPostMailing" value="${not empty isPostMailing and isPostMailing}" />
+    <c:set target="${agnNavConditionsParams}" property="isActiveMailing"        value="${isActiveMailing}" />
+    <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled"    value="${mailinglistDisabled}" />
+    <c:set target="${agnNavConditionsParams}" property="isPostMailing"          value="${not empty isPostMailing and isPostMailing}" />
+    <c:set target="${agnNavConditionsParams}" property="isStandaloneSmsMailing" value="${not empty isStandaloneSmsMailing and isStandaloneSmsMailing}" />
 </emm:instantiate>
 
 <emm:instantiate var="reportNameToHelpKeyMap" type="java.util.HashMap">
     <c:set target="${reportNameToHelpKeyMap}" property="${SUMMARY_TYPE}" value="summary"/>
     <c:set target="${reportNameToHelpKeyMap}" property="${CLICK_PER_LINK_TYPE}" value="clickstatistic_per_link"/>
-    <c:choose>
-        <c:when test="${emm:permissionAllowed('migration.mailing.progress.stat', pageContext.request)}">
-            <c:set target="${reportNameToHelpKeyMap}" property="${PROGRESS_TYPE}" value="deliveryProgressStatistic"/>
-        </c:when>
-        <c:otherwise>
-            <c:set target="${reportNameToHelpKeyMap}" property="${StatisticType.PROGRESS_OF_DELIVERY}" value="deliveryProgressStatistic"/>
-            <c:set target="${reportNameToHelpKeyMap}" property="${StatisticType.PROGRESS_OF_OPENINGS}" value="Progress_of_openings"/>
-            <c:set target="${reportNameToHelpKeyMap}" property="${StatisticType.PROGRESS_OF_CLICKS}" value="Progress_of_clicks"/>
-        </c:otherwise>
-    </c:choose>
+    <c:set target="${reportNameToHelpKeyMap}" property="${PROGRESS_TYPE}" value="deliveryProgressStatistic"/>
     <c:set target="${reportNameToHelpKeyMap}" property="${TOP_DOMAINS_TYPE}" value="top_domains"/>
     <c:set target="${reportNameToHelpKeyMap}" property="${BOUNCES_TYPE}" value="bounceStatistic"/>
     <%@ include file="fragments/help-keys-extended.jspf" %>
@@ -136,7 +129,7 @@
     </c:choose>
 </emm:instantiate>
 
-<c:if test="${isReportCanBeShown && (not empty downloadBirtUrl or isBenchmarkStat or (isClickPerLinkStat && emm:permissionAllowed('migration.mailing.click.stat', pageContext.request)) or (isEndDeviceStat && emm:permissionAllowed('migration.mailing.enddevice.stat', pageContext.request))) and not hideStatActions}">
+<c:if test="${isReportCanBeShown && (not empty downloadBirtUrl or isBenchmarkStat or (isClickPerLinkStat) or isEndDeviceStat) and not hideStatActions}">
     <emm:instantiate var="agnMailingExtraOptions" type="java.util.LinkedHashMap" scope="request">
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${agnMailingExtraOptions}" property="0" value="${option}"/>
@@ -145,7 +138,7 @@
                     <c:url var="benchmarkCsv" value="/statistics/mailing/${mailingId}/benchmark.csv.action"/>
                     <c:set target="${option}" property="extraAttributes" value="data-form-target='#benchmark-form' data-form-url='${benchmarkCsv}' data-form-submit-static data-prevent-load"/>
                 </c:when>
-                <c:when test="${isClickPerLinkStat && emm:permissionAllowed('migration.mailing.click.stat', pageContext.request)}">
+                <c:when test="${isClickPerLinkStat}">
                     <c:set target="${option}" property="url">
                         <c:url value="/statistics/mailing/${mailingId}/clickStatPerLink/csv.action">
                             <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
@@ -155,7 +148,7 @@
                     </c:set>
                     <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
                 </c:when>
-                <c:when test="${isEndDeviceStat && emm:permissionAllowed('migration.mailing.enddevice.stat', pageContext.request)}">
+                <c:when test="${isEndDeviceStat}">
                     <c:set target="${option}" property="url">
                         <c:url value="/statistics/mailing/${mailingId}/endDevice/csv.action">
                             <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
@@ -165,7 +158,7 @@
                     </c:set>
                     <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
                 </c:when>
-                <c:when test="${isAlphaTrackingPointStat && emm:permissionAllowed('migration.mailing.alphanumerictracking.stat', pageContext.request)}">
+                <c:when test="${isAlphaTrackingPointStat}">
                     <c:set target="${option}" property="url">
                         <c:url value="/statistics/mailing/${mailingId}/alphaTrackingPoints/csv.action">
                             <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
@@ -175,15 +168,51 @@
                     </c:set>
                     <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
                 </c:when>
-                <c:when test="${isSummaryStat and isSummaryStatMigration}">
+                <c:when test="${isSimpleTrackingPointStat and emm:permissionAllowed('migration.simple.point.stat', pageContext.request)}">
+                    <c:set target="${option}" property="url">
+                        <c:url value="/statistics/mailing/${mailingId}/simpleTrackingPoints/csv.action">
+                            <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
+                                <c:param name="targetGroups" value="${selectedTarget}" />
+                            </c:forEach>
+                        </c:url>
+                    </c:set>
+                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
+                </c:when>
+                <c:when test="${isRevenueStat}">
+                    <c:set target="${option}" property="url">
+                        <c:url value="/statistics/mailing/${mailingId}/revenue/csv.action">
+                            <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
+                                <c:param name="targetGroups" value="${selectedTarget}" />
+                            </c:forEach>
+                            <c:param name="hourScale" value="${isHourScale}" />
+                            <c:param name="from" value="${fromDate.time}" />
+                            <c:param name="to" value="${toDate.time}" />
+                        </c:url>
+                    </c:set>
+                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
+                </c:when>
+                <c:when test="${isNumTrackingPointStat}">
+                    <c:set target="${option}" property="url">
+                        <c:url value="/statistics/mailing/${mailingId}/numTrackingPoints/csv.action">
+                            <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
+                                <c:param name="targetGroups" value="${selectedTarget}" />
+                            </c:forEach>
+                            <c:param name="hourScale" value="${isHourScale}" />
+                            <c:param name="from" value="${fromDate.time}" />
+                            <c:param name="to" value="${toDate.time}" />
+                        </c:url>
+                    </c:set>
+                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
+                </c:when>
+                <c:when test="${isSummaryStat}">
                     <c:url var="summaryCsvUrl" value="/statistics/mailing/${mailingId}/summary/csv.action"/>
                     <c:set target="${option}" property="extraAttributes" value="data-form-target='#stat-form' data-form-url='${summaryCsvUrl}' data-form-submit-static data-prevent-load"/>
                 </c:when>
-                <c:when test="${isTopDomainStats and isTopDomainStatsMigration}">
+                <c:when test="${isTopDomainStats}">
                     <c:url var="topDomainsCsvUrl" value="/statistics/mailing/${mailingId}/top-domains/csv.action"/>
                     <c:set target="${option}" property="extraAttributes" value="data-form-target='#stat-form' data-form-url='${topDomainsCsvUrl}' data-form-submit-static data-prevent-load"/>
                 </c:when>
-                <c:when test="${isBounceStats and isBounceStatsMigration}">
+                <c:when test="${isBounceStats}">
                     <c:url var="bouncesCsvUrl" value="/statistics/mailing/${mailingId}/bounces/csv.action"/>
                     <c:set target="${option}" property="extraAttributes" value="data-form-target='#stat-form' data-form-url='${bouncesCsvUrl}' data-form-submit-static data-prevent-load"/>
                 </c:when>
@@ -233,10 +262,10 @@
         <c:when test="${isBenchmarkStat}">
             data-form-target='#benchmark-form' data-form-submit
         </c:when>
-        <c:when test="${isSummaryStat and isSummaryStatMigration}">
+        <c:when test="${isSummaryStat}">
             data-action='reload-summary-stat'
         </c:when>
-        <c:when test="${isTopDomainStats and isTopDomainStatsMigration}">
+        <c:when test="${isTopDomainStats}">
             data-action='reload-top-domain-stats'
         </c:when>
         <c:otherwise>

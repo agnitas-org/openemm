@@ -1,0 +1,10 @@
+
+<script id="status-info-stats-template" type="text/x-mustache-template">
+    <div class="d-grid gap-3" style="grid-template-columns: 1fr 1fr">
+
+        <div id="summed-table" class="table-wrapper"></div>
+
+        <div id="not-summed-table" class="table-wrapper"></div>
+
+    </div>
+</script>

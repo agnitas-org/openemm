@@ -1,6 +1,4 @@
 
-<c:set var="localeDatePattern" value="dd.mm.yyyy"/>
-
 <script id="module-GetArchiveMailing" type="text/x-mustache-template">
     <div class="tile-body" data-module-content="{{- index}}">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="GetArchiveMailing"/>
@@ -10,7 +8,7 @@
         <div class="date-picker-container">
             <input type="text" name="modules[].expireDate" id="module_{{- index}}.expireDate" value="{{- expireDate}}"
                    class="form-control js-datepicker" placeholder="<mvc:message code="default.date.format.DD.MM.YYYY"/>"
-                   data-datepicker-options="dateFormat: '${localeDatePattern}'">
+                   data-datepicker-options="dateFormat: 'dd.mm.yyyy'">
         </div>
     </div>
 </script>

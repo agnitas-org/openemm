@@ -10,6 +10,8 @@
 <%--@elvariable id="sendTestmailResult" type="com.agnitas.service.SimpleServiceResult"--%>
 <%--@elvariable id="serverStatus" type="com.agnitas.emm.core.serverstatus.bean.ServerStatus"--%>
 <%--@elvariable id="checkDbSchemaAllowed" type="java.lang.Boolean"--%>
+<%--@elvariable id="canToggleCsrfProtection" type="java.lang.Boolean"--%>
+<%--@elvariable id="csrfProtectionEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="isVersionUpdateExists" type="java.lang.Boolean"--%>
 <%--@elvariable id="isEOLReached" type="java.lang.Boolean"--%>
 <%--@elvariable id="eolDate" type="java.lang.String"--%>
@@ -160,6 +162,19 @@
 					</div>
 				</div>
 			</mvc:form>
+
+			<c:if test="${canToggleCsrfProtection}">
+				<div>
+					<div class="form-check form-switch">
+						<input id="toggle-csrf-protection" class="form-check-input" role="switch" type="checkbox"
+							${csrfProtectionEnabled ? 'checked' : ''} data-action="toggle-csrf">
+						<label class="form-label form-check-label" for="toggle-csrf-protection">
+							<mvc:message code="settings.security.csrf" />
+							<a href="#" class="icon icon-question-circle" data-help="security/CSRF.xml"></a>
+						</label>
+					</div>
+				</div>
+			</c:if>
 		</div>
 	</div>
 </div>

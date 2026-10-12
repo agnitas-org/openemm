@@ -1,4 +1,19 @@
 
+/*doc
+---
+title: Click to copy
+name: copyable_02_click_to_copy
+parent: copyable
+---
+
+Use for any text element that is frequently copied.
+It adds a tooltip and visual styling to indicate it can be copied.
+
+```htmlexample
+Move your cursor over this ID: <span class="click-to-copy">1234</span>
+```
+*/
+
 .copy-box {
   --copy-box-color: #{$gray-600};
 

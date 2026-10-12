@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -72,9 +72,11 @@ public class TargetController implements XssCheckAware {
     private final BirtReportDao birtReportDao;
     private final UserActivityLogService userActivityLogService;
 
-    public TargetController(TargetService targetService, WebStorage webStorage,
-                            UserActivityLogService userActivityLogService,
-                            BirtReportDao birtReportDao) {
+    public TargetController(
+            TargetService targetService, WebStorage webStorage,
+            UserActivityLogService userActivityLogService,
+            BirtReportDao birtReportDao
+    ) {
         this.webStorage = webStorage;
         this.birtReportDao = birtReportDao;
         this.targetService = targetService;
@@ -212,17 +214,14 @@ public class TargetController implements XssCheckAware {
     @PostMapping("/{id:\\d+}/delete/recipients.action")
     @RequiredPermission("recipient.delete")
     public String deleteRecipients(Admin admin, @PathVariable int id, Popups popups) {
-        final boolean deletedSuccessfully = targetService.deleteRecipients(id, admin.getCompanyID());
+        int deletedCount = targetService.deleteRecipients(id, admin.getCompanyID());
+        popups.changesSaved();
 
-        if (!deletedSuccessfully) {
-            logger.warn("Could not delete recipients for target with id: {}", id);
-            popups.defaultError();
-            return MESSAGES_VIEW;
+        if (deletedCount > 0) {
+            String ualDescription = "Deleted %d recipients from target group with id=%d".formatted(deletedCount, id);
+            userActivityLogService.writeUserActivityLog(admin, "edit target group", ualDescription);
         }
 
-        popups.changesSaved();
-        userActivityLogService.writeUserActivityLog(admin, "edit target group",
-                "All recipients deleted from target group with id=" + id);
         return TARGETS_LIST_REDIRECT;
     }
 

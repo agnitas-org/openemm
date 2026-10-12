@@ -3,6 +3,7 @@
 
 <%@ page import="com.agnitas.emm.core.birtreport.dto.BirtReportType" %>
 <%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
+<%@ page import="com.agnitas.emm.core.birtreport.bean.ReportFormat" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -79,11 +80,12 @@
                 <h1 class="tile-title text-truncate"><mvc:message code="workflow.mailing.DeliverySettings" /></h1>
             </div>
             <div class="tile-body vstack gap-3 js-scrollable" data-field="toggle-vis">
-                <div>
+                <div data-field="validator">
                     <label for="emailAddresses" class="form-label"><mvc:message code="report.autosend.email"/> *</label>
 
                     <mvc:select id="emailAddresses" path="emailAddresses" dynamicTags="true" cssClass="form-control"
-                                placeholder="${emailPlaceholder}" data-select-options="selectOnClose: true" />
+                                placeholder="${emailPlaceholder}" data-select-options="selectOnClose: true"
+                                data-field-validator="email-validator" />
                 </div>
 
                 <div>
@@ -215,8 +217,11 @@
                 <div>
                     <label for="format" class="form-label"><mvc:message code="report.data.type"/></label>
                     <mvc:select path="format" id="format" cssClass="form-control" size="1">
-                        <mvc:option value="0"><mvc:message code="report.data.type.pdf"/></mvc:option>
-                        <mvc:option value="1"><mvc:message code="report.data.type.csv"/></mvc:option>
+                        <c:forEach var="reportFormat" items="${ReportFormat.values()}">
+                            <mvc:option value="${reportFormat}">
+                                <mvc:message code="report.data.type.${fn:toLowerCase(reportFormat.name())}"/>
+                            </mvc:option>
+                        </c:forEach>
                     </mvc:select>
                 </div>
 

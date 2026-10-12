@@ -1,8 +1,12 @@
 AGN.Lib.Controller.new('recipient-distribution-stats', function() {
 
   const StatsChart = AGN.Lib.StatsChart;
+  const Table = AGN.Lib.Table;
+
+  const getTable$ = () => $('#table');
 
   let data;
+
   let metrics;
 
   this.addDomInitializer("recipient-distribution-stats", function () {
@@ -13,8 +17,8 @@ AGN.Lib.Controller.new('recipient-distribution-stats', function() {
   });
 
   function renderTable() {
-    new AGN.Lib.Table(
-      $('#table').empty(),
+    new Table(
+      getTable$().empty(),
       getTableColumnDefinitions(),
       data,
       getDefaultTableOptions()
@@ -87,10 +91,8 @@ AGN.Lib.Controller.new('recipient-distribution-stats', function() {
     }
   }
 
-  this.addAction({click: 'export-csv'}, function () {
-    const table = AGN.Lib.Table.get($('#table'));
-    if (table?.api) {
-      table.api.exportDataAsCsv({ fileName: 'recipient_distribution.csv' });
-    }
-  });
+  this.addAction(
+    { click: 'export-csv' },
+    () => Table.get(getTable$()).exportUnsortedCsv({ fileName: 'recipient_distribution.csv' })
+  );
 });

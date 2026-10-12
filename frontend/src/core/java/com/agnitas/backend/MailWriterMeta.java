@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -86,6 +86,7 @@ public class MailWriterMeta extends MailWriter {
 	 */
 	private boolean keepATmails;
 	private boolean keepPreviewMails;
+	private boolean keepErrorFiles;
 	private List<Reference> multi;
 	private List <MailkeyDAO.Mailkey> mailkeys;
 
@@ -122,6 +123,7 @@ public class MailWriterMeta extends MailWriter {
 		}
 		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
 		keepPreviewMails = Str.atob (data.company.info ("keep-preview-files"), false);
+		keepErrorFiles = Str.atob (data.company.info ("keep-error-files"), false);
 		multi = null;
 		mailkeys = null;
 		setup();
@@ -200,10 +202,10 @@ public class MailWriterMeta extends MailWriter {
 						data.previewOutput.setError(error);
 					}
 				}
-				if ((new File(path)).delete()) {
-					data.unmarkToRemove(path);
-				}
 				if (! keepPreviewMails) {
+					if ((new File(path)).delete()) {
+						data.unmarkToRemove(path);
+					}
 					if ((new File(pathname)).delete()) {
 						data.unmarkToRemove(pathname);
 					}
@@ -808,7 +810,11 @@ public class MailWriterMeta extends MailWriter {
 		command.add("-o" + output);
 		command.add(filename);
 		cmd = command.toString();
-		data.markToRemove(efile);
+		if (! keepErrorFiles) {
+			data.markToRemove(efile);
+		} else {
+			data.logging (Log.DEBUG, "write/meta", "Keep error file as \"" + efile.getAbsolutePath () + "\"");
+		}
 		try {
 			data.logging(Log.DEBUG, "write/meta", "Try to execute " + cmd);
 
@@ -862,8 +868,10 @@ public class MailWriterMeta extends MailWriter {
 			data.logging(Log.ERROR, "writer/meta", "command " + cmd + " failed (Missing binary? Wrong permissions?): " + e.toString(), e);
 			throw new Exception("Execution of " + cmd + " failed: " + e.toString(), e);
 		} finally {
-			if (efile.delete()) {
-				data.unmarkToRemove(efile);
+			if (! keepErrorFiles) {
+				if (efile.delete()) {
+					data.unmarkToRemove(efile);
+				}
 			}
 		}
 	}
@@ -1258,6 +1266,8 @@ public class MailWriterMeta extends MailWriter {
 			}
 			writer.close ("imagepool");
 			writer.empty ();
+		} else {
+			writer.comment("no imagepool");
 		}
 	}
 
@@ -1336,6 +1346,7 @@ public class MailWriterMeta extends MailWriter {
 							cr.add("target_id", cont.targetID);
 							cr.add("condition", cont.condition);
 						}
+						cr.addIfTrue ("generative", cont.generativeContent);
 						writer.opennode(cr);
 						if (cont.text != null) {
 							emitBlock(cont.text, 0, 0);

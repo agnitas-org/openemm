@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -28,8 +28,8 @@ import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
+import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.mvc.Popups;
 import org.springframework.context.ApplicationContext;
 
 public interface MailingBaseService {
@@ -135,7 +135,7 @@ public interface MailingBaseService {
      */
     boolean isContentBlank(String content, Map<String, DynamicTag> contentMap);
 
-    void doTextTemplateFilling(Mailing mailing, Admin admin, Popups popups);
+    List<Message> doTextTemplateFilling(Mailing mailing, Admin admin);
     
     Mailing getMailing(int companyId, int mailingId);
     
@@ -176,5 +176,10 @@ public interface MailingBaseService {
 
     boolean isPostMailing(Mailing mailing);
 
-    String getThumbnailUrl(Mailing mailing);
+    String getThumbnailDataUri(Mailing mailing);
+
+    boolean isStandaloneSmsMailing(int mailingId, int companyId);
+
+    boolean isStandaloneSmsMailing(Mailing mailing);
+
 }

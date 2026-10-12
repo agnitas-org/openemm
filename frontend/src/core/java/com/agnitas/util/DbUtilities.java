@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.util;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.tomcat.jakartaee.commons.lang3.StringUtils.isBlank;
 
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
@@ -462,19 +463,6 @@ public class DbUtilities {
 		}
 	}
 
-	public static boolean checkDbVendorIsMySQL(DataSource dataSource) {
-		if (dataSource == null) {
-			throw new IllegalArgumentException("Cannot detect db vendor: dataSource is null");
-		}
-
-		try (Connection connection = dataSource.getConnection()) {
-			return checkDbVendorIsMySQL(connection);
-		} catch (SQLException e) {
-			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
-			throw new IllegalStateException("Cannot detect db vendor: " + e.getMessage(), e);
-		}
-	}
-
 	private static boolean checkDbVendorIsPostgreSQL(Connection connection) {
 		if (connection == null) {
 			throw new IllegalArgumentException("Cannot detect db vendor: connection is null");
@@ -529,26 +517,6 @@ public class DbUtilities {
 
 			return "maria".equalsIgnoreCase(productName) || "mariadb".equalsIgnoreCase(productName)
 					|| dbMetaData.getURL().toLowerCase().startsWith("jdbc:mariadb:");
-		} catch (SQLException e) {
-			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
-			throw new IllegalStateException("Cannot detect db vendor: " + e.getMessage(), e);
-		}
-	}
-
-	private static boolean checkDbVendorIsMySQL(Connection connection) throws SQLException {
-		if (connection == null) {
-			throw new IllegalArgumentException("Cannot detect db vendor: connection is null");
-		}
-
-		try {
-			DatabaseMetaData dbMetaData = connection.getMetaData();
-			if (dbMetaData == null) {
-				return false;
-			}
-
-			String productName = dbMetaData.getDatabaseProductName();
-			return "mysql".equalsIgnoreCase(productName) || "mysqldb".equalsIgnoreCase(productName)
-					|| dbMetaData.getURL().toLowerCase().startsWith("jdbc:mysql:");
 		} catch (SQLException e) {
 			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
 			throw new IllegalStateException("Cannot detect db vendor: " + e.getMessage(), e);
@@ -2372,14 +2340,16 @@ public class DbUtilities {
 	}
 	
 	public static boolean dropTriggerIfExists(String name, String tableName, DataSource dataSource) {
-		final JdbcTemplate template = new JdbcTemplate(dataSource);
+		JdbcTemplate template = new JdbcTemplate(dataSource);
 
 		try {
 			// FIXME SQL injection possible
-			if (checkDbVendorIsPostgreSQL(dataSource)) {
+			if (checkDbVendorIsOracle(dataSource)) {
+				template.execute("DROP TRIGGER %s".formatted(name));
+			} else if (checkDbVendorIsPostgreSQL(dataSource)) {
 				template.execute("DROP TRIGGER IF EXISTS %s ON %s".formatted(name, tableName));
 			} else {
-				template.execute("DROP TRIGGER %s".formatted(name));
+				template.execute("DROP TRIGGER IF EXISTS %s".formatted(name));
 			}
 			return true;
 		} catch (Exception e) {
@@ -3006,5 +2976,15 @@ public class DbUtilities {
 
 	public static String getHstCustomerBindingTableName(int companyId) {
 		return "hst_customer_%d_binding_tbl".formatted(companyId);
+	}
+
+	public static String combineWithAnd(String part1, String part2) {
+		if (isBlank(part1)) {
+			return part2;
+		}
+		if (isBlank(part2)) {
+			return part1;
+		}
+		return "(" + part1 + ") AND (" + part2 + ")";
 	}
 }

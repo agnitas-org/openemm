@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,12 +19,11 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.emm.core.birtreport.bean.ReportFormat;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 
 public class BirtReportComparisonSettings extends BirtReportSettings {
 
@@ -48,12 +47,11 @@ public class BirtReportComparisonSettings extends BirtReportSettings {
     }
 
     @Override
-    public String getReportName(String reportFormat) {
-        if (Strings.CI.equals(BirtReport.FORMAT_CSV, reportFormat)) {
-            return "mailings_compare_report_csv.rptdesign";
-        }
-
-        return "mailings_compare_report.rptdesign";
+    public String getReportName(ReportFormat format) {
+        return switch (format) {
+            case CSV -> "mailings_compare_report_csv.rptdesign";
+            case PDF -> "mailings_compare_report.rptdesign";
+        };
     }
 
     public String getSortBy() {
@@ -66,7 +64,7 @@ public class BirtReportComparisonSettings extends BirtReportSettings {
 		Map<String, String> parameters = new HashMap<>();
 		parameters.put(TARGET_GROUPS_KEY, generateExpression(getTargetGroups()));
 		parameters.put(MAILINGS_KEY, generateExpression(getMailings()));
-		parameters.put(FIGURES_KEY, BirtReporUtils.packFigures(getSettingsMap()));
+		parameters.put(FIGURES_KEY, BirtReportUtils.packFigures(getSettingsMap()));
 		if (MailingType.ACTION_BASED.getCode() == getReportSettingAsInt(MAILING_TYPE_KEY)) {
             parameters.put(SORT_BY_KEY, "date");
         } else {

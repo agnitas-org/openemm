@@ -1,18 +1,20 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.components.service;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
@@ -54,6 +56,12 @@ public interface MailingComponentsService {
 
 	Map<String, Integer> getImageSizeMap(int companyId, int mailingId, boolean includeExternalImages);
 
+	MailingComponent getComponentById(int componentId, int mailingId, int companyId);
+
+	Optional<MailingComponent> findComponentById(int componentId, int mailingId, int companyId);
+
+	SimpleServiceResult uploadAttachment(int mailingId, Admin admin, UploadMailingAttachmentDto attachment);
+
 	SimpleServiceResult uploadMailingAttachment(Admin admin, int mailingId, UploadMailingAttachmentDto attachment);
 
 	SimpleServiceResult updateMailingAttachments(Admin admin, int mailingId, Map<Integer, UpdateMailingAttachmentDto> attachments);
@@ -71,7 +79,9 @@ public interface MailingComponentsService {
 
     PaginatedList<MailingImageDto> getMailingImagesOverview(int companyId, int mailingId, MailingImagesOverviewFilter filter);
 
-    ServiceResult<ImportStatistics> uploadImages(Admin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions);
+	MailingImageDto uploadImage(UploadMailingImageDto image, int mailingId, Admin admin);
+
+	ServiceResult<ImportStatistics> uploadImages(Admin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions);
     
 	List<MailingComponent> getPreviewHeaderComponents(int companyId, int mailingId);
 
@@ -81,7 +91,11 @@ public interface MailingComponentsService {
 
     List<MailingComponent> getMailingComponents(int mailingId, int companyId, MailingComponentType componentType, boolean includeContent);
 
-	boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds);
+	void deleteImage(String filename, int mailingId, Admin admin);
+
+	void deleteImage(int imageId, int mailingId, Admin admin);
+
+	boolean deleteImages(Set<Integer> bulkIds, int mailingId, Admin admin);
 
 	ServiceResult<Boolean> reloadImage(Admin admin, int mailingId, int componentId);
 
@@ -112,9 +126,34 @@ public interface MailingComponentsService {
 
 	List<String> getNames(Set<Integer> ids, int mailingId, Admin admin);
 
-	ServiceResult<UserAction> delete(Set<Integer> ids, int mailingId, Admin admin);
+	ServiceResult<UserAction> deleteAttachment(Set<Integer> ids, int mailingId, Admin admin);
+
+	ServiceResult<UserAction> deleteAttachment(String filename, int mailingId, Admin admin);
+
+	ServiceResult<UserAction> deleteAttachment(int componentId, int mailingId, Admin admin);
+
+	MailingAttachmentDto getAttachment(int attachmentId, int mailingId, int companyId);
+
+	MailingAttachmentDto getAttachment(String filename, int mailingId, int companyId);
+
+	MailingImageDto getImage(int imageId, int mailingId, int companyId);
+
+	MailingImageDto getImage(String filename, int mailingId, int companyId);
+
+	MailingComponent getImageCompById(int imageId, int mailingId, int companyId);
+
+	MailingComponent getImageCompByFileName(String filename, int mailingId, int companyId);
 
 	File getZipToDownload(Set<Integer> ids, int mailingId, Admin admin);
 
-    int getImageComponent(int mailingId, int companyId, MailingComponentType componentType);
+	InputStream attachmentToStream(int componentId, int mailingId, int companyId);
+
+	InputStream attachmentToStream(int componentId, int mailingId, int companyId, Integer customerId);
+
+	void validateNewImages(List<UploadMailingImageDto> images, int mailingId, Admin admin);
+
+    void validateImagesCanBeDeleted(Set<Integer> bulkIds, int mailingId, Admin admin);
+
+	String buildDownloadUrl(int componentId, Admin admin, String token);
+
 }

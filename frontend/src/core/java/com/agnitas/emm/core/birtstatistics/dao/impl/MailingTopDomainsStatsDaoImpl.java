@@ -1,33 +1,30 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.birtstatistics.dao.impl;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 
 import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.birtstatistics.dao.MailingTopDomainsStatsDao;
-import com.agnitas.util.Tuple;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MailingTopDomainsStatsDaoImpl extends BaseDaoImpl implements MailingTopDomainsStatsDao {
-
-    private static final RowMapper<Tuple<String, Integer>> DOMAIN_TO_COUNT_MAPPER = (rs, rowNum) -> new Tuple<>(
-            rs.getString("domain_name"),
-            rs.getInt("count_per_domain")
-    );
 
     public MailingTopDomainsStatsDaoImpl(
             @Qualifier("dataSource") DataSource dataSource,
@@ -37,161 +34,131 @@ public class MailingTopDomainsStatsDaoImpl extends BaseDaoImpl implements Mailin
     }
 
     @Override
-    public Map<String, Integer> getSentEmails(TopDomainsFilter opts, String targetSql) {
-        targetSql = andClause(targetSql);
-        String domainFromEmailExpression = getDomainFromEmailExpression(opts.isTopLevel());
+    public Map<Integer, Map<String, Integer>> getSentEmails(Filter filter, List<TargetFilter> targets) {
+        Map<Integer, Map<String, Integer>> result = newResultMap(targets);
+        if (targets.isEmpty()) {
+            return result;
+        }
 
-        return selectLinkedMap(
-                addRowLimit(
-                        """
-                                SELECT COUNT(*) AS count_per_domain, domain_name
-                                FROM (
-                                  SELECT %s AS domain_name
-                                  FROM mailtrack_%d_tbl track
-                                    JOIN customer_%d_tbl cust ON cust.customer_id = track.customer_id
-                                  WHERE track.mailing_id = ? %s
-                                ) sub
-                                GROUP BY domain_name HAVING COUNT(*) > 0
-                                ORDER BY count_per_domain DESC
-                                """.formatted(domainFromEmailExpression, opts.companyId(), opts.companyId(), targetSql),
-                        opts.limit()
-                ),
-                DOMAIN_TO_COUNT_MAPPER,
-                opts.mailingId()
-        );
+        String domainExpr = getDomainFromEmailExpression(filter.isTopLevel());
+
+        StringBuilder query = new StringBuilder("SELECT ").append(domainExpr).append(" AS domain_name");
+        for (int i = 0; i < targets.size(); i++) {
+            query.append(", COUNT(CASE WHEN ").append(targetCaseCondition(targets.get(i).targetSql())).append(" THEN 1 END) AS amount_").append(i);
+        }
+        query.append(" FROM mailtrack_").append(filter.companyId()).append("_tbl track")
+                .append(" JOIN customer_").append(filter.companyId()).append("_tbl cust ON cust.customer_id = track.customer_id")
+                .append(" WHERE track.mailing_id = ?")
+                .append(" GROUP BY ").append(domainExpr);
+
+        query(query.toString(), rs -> {
+            String domain = rs.getString("domain_name");
+            for (int i = 0; i < targets.size(); i++) {
+                int amount = rs.getInt("amount_" + i);
+                if (amount != 0) {
+                    result.get(targets.get(i).targetId()).put(domain, amount);
+                }
+            }
+        }, filter.mailingId());
+
+        return result;
     }
 
     @Override
-    public Map<String, Integer> getHardBounces(TopDomainsFilter opts, String targetSql) {
-        return getBounces(opts, targetSql, "bounce.detail >= 510");
+    public Map<Integer, Map<String, Integer>> getHardBounces(Filter filter, List<TargetFilter> targets) {
+        return getBounces(filter, targets, "bounce.detail >= 510");
     }
 
     @Override
-    public Map<String, Integer> getSoftBounces(TopDomainsFilter opts, String targetSql) {
-        return getBounces(opts, targetSql, "bounce.detail < 510");
+    public Map<Integer, Map<String, Integer>> getSoftBounces(Filter filter, List<TargetFilter> targets) {
+        return getBounces(filter, targets, "bounce.detail < 510");
     }
 
-    private Map<String, Integer> getBounces(TopDomainsFilter opts, String targetSql, String condition) {
-        targetSql = andClause(targetSql);
-        String domainFromEmailExpression = getDomainFromEmailExpression(opts.isTopLevel());
-        return selectLinkedMap(
-                addRowLimit("""
-                                SELECT COUNT(*) AS count_per_domain, domain_name
-                                FROM (
-                                  SELECT %s AS domain_name
-                                  FROM bounce_tbl bounce
-                                    JOIN customer_%d_tbl cust ON cust.customer_id = bounce.customer_id
-                                  WHERE bounce.company_id = ?
-                                    AND bounce.mailing_id = ?
-                                    AND %s
-                                    %s
-                                ) sub
-                                GROUP BY domain_name HAVING COUNT(*) > 0
-                                ORDER BY count_per_domain DESC
-                                """.formatted(domainFromEmailExpression, opts.companyId(), condition, targetSql),
-                        opts.limit()
-                ),
-                (rs, rowNum) -> new Tuple<>(
-                        rs.getString("domain_name"),
-                        rs.getInt("count_per_domain")),
-                opts.companyId(), opts.mailingId()
-        );
-    }
+    private Map<Integer, Map<String, Integer>> getBounces(Filter filter, List<TargetFilter> targets, String condition) {
+        Map<Integer, Map<String, Integer>> result = newResultMap(targets);
+        if (targets.isEmpty()) {
+            return result;
+        }
 
-    @Override
-    public int getHardBouncesTotal(TopDomainsFilter opts, String targetSql) {
-        return getBouncesTotal(opts.mailingId(), opts.companyId(), targetSql,  "bounce.detail >= 510");
-    }
+        String domainExpr = getDomainFromEmailExpression(filter.isTopLevel());
 
-    @Override
-    public int getSoftBouncesTotal(TopDomainsFilter opts, String targetSql) {
-        return getBouncesTotal(opts.mailingId(), opts.companyId(), targetSql,  "bounce.detail < 510");
-    }
+        StringBuilder query = new StringBuilder("SELECT ").append(domainExpr).append(" AS domain_name");
+        for (int i = 0; i < targets.size(); i++) {
+            query.append(", COUNT(CASE WHEN ").append(targetCaseCondition(targets.get(i).targetSql())).append(" THEN 1 END) AS amount_").append(i);
+        }
+        query.append(" FROM bounce_tbl bounce")
+                .append(" JOIN customer_").append(filter.companyId()).append("_tbl cust ON cust.customer_id = bounce.customer_id")
+                .append(" WHERE bounce.company_id = ? AND bounce.mailing_id = ? AND ").append(condition)
+                .append(" GROUP BY ").append(domainExpr);
 
-    private int getBouncesTotal(int mailingId, int companyId, String targetSql, String condition) {
-        return selectInt("""
-                        SELECT COUNT(*)
-                        FROM bounce_tbl bounce
-                         JOIN customer_%d_tbl cust ON cust.customer_id = bounce.customer_id
-                        WHERE bounce.company_id = ?
-                          AND bounce.mailing_id = ?
-                          AND %s
-                          %s
-                        """.formatted(companyId, condition, andClause(targetSql)),
-                companyId,
-                mailingId
-        );
+        query(query.toString(), rs -> {
+            String domain = rs.getString("domain_name");
+            for (int i = 0; i < targets.size(); i++) {
+                int amount = rs.getInt("amount_" + i);
+                if (amount != 0) {
+                    result.get(targets.get(i).targetId()).put(domain, amount);
+                }
+            }
+        }, filter.companyId(), filter.mailingId());
+
+        return result;
     }
 
     @Override
-    public int getOpenersTotal(int mailingId, int companyId, String targetSql) {
-        return selectInt("""
-                        SELECT COUNT(DISTINCT cust.customer_id)
-                        FROM onepixellog_device_%d_tbl opl
-                          JOIN customer_%d_tbl cust ON opl.customer_id = cust.customer_id
-                        WHERE opl.mailing_id = ? %s
-                        """.formatted(companyId, companyId, andClause(targetSql)),
-                mailingId
-        );
+    public Map<Integer, Map<String, Integer>> getOpeners(Filter filter, List<TargetFilter> targets) {
+        return getDistinctCustomersByDomain(filter, targets, "onepixellog_device_" + filter.companyId() + "_tbl", "opl");
     }
 
     @Override
-    public int getClickersTotal(int mailingId, int companyId, String targetSql) {
-        return selectInt("""
-                        SELECT COUNT(DISTINCT cust.customer_id)
-                        FROM rdirlog_%d_tbl rlog
-                          JOIN customer_%d_tbl cust ON cust.customer_id = rlog.customer_id
-                        WHERE rlog.mailing_id = ? %s
-                        """.formatted(companyId, companyId, andClause(targetSql)),
-                mailingId
-        );
+    public Map<Integer, Map<String, Integer>> getClickers(Filter filter, List<TargetFilter> targets) {
+        return getDistinctCustomersByDomain(filter, targets, "rdirlog_" + filter.companyId() + "_tbl", "rlog");
     }
 
-    @Override
-    public Map<String, Integer> getOpeners(TopDomainsFilter opts, String targetSql) {
-        targetSql = andClause(targetSql);
-        String domainFromEmailExpression = getDomainFromEmailExpression(opts.isTopLevel());
-        return selectLinkedMap(addRowLimit("""
-                                SELECT COUNT(DISTINCT customer_id) AS count_per_domain, domain_name
-                                FROM (
-                                  SELECT %s AS domain_name, cust.customer_id
-                                  FROM onepixellog_device_%d_tbl opl
-                                    JOIN customer_%d_tbl cust ON cust.customer_id = opl.customer_id
-                                  WHERE opl.mailing_id = ? %s
-                                ) sub
-                                GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0
-                                ORDER BY count_per_domain DESC
-                                """.formatted(domainFromEmailExpression, opts.companyId(), opts.companyId(), targetSql),
-                        opts.limit()
-                ),
-                DOMAIN_TO_COUNT_MAPPER,
-                opts.mailingId()
-        );
+    private Map<Integer, Map<String, Integer>> getDistinctCustomersByDomain(
+            Filter filter, List<TargetFilter> targets, String tableName, String tableAlias
+    ) {
+        Map<Integer, Map<String, Integer>> result = newResultMap(targets);
+        if (targets.isEmpty()) {
+            return result;
+        }
+
+        String domainExpr = getDomainFromEmailExpression(filter.isTopLevel());
+
+        StringBuilder query = new StringBuilder("SELECT ").append(domainExpr).append(" AS domain_name");
+        for (int i = 0; i < targets.size(); i++) {
+            query.append(", COUNT(DISTINCT CASE WHEN ").append(targetCaseCondition(targets.get(i).targetSql())).append(" THEN cust.customer_id END) AS amount_").append(i);
+        }
+        query.append(" FROM ").append(tableName).append(" ").append(tableAlias)
+                .append(" JOIN customer_").append(filter.companyId()).append("_tbl cust ON cust.customer_id = ").append(tableAlias).append(".customer_id")
+                .append(" WHERE ").append(tableAlias).append(".mailing_id = ?")
+                .append(" GROUP BY ").append(domainExpr);
+
+        query(query.toString(), rs -> {
+            String domain = rs.getString("domain_name");
+            for (int i = 0; i < targets.size(); i++) {
+                int amount = rs.getInt("amount_" + i);
+                if (amount != 0) {
+                    result.get(targets.get(i).targetId()).put(domain, amount);
+                }
+            }
+        }, filter.mailingId());
+
+        return result;
     }
 
-    @Override
-    public Map<String, Integer> getClickers(TopDomainsFilter opts, String targetSql) {
-        targetSql = andClause(targetSql);
-        String domainFromEmailExpression = getDomainFromEmailExpression(opts.isTopLevel());
-        return selectLinkedMap(addRowLimit("""
-                                SELECT COUNT(DISTINCT customer_id) AS count_per_domain, domain_name
-                                FROM (
-                                  SELECT %s AS domain_name, cust.customer_id
-                                  FROM rdirlog_%s_tbl rlog
-                                    JOIN customer_%s_tbl cust ON cust.customer_id = rlog.customer_id
-                                  WHERE rlog.mailing_id = ? %s
-                                ) sub
-                                GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0
-                                ORDER BY count_per_domain DESC
-                                """.formatted(domainFromEmailExpression, opts.companyId(), opts.companyId(), targetSql),
-                        opts.limit()
-                ),
-                DOMAIN_TO_COUNT_MAPPER,
-                opts.mailingId()
-        );
+    private Map<Integer, Map<String, Integer>> newResultMap(List<TargetFilter> targets) {
+        Map<Integer, Map<String, Integer>> result = new LinkedHashMap<>();
+        for (TargetFilter target : targets) {
+            result.put(target.targetId(), new LinkedHashMap<>());
+        }
+        return result;
     }
 
-    public String getDomainFromEmailExpression(boolean topLevelDomains) {
+    private String targetCaseCondition(String targetSql) {
+        return isBlank(targetSql) ? "1=1" : "(" + targetSql + ")";
+    }
+
+    private String getDomainFromEmailExpression(boolean topLevelDomains) {
         return "SUBSTR(email, " + getPosExpression(topLevelDomains) + " + 1)";
     }
 
@@ -200,8 +167,8 @@ public class MailingTopDomainsStatsDaoImpl extends BaseDaoImpl implements Mailin
             return topLevelDomains ? "INSTR(email, '.', -1) " : "INSTR(email, '@')";
         }
         if (isPostgreSQL()) {
-            return topLevelDomains ? "LENGTH(email) - STRPOS(REVERSE(email), '.')" : "STRPOS(email, '@')";
+            return topLevelDomains ? "LENGTH(email) - STRPOS(REVERSE(email), '.') + 1" : "STRPOS(email, '@')";
         }
-        return topLevelDomains ? "LENGTH(email) - INSTR(REVERSE(email), '.')" : "INSTR(email, '@')";
+        return topLevelDomains ? "LENGTH(email) - INSTR(REVERSE(email), '.') + 1" : "INSTR(email, '@')";
     }
 }

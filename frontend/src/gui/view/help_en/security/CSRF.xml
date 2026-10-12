@@ -1,0 +1,4 @@
+<HelpBalloon>
+    <title><![CDATA[CSRF protection requires a separate login for all tabs]]></title>
+    <content><![CDATA[CSRF protection has been implemented in the EMM. Cross-Site Request Forgery (CSRF) is an attack in which a malicious phishing website causes a user's web browser to perform an unwanted action in the EMM while the user is logged in. To prevent this, CSRF protection has been enabled.<br/><br/><b>Please note:</b> Due to CSRF protection, it is no longer possible to operate multiple EMM tabs with the same session. If you require multiple tabs in parallel for your work, you must log in separately for each tab.]]></content>
+</HelpBalloon>

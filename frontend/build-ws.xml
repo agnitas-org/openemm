@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="all" name="OpenEMM_WS">
+<project basedir="." default="all" name="OpenEMM_WS" xmlns:ivy="antlib:org.apache.ivy.ant">
 	<import file="build.xml" />
 
 	<target name="all" depends="checkForPropertiesFile, setupBuildPaths, createPropertiesFiles, replaceEmmPropertiesPlaceholders, compile, deploy, applicationContext" description="Build everything.">
@@ -9,6 +9,7 @@
 	<target name="checkForPropertiesFile" description="Check the existence of the propertyfile and import it. This overrides the base target">
 		<property file="build-ws.properties" />
 		<property file="build-ws.properties.default" />
+		<property name="use.ivy" value="false"/>
 
 		<if>
 			<not>
@@ -27,6 +28,22 @@
 				</not>
 			</condition>
 		</fail>
+
+		<available file="ivy.properties" property="isIvyPropertiesAvailable"/>
+		<fail message="Missing ivy.properties: copy ivy.properties.default to ivy.properties and adjust the settings">
+			<condition>
+				<and>
+					<istrue value="${use.ivy}"/>
+					<not><isset property="isIvyPropertiesAvailable"/></not>
+				</and>
+			</condition>
+		</fail>
+
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then><property name="libs.dir" value="libs_ivy"/></then>
+			<else><property name="libs.dir" value="libs"/></else>
+		</if>
 
 		<propertyregex property="deploydir" input="${deploydir}" regexp="~" replace="${user.home}" global="true" override="true" />
 
@@ -79,18 +96,52 @@
 		</if>
 	</target>
 
-	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
+	<target name="resolve-if-ivy" depends="checkForPropertiesFile">
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then>
+				<echo message="[ivy] use.ivy=true — resolving core + soap dependencies..."/>
+				<ivy:settings file="${ivy.settings.file}"/>
+				<ivy:resolve file="./src/core/ivy.xml" conf="compile"/>
+				<ivy:retrieve pattern="${libs.dir}/core/[artifact]-[revision].[ext]" conf="compile" sync="true"/>
+				<ivy:resolve file="./src/soap/ivy.xml" conf="compile"/>
+				<ivy:retrieve pattern="${libs.dir}/soap/[artifact]-[revision].[ext]" conf="compile" sync="true"/>
+			</then>
+			<else>
+				<echo message="[ivy] use.ivy=false — using manual libs/core and libs/soap."/>
+			</else>
+		</if>
+	</target>
+
+	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget, resolve-if-ivy" description="Setting up the needed paths">
 		<path id="build.core.classpath">
-			<fileset dir="${basecss}/libs/core">
+			<fileset dir="${basecss}/${libs.dir}/core">
 				<include name="*.jar"/>
 			</fileset>
 		</path>
 
-		<path id="build.soap.classpath">
-			<fileset dir="${basecss}/libs/soap">
-				<include name="*.jar"/>
-			</fileset>
-		</path>
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then>
+				<!-- use.ivy=true: soap libs are self-contained (core inherited via <extends>) -->
+				<path id="build.soap.classpath">
+					<fileset dir="${basecss}/${libs.dir}/soap">
+						<include name="*.jar"/>
+					</fileset>
+				</path>
+			</then>
+			<else>
+				<!-- use.ivy=false: core libs needed on compile classpath separately -->
+				<path id="build.soap.classpath">
+					<fileset dir="${basecss}/${libs.dir}/core">
+						<include name="*.jar"/>
+					</fileset>
+					<fileset dir="${basecss}/${libs.dir}/soap">
+						<include name="*.jar"/>
+					</fileset>
+				</path>
+			</else>
+		</if>
 
 		<path id="build.containerPath">
 			<fileset dir="${CATALINA_HOME}/lib">
@@ -111,7 +162,7 @@
 
 		<property name="emmSourcePath" value="src" />
 		<property name="emmEtcPath" value="etc" />
-		<property name="emmLibsPath" value="libs" />
+		<property name="emmLibsPath" value="${libs.dir}" />
 
 		<fail message="Invalid deploytarget: ${deploytarget} (Invalid applicationtype)">
 			<condition>
@@ -185,12 +236,18 @@
 				<exclude name="**/*.default"/>
 			</fileset>
 		</copy>
+		<if>
+			<isfalse value="${use.ivy}"/>
+			<then>
+				<copy todir="${deploydir}${appname}/WEB-INF/lib" overwrite="true">
+					<fileset dir="${basecss}/${libs.dir}/core">
+						<include name="*.jar" />
+					</fileset>
+				</copy>
+			</then>
+		</if>
 		<copy todir="${deploydir}${appname}/WEB-INF/lib">
-			<fileset dir="${basecss}/libs/core">
-				<include name="*.jar" />
-			</fileset>
-
-			<fileset dir="${basecss}/libs/soap">
+			<fileset dir="${basecss}/${libs.dir}/soap">
 				<include name="*.jar" />
 			</fileset>
 		</copy>
@@ -231,17 +288,6 @@
 		<replace file="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" value="">
 			<replacetoken> xmlns=""</replacetoken>
 		</replace>
-
-		<xmltask
-				source="${emmSourcePath}/soap/view/WEB-INF/applicationContext-ws-service.xml"
-				dest="${deploydir}${appname}/WEB-INF/applicationContext-ws-service.xml"
-				preserveType="true">
-			<insert path="/*[local-name()='beans']/*[local-name()='bean'][last()]" position="after">
-				<![CDATA[
-					<bean id="WebserviceSubscriptionRejectionService" class="com.agnitas.emm.springws.subscriptionrejection.service.NullSubscriptionRejectionServiceImpl" />
-				]]>
-			</insert>
-		</xmltask>
 
 		<!-- Remove unwanted namespace attributes -->
 		<replace file="${deploydir}${appname}/WEB-INF/spring-ws-common.xml" value="">
@@ -296,10 +342,12 @@
 			</classpath>
 
 			<compilerarg line="-processorpath lib_tools/mapstruct-processor-1.6.3.jar"/>
-			<compilerarg line="-s ${deploydir}${appname}/WEB-INF/classes"/>
+			<compilerarg line="-s ${deploydir}${appname}/generated-sources"/>
 
 			<!-- To exclude some files: -->
 			<compilerarg line="-Xlint:-unchecked" />
 		</javac>
+
+		<delete dir="${deploydir}${appname}/generated-sources"/>
 	</target>
 </project>

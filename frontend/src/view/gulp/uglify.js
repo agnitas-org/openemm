@@ -42,6 +42,11 @@ const dashboardFiles = [
   'dashboard-news',
 ].map(file => `${config.assets}/js/controllers/dashboard/${file}.js`);
 
+const statisticsReportFiles = [
+  'abstract/statistics-report-base',
+  'mailing-statistics-report',
+].map(file => `${config.assets}/js/controllers/statistics-report/${file}.js`);
+
 const workflowFiles = [
   'comment-editor',
   'field-rules-table',
@@ -108,6 +113,7 @@ const fieldFiles = [
 const chartFiles = [
   'stats-chart',
   'line-chart',
+  'doughnut-chart',
 ].map(file => `${config.assets}/js/lib/chart/${file}.js`);
 
 const mailingContentFiles = [
@@ -127,7 +133,7 @@ const mailingContentFiles = [
 const applicationCommonFiles = [
     `${config.runtimeLibs}/jquery/jquery-3.5.1.js`,
     `${config.assets}/js/vendor/jquery-ui-1.14.1.js`,
-    `${config.runtimeLibs}/lodash/lodash-4.17.21.js`,
+    `${config.runtimeLibs}/lodash/lodash-4.18.1.js`,
     `${config.assets}/js/vendor/jquery-i18n-1.1.1.js`,
     `${config.node_modules}/marked/marked.min.js`,
     `${config.node_modules}/spectrum-colorpicker/spectrum.js`,
@@ -197,6 +203,7 @@ const applicationCommonFiles = [
     ...dashboardFiles,
     ...workflowFiles,
     ...mailingContentFiles,
+    ...statisticsReportFiles,
     `${config.assets}/js/controllers/*.js`,
     `${config.assets}/js/vendor/interact.js`
   ],

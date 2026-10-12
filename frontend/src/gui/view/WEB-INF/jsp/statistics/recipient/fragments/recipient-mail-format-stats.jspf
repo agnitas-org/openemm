@@ -1,0 +1,19 @@
+
+<script id="mail-format-stats-template" type="text/x-mustache-template">
+    <div class="d-flex gap-3 min-h-0">
+
+        <div class="tile tile--highlighted tile--xs" style="flex: 1">
+            <div class="tile-header">
+                <h3 class="tile-title fs-3 fw-semibold"><mvc:message code="Mailtype"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="mail-format-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="mail-format-table" class="table-wrapper" style="flex: 3"></div>
+
+    </div>
+</script>

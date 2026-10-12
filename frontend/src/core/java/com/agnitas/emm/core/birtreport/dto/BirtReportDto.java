@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -15,6 +15,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.agnitas.emm.core.birtreport.bean.ReportFormat;
 
 public class BirtReportDto {
     
@@ -33,7 +35,7 @@ public class BirtReportDto {
     private Date endDate;
     private Map<ReportSettingsType, Map<String, Object>> settings = new EnumMap<>(ReportSettingsType.class);
     
-    private int format;
+    private ReportFormat format = ReportFormat.PDF;
     
     private List<String> emailRecipientList;
     private String intervalpattern;
@@ -122,11 +124,11 @@ public class BirtReportDto {
         return emailDescription;
     }
     
-    public int getFormat() {
+    public ReportFormat getFormat() {
         return format;
     }
     
-    public void setFormat(int format) {
+    public void setFormat(ReportFormat format) {
         this.format = format;
     }
 

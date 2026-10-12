@@ -76,7 +76,7 @@
                             <input class="form-check-input" type="checkbox" name="bulkIds" value="${attachment.id}" autocomplete="off" data-bulk-checkbox />
                         </emm:column>
 
-                        <emm:column sortable="true" titleKey="default.Name" property="name" />
+                        <emm:column sortable="true" titleKey="settings.FileName" property="name" />
 
                         <emm:column sortable="true" titleKey="Target" sortProperty="targetId">
                             <mvc:hidden path="attachments[${attachment_index}].id"/>

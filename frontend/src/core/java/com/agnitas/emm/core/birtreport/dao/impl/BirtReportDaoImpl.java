@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -46,6 +46,7 @@ import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.birtreport.bean.ReportFormat;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
@@ -288,7 +289,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 					report.getDescription(),
 					report.isReportActive(),
 					report.getReportType(),
-					report.getFormat(),
+					report.getFormat().getCode(),
 					report.getEmailSubject(),
 					report.getEmailDescription(),
 					report.getActivationDate(),
@@ -316,7 +317,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 					report.getDescription(),
 					report.isReportActive(),
 					report.getReportType(),
-					report.getFormat(),
+					report.getFormat().getCode(),
 					report.getEmailSubject(),
 					report.getEmailDescription(),
 					report.getActivationDate(),
@@ -374,7 +375,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				report.getDescription(),
 				report.isReportActive(),
 				report.getReportType(),
-				report.getFormat(),
+				report.getFormat().getCode(),
 				report.getEmailSubject(),
 				report.getEmailDescription(),
 				report.getActivationDate(),
@@ -595,7 +596,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				report.setDescription(resultSet.getString("description"));
 				report.setReportActive(resultSet.getInt("active"));
 				report.setReportType(resultSet.getInt("report_type"));
-				report.setFormat(resultSet.getInt("format"));
+				report.setFormat(ReportFormat.getByCode(resultSet.getInt("format")));
 				report.setEmailSubject(resultSet.getString("email_subject"));
 				report.setEmailDescription(resultSet.getString("email_description"));
 				report.setActivationDate(resultSet.getTimestamp("activation_date"));

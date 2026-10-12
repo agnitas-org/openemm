@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+    <info organisation="com.agnitas" module="soap">
+        <extends organisation="com.agnitas" module="core" revision="working@localhost"
+                 location="../../src/core/ivy.xml" extendType="all"/>
+    </info>
+
+    <configurations>
+        <conf name="compile"/>
+    </configurations>
+
+    <dependencies>
+        <!-- Spring Web Services -->
+        <dependency org="org.springframework.ws" name="spring-ws-core"     rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ws" name="spring-ws-security" rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ws" name="spring-ws-support"  rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+
+        <!-- WSDL support -->
+        <dependency org="wsdl4j" name="wsdl4j" rev="1.6.1" conf="compile->default;sources->sources(*)"/>
+
+        <!-- XML Schema processing — was a transitive dep of spring-ws-core 4.x,
+             dropped in 5.0.0 but still required at runtime -->
+        <dependency org="org.apache.ws.xmlschema" name="xmlschema-core" rev="2.3.2" conf="compile->default;sources->sources(*)"/>
+
+        <!-- WS-Security (WSS4J) -->
+        <dependency org="org.apache.wss4j" name="wss4j-ws-security-common" rev="4.0.1" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.apache.wss4j" name="wss4j-ws-security-dom"    rev="4.0.1" conf="compile->default;sources->sources(*)"/>
+
+        <!-- opensaml/shibboleth are wss4j's optional SAML token feature — not used by this service -->
+        <exclude org="org.opensaml"/>
+        <exclude org="net.shibboleth"/>
+        <!-- jakarta.mail-api spec-only jar conflicts with Angus impl (2.1 API vs 2.0 impl);
+             jakarta.mail-2.0.2.jar already contains all API classes -->
+        <exclude org="jakarta.mail" module="jakarta.mail-api"/>
+        <!-- jcl-over-slf4j (from OpenSAML) conflicts with core's log4j-jcl — both implement JCL LogFactory -->
+        <exclude org="org.slf4j" module="jcl-over-slf4j"/>
+
+        <exclude org="org.cryptacular"/>
+        <exclude org="org.ehcache"/>
+        <exclude org="javax.cache"/>
+        <exclude org="org.jasypt"/>
+        <exclude org="com.google.guava"/>
+
+        <override org="org.apache.xmlrpc" module="xmlrpc-common" rev="3.1.3-jakarta"/>
+        <override org="org.springframework"            rev="7.0.8"/>
+        <override org="org.springframework.security"   rev="7.1.0"/>
+        <override org="org.slf4j"                      rev="2.0.18"/>
+    </dependencies>
+</ivy-module>

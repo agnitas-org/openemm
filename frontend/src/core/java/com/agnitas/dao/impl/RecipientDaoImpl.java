@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -1975,61 +1975,59 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteRecipients(int companyID, String target) {
+	public int deleteRecipients(int companyID, String target) {
+		String tmpTableName = "drop_cust_" + companyID + "_tbl";
+
 		try {
-			// Create a temporary table with the customerids so we do not have a problem with newly created customers between the two delete statements
+			// Create a temporary table with the customer ids so we do not have a problem with newly created customers between the two delete statements
 			if (isOracleDB() || isPostgreSQL()) {
 				String tablespacePart = "";
 				if (DbUtilities.checkOracleTablespaceExists(getDataSource(), "data_temp")) {
 					tablespacePart = " TABLESPACE data_temp";
 				}
-				execute("CREATE TABLE drop_cust_" + companyID + "_tbl" + tablespacePart + " AS SELECT customer_id FROM " + getCustomerTableName(companyID) + " cust WHERE " + target);
+				execute("CREATE TABLE " + tmpTableName + tablespacePart + " AS SELECT customer_id FROM " + getCustomerTableName(companyID) + " cust WHERE " + target);
 			} else {
-				execute("CREATE TABLE drop_cust_" + companyID + "_tbl ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AS SELECT customer_id FROM " + getCustomerTableName(companyID) + " cust WHERE " + target);
+				execute("CREATE TABLE " + tmpTableName + " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AS SELECT customer_id FROM " + getCustomerTableName(companyID) + " cust WHERE " + target);
 			}
-			execute("CREATE INDEX dropCust" + companyID + "$cid$idx ON drop_cust_" + companyID + "_tbl (customer_id)");
+			execute("CREATE INDEX dropCust%d$cid$idx ON %s (customer_id)".formatted(companyID, tmpTableName));
 
 			int stepsize = 200000;
-			int touchedLines = 0;
+			int touchedLines;
 			do {
 				if (isOracleDB()) {
-					touchedLines = update("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id in (SELECT customer_id FROM drop_cust_" + companyID + "_tbl) AND ROWNUM <= ?", stepsize);
+					touchedLines = update("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM " + tmpTableName + ") AND ROWNUM <= ?", stepsize);
 				} else if (isPostgreSQL()) {
-					touchedLines = update("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM drop_cust_" + companyID + "_tbl LIMIT " + stepsize + ")");
+					touchedLines = update("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM " + tmpTableName + " LIMIT " + stepsize + ")");
 				} else {
-					touchedLines = update("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id in (SELECT customer_id FROM drop_cust_" + companyID + "_tbl) LIMIT " + stepsize);
-				}
-			} while (touchedLines == stepsize);
-			
-			touchedLines = 0;
-			do {
-				if (isOracleDB()) {
-					touchedLines = update("DELETE FROM " + getCustomerTableName(companyID) + " WHERE customer_id in (SELECT customer_id FROM drop_cust_" + companyID + "_tbl) AND ROWNUM <= ?", stepsize);
-				} else if (isPostgreSQL()) {
-					touchedLines = update("DELETE FROM " + getCustomerTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM drop_cust_" + companyID + "_tbl LIMIT " + stepsize + ")");
-				} else {
-					touchedLines = update("DELETE FROM " + getCustomerTableName(companyID) + " WHERE customer_id in (SELECT customer_id FROM drop_cust_" + companyID + "_tbl) LIMIT " + stepsize);
+					touchedLines = update("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM " + tmpTableName + ") LIMIT " + stepsize);
 				}
 			} while (touchedLines == stepsize);
 
-			return true;
-		} catch (Exception e) {
-			logger.error("Error while deleting recipients", e);
-			return false;
+            do {
+				if (isOracleDB()) {
+					touchedLines = update("DELETE FROM " + getCustomerTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM " + tmpTableName + ") AND ROWNUM <= ?", stepsize);
+				} else if (isPostgreSQL()) {
+					touchedLines = update("DELETE FROM " + getCustomerTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM " + tmpTableName + " LIMIT " + stepsize + ")");
+				} else {
+					touchedLines = update("DELETE FROM " + getCustomerTableName(companyID) + " WHERE customer_id IN (SELECT customer_id FROM " + tmpTableName + ") LIMIT " + stepsize);
+				}
+			} while (touchedLines == stepsize);
+
+			return DbUtilities.getTableEntriesCount(dataSource, tmpTableName);
 		} finally {
 			try {
-				DbUtilities.dropTable(getDataSource(), "drop_cust_" + companyID + "_tbl");
+				DbUtilities.dropTable(getDataSource(), tmpTableName);
 			} catch (Exception e) {
-				logger.error("Cannot drop temporary table drop_cust_{}_tbl", companyID, e);
+				logger.error("Cannot drop temporary table {}", tmpTableName, e);
 			}
 		}
 	}
 
 	@Override
-	@DaoUpdateReturnValueCheck
-	public void deleteAllNoBindings(int companyID, String toBeDeletedTable) {
+	public int deleteAllNoBindings(int companyID, String toBeDeletedTable) {
 		final int stepsize = 100000;
-		int touchedLines = 0;
+		int deletedCount = 0;
+		int touchedLines;
 
 		String subQuery = "SELECT customer_id FROM " + getCustomerTableName(companyID)
 				+ " WHERE NOT EXISTS (SELECT 1 FROM " + getCustomerBindingTableName(companyID) + " bind WHERE " + getCustomerTableName(companyID) + ".customer_id = bind.customer_id)"
@@ -2047,9 +2045,12 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		}
 		do {
 			touchedLines = update(query, stepsize);
+			deletedCount += touchedLines;
 		} while (touchedLines == stepsize);
 		
 		DbUtilities.dropTable(getDataSource(), toBeDeletedTable);
+
+		return deletedCount;
 	}
 
 	@Override
@@ -2079,7 +2080,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean notAdminsAndTests) {
+	public int deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean notAdminsAndTests) {
 		final int stepSize = configService.getIntegerValue(ConfigValue.DeleteBindingStepsize, companyID);
 		if (stepSize <= 0) {
 			throw new IllegalStateException("Invalid config value for 'DeleteBindingStepsize': less or equal than zero");
@@ -2105,11 +2106,15 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		if (isMariaDB()) {
 			query += " LIMIT ?";
 		}
-		
-		int touchedLines = 0;
+
+		int deletedCount = 0;
+		int touchedLines;
 		do {
 			touchedLines = update(query, mailinglistID, mailinglistID, stepSize);
+			deletedCount += touchedLines;
 		} while (touchedLines == stepSize);
+
+		return deletedCount;
 	}
 
 	@Override
@@ -2537,7 +2542,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	}
 
 	@Override
-	public void batchUpdateData(List<Integer> customerIds, List<Map<String, ? extends Object>> rowsData, List<String> columns, int companyId) {
+	public void batchUpdateData(List<Integer> customerIds, List<Map<String, ?>> rowsData, List<String> columns, int companyId) {
         String setClause = columns.stream()
 				.map(col -> col + " = ?")
 				.collect(Collectors.joining(", "));

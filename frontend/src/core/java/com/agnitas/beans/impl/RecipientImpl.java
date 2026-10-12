@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -481,7 +481,7 @@ public class RecipientImpl implements Recipient {
 			if (!isAllowedName(entry.getKey())) {
 				continue;
 			}
-			if (colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_TIMESTAMP) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
+			if (colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_TIMESTAMP) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_TIMESTAMPTZ) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATE) || colType.equalsIgnoreCase(DbColumnType.GENERIC_TYPE_DATETIME)) {
 				if (StringUtils.isNotBlank((String) caseInsensitiveParameters.get(entry.getKey() + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT))) {
 					String value = (String) caseInsensitiveParameters.get(entry.getKey());
 					if (StringUtils.isNotBlank(value)) {

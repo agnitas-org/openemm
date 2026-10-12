@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -21,13 +21,17 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.useractivitylog.bean.McpToolAction;
+import com.agnitas.emm.core.useractivitylog.bean.McpUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
+import com.agnitas.emm.core.useractivitylog.dao.McpUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.dao.SoapUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.forms.McpUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.SoapUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
@@ -47,15 +51,17 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	private final UserActivityLogDao generalUserActivityLogDao;
 	private final RestfulUserActivityLogDao restfulUserActivityLogDao;
 	private final SoapUserActivityLogDao soapUserActivityLogDao;
+	private final McpUserActivityLogDao mcpUserActivityLogDao;
 	private final AdminService adminService;
 	private final WebserviceUserService webserviceUserService;
 
 	public DbUserActivityLogServiceImpl(UserActivityLogDao generalUserActivityLogDao, RestfulUserActivityLogDao restfulUserActivityLogDao,
-                                        SoapUserActivityLogDao soapUserActivityLogDao, AdminService adminService,
-										WebserviceUserService webserviceUserService) {
+                                        SoapUserActivityLogDao soapUserActivityLogDao, McpUserActivityLogDao mcpUserActivityLogDao,
+                                        AdminService adminService, WebserviceUserService webserviceUserService) {
 		this.generalUserActivityLogDao = generalUserActivityLogDao;
 		this.restfulUserActivityLogDao = restfulUserActivityLogDao;
 		this.soapUserActivityLogDao = soapUserActivityLogDao;
+		this.mcpUserActivityLogDao = mcpUserActivityLogDao;
         this.adminService = adminService;
         this.webserviceUserService = webserviceUserService;
     }
@@ -73,8 +79,10 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
         Map<Integer, Set<String>> restfulUsernames = groupUsernamesByCompany(adminsMap.get(true));
         Map<Integer, Set<String>> guiUsernames = groupUsernamesByCompany(adminsMap.get(false));
 
-        restfulUsernames.forEach((companyId, usernames) ->
-                restfulUserActivityLogDao.deleteByUsernames(usernames, companyId));
+        restfulUsernames.forEach((companyId, usernames) -> {
+			restfulUserActivityLogDao.deleteByUsernames(usernames, companyId);
+			mcpUserActivityLogDao.deleteByUsernames(usernames, companyId);
+		});
 
         guiUsernames.forEach((companyId, usernames) ->
                 generalUserActivityLogDao.deleteByUsernames(usernames, companyId));
@@ -110,6 +118,10 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 				usernames = restfulUserActivityLogDao.getDistinctUsernames(companyId);
 				usernames.addAll(adminService.getRestfulUsernames(companyId));
 			}
+			case MCP -> {
+				usernames = mcpUserActivityLogDao.getDistinctUsernames(companyId);
+				usernames.addAll(adminService.getRestfulUsernames(companyId));
+			}
 			case SOAP -> {
 				usernames = soapUserActivityLogDao.getDistinctUsernames(companyId);
 				usernames.addAll(webserviceUserService.getUsernames(companyId));
@@ -118,6 +130,23 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 		}
 
 		return usernames.stream()
+				.filter(StringUtils::isNotBlank)
+				.collect(Collectors.toSet());
+	}
+
+	@Override
+	public Set<String> getAvailableMcpSources(Admin admin) {
+		boolean masterLogAllowed = admin.permissionAllowed(Permission.MASTERLOG_SHOW);
+		boolean adminLogAllowed = admin.permissionAllowed(Permission.ADMINLOG_SHOW);
+
+		if (!masterLogAllowed && !adminLogAllowed) {
+			return Collections.emptySet();
+		}
+
+		Integer companyId = masterLogAllowed ? null : admin.getCompanyID();
+
+		return mcpUserActivityLogDao.getDistinctSources(companyId)
+				.stream()
 				.filter(StringUtils::isNotBlank)
 				.collect(Collectors.toSet());
 	}
@@ -145,6 +174,17 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	}
 
 	@Override
+	public PaginatedList<McpUserActivityAction> getMcpUserActivityLogByFilter(McpUserActivityLogFilter filter, Admin admin) {
+		addRequiredFilterRestrictions(filter, admin);
+
+		if (StringUtils.isBlank(filter.getSort())) {
+			filter.setSort("timestamp");
+		}
+
+		return mcpUserActivityLogDao.getUserActivityEntries(filter);
+	}
+
+	@Override
 	public PaginatedList<SoapUserActivityAction> getSoapUserActivityLogByFilter(SoapUserActivityLogFilter filter, Admin admin) {
 		addRequiredFilterRestrictions(filter, admin);
 
@@ -159,15 +199,12 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	public SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, UserType userType, Admin admin) {
 		addRequiredFilterRestrictions(filter, admin);
 
-		if (UserType.REST.equals(userType)) {
-			return restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((RestfulUserActivityLogFilter) filter));
-		}
-
-		if (UserType.SOAP.equals(userType)) {
-			return soapUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((SoapUserActivityLogFilter) filter));
-		}
-
-        return generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving((UserActivityLogFilter) filter);
+		return switch (userType) {
+            case GUI -> generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving((UserActivityLogFilter) filter);
+            case REST -> restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving((RestfulUserActivityLogFilter) filter);
+            case SOAP -> soapUserActivityLogDao.prepareSqlStatementForEntriesRetrieving((SoapUserActivityLogFilter) filter);
+            case MCP -> mcpUserActivityLogDao.prepareSqlStatementForEntriesRetrieving((McpUserActivityLogFilter) filter);
+		};
 	}
 
 	private void addRequiredFilterRestrictions(UserActivityLogFilterBase filter, Admin admin) {
@@ -199,6 +236,12 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 			admin
 		);
 		generalUserActivityLogDao.addAdminUseOfFeature(admin, action.description(), new Date());
+	}
+
+	@Async
+	@Override
+	public void writeMcpUserActivityLog(McpToolAction action, Admin admin) {
+		mcpUserActivityLogDao.writeUserActivityLog(action.toolName(), action.source(), admin);
 	}
 
 	@Override

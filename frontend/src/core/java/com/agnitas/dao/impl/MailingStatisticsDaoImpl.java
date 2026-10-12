@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,12 +43,14 @@ import com.agnitas.emm.core.mailing.dto.FollowupRecipientsQuery;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.Tuple;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.springframework.jdbc.core.RowMapper;
 
 public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStatisticsDao {
 
@@ -60,16 +63,16 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
     @Override
-    public int getNonOpeningClickers(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange timestamp) {
-        return selectInt(buildOpenersClickersQuery(mailingId, companyId, targetSql, userTypes, timestamp, false));
+    public int getNonOpeningClickers(int mailingId, int companyId, String targetSql, DateRange timestamp) {
+        return selectInt(buildOpenersClickersQuery(mailingId, companyId, targetSql, timestamp, false));
     }
 
     @Override
-    public int getOpeningClickers(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange timestamp) {
-        return selectInt(buildOpenersClickersQuery(mailingId, companyId, targetSql, userTypes, timestamp, true));
+    public int getOpeningClickers(int mailingId, int companyId, String targetSql, DateRange timestamp) {
+        return selectInt(buildOpenersClickersQuery(mailingId, companyId, targetSql, timestamp, true));
     }
 
-    private QueryAndParams buildOpenersClickersQuery(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange timestamp, boolean opening) {
+    private QueryAndParams buildOpenersClickersQuery(int mailingId, int companyId, String targetSql, DateRange timestamp, boolean opening) {
         StringBuilder query = new StringBuilder(
                 "SELECT COUNT(DISTINCT(r.customer_id)) FROM rdirlog_%d_tbl r".formatted(companyId)
         );
@@ -88,13 +91,6 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         query.append(getRangeFilterWithAnd("r.timestamp", timestamp, params));
         query.append(" AND ").append(opening ? "" : "NOT").append(" EXISTS (SELECT 1 FROM onepixellog_")
                 .append(companyId).append("_tbl o WHERE o.mailing_id = r.mailing_id AND o.customer_id = r.customer_id)");
-
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            query.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyId).append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append("AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
-        }
 
         return new QueryAndParams(query.toString(), params);
     }
@@ -131,13 +127,34 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
     @Override
+    public long getAvgMailingSizeKb(int mailingId, int companyId) {
+        return selectObject("""
+                SELECT COALESCE(SUM(no_of_mailings), 0) AS mails, COALESCE(SUM(no_of_bytes), 0) AS bytes
+                FROM mailing_account_tbl
+                WHERE mailing_id = ?
+                  AND status_field NOT IN ('A', 'T', 'V')
+                """, (resultSet, i) -> {
+            long sentMails = resultSet.getLong("mails");
+            if (sentMails <= 0) {
+                return 0L;
+            }
+
+            long numberOfBytes = resultSet.getLong("bytes")
+                    + selectLong("SELECT SUM(content_size * amount) FROM rdir_traffic_agr_%d_tbl WHERE mailing_id = ?".formatted(companyId), mailingId)
+                    + selectLong("SELECT SUM(content_size) FROM rdir_traffic_amount_%d_tbl WHERE mailing_id = ?".formatted(companyId), mailingId);
+
+            return numberOfBytes / sentMails / 1024;
+        }, mailingId);
+    }
+
+    @Override
     public int countOfOnceSending(int mailingId, Date thresholdDate) {
         return selectInt("""
                 SELECT COUNT(mailing_id)
                 FROM maildrop_status_tbl
                 WHERE mailing_id = ?
                   AND status_field IN ('W')
-                  AND senddate < CURRENT_DATE
+                  AND senddate < CURRENT_TIMESTAMP
                   AND senddate >= ?
                 """, mailingId, thresholdDate);
     }
@@ -151,7 +168,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
                 WHERE mst.mailing_id = ?
                   AND mst.status_field IN ('C', 'E', 'R', 'D')
                   AND mt.work_status = ?
-                  AND mst.senddate < CURRENT_DATE
+                  AND mst.senddate < CURRENT_TIMESTAMP
                 """, mailingId, MailingStatus.ACTIVE.getDbKey());
     }
 
@@ -161,7 +178,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
     @Override
-    public int getDeliveredCount(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange timestamp) {
+    public int getDeliveredCount(int mailingId, int companyId, String targetSql, DateRange timestamp) {
         // Do not count by "distinct customer_id", because event based mailings (birthday mailings etc.) might be delivered multiple times
         StringBuilder query = new StringBuilder("SELECT COUNT(s.customer_id) AS counter FROM success_%d_tbl s".formatted(companyId));
         List<Object> params = new ArrayList<>(List.of(mailingId));
@@ -175,14 +192,6 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
 
         if (StringUtils.isNotBlank(targetSql)) {
             query.append(" AND (").append(targetSql).append(")");
-        }
-
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            query.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyId).append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = s.mailing_id) AND bind.customer_id = s.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
         }
 
         return selectInt(query.toString(), params.toArray());
@@ -230,7 +239,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
     @Override
-    public int getClickersCount(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange timestamp) {
+    public int getClickersCount(int mailingId, int companyId, String targetSql, DateRange timestamp) {
         StringBuilder query = new StringBuilder("SELECT COUNT(DISTINCT r.customer_id) FROM rdirlog_%d_tbl r".formatted(companyId));
         List<Object> params = new ArrayList<>(List.of(mailingId));
 
@@ -245,19 +254,11 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
             query.append(" AND (").append(targetSql).append(")");
         }
 
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            query.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyId).append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
-        }
-
         return selectInt(query.toString(), params.toArray());
     }
 
     @Override
-    public int getOpenersCount(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange timestamp, Set<Integer> deviceIds) {
+    public int getOpenersCount(int mailingId, int companyId, String targetSql, DateRange timestamp, Set<Integer> deviceIds) {
         StringBuilder query = new StringBuilder("SELECT COUNT(DISTINCT o.customer_id) FROM onepixellog_device_").append(companyId).append("_tbl o");
         List<Object> params = new ArrayList<>(List.of(mailingId));
 
@@ -277,21 +278,11 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
             query.append(" AND (").append(targetSql).append(")");
         }
 
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            query.append(" AND EXISTS (SELECT 1 FROM customer_")
-                    .append(companyId)
-                    .append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
-        }
-
         return selectInt(query.toString(), params.toArray());
     }
 
     @Override
-    public int getOpeningsCount(int mailingId, int companyId, Set<UserType> userTypes, String targetSql, DateRange dateRange) {
+    public int getOpeningsCount(int mailingId, int companyId, String targetSql, DateRange dateRange) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM onepixellog_device_").append(companyId).append("_tbl o");
         List<Object> params = new ArrayList<>(List.of(mailingId));
 
@@ -308,20 +299,11 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
             sql.append(" AND (").append(targetSql).append(")");
         }
 
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            sql.append(" AND EXISTS (SELECT 1 FROM customer_")
-                    .append(companyId)
-                    .append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
-        }
         return selectInt(sql.toString(), params.toArray());
     }
 
     @Override
-    public int getClicksCount(int mailingId, int companyId, Set<UserType> userTypes, String targetSql, DateRange dateRange) {
+    public int getClicksCount(int mailingId, int companyId, String targetSql, DateRange dateRange) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM rdirlog_" + companyId + "_tbl r");
         List<Object> params = new ArrayList<>(List.of(mailingId));
 
@@ -338,15 +320,6 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
             sql.append(" AND (").append(targetSql).append(")");
         }
 
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            sql.append(" AND EXISTS (SELECT 1 FROM customer_")
-                    .append(companyId)
-                    .append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
-        }
         return selectInt(sql.toString(), params.toArray());
     }
 
@@ -387,6 +360,28 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         query.append(getRangeFilterWithAnd("timestamp", timestamp, params));
 
         return selectIntWithDefaultValue(query.toString(), 0, params.toArray());
+    }
+
+    @Override
+    public Map<Integer, Long> getRecipientsCountByMailType(int mailingId, Set<MaildropStatus> maildropStatuses, DateRange dateRange) {
+        StringBuilder query = new StringBuilder("""
+                SELECT mailtype, COALESCE(SUM(no_of_mailings), 0) AS count
+                FROM mailing_account_tbl
+                WHERE mailing_id = ?
+                """);
+        List<Object> params = new ArrayList<>(List.of(mailingId));
+
+        if (!maildropStatuses.isEmpty()) {
+            query.append(" AND ").append(makeBulkInClause("status_field", maildropStatuses.size()));
+            params.addAll(maildropStatuses.stream().map(MaildropStatus::getCodeString).toList());
+        }
+
+        query.append(getRangeFilterWithAnd("timestamp", dateRange, params));
+        query.append(" GROUP BY mailtype");
+
+        Map<Integer, Long> result = new HashMap<>();
+        query(query.toString(), rs -> result.put(rs.getInt("mailtype"), rs.getLong("count")), params.toArray());
+        return result;
     }
 
     @Override
@@ -468,7 +463,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
                                  WHEN 'T' THEN 4
                                  WHEN 'A' THEN 4
                                  ELSE 5 END, status_id DESC
-                    """.formatted(isPostgreSQL() ? "EXTRACT(DAY FROM CURRENT_TIMESTAMP - senddate)" : "TIMESTAMPDIFF(DAY, senddate, CURRENT_TIMESTAMP)");
+                    """.formatted(isPostgreSQL() ? "CURRENT_DATE - senddate::date" : "TIMESTAMPDIFF(DAY, senddate, CURRENT_TIMESTAMP)");
         }
 
         return Optional.ofNullable(selectIntDefaultNull(addRowLimit(query, 1), companyId, mailingId));
@@ -702,7 +697,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
      * = openers that opened this mailing with any combination of more than one deviceclass
      */
     @Override
-    public Map<DeviceClass, Integer> getOpenersByDevice(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange dateRange) {
+    public Map<DeviceClass, Integer> getOpenersByDevice(int mailingId, int companyId, String targetSql, DateRange dateRange) {
         StringBuilder sql = new StringBuilder("SELECT o.device_class_id AS deviceClassId, COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_%d_tbl o".formatted(companyId));
         List<Object> params = new ArrayList<>(List.of(mailingId));
 
@@ -716,21 +711,20 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         // Exclude anonymous entries
         sql.append(" AND o.customer_id <> 0");
 
-        // Exclude clickers with combinations of deviceclasses
-        sql.append(" AND NOT EXISTS (SELECT 1 FROM onepixellog_device_%d_tbl opl WHERE opl.device_class_id != o.device_class_id AND opl.mailing_id = o.mailing_id AND opl.customer_id = o.customer_id)".formatted(companyId));
+        // Exclude openers with combinations of device classes (legacy rows without a device class always pass through)
+        sql.append("""
+                 AND (o.device_class_id IS NULL OR o.customer_id IN (
+                     SELECT opl.customer_id FROM onepixellog_device_%d_tbl opl
+                     WHERE opl.mailing_id = ? AND opl.customer_id <> 0
+                     GROUP BY opl.customer_id HAVING COUNT(DISTINCT opl.device_class_id) = 1
+                 ))
+                """.formatted(companyId));
+        params.add(mailingId);
 
         sql.append(getRangeFilterWithAnd("o.creation", dateRange, params));
 
         if (MailingStatisticsDao.isTargetFilterRequired(targetSql)) {
             sql.append(" AND (").append(targetSql).append(")");
-        }
-
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            sql.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyId).append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
         }
 
         sql.append(" GROUP BY o.device_class_id");
@@ -740,14 +734,17 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
 
     private Map<DeviceClass, Integer> getDeviceClassMap(StringBuilder sql, List<Object> params) {
         Map<DeviceClass, Integer> returnMap = new EnumMap<>(DeviceClass.class);
-        for (DeviceClass deviceClass : AVAILABLE_DEVICE_CLASSES) {
+        for (DeviceClass deviceClass : DeviceClass.getOnlyKnownDeviceClasses()) {
             returnMap.put(deviceClass, 0);
         }
 
         select(sql.toString(), (rs, rowNum) -> {
-            // Some old entries dont't have a deviceclassid, those are desktop values
-            DeviceClass deviceClass = DeviceClass.fromIdWithDefault(rs.getInt("deviceClassId"), DeviceClass.DESKTOP);
-            returnMap.put(deviceClass, rs.getInt("counter"));
+            int rawDeviceClassId = rs.getInt("deviceClassId");
+            DeviceClass deviceClass = rawDeviceClassId > 0
+                    ? DeviceClass.fromIdWithDefault(rawDeviceClassId, DeviceClass.UNKNOWN_DESKTOP)
+                    : DeviceClass.DESKTOP;
+
+            returnMap.merge(deviceClass, rs.getInt("counter"), Integer::sum);
             return null;
         }, params.toArray());
 
@@ -763,7 +760,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
      * = clickers that clicked a link of this mailing with any combination of more than one deviceclass
      */
     @Override
-    public Map<DeviceClass, Integer> getClickersByDevice(int mailingId, int companyId, String targetSql, Set<UserType> userTypes, DateRange dateRange) {
+    public Map<DeviceClass, Integer> getClickersByDevice(int mailingId, int companyId, String targetSql, DateRange dateRange) {
         StringBuilder sql = new StringBuilder("SELECT r.device_class_id AS deviceClassId, COUNT(DISTINCT r.customer_id) AS counter FROM rdirlog_%d_tbl r".formatted(companyId));
         List<Object> params = new ArrayList<>(List.of(mailingId));
 
@@ -777,9 +774,15 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         // Exclude anonymous entries.
         sql.append(" AND r.customer_id <> 0");
 
-        // Exclude clickers with combinations of deviceclasses
-        sql.append(" AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyId
-                   + "_tbl rdir WHERE rdir.device_class_id != r.device_class_id AND rdir.mailing_id = r.mailing_id AND rdir.customer_id = r.customer_id)");
+        // Exclude clickers with combinations of device classes (legacy rows without a device class always pass through)
+        sql.append("""
+                 AND (r.device_class_id IS NULL OR r.customer_id IN (
+                     SELECT rdir.customer_id FROM rdirlog_%d_tbl rdir
+                     WHERE rdir.mailing_id = ? AND rdir.customer_id <> 0
+                     GROUP BY rdir.customer_id HAVING COUNT(DISTINCT rdir.device_class_id) = 1
+                 ))
+                """.formatted(companyId));
+        params.add(mailingId);
 
         sql.append(getRangeFilterWithAnd("r.timestamp", dateRange, params));
 
@@ -787,16 +790,111 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
             sql.append(" AND (").append(targetSql).append(")");
         }
 
-        if (CollectionUtils.isNotEmpty(userTypes)) {
-            sql.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyId).append("_binding_tbl bind WHERE ")
-                    .append(makeBulkInClause("bind.user_type", userTypes.size()))
-                    .append(" AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
-
-            params.addAll(userTypes.stream().map(UserType::getTypeCode).toList());
-        }
-
         sql.append(" GROUP BY r.device_class_id");
 
         return getDeviceClassMap(sql, params);
     }
+
+    @Override
+    public List<DeviceCount> getOpenerDeviceCounts(
+            int mailingId,
+            int companyId,
+            List<LightTarget> targets,
+            DeviceClass deviceClass,
+            DateRange dateRange,
+            int maxCount
+    ) {
+        if (targets.isEmpty()) {
+            return List.of();
+        }
+
+        StringBuilder sql = new StringBuilder("SELECT d.description AS deviceName");
+        for (LightTarget target : targets) {
+            sql.append(", COUNT(DISTINCT CASE WHEN (").append(target.getTargetSQL()).append(") THEN o.customer_id END) AS tg_").append(target.getId());
+        }
+
+        sql.append(" FROM onepixellog_device_%d_tbl o".formatted(companyId));
+        sql.append(" JOIN device_tbl d ON o.device_id = d.device_id");
+        sql.append(" LEFT JOIN customer_%d_tbl cust ON o.customer_id = cust.customer_id".formatted(companyId));
+
+        List<Object> params = new ArrayList<>();
+        sql.append(" WHERE o.mailing_id = ? AND o.device_class_id = ?");
+        params.add(mailingId);
+        params.add(deviceClass.getId());
+
+        sql.append(" AND o.customer_id <> 0");
+
+        sql.append("""
+                 AND o.customer_id IN (
+                     SELECT opl.customer_id FROM onepixellog_device_%d_tbl opl
+                     WHERE opl.mailing_id = ? AND opl.customer_id <> 0
+                     GROUP BY opl.customer_id HAVING COUNT(DISTINCT opl.device_class_id) = 1
+                 )
+                """.formatted(companyId));
+        params.add(mailingId);
+
+        sql.append(getRangeFilterWithAnd("o.creation", dateRange, params));
+
+        sql.append(" GROUP BY d.description");
+        sql.append(" ORDER BY tg_").append(targets.getFirst().getId()).append(" DESC, d.description ASC");
+
+        return select(addRowLimit(sql.toString(), maxCount), deviceCountRowMapper(targets), params.toArray());
+    }
+
+    @Override
+    public List<DeviceCount> getClickerDeviceCounts(
+            int mailingId,
+            int companyId,
+            List<LightTarget> targets,
+            DeviceClass deviceClass,
+            DateRange dateRange,
+            int maxCount
+    ) {
+        if (targets.isEmpty()) {
+            return List.of();
+        }
+
+        StringBuilder sql = new StringBuilder("SELECT d.description AS deviceName");
+        for (LightTarget target : targets) {
+            sql.append(", COUNT(DISTINCT CASE WHEN (").append(target.getTargetSQL()).append(") THEN r.customer_id END) AS tg_").append(target.getId());
+        }
+
+        sql.append(" FROM rdirlog_%d_tbl r".formatted(companyId));
+        sql.append(" JOIN device_tbl d ON r.device_id = d.device_id");
+        sql.append(" LEFT JOIN customer_%d_tbl cust ON r.customer_id = cust.customer_id".formatted(companyId));
+
+        List<Object> params = new ArrayList<>();
+        sql.append(" WHERE r.mailing_id = ? AND r.device_class_id = ?");
+        params.add(mailingId);
+        params.add(deviceClass.getId());
+
+        sql.append(" AND r.customer_id <> 0");
+
+        sql.append("""
+                 AND r.customer_id IN (
+                     SELECT rdir.customer_id FROM rdirlog_%d_tbl rdir
+                     WHERE rdir.mailing_id = ? AND rdir.customer_id <> 0
+                     GROUP BY rdir.customer_id HAVING COUNT(DISTINCT rdir.device_class_id) = 1
+                 )
+                """.formatted(companyId));
+        params.add(mailingId);
+
+        sql.append(getRangeFilterWithAnd("r.timestamp", dateRange, params));
+
+        sql.append(" GROUP BY d.description");
+        sql.append(" ORDER BY tg_").append(targets.getFirst().getId()).append(" DESC, d.description ASC");
+
+        return select(addRowLimit(sql.toString(), maxCount), deviceCountRowMapper(targets), params.toArray());
+    }
+
+    private RowMapper<DeviceCount> deviceCountRowMapper(List<LightTarget> targets) {
+        return (rs, rowNum) -> {
+            Map<Integer, Long> countsByTargetId = new LinkedHashMap<>();
+            for (LightTarget target : targets) {
+                countsByTargetId.put(target.getId(), rs.getLong("tg_" + target.getId()));
+            }
+            return new DeviceCount(rs.getString("deviceName"), countsByTargetId);
+        };
+    }
+
 }

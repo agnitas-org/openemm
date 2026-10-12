@@ -175,5 +175,5 @@
 </template>
 
 <template id="start-after-error-cell">
-	<span class="status-badge status.{{- value ? 'success' : 'error' }}"></span>
+	<span class="status-badge status.{{- value ? 'enabled' : 'disabled' }}"></span>
 </template>

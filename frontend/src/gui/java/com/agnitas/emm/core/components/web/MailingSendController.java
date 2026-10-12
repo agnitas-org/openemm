@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -32,6 +32,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendOptions;
@@ -63,7 +64,7 @@ import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
 import com.agnitas.emm.core.mailing.bean.MailingSize;
-import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
+import com.agnitas.emm.core.mailing.bean.impl.MailingValidatorLegacy;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
@@ -147,7 +148,7 @@ public class MailingSendController implements XssCheckAware {
     private final GridServiceWrapper gridService;
     private final MailingDao mailingDao;
     private final WebStorage webStorage;
-    private final MailingValidator mailingValidator;
+    private final MailingValidatorLegacy mailingValidator;
     private final PremiumFeaturesService premiumFeatureService;
     private final ServerPrioService serverPrioService;
     private final MailinglistApprovalService mailinglistApprovalService;
@@ -171,7 +172,7 @@ public class MailingSendController implements XssCheckAware {
             MailingStopService mailingStopService,
             MailinglistService mailinglistService,
             @Autowired(required = false) AutoImportService autoImportService,
-            MailingValidator mailingValidator,
+            MailingValidatorLegacy mailingValidator,
             MailingDeliveryBlockingService mailingDeliveryBlockingService,
             MailingStatisticsDao mailingStatisticsDao,
             BounceFilterService bounceFilterService,
@@ -277,6 +278,7 @@ public class MailingSendController implements XssCheckAware {
 
             model.addAttribute("targetGroups", targetGroupsAsString);
             model.addAttribute(MAILING_SUBJECT_ATTR, getMailingSubject(mailing));
+            model.addAttribute("isStandaloneSmsMailing", mailingService.isStandaloneSmsMailing(mailing));
             model.addAttribute("thumbnailComponentId", mailingService.getThumbnailComponentId(mailing).orElse(null));
             addMailingSizeAttributes(mailing, admin, model);
         }
@@ -612,6 +614,7 @@ public class MailingSendController implements XssCheckAware {
 
     private void addModelAttributesForConfirmSending(Mailing mailing, Admin admin, int recipientsCount, Date sendDate, Model model) {
         model.addAttribute("potentialSendDate", admin.getDateTimeFormat().format(sendDate));
+        model.addAttribute("isStandaloneSmsMailing", mailingService.isStandaloneSmsMailing(mailing));
         model.addAttribute(MAILING_SUBJECT_ATTR, getMailingSubject(mailing));
         addMailingSizeAttributes(mailing, admin, model);
         model.addAttribute("recipientsCount", NumberFormat.getNumberInstance(admin.getLocale()).format(recipientsCount));
@@ -745,15 +748,22 @@ public class MailingSendController implements XssCheckAware {
 
         form.setMailingID(mailingId);
         form.setWorkStatus(mailingDao.getStatus(companyID, mailingId).getDbKey());
-        loadDeliveryStatistics(admin, mailing, model);
+        DeliveryStat deliveryStat = loadDeliveryStatistics(admin, mailing, model);
 
         model.addAttribute("isPostMailing", mailingService.isPostMailing(mailing));
+        model.addAttribute("isStandaloneSmsMailing", mailingService.isStandaloneSmsMailing(mailing));
         model.addAttribute("copyCancelledMailingEnabled", isCopyCancelledMailingEnabled(admin, mailing));
         model.addAttribute("isTransmissionRunning", mailingDao.isTransmissionRunning(mailingId));
         model.addAttribute("needsOutsideApproval", adminCannotApproveOrSendAnyway && mailingLockedAndNotSent);
 
         model.addAttribute("mailingType", mailing.getMailingType());
         model.addAttribute("worldMailingSend", maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID()));
+        model.addAttribute("isDeliveryThrottled", mailing.getMaildropStatus().stream()
+                .filter(maildrop -> maildrop.getStatus() == MaildropStatus.WORLD.getCode())
+                .anyMatch(maildrop -> deliveryStat != null
+                        && maildrop.getBlocksize() > 0
+                        && maildrop.getStepping() > 0
+                        && maildrop.getBlocksize() < deliveryStat.getTotalMails()));
 
         if (mailing.getMailingType() == MailingType.ACTION_BASED) {
             model.addAttribute("bounceFilterNames", loadBounceFiltersNames(companyID, mailingId));
@@ -872,6 +882,7 @@ public class MailingSendController implements XssCheckAware {
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
 
         model.addAttribute(MAILING_SUBJECT_ATTR, getMailingSubject(mailing));
+        model.addAttribute("isStandaloneSmsMailing", mailingService.isStandaloneSmsMailing(mailing));
         model.addAttribute("thumbnailComponentId", mailingService.getThumbnailComponentId(mailing).orElse(null));
         model.addAttribute("shortname", mailing.getShortname());
         addMailingSizeAttributes(mailing, admin, model);
@@ -1149,11 +1160,14 @@ public class MailingSendController implements XssCheckAware {
         return bounceFilterService.getBounceFilterNames(bounceFilters);
     }
 
-    private void loadDeliveryStatistics(Admin admin, Mailing mailing, Model model) {
+    private DeliveryStat loadDeliveryStatistics(Admin admin, Mailing mailing, Model model) {
         int mailingId = mailing.getId();
 
-        model.addAttribute("deliveryStat", deliveryStatService.getDeliveryStats(admin.getCompanyID(), mailingId, mailing.getMailingType()));
+        DeliveryStat deliveryStat = deliveryStatService.getDeliveryStats(admin.getCompanyID(), mailingId, mailing.getMailingType());
+        model.addAttribute("deliveryStat", deliveryStat);
         model.addAttribute("targetGroupsNames", targetService.getTargetNamesByIds(admin.getCompanyID(), targetService.getTargetIdsFromExpression(mailing)));
+
+        return deliveryStat;
     }
 
     private boolean validateMailingSize(Mailing mailing, Popups popups, Admin admin) {

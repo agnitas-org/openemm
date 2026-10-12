@@ -1,11 +1,10 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
-<%@ page import="com.agnitas.emm.core.dashboard.bean.DashboardWorkflow" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ page import="com.agnitas.emm.core.workflow.beans.Workflow" %>
 
 <%--@elvariable id="workflows" type="java.util.List<com.agnitas.emm.core.dashboard.bean.DashboardWorkflow>"--%>
 
 <c:set var="STOP_TYPE_AUTOMATIC" value="<%= WorkflowStop.WorkflowEndType.AUTOMATIC %>"/>
-<c:set var="STATUS_ACTIVE" value="<%= DashboardWorkflow.Status.ACTIVE %>" />
+<c:set var="STATUS_ACTIVE" value="<%= Workflow.WorkflowStatus.STATUS_ACTIVE %>" />
 
 <script id="dashboard-tile-workflows" type="text/x-mustache-template">
     <div class="tile draggable-tile scheduled-items">
@@ -16,11 +15,9 @@
             <c:choose>
                 <c:when test="${not workflows.isEmpty()}">
                     <c:forEach var="workflow" items="${workflows}">
-                        <c:set var="status" value="${fn:toLowerCase(workflow.status.name())}" />
-
                         <a class="list-item overflow-hidden" href="<c:url value="/workflow/${workflow.id}/view.action" />">
                             <div class="item__info-container">
-                                <span class="status-badge campaign.status.${status}" data-tooltip="<mvc:message code="workflow.view.status.${status}"/>"></span>
+                                <span class="status-badge campaign.status.${workflow.status.name}" data-tooltip="<mvc:message code="${workflow.status.messageKey}"/>"></span>
                                 <span class="item__name-label text-truncate">${workflow.name}</span>
                             </div>
 

@@ -1,23 +1,26 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.service;
 
-import com.agnitas.messages.Message;
-import org.apache.commons.collections4.CollectionUtils;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.agnitas.emm.core.validator.ValidationField;
+import com.agnitas.messages.Message;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 
 public class ServiceResult<T> {
     private final T result;
@@ -26,6 +29,7 @@ public class ServiceResult<T> {
     private final Collection<Message> warningMessages;
     private final Collection<Message> errorMessages;
     private final Collection<Message> infoMessages;
+    private final Map<ValidationField, Message> fieldErrors;
 
     public static <R> ServiceResult<R> success(final R result, final Message... successMessages) {
         return new ServiceResult<>(result, true, Arrays.asList(successMessages), null, null);
@@ -67,11 +71,13 @@ public class ServiceResult<T> {
             this.warningMessages = Collections.emptyList();
             this.errorMessages = Collections.emptyList();
             this.infoMessages = Collections.emptyList();
+            this.fieldErrors = Map.of();
         } else {
             this.successMessages = Collections.emptyList();
             this.warningMessages = Collections.emptyList();
             this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.unmodifiableList(Arrays.asList(messages));
+            this.fieldErrors = Map.of();
         }
     }
 
@@ -83,11 +89,13 @@ public class ServiceResult<T> {
             this.warningMessages = Collections.emptyList();
             this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.emptyList();
+            this.fieldErrors = Map.of();
         } else {
             this.successMessages = Collections.emptyList();
             this.warningMessages = Collections.emptyList();
             this.infoMessages = Collections.emptyList();
             this.errorMessages = Collections.unmodifiableCollection(messages);
+            this.fieldErrors = Map.of();
         }
     }
 
@@ -96,6 +104,18 @@ public class ServiceResult<T> {
     }
 
     public ServiceResult (final T result, final boolean success, final Collection<Message> successMessages, final Collection<Message> warningMessages, final Collection<Message> errorMessages, final Collection<Message> infoMessages) {
+        this(result, success, successMessages, warningMessages, errorMessages, infoMessages, Map.of());
+    }
+
+    public ServiceResult (
+            final T result,
+            final boolean success,
+            final Collection<Message> successMessages,
+            final Collection<Message> warningMessages,
+            final Collection<Message> errorMessages,
+            final Collection<Message> infoMessages,
+            final Map<ValidationField, Message> fieldErrors
+    ) {
         this.result = result;
         this.success = success;
 
@@ -122,6 +142,7 @@ public class ServiceResult<T> {
         } else {
             this.infoMessages = Collections.unmodifiableCollection(infoMessages);
         }
+        this.fieldErrors = Map.copyOf(MapUtils.emptyIfNull(fieldErrors));
     }
 
     public static <R> ServiceResult<R> from(ServiceResult<?> result) {
@@ -158,6 +179,8 @@ public class ServiceResult<T> {
     public boolean hasErrorMessages() {
         return CollectionUtils.isNotEmpty(errorMessages);
     }
+
+    public Map<ValidationField, Message> getFieldErrors() { return fieldErrors; }
 
     public T getResult() {
         return result;

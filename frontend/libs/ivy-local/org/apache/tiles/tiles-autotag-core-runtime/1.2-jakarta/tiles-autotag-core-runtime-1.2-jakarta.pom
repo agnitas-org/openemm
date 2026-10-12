@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>tiles-autotag</artifactId>
+    <groupId>org.apache.tiles</groupId>
+    <version>1.2</version>
+  </parent>
+  <groupId>org.apache.tiles</groupId>
+  <artifactId>tiles-autotag-core-runtime</artifactId>
+  <version>1.2-jakarta</version>
+  <name>Autotag - Core runtime</name>
+  <description>Autotag: runtime core classes.</description>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <configuration>
+                        <archive>
+                            <manifestFile>${tiles.manifestfile}</manifestFile>
+                            <manifest>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>2.3.7</version>
+                    <inherited>true</inherited>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <excludeDependencies>true</excludeDependencies>
+                    <manifestLocation>target/osgi</manifestLocation>
+                    <instructions>
+                        <_nouses>true</_nouses>
+                        <Bundle-SymbolicName>${tiles.osgi.symbolicName}</Bundle-SymbolicName>
+                        <Export-Package>${tiles.osgi.export}</Export-Package>
+                        <Private-Package>${tiles.osgi.private}</Private-Package>
+                        <Import-Package>${tiles.osgi.import}</Import-Package>
+                        <DynamicImport-Package>${tiles.osgi.dynamicImport}</DynamicImport-Package>
+                        <Bundle-DocURL>${project.url}</Bundle-DocURL>
+                        <Specification-Title>${project.name}</Specification-Title>
+                        <Specification-Version>${project.version}</Specification-Version>
+                        <Specification-Vendor>${project.organization.name}</Specification-Vendor>
+                        <Implementation-Title>${project.name}</Implementation-Title>
+                        <Implementation-Version>${project.version}</Implementation-Version>
+                        <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                        <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
+                    </instructions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <releaseProfiles>apache-release</releaseProfiles><!-- xxx tiles still uses "release" instead of "apache-release" -->
+                    <goals>deploy site-deploy</goals>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <defaultGoal>install</defaultGoal>
+    </build>
+
+    <properties>
+        <tiles.osgi.symbolicName>org.apache.${project.artifactId}</tiles.osgi.symbolicName>
+        <tiles.osgi.export>org.apache.tiles.*;version=${project.version}</tiles.osgi.export>
+        <tiles.osgi.import>*</tiles.osgi.import>
+        <tiles.osgi.dynamicImport />
+        <tiles.osgi.private />
+        <tiles.manifestfile>target/osgi/MANIFEST.MF</tiles.manifestfile>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+  <dependencies>
+      <dependency>
+      	<groupId>junit</groupId>
+      	<artifactId>junit</artifactId>
+      	<scope>test</scope>
+      </dependency>
+      <dependency>
+      	<groupId>org.easymock</groupId>
+      	<artifactId>easymock</artifactId>
+      	<scope>test</scope>
+      </dependency>
+  </dependencies>
+</project>

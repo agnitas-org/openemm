@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,10 +13,12 @@ package com.agnitas.reporting.birt.external.dataset;
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -25,12 +27,38 @@ import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.DateUtils;
 
 /**
  * BIRT-DataSet for mailing url clicks statistics
  */
 public class MailingURLClicksDataSet extends BIRTDataSet {
+
+	private enum ShareType {
+		ALL(""),
+		MOBILE("rlog.device_class_id = " + DeviceClass.MOBILE.getId()),
+		ANONYMOUS("rlog.customer_id = 0");
+
+		final String condition;
+
+		ShareType(String condition) {
+			this.condition = condition;
+		}
+	}
+
+	private record TargetGroup(String name, String targetSql, int columnIndex) {
+	}
+
+	private record Filter(TargetGroup targetGroup, ShareType share, String condition) {
+	}
+
+	private record ClickCounts(int clicksGross, int clicksNet) {
+		static final ClickCounts EMPTY = new ClickCounts(0, 0);
+	}
+
+	private record UrlInfo(String url, boolean adminLink, boolean deleted) {
+	}
 
 	private static String getTempTableName(int companyId) {
 		return "tmp_report_aggregation_" + companyId + "_tbl";
@@ -44,7 +72,6 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 		return new DateFormats(startDate, stopDate, hourScale);
 	}
 
-	// TODO: GWUA-6948: Remove when removing 'migration.mailing.click.stat'
 	public int prepareReport(int mailingID, int companyID, String selectedTargets, String recipientsType) {
 		return prepareReport(mailingID, companyID, selectedTargets, null, recipientsType, new DateFormats());
 	}
@@ -52,26 +79,93 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	public int prepareReport(int mailingID, int companyID, String selectedTargets, String hiddenTargetIdStr, String recipientsType, DateFormats dateFormats) {
 		int tempTableID = createTempTable();
 
-		insertTargetGroup(CommonKeys.ALL_SUBSCRIBERS, null, mailingID, companyID, tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 		List<LightTarget> targetsList = getTargets(selectedTargets, companyID);
+		String hiddenTargetSql = getTargetSqlString(hiddenTargetIdStr, companyID);
 
-		final String hiddenTargetSql = getTargetSqlString(hiddenTargetIdStr, companyID);
-
+		List<TargetGroup> targetGroups = new ArrayList<>();
+		targetGroups.add(new TargetGroup(CommonKeys.ALL_SUBSCRIBERS, null, ALL_SUBSCRIBERS_INDEX));
+		int columnIndex = ALL_SUBSCRIBERS_INDEX;
 		if (CollectionUtils.isNotEmpty(targetsList)) {
-			int columnIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
 			for (LightTarget target : targetsList) {
-				final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
-				insertTargetGroup(target.getName(), resultTargetSql, mailingID, companyID, tempTableID, ++columnIndex, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+				String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
+				targetGroups.add(new TargetGroup(target.getName(), resultTargetSql, ++columnIndex));
 			}
 		}
+
+		insertAllTargetGroups(tempTableID, mailingID, companyID, targetGroups, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
+
 		updateRates(tempTableID, targetsList);
 
 		return tempTableID;
 	}
 
-	private void insertTargetGroup(String targetName, String targetSql, int mailingID, int companyID, int tempTableID, int columnIndex, String recipientsType, String startDateString, String endDateString) {
-		List<Object> parameters = new ArrayList<>();
+	private void insertAllTargetGroups(int tempTableID, int mailingID, int companyID, List<TargetGroup> targetGroups, String recipientsType, String startDateString, String endDateString) {
+		Map<Integer, UrlInfo> urlInfoById = loadUrlInfo(mailingID);
 
+		List<Filter> filters = new ArrayList<>();
+		for (TargetGroup targetGroup : targetGroups) {
+			for (ShareType share : ShareType.values()) {
+				filters.add(new Filter(targetGroup, share, combineConditions(targetGroup.targetSql(), share.condition)));
+			}
+		}
+
+		Map<Filter, Map<Integer, ClickCounts>> countsByFilter = loadClickCounts(mailingID, companyID, recipientsType, startDateString, endDateString, filters);
+
+		List<MailingClickStatsPerTargetRow> rows = new ArrayList<>();
+		for (Filter filter : filters) {
+			Map<Integer, ClickCounts> counts = countsByFilter.get(filter);
+
+			for (Map.Entry<Integer, UrlInfo> entry : urlInfoById.entrySet()) {
+				int urlId = entry.getKey();
+				UrlInfo info = entry.getValue();
+				ClickCounts clickCounts = counts.getOrDefault(urlId, ClickCounts.EMPTY);
+
+				MailingClickStatsPerTargetRow row = new MailingClickStatsPerTargetRow();
+				row.setUrlId(urlId);
+				row.setUrl(info.url());
+				row.setAdminLink(info.adminLink());
+				row.setDeleted(info.deleted());
+				row.setColumnIndex(filter.targetGroup().columnIndex());
+				row.setTargetgroup(filter.targetGroup().name());
+				row.setMobile(filter.share() == ShareType.MOBILE);
+				row.setAnonymous(filter.share() == ShareType.ANONYMOUS);
+				row.setClicksGross(clickCounts.clicksGross());
+				row.setClicksNet(clickCounts.clicksNet());
+				rows.add(row);
+			}
+		}
+
+		insertIntoTempTable(tempTableID, rows);
+	}
+
+	private Map<Integer, UrlInfo> loadUrlInfo(int mailingID) {
+		String queryAllLinks = """
+				SELECT url_id, COALESCE(shortname, alt_text, full_url) AS url, admin_link, deleted
+				FROM rdir_url_tbl
+				WHERE mailing_id = ? AND deleted = 0
+				ORDER BY url_id""";
+
+		Map<Integer, UrlInfo> result = new LinkedHashMap<>();
+		for (Map<String, Object> row : select(queryAllLinks, mailingID)) {
+			int urlID = toInt(row.get("url_id"));
+			result.put(urlID, new UrlInfo(
+					(String) row.get("url"),
+					toInt(row.get("admin_link")) == 1,
+					extractBooleanValue(row.get("deleted"))
+			));
+		}
+		return result;
+	}
+
+	private Map<Filter, Map<Integer, ClickCounts>> loadClickCounts(
+			int mailingID, int companyID, String recipientsType, String startDateString, String endDateString, List<Filter> filters
+	) {
+		Map<Filter, Map<Integer, ClickCounts>> result = new LinkedHashMap<>();
+		for (Filter filter : filters) {
+			result.put(filter, new LinkedHashMap<>());
+		}
+
+		List<Object> parameters = new ArrayList<>();
 		parameters.add(mailingID);
 
 		String recipientFilter = "";
@@ -103,108 +197,57 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 			}
 		}
 
-		Map<Integer, MailingClickStatsPerTargetRow> allDeviceClassesClickItems = new HashMap<>();
-		Map<Integer, MailingClickStatsPerTargetRow> mobileClickItems = new HashMap<>();
-		Map<Integer, MailingClickStatsPerTargetRow> anonymousClickItems = new HashMap<>();
+		boolean needsCustomerJoin = containsCustomerCondition(recipientFilter)
+				|| filters.stream().anyMatch(f -> containsCustomerCondition(f.condition()));
 
-		updateAllLinks(columnIndex, mailingID, targetName, allDeviceClassesClickItems, mobileClickItems, anonymousClickItems);
+		StringBuilder sql = new StringBuilder("SELECT rlog.url_id");
+		for (int i = 0; i < filters.size(); i++) {
+			sql.append(", ").append(buildClickPivotColumns(filters.get(i).condition(), i));
+		}
+		sql.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog");
+		if (needsCustomerJoin) {
+			sql.append(" LEFT JOIN ").append(getCustomerTableName(companyID)).append(" cust ON rlog.customer_id = cust.customer_id");
+		}
+		sql.append(" WHERE rlog.mailing_id = ?");
+		sql.append(recipientFilter);
+		sql.append(timeFilter);
+		sql.append(" GROUP BY rlog.url_id ORDER BY rlog.url_id");
 
-		updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, allDeviceClassesClickItems, false);
-		updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, mobileClickItems, true);
-		updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, anonymousClickItems, false, true);
+		for (Map<String, Object> row : select(sql.toString(), parameters.toArray(new Object[0]))) {
+			int urlId = toInt(row.get("url_id"));
+			for (int i = 0; i < filters.size(); i++) {
+				int clicksGross = toInt(row.get("clicks_gross_" + i));
+				if (clicksGross == 0) {
+					continue;
+				}
+				int clicksNet = toInt(row.get("clicks_net_" + i));
+				result.get(filters.get(i)).put(urlId, new ClickCounts(clicksGross, clicksNet));
+			}
+		}
 
-		insertIntoTempTable(tempTableID, allDeviceClassesClickItems.values());
-		insertIntoTempTable(tempTableID, mobileClickItems.values());
-		insertIntoTempTable(tempTableID, anonymousClickItems.values());
+		return result;
 	}
 
-	private void updateMeasureLinks(int companyID, String targetSql, String recipientFilter, String timeFilter, List<Object> parameters, Map<Integer, MailingClickStatsPerTargetRow> clicksItems, boolean isMobile) {
-        updateMeasureLinks(companyID, targetSql, recipientFilter, timeFilter, parameters, clicksItems, isMobile, false);
-    }
-
-	private void updateMeasureLinks(int companyID, String targetSql, String recipientFilter, String timeFilter, List<Object> parameters, Map<Integer, MailingClickStatsPerTargetRow> clicksItems, boolean isMobile, boolean isAnonymous) {
-		StringBuilder sql = new StringBuilder("SELECT rlog.url_id, COUNT(*) AS clicks_gross, COUNT(DISTINCT rlog.customer_id) AS clicks_net");
-
-		if ((recipientFilter != null && recipientFilter.contains("cust.")) || (targetSql != null && targetSql.contains("cust."))) {
-			// Join customer table
-			sql.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog, ").append(getCustomerTableName(companyID)).append(" cust");
-			sql.append(" WHERE rlog.customer_id = cust.customer_id AND rlog.customer_id != 0 AND rlog.mailing_id = ?");
-		} else {
-			sql.append(" FROM ").append(getRdirLogTableName(companyID)).append(" rlog");
-			sql.append(" WHERE ").append(" rlog.mailing_id = ?");
+	private String buildClickPivotColumns(String condition, int index) {
+		if (StringUtils.isBlank(condition)) {
+			return """
+					COUNT(*) AS clicks_gross_%1$d,
+					COUNT(DISTINCT rlog.customer_id) AS clicks_net_%1$d""".formatted(index);
 		}
-
-		if (isMobile) {
-			sql.append(" AND rlog.device_class_id = ").append(DeviceClass.MOBILE.getId());
-		}
-        
-        if (isAnonymous) {
-            sql.append(" AND rlog.customer_id = 0");
-        }
-
-		if (StringUtils.isNotEmpty(targetSql)) {
-			sql.append(" AND (").append(targetSql).append(")");
-		}
-
-		sql.append(recipientFilter)
-				.append(timeFilter)
-				.append(" GROUP BY rlog.url_id")
-				.append(" ORDER BY rlog.url_id");
-
-		List<Map<String, Object>> result = select(sql.toString(), parameters.toArray(new Object[0]));
-		for (Map<String, Object> row : result) {
-			int urlID = toInt(row.get("url_id"));
-			addClickGrossAndNetValues(clicksItems.get(urlID), row);
-		}
+		return """
+				COUNT(CASE WHEN (%2$s) THEN 1 END) AS clicks_gross_%1$d,
+				COUNT(DISTINCT CASE WHEN (%2$s) THEN rlog.customer_id END) AS clicks_net_%1$d""".formatted(index, condition);
 	}
 
-	private void addClickGrossAndNetValues(MailingClickStatsPerTargetRow targetRow, Map<String, Object> row) {
-		if (targetRow != null) {
-			targetRow.addClicksGross(toInt(row.get("clicks_gross")));
-			targetRow.addClicksNet(toInt(row.get("clicks_net")));
-		}
+	private static String combineConditions(String... conditions) {
+		return Arrays.stream(conditions)
+				.filter(StringUtils::isNotBlank)
+				.map(c -> "(" + c + ")")
+				.collect(Collectors.joining(" AND "));
 	}
 
-	private void updateAllLinks(int columnIndex, int mailingID, String targetName,
-                                Map<Integer, MailingClickStatsPerTargetRow> allDeviceClassesClickItems,
-                                Map<Integer, MailingClickStatsPerTargetRow> mobileClickItems,
-                                Map<Integer, MailingClickStatsPerTargetRow> anonymousClickItems) {
-		String queryAllLinks =
-			"SELECT"
-				+ " url_id,"
-				+ " COALESCE(shortname, alt_text, full_url) AS url,"
-				+ " admin_link,"
-				+ " deleted"
-			+ " FROM rdir_url_tbl"
-			+ " WHERE mailing_id = ? AND deleted = 0"
-			+ " ORDER BY url_id";
-
-		List<Map<String, Object>> resultAllLinks = select(queryAllLinks, mailingID);
-		for (Map<String, Object> row : resultAllLinks) {
-			int urlID = toInt(row.get("url_id"));
-
-			allDeviceClassesClickItems.put(urlID, getMailingClickStatByTargetRow(urlID, columnIndex, targetName, row, false));
-			mobileClickItems.put(urlID, getMailingClickStatByTargetRow(urlID, columnIndex, targetName, row, true));
-			anonymousClickItems.put(urlID, getAnonymousMailingClickStatByTargetRow(urlID, columnIndex, targetName, row));
-		}
-	}
-
-	private MailingClickStatsPerTargetRow getAnonymousMailingClickStatByTargetRow(int urlId, int columnIndex, String targetName, Map<String,Object> row) {
-        MailingClickStatsPerTargetRow anonymousRow = getMailingClickStatByTargetRow(urlId, columnIndex, targetName, row, false);
-        anonymousRow.setAnonymous(true);
-        return anonymousRow;
-    }
-    
-	private MailingClickStatsPerTargetRow getMailingClickStatByTargetRow(int urlId, int columnIndex, String targetName, Map<String,Object> row, boolean isMobile) {
-		MailingClickStatsPerTargetRow statsRow = new MailingClickStatsPerTargetRow();
-		statsRow.setUrlId(urlId);
-		statsRow.setMobile(isMobile);
-		statsRow.setUrl((String) row.get("url"));
-		statsRow.setAdminLink(toInt(row.get("admin_link")) == 1);
-		statsRow.setColumnIndex(columnIndex);
-		statsRow.setTargetgroup(targetName);
-		statsRow.setDeleted(extractBooleanValue(row.get("deleted")));
-		return statsRow;
+	private static boolean containsCustomerCondition(String sql) {
+		return Strings.CS.contains(sql, "cust.");
 	}
 
 	public List<MailingClickStatsPerTargetRow> getUrlClicksData(int tempTableID) {

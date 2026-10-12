@@ -1,30 +1,60 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.dao;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.PaginatedList;
-import com.agnitas.emm.core.admin.AdminNameNotFoundException;
-import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
-import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.admin.service.UserListOpts;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.news.enums.NewsType;
+import org.apache.commons.lang3.StringUtils;
 
 public interface AdminDao {
+
+	String USERNAME_COL = "username";
+
+	enum UserListAdditionalColumn {
+
+		COMPANY("company_name"),
+		USER_GROUP("user_group"),
+		LANGUAGE("admin_lang");
+
+		private static final Map<String, UserListAdditionalColumn> BY_COLUMN = Arrays.stream(values())
+				.collect(Collectors.toUnmodifiableMap(UserListAdditionalColumn::name, Function.identity()));
+
+
+		public final String dbColumn;
+
+		UserListAdditionalColumn(String dbColumn) {
+			this.dbColumn = dbColumn;
+		}
+
+		public String getDbColumn() {
+			return dbColumn;
+		}
+
+		public static Optional<UserListAdditionalColumn> fromColumn(String column) {
+			return Optional.ofNullable(BY_COLUMN.get(StringUtils.defaultString(column)));
+		}
+	}
 
     List<AdminEntry> getAllAdminsByCompanyIdOnly(int companyID);
 
@@ -34,33 +64,7 @@ public interface AdminDao {
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
 
-    PaginatedList<AdminEntry> getAdminList(
-    	int companyID,
-    	String searchFirstName,
-    	String searchLastName,
-    	String searchEmail,
-    	String searchCompanyName,
-    	Integer filterCompanyId,
-    	Integer filterAdminGroupId,
-		Integer filterMailinglistId,
-    	String filterLanguage,
-		DateRange creationDate,
-		DateRange lastLoginDate,
-		String username,
-    	String sort,
-    	String direction,
-    	int pageNumber,
-    	int pageSize,
-    	boolean showRestfulUsers);
-	
-	/**
-	 * Read admin from DB.
-	 * 
-	 * @param username user name of admin
-	 * 
-	 * @return {@link Admin} for given user name
-	 */
-	Admin getByNameAndActiveCompany(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
+    PaginatedList<AdminEntry> getAdminList(UserListOpts opts, boolean showRestfulUsers);
 	
 	int getNumberOfRestfulUsers(int companyID);
 
@@ -111,9 +115,11 @@ public interface AdminDao {
      */
     int saveAdminRights(int adminID, Set<String> userRights);
 
-    Admin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
+    Admin getAdmin(String username);
 
-	Admin getByEmail(String email);
+    Optional<Admin> findUiUser(String username, int companyId);
+
+    Admin getByEmail(String email);
 
 	Admin getOldestAdminOfCompany(int companyId);
 

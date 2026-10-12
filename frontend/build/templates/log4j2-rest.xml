@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration name="EMM" packages="">
+	<Appenders>
+		<Console name="ROOT_CONSOLE" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="${sys:emm.log.level:-${env:EMM_LOG_LEVEL:-warn}}" onMatch="ACCEPT" onMisMatch="DENY" />
+		</Console>
+
+		<RollingFile name="APPLICATIONLOGFILE" fileName="${sys:emm.log.dir:-${env:EMM_LOG_DIR:-${sys:user.home}/logs/webapps}}/rest.log" filePattern="${sys:emm.log.dir:-${env:EMM_LOG_DIR:-${sys:user.home}/logs/webapps}}/rest.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="${sys:emm.log.level:-${env:EMM_LOG_LEVEL:-warn}}" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="APPLICATIONERRORLOGFILE" fileName="${sys:emm.log.dir:-${env:EMM_LOG_DIR:-${sys:user.home}/logs/webapps}}/rest_error.log" filePattern="${sys:emm.log.dir:-${env:EMM_LOG_DIR:-${sys:user.home}/logs/webapps}}/rest_error.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="error" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+	</Appenders>
+	
+	<Loggers>
+		<Root level="${sys:emm.log.level:-${env:EMM_LOG_LEVEL:-warn}}">
+			<AppenderRef ref="ROOT_CONSOLE" />
+			<AppenderRef ref="APPLICATIONLOGFILE" />
+			<AppenderRef ref="APPLICATIONERRORLOGFILE" />
+		</Root>
+	</Loggers>
+</Configuration>

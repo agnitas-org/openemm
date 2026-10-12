@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -429,6 +429,10 @@ public class Data implements Closeable {
 	 * all informations about available images
 	 */
 	private Imagepool imagepool = null;
+	/**
+	 * all messages from messages_tbl
+	 */
+	private Messages messages = null;
 	/**
 	 * the share with your network configuration
 	 */
@@ -1545,8 +1549,8 @@ public class Data implements Closeable {
 				}
 				if (nid != maildropStatus.id()) {
 					++cnt;
-					msg += "\tlowest maildrop_status_id is not mine (" + maildropStatus.id() + ") but " + nid + "\n";
-					maildropStatus.removeEntry();
+					msg += "\tlowest maildrop_status_id is not mine (" + maildropStatus.id() + " from " + maildropStatus.origin () + ") but " + nid + "\n";
+					maildropStatus.setGenerationStatus (0, 4, true);
 				}
 			} catch (Exception e) {
 				++cnt;
@@ -2985,6 +2989,13 @@ public class Data implements Closeable {
 		setupImagepool();
 		return imagepool.getComponentsUsed();
 	}
+	
+	public Messages messages () throws SQLException {
+		if (messages == null) {
+			messages = new Messages (this);
+		}
+		return messages;
+	}
 
 	/**
 	 * Mark a filename to be removed during cleanup phase
@@ -3814,6 +3825,7 @@ public class Data implements Closeable {
 					imagepool.addImage(blocks.getBlock(n), true);
 				}
 			}
+			logging (Log.DEBUG, "imgpool", "Imagepool setup completed for " + (blocks != null ? blocks.blockCount () : "no") + " blocks");
 		}
 	}
 
@@ -3889,8 +3901,12 @@ public class Data implements Closeable {
 							if (name != null && name.length() > 1000) {
 								throw new Exception("Value for rdir_url_tbl.shortname is to long (Maximum: 1000, Current: " + name.length() + ")");
 							}
-							if (dbase.isOracle()) {
-								query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
+							if (dbase.isOracle() || dbase.isPostgreSQL()) {
+								if (dbase.isOracle()) {
+									query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
+								} else {
+									query = "SELECT nextval('rdir_url_tbl_url_id_seq')";
+								}
 								urlID = dbase.queryLong(with.cursor (), query);
 								if (urlID > 0) {
 									query = "INSERT INTO rdir_url_tbl " +

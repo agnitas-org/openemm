@@ -4,29 +4,27 @@
 
     static ID = 'statistics';
 
-    extractStatisticsData(data) {
-      const names = [];
-      const values = [];
-
-      for (let i = 0; i < data['common'].length; i++) {
-        names.push(data['common'][i][0]);
-        values.push(parseInt(data['common'][i][1]));
-      }
-
-      return {names, values};
+    getMetrics() {
+      return {
+        [t('statistics.default.sent')]: this._data.sent,
+        [t('statistics.default.openers')]: this._data.openers,
+        [t('statistics.default.clicker')]: this._data.clickers,
+        [t('statistics.optOuts')]: this._data.optOuts,
+        [t('statistics.default.hardBounces')]: this._data.hardBounces
+      };
     }
 
     getChartOptions() {
       const isMobileView = this._isMobileView;
-
       const barColor = this.$el.css('--chart-blue-color');
+      const metrics = this.getMetrics();
 
       return {
         type: 'bar',
         data: {
-          labels: this._chartData.names,
+          labels: Object.keys(metrics),
           datasets: [{
-            data: this._chartData.values,
+            data: Object.values(metrics),
             backgroundColor: barColor,
             categoryPercentage: isMobileView ? 0.7 : 0.9,
             minBarLength: 2
@@ -69,6 +67,11 @@
     needsRedrawOnMobile() {
       return true;
     }
+
+    getStatisticsUrl() {
+      return AGN.url('/dashboard/statistics.action');
+    }
+
   }
 
   AGN.Lib.Dashboard.StatisticsTile = StatisticsTile;

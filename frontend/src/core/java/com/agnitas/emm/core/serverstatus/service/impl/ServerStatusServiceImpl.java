@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,6 +13,7 @@ package com.agnitas.emm.core.serverstatus.service.impl;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
@@ -44,6 +45,7 @@ import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
 import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
 import com.agnitas.emm.puppeteer.service.PuppeteerService;
+import com.agnitas.exception.ForbiddenException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.JobDto;
 import com.agnitas.service.JobQueueService;
@@ -70,10 +72,8 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 
 	private static final Logger logger = LogManager.getLogger(ServerStatusServiceImpl.class);
 
+	private static final int ROOT_ADMIN_ID = 1;
 	private static final String TEMP_LICENSE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "License";
-
-	private static final String ORACLE = "oracle";
-	private static final String MARIADB = "mariadb";
 
 	private static final String ERROR = "ERROR";
 	private static final String OK = "OK";
@@ -100,7 +100,30 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	    return serverStatusDao.checkDatabaseConnection();
     }
 
-    @Override
+	@Override
+	public boolean canToggleCsrfProtection(Admin admin) {
+		return admin.getAdminID() == ROOT_ADMIN_ID;
+	}
+
+	@Override
+	public boolean isCsrfProtectionEnabled() {
+		return configService.getBooleanValue(ConfigValue.Security.CsrfProtectionEnabled);
+	}
+
+	@Override
+	public void toggleCsrfProtection(boolean enable, Admin admin) {
+		if (!canToggleCsrfProtection(admin)) {
+			throw new ForbiddenException(Message.exact("Only root admin can toggle CSRF protection"));
+		}
+
+		configService.writeBooleanValue(
+				ConfigValue.Security.CsrfProtectionEnabled,
+				enable,
+				"Changed by '%s'".formatted(admin.getUsername())
+		);
+	}
+
+	@Override
     public String getDbUrl() {
 		return serverStatusDao.getDbUrl();
 	}
@@ -287,7 +310,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		PuppeteerStatus puppeteerStatus = puppeteerService.getStatus();
 
 		return ServerStatus.builder(version, installPath, admin.getLocale(), configService)
-			.database(serverStatusDao.getDbVendor(), getDbUrl(), getDbVersion(), checkDatabaseConnection(), getNetStatDbConnectionsCount())
+			.database(serverStatusDao.getDbVendor().getName(), getDbUrl(), getDbVersion(), checkDatabaseConnection(), getNetStatDbConnectionsCount())
 			.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
 			.statuses(isOverallStatusOK() && puppeteerStatus.isAvailable(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK(), isLicenseStatusOK())
 			.dbVersionStatuses(getLatestDBVersionsAndErrors())
@@ -462,12 +485,25 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	}
 
 	private List<Version> getMandatoryDbVersions() {
+		String dbVendor = switch (serverStatusDao.getDbVendor()) {
+            case ORACLE -> "oracle";
+            case MARIADB -> "mariadb";
+            case POSTGRES -> "postgres";
+        };
+
+		String fileName = "mandatoryDbChanges_%s.csv".formatted(dbVendor);
+
 		List<Version> list = new ArrayList<>();
-		String dbVendor = ConfigService.isOracleDB() ? ORACLE : MARIADB;
 		try {
-			List<String> versionStringList = IOUtils.readLines(getClass().getClassLoader()
-							.getResourceAsStream("mandatoryDbChanges_"+ dbVendor + ".csv"),
-							StandardCharsets.UTF_8);
+			InputStream mandatoryDbChanges = getClass().getClassLoader()
+					.getResourceAsStream(fileName);
+
+			if (mandatoryDbChanges == null) {
+				logger.warn("{} is missing", fileName);
+				return list;
+			}
+
+			List<String> versionStringList = IOUtils.readLines(mandatoryDbChanges, StandardCharsets.UTF_8);
 			for (String versionString : versionStringList) {
 				if (!versionString.contains("emm-")) {
 					list.add(new Version(versionString));
@@ -476,7 +512,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
                 }
 			}
 		} catch (Exception e) {
-			logger.error("mandatoryDbChanges.csv contains invalid data", e);
+			logger.error("{} contains invalid data", fileName, e);
 		}
 
 		Collections.sort(list);
@@ -658,8 +694,8 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	}
 
 	@Override
-	public String getDbVendor() {
-		return serverStatusDao.getDbVendor();
+	public String getDbVendorName() {
+		return serverStatusDao.getDbVendor().getName();
 	}
 
 	@Override

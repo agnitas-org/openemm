@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.agnitas</groupId>
+  <artifactId>push-postman-api</artifactId>
+  <version>1.4.3</version>
+</project>

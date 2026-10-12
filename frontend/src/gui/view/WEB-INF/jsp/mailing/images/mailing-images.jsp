@@ -169,7 +169,14 @@
                                 </template>
 
                                 <c:if test="${isChangeAllowed and image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE}">
-                                    <a href="#" data-modal="image-editor-modal" data-modal-set='id: ${image.id}, name: ${image.name}, link: ${image.link}, src: ${sourceSrc}' data-view-row></a>
+                                    <c:choose>
+                                        <c:when test="${fn:contains(['gif', 'svg', 'webp'], fn:toLowerCase(image.fileExtension))}">
+                                            <a href="#" data-modal="image-view-modal" data-modal-set='name: ${image.name}, src: ${sourceSrc}' data-view-row></a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="#" data-modal="image-editor-modal" data-modal-set='id: ${image.id}, name: ${image.name}, link: ${image.link}, src: ${sourceSrc}' data-view-row></a>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </c:if>
 
                                 <div>
@@ -273,4 +280,22 @@
 
 <script id="image-editor-modal" type="text/x-mustache-template">
     <%@ include file="fragments/image-editor-modal.jspf" %>
+</script>
+
+<script id="image-view-modal" type="text/x-mustache-template">
+    <div class="modal modal-adaptive" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="mailing.Graphics_Component"/>: {{= name }}</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+                <div class="modal-body flex-center overflow-hidden">
+                    <img src="{{= src }}" class="img-fluid" style="max-height: var(--modal-content-max-height)">
+                </div>
+            </div>
+        </div>
+    </div>
 </script>

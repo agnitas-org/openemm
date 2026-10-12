@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -27,8 +27,6 @@ import javax.sql.DataSource;
 import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.bounce.Bounce;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.BouncesEmailStatRow;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -217,100 +215,6 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 			0, // Row is not used in total count, so percent is 0
 			language);
     }
-
-	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(int companyID, int mailingID, String language, String selectedTargets) {
-		return getBouncesWithDetailAndEmail(companyID, mailingID, language, selectedTargets, true, true);
-	}
-
-	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(int companyID, int mailingID, String language, String selectedTargets, boolean showSoftbounces, boolean showHardbounces){
-		language = StringUtils.defaultIfEmpty(language, "EN");
-
-		// In the mailing_statistic_csv.rptdesign "-1" is a default value if target groups are not present
-		if ("-1".equals(selectedTargets)) {
-			selectedTargets = "";
-		}
-		
-		List<BouncesEmailStatRow> statList = new ArrayList<>();
-		
-		if (showSoftbounces) {
-			StringBuilder query = new StringBuilder();
-			String targetSql = getTargetSqlString(selectedTargets, companyID);
-			query.append("SELECT cust.email email, cust.gender gender, cust.firstname firstname, cust.lastname lastname, cust.customer_id customer_id, bounce.detail AS detail FROM bounce_tbl bounce");
-			query.append(" JOIN customer_" + companyID + "_tbl cust ON (bounce.customer_id = cust.customer_id)");
-			query.append(" WHERE bounce.company_id = ? AND bounce.mailing_id = ? AND bounce.detail <= 509");
-			if (isNotBlank(targetSql)) {
-				query.append(" AND (" + targetSql + ")");
-			}
-
-			List<Map<String, Object>> result = select(query.toString(), companyID, mailingID);
-			for (Map<String, Object> resultRow : result) {
-				int bounceDetailCode = toInt(resultRow.get("detail"));
-				
-				BouncesEmailStatRow row = new BouncesEmailStatRow();
-				row.setMailingId(mailingID);
-				row.setCustomerID(toInt(resultRow.get("customer_id")));
-				row.setEmail((String) resultRow.get("email"));
-				row.setFirstname((String) resultRow.get("firstname"));
-				row.setLastname((String) resultRow.get("lastname"));
-				row.setGender(I18nString.getLocaleString("recipient.gender." + toInt(resultRow.get("gender")) + ".short", language));
-				row.setDetail(I18nString.getLocaleString("bounces.detail." + bounceDetailCode, language));
-				if (bounceDetailCode == 410) {
-					row.setIndex(0);
-				} else if (bounceDetailCode == 420) {
-					row.setIndex(1);
-				} else {
-					row.setIndex(2);
-				}
-				statList.add(row);
-			}
-		}
-		
-		if (showHardbounces) {
-			String targetSql = getTargetSqlString(selectedTargets, companyID);
-			StringBuilder query = new StringBuilder();
-			query.append("SELECT cust.email email, cust.gender gender, cust.firstname firstname, cust.lastname lastname, cust.customer_id customer_id, MAX(bind.user_remark) AS user_remark");
-			query.append(" FROM customer_" + companyID + "_binding_tbl bind");
-			query.append(" JOIN customer_" + companyID + "_tbl cust ON bind.customer_id = cust.customer_id");
-			query.append(" WHERE bind.user_status = ? AND bind.exit_mailing_id = ? AND bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "')");
-			if (isNotBlank(targetSql)) {
-				query.append(" AND (" + targetSql + ")");
-			}
-			query.append(" GROUP BY cust.email, cust.gender, cust.firstname, cust.lastname, cust.customer_id");
-
-			List<Map<String, Object>> result = select(query.toString(), UserStatus.Bounce.getStatusCode(), mailingID);
-			for (Map<String, Object> resultRow : result) {
-				String userRemark = (String) resultRow.get("user_remark");
-
-				// Userremark may be of format "bounce:<code>"
-				int bounceDetailCode = 510; // 510 is default hardbounce
-				if (userRemark != null && userRemark.startsWith(BOUNCE_REMARK_SIGN)) {
-					String bounceDetailCodeString = userRemark.substring(BOUNCE_REMARK_SIGN.length()).trim();
-					if (AgnUtils.isNumber(bounceDetailCodeString)) {
-						bounceDetailCode = Integer.parseInt(bounceDetailCodeString);
-					}
-				}
-
-				BouncesEmailStatRow row = new BouncesEmailStatRow();
-				row.setMailingId(mailingID);
-				row.setCustomerID(toInt(resultRow.get("customer_id")));
-				row.setEmail((String) resultRow.get("email"));
-				row.setFirstname((String) resultRow.get("firstname"));
-				row.setLastname((String) resultRow.get("lastname"));
-				row.setGender(I18nString.getLocaleString("recipient.gender." + toInt(resultRow.get("gender")) + ".short", language));
-				row.setDetail(I18nString.getLocaleString("bounces.detail." + bounceDetailCode, language));
-				if (bounceDetailCode == 511) {
-					row.setIndex(3);
-				} else if (bounceDetailCode == 512) {
-					row.setIndex(4);
-				} else {
-					row.setIndex(5);
-				}
-				statList.add(row);
-			}
-		}
-
-		return statList;
-	}
 
 	/**
 	 * Contains all hard bounce statuses and their names provided by the AGNINTAS.

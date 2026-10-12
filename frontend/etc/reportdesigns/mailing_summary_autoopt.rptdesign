@@ -66,7 +66,7 @@ reportContext.setPersistentGlobalVariable("showNet", new Boolean(showNet));
 reportContext.setPersistentGlobalVariable("showGross", new Boolean(showGross));
 
 optimizationDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.TotalOptimizationDataSet();
-optimizationDataSet.prepareOptimizationReport(params["optimizationID"], params["companyID"], params["showSoftbounces"]);
+optimizationDataSet.prepareOptimizationReport(params["optimizationID"], params["companyID"], params["selectedTargets"], params["showSoftbounces"]);
 
 var autoOptData = new AutoOptimizationDataSet().getData(params["optimizationID"], params["companyID"]);
 
@@ -493,6 +493,17 @@ reportContext.setGlobalVariable("getKeyFiguresColumnPositionByNameFunction", get
             <property name="paramType">simple</property>
             <property name="controlType">check-box</property>
             <structure name="format"/>
+        </scalar-parameter>
+        <scalar-parameter name="selectedTargets" id="1906">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
         </scalar-parameter>
     </parameters>
     <data-sources>

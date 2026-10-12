@@ -1,15 +1,16 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.workflow.service;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -22,6 +23,7 @@ import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
@@ -260,6 +262,8 @@ public interface WorkflowService {
 
     Date getPauseDate(int workflowId, int companyId);
 
+    Optional<Instant> getPauseTime(Workflow workflow, int companyId);
+
     void deletePauseUndoEntry(int workflowId, int companyId);
 
     Admin getPauseAdmin(int workflowId, int companyId);
@@ -275,4 +279,10 @@ public interface WorkflowService {
     boolean isAutoImportManagedByWorkflow(int autoImportId);
 
     Map<Integer, ServiceResult<ChangingWorkflowStatusResult>> setActiveness(Set<Integer> ids, Admin admin, boolean activeness);
+
+    ServiceResult<ChangingWorkflowStatusResult> activateWorkflow(Workflow workflow, Admin admin);
+
+    ServiceResult<ChangingWorkflowStatusResult> deactivateWorkflow(Workflow workflow, Admin admin);
+
+    PaginatedList<Workflow> paginatedList(int page, int size, Admin admin);
 }

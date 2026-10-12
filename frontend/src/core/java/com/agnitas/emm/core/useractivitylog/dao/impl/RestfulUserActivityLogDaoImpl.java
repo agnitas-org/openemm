@@ -1,17 +1,15 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.useractivitylog.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +23,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implements RestfulUserActivityLogDao {
+
+    private final RowMapper<RestfulUserActivityAction> userActionRowMapper = (rs, rowNum) ->
+            new RestfulUserActivityAction(
+                    rs.getString("username"),
+                    rs.getString("supervisor_name"),
+                    rs.getString("endpoint"),
+                    rs.getString("description"),
+                    rs.getString("request_method"),
+                    rs.getTimestamp("timestamp")
+            );
 
     @Override
     public void writeUserActivityLog(String endpoint, String description, String httpMethod, String host, Admin admin) {
@@ -43,8 +51,8 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         StringBuilder query = new StringBuilder();
         List<Object> params = buildOverviewSelectQuery(query, filter);
 
-        PaginatedList<RestfulUserActivityAction> list = selectPaginatedList(query.toString(), "restful_usage_log_tbl",
-                filter, new RestfulUserActionRowMapper(), params.toArray());
+        PaginatedList<RestfulUserActivityAction> list = selectPaginatedList(query.toString(), getTableName(),
+                filter, userActionRowMapper, params.toArray());
 
         if (filter.isUiFiltersSet()) {
             list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
@@ -109,23 +117,6 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         List<Object> params = buildOverviewSelectQuery(query, filter);
 
         return new SqlPreparedStatementManager(query.toString(), params.toArray());
-    }
-
-    private static final class RestfulUserActionRowMapper implements RowMapper<RestfulUserActivityAction> {
-
-        @Override
-        public RestfulUserActivityAction mapRow(ResultSet rs, int rowNum) throws SQLException {
-            RestfulUserActivityAction userAction = new RestfulUserActivityAction();
-
-            userAction.setTimestamp(rs.getTimestamp("timestamp"));
-            userAction.setEndpoint(rs.getString("endpoint"));
-            userAction.setDescription(rs.getString("description"));
-            userAction.setRequestMethod(rs.getString("request_method"));
-            userAction.setUsername(rs.getString("username"));
-            userAction.setSupervisorName(rs.getString("supervisor_name"));
-
-            return userAction;
-        }
     }
 
     @Override

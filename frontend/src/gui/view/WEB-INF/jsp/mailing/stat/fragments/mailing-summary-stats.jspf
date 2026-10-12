@@ -1,6 +1,6 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
-<%--@elvariable id="mailingThumbnailUrl" type="java.lang.String"--%>
+<%--@elvariable id="mailingThumbnailUri" type="java.lang.String"--%>
 <%--@elvariable id="isMailtrackingActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTrackingExists" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTrackingAvailableForMailing" type="java.lang.Boolean"--%>
@@ -18,104 +18,101 @@
 
     <div class="d-flex gap-3" style="align-items: stretch;">
 
-        <img src="<c:url value="${mailingThumbnailUrl}"/>" class="rounded-1" alt="Thumbnail" style="height: auto; aspect-ratio: 1 / 1; object-fit: cover; flex-shrink: 0;">
+        <img src="<c:url value="${mailingThumbnailUri}"/>" class="rounded-1" alt="Thumbnail" style="height: auto; max-height: 300px; aspect-ratio: 1 / 1; object-fit: cover; flex-shrink: 0;">
 
-        <div class="table-wrapper table-wrapper--sm" style="flex: 1;">
-            <div class="table-wrapper__header"></div>
-            <div class="table-wrapper__body" data-prevent-scrollable>
-                <table class="table--borderless">
-                    <thead>
+        <div class="flex-1">
+            <table class="table table--sm table--borderless h-100">
+                <thead>
+                <tr>
+                    <th colspan="2"><mvc:message code='General2'/></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><mvc:message code="mailing.Subject"/></td>
+                    <td>{{- generalInfo.subject }}</td>
+                </tr>
+                <tr>
+                    <td><mvc:message code="birt.Target"/></td>
+                    <td>
+                        {{ _.each(generalInfo.targets, function(target) { }}
+                            {{- target }}<br>
+                        {{ }); }}
+                    </td>
+                </tr>
+                <tr>
+                    <td><mvc:message code="${isTrackingAvailableForMailing ? 'report.numberRecipients.notracking' : 'report.numberRecipients'}"/></td>
+                    <td>{{- generalInfo.sentCount }} ${isTrackingAvailableForMailing && not successStatisticExpired ? '('.concat('{{- generalInfo.anonymousCount }}').concat(')') : ''}</td>
+                </tr>
+                <tr>
+                    <td><mvc:message code="report.startSending"/></td>
+                    <td>{{- generalInfo.sendStart }}</td>
+                </tr>
+                <tr>
+                    <td><mvc:message code="report.stopSending"/></td>
+                    <td>{{- generalInfo.sendEnd }}</td>
+                </tr>
+                <tr>
+                    <td><mvc:message code="report.mailformat"/></td>
+                    <td>{{- generalInfo.mailFormat }}</td>
+                </tr>
+                <tr>
+                    <td><mvc:message code="report.mailsize"/></td>
+                    <td>{{- generalInfo.sizeInKb }}</td>
+                </tr>
+                {{ if (generalInfo.period) { }}
                     <tr>
-                        <th><mvc:message code='General2'/></th>
-                        <th>&nbsp;</th>
+                        <td><mvc:message code="report.period.evaluation"/></td>
+                        <td>{{- generalInfo.period }}</td>
                     </tr>
-                    </thead>
-                    <tbody>
+                {{ } }}
+                {{ if (generalInfo.period) { }}
                     <tr>
-                        <td><mvc:message code="mailing.Subject"/></td>
-                        <td>{{- generalInfo.subject }}</td>
+                        <td><mvc:message code="mailing.SendingTime"/></td>
+                        <td>{{- generalInfo.dispatchTime }}</td>
                     </tr>
-                    <tr>
-                        <td><mvc:message code="birt.Target"/></td>
-                        <td>
-                            {{ _.each(generalInfo.targets, function(target) { }}
-                                {{- target }}<br>
-                            {{ }); }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="${isTrackingAvailableForMailing ? 'report.numberRecipients.notracking' : 'report.numberRecipients'}"/></td>
-                        <td>{{- generalInfo.sentCount }} ${isTrackingAvailableForMailing && not successStatisticExpired ? '('.concat('{{- generalInfo.anonymousCount }}').concat(')') : ''}</td>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="report.startSending"/></td>
-                        <td>{{- generalInfo.sendStart }}</td>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="report.stopSending"/></td>
-                        <td>{{- generalInfo.sendEnd }}</td>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="report.mailformat"/></td>
-                        <td>{{- generalInfo.mailFormat }}</td>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="report.mailsize"/></td>
-                        <td>{{- generalInfo.sizeInKb }}</td>
-                    </tr>
-                    {{ if (generalInfo.period) { }}
-                        <tr>
-                            <td><mvc:message code="report.period.evaluation"/></td>
-                            <td>{{- generalInfo.period }}</td>
-                        </tr>
-                    {{ } }}
-                    {{ if (generalInfo.period) { }}
-                        <tr>
-                            <td><mvc:message code="mailing.SendingTime"/></td>
-                            <td>{{- generalInfo.dispatchTime }}</td>
-                        </tr>
-                    {{ } }}
-                    </tbody>
-                </table>
-            </div>
-            <div class="table-wrapper__footer"></div>
+                {{ } }}
+                </tbody>
+                <tfoot>
+                <tr><td colspan="2"></td></tr>
+                </tfoot>
+            </table>
         </div>
 
-        <div class="table-wrapper table-wrapper--sm" style="flex: 1;">
-            <div class="table-wrapper__header"></div>
-            <div class="table-wrapper__body" data-prevent-scrollable>
-                <table class="table--borderless table--stretch-rows">
-                    <thead>
-                        <tr>
-                            <th><mvc:message code="statistic.Response"/></th>
-                            {{ _.each(reactions, function(reaction) { }}
-                                <th>{{- reaction.target }}</th>
-                            {{ }); }}
-                        </tr>
-                    </thead>
-                    <tbody style="--table-row-count: 3">
-                        <tr>
-                            <td><mvc:message code="statistic.MeasuredOpeningsGross"/></td>
-                            {{ _.each(reactions, function(reaction) { }}
-                                <td>{{- reaction.openings }}</td>
-                            {{ }); }}
-                        </tr>
-                        <tr>
-                            <td><mvc:message code="statistic.Clicks"/></td>
-                            {{ _.each(reactions, function(reaction) { }}
-                                <td>{{- reaction.clicks }}</td>
-                            {{ }); }}
-                        </tr>
-                        <tr>
-                            <td><mvc:message code="statistic.ActivityRate"/></td>
-                            {{ _.each(reactions, function(reaction) { }}
-                                <td>{{- reaction.rate }}</td>
-                            {{ }); }}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="table-wrapper__footer"></div>
+        <div class="flex-1">
+            <table class="table table--sm table--borderless table--stretch-rows h-100">
+                <thead>
+                    <tr>
+                        <th><mvc:message code="statistic.Response"/></th>
+                        {{ _.each(reactions, function(reaction) { }}
+                            <th>{{- reaction.target }}</th>
+                        {{ }); }}
+                    </tr>
+                </thead>
+                <tbody style="--table-row-count: 3">
+                    <tr>
+                        <td><mvc:message code="statistic.MeasuredOpeningsGross"/></td>
+                        {{ _.each(reactions, function(reaction) { }}
+                            <td>{{- reaction.openings }}</td>
+                        {{ }); }}
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="statistic.Clicks"/></td>
+                        {{ _.each(reactions, function(reaction) { }}
+                            <td>{{- reaction.clicks }}</td>
+                        {{ }); }}
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="statistic.ActivityRate"/></td>
+                        {{ _.each(reactions, function(reaction) { }}
+                            <td>{{- reaction.rate }}</td>
+                        {{ }); }}
+                    </tr>
+                </tbody>
+                <tfoot>
+                <tr><td colspan="{{= reactions.length + 1 }}"></td></tr>
+                </tfoot>
+            </table>
         </div>
     </div>
 

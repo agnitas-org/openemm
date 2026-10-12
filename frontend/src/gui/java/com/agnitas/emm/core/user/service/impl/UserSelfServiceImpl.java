@@ -1,0 +1,62 @@
+/*
+
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
+
+*/
+
+package com.agnitas.emm.core.user.service.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Optional;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.loginmanager.bean.LoginData;
+import com.agnitas.emm.core.loginmanager.service.LoginTrackService;
+import com.agnitas.emm.core.user.service.UserSelfService;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserSelfServiceImpl implements UserSelfService {
+
+    private final LoginTrackService loginTrackService;
+
+    public UserSelfServiceImpl(LoginTrackService loginTrackService) {
+        this.loginTrackService = loginTrackService;
+    }
+
+    @Override
+    public List<LoginData> getLoginTrackingList(Admin admin, int minPeriodDays, SimpleDateFormat loginTimeFormat) {
+        Calendar calendar = new GregorianCalendar();
+        calendar.add(Calendar.DAY_OF_YEAR, -minPeriodDays);
+        Date xDaysBefore = calendar.getTime();
+
+        final Optional<LoginData> lastLoginOptional = loginTrackService.findLastSuccessfulLogin(admin.getUsername(), true);
+
+        List<LoginData> list;
+
+        if (lastLoginOptional.isPresent()) {
+            final LoginData lastLogin = lastLoginOptional.get();
+
+            if (xDaysBefore.before(lastLogin.getLoginTime())) {
+                list = loginTrackService.listLoginAttemptsSince(admin.getUsername(), xDaysBefore);
+            } else {
+                list = loginTrackService.listLoginAttemptsSince(admin.getUsername(), lastLogin.getLoginTime());
+            }
+        } else {
+            list = loginTrackService.listLoginAttemptsSince(admin.getUsername(), xDaysBefore);
+        }
+
+        list.forEach(loginData -> loginData.setLoginDate(loginTimeFormat.format(loginData.getLoginTime())));
+
+        return list;
+    }
+
+}

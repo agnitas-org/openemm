@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -23,14 +23,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.CompaniesConstraints;
+import com.agnitas.beans.IntEnum;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -43,22 +46,20 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.dao.WorkflowDao;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
-import com.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.PredicateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Transactional;
 
-public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
+public class WorkflowDaoImpl extends PaginatedBaseDaoImpl implements WorkflowDao {
 	
     protected TargetService targetService;
     protected ConfigService configService;
 
 	@Override
 	public Workflow getWorkflow(int workflowId, int companyId) {
-        return selectObjectDefaultNull("SELECT * FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?", new WorkflowRowMapper(), workflowId, companyId);
+        return selectObjectDefaultNull("SELECT workflow_id, company_id, shortname, description, status, general_start_date, general_end_date, end_type, general_start_reaction, general_start_event, workflow_schema FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?", new WorkflowRowMapper(), workflowId, companyId);
 	}
 
 	@Override
@@ -129,19 +130,20 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 
     @Override
     public List<DashboardWorkflow> getWorkflowsForDashboard(Admin admin) {
-        final List<Integer> necessaryWorkflowStatuses = Stream.of(DashboardWorkflow.Status.values())
-                .flatMap(s -> s.getRealStatuses().stream())
-                .map(WorkflowStatus::getId)
-                .toList();
+        List<Object> params = new ArrayList<>(List.of(
+                admin.getCompanyID(),
+                WorkflowStatus.STATUS_ACTIVE.getId(),
+                WorkflowStatus.STATUS_COMPLETE.getId()
+        ));
 
-        List<Object> parameters = new ArrayList<>();
+        String subQuery = """
+                SELECT wf.workflow_id, wf.shortname, wf.general_start_date, wf.actual_end_date, wf.end_type, wf.status
+                FROM workflow_tbl wf
+                WHERE wf.company_id = ?
+                  AND wf.status IN (?, ?)
+                """;
 
-        String subQuery = "SELECT wf.workflow_id, wf.shortname, wf.general_start_date, wf.actual_end_date, wf.end_type, " +
-                " CASE " + buildSqlWithStatusConditions() + " END AS status FROM workflow_tbl wf " +
-                " WHERE wf.company_id = ? AND " + makeBulkInClauseForInteger("wf.status", necessaryWorkflowStatuses);
-
-        parameters.add(admin.getCompanyID());
-        subQuery += getAdminRestrictions(admin, parameters);
+        subQuery += getAdminRestrictions(admin, params);
 
         String query = String.format(
                 "SELECT workflow_id, shortname, status, general_start_date, actual_end_date, end_type FROM (%s) %s ORDER BY status ASC, general_start_date DESC ",
@@ -149,24 +151,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                 isOracleDB() ? "" : "AS subquery"
         );
 
-        return select(addRowLimit(query, 10), new DashboardWorkflowRowMapper(), parameters.toArray());
-    }
-
-    private String buildSqlWithStatusConditions() {
-        StringBuilder sqlStatusConditions = new StringBuilder();
-
-        for (DashboardWorkflow.Status status : DashboardWorkflow.Status.values()) {
-            List<Integer> statuses = status.getRealStatuses().stream()
-                    .map(WorkflowStatus::getId)
-                    .toList();
-
-            sqlStatusConditions.append(" WHEN ")
-                    .append(makeBulkInClauseForInteger("wf.status", statuses))
-                    .append(" THEN ")
-                    .append(status.getId());
-        }
-
-        return sqlStatusConditions.toString();
+        return select(addRowLimit(query, 10), new DashboardWorkflowRowMapper(), params.toArray());
     }
 
     private String getDisabledMailingListsSqlRestriction(Admin admin, List<Object> params) {
@@ -415,6 +400,37 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 		return select(query, new WorkflowRowMapper(), parameters.toArray());
     }
 
+    @Override
+    public PaginatedList<Workflow> find(int page, int size, Admin admin) {
+        List<Object> params = new ArrayList<>(List.of(admin.getCompanyID()));
+        return selectPaginatedList("""
+                SELECT wf.workflow_id,
+                       wf.company_id,
+                       wf.shortname,
+                       wf.description,
+                       wf.status,
+                       wf.general_start_date,
+                       wf.general_end_date,
+                       wf.end_type,
+                       wf.general_start_reaction,
+                       wf.general_start_event,
+                       wf.workflow_schema
+                FROM workflow_tbl wf
+                WHERE wf.company_id = ?
+                  %s
+                ORDER BY CASE
+                             WHEN wf.status = 2 THEN 3
+                             WHEN wf.status = 3 THEN 2
+                             WHEN wf.status = 1 OR wf.status = 4 THEN wf.status
+                             END,
+                         CASE
+                             WHEN wf.status = 2 OR wf.status = 3 OR wf.status = 4 THEN wf.general_start_date
+                             WHEN wf.status = 1 THEN wf.created END DESC
+                """.formatted(getAdminRestrictions(admin, params)),
+                page, size, new WorkflowRowMapper(), params.toArray()
+        );
+    }
+
     protected String getAdminRestrictions(Admin admin, List<Object> params) {
         return getDisabledMailingListsSqlRestriction(admin, params);
     }
@@ -428,7 +444,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 
 	@Override
 	public List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints) {
-        final String sqlGetWorkflowsToDeactivate = "SELECT * FROM workflow_tbl " +
+        final String sqlGetWorkflowsToDeactivate = "SELECT workflow_id, company_id, shortname, description, status, general_start_date, general_end_date, end_type, general_start_reaction, general_start_event, workflow_schema FROM workflow_tbl " +
                 "WHERE (status = ? " +
                 "OR status = ? AND ((general_end_date < CURRENT_TIMESTAMP AND end_type = ?) OR (general_end_date IS NULL AND end_type = ?)))" +
                 DbUtilities.asCondition(" AND %s", constraints);
@@ -469,7 +485,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                 WorkflowStatus.STATUS_PAUSED.getId(),
                 DateUtilities.getDateOfHoursAgo(expireHours)
         };
-        String sql = "SELECT w.* FROM workflow_tbl w WHERE w.workflow_id = ? AND w.status = ? AND EXISTS" +
+        String sql = "SELECT w.workflow_id, w.company_id, w.shortname, w.description, w.status, w.general_start_date, w.general_end_date, w.end_type, w.general_start_reaction, w.general_start_event, w.workflow_schema FROM workflow_tbl w WHERE w.workflow_id = ? AND w.status = ? AND EXISTS" +
                 "(SELECT 1 FROM undo_workflow_tbl uw WHERE uw.undo_id = w.pause_undo_id AND uw.creation_date < ?)";
         return select(sql, new WorkflowRowMapper(), params);
     }
@@ -570,7 +586,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
         StringBuilder sqlBuilder = new StringBuilder();
         List<Object> sqlParameters = new ArrayList<>();
 
-        sqlBuilder.append("SELECT w.* FROM workflow_tbl w ")
+        sqlBuilder.append("SELECT w.workflow_id, w.company_id, w.shortname, w.description, w.status, w.general_start_date, w.general_end_date, w.end_type, w.general_start_reaction, w.general_start_event, w.workflow_schema FROM workflow_tbl w ")
                 .append("JOIN workflow_dependency_tbl dep ON dep.workflow_id = w.workflow_id AND dep.company_id = w.company_id ")
                 .append("WHERE w.company_id = ?  ");
 
@@ -633,7 +649,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
         List.of(types).forEach(type -> params.add(type.getId()));
         params.add(name);
 
-        return select("SELECT w.* FROM workflow_tbl w " +
+        return select("SELECT w.workflow_id, w.company_id, w.shortname, w.description, w.status, w.general_start_date, w.general_end_date, w.end_type, w.general_start_reaction, w.general_start_event, w.workflow_schema FROM workflow_tbl w " +
                 "JOIN workflow_dependency_tbl d ON d.workflow_id = w.workflow_id AND d.company_id = w.company_id " +
                 "WHERE w.company_id = ? AND w.status IN (?, ?, ?) " +
                 (types.length > 0 ? "AND d.type IN (" + StringUtils.repeat("?",  ", ", types.length) + ") " : "") +
@@ -647,7 +663,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
             return Collections.emptyList();
         }
 
-        String sqlGetDependentWorkflows = "SELECT w.* FROM workflow_tbl w " +
+        String sqlGetDependentWorkflows = "SELECT w.workflow_id, w.company_id, w.shortname, w.description, w.status, w.general_start_date, w.general_end_date, w.end_type, w.general_start_reaction, w.general_start_event, w.workflow_schema FROM workflow_tbl w " +
                 "JOIN workflow_reaction_tbl rc ON rc.workflow_id = w.workflow_id AND rc.company_id = w.company_id " +
                 "WHERE w.company_id = ? AND w.status IN (?, ?, ?) AND rc.reaction_type = ? AND LOWER(rc.profile_column) = ? AND rc.mailinglist_id = ? " +
                 "AND " + getIsEmpty("rc.rules_sql", !isUseRules) + " ORDER BY w.workflow_id DESC";
@@ -702,7 +718,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                     rs.getString("shortname"),
                     rs.getTimestamp("general_start_date"),
                     rs.getTimestamp("actual_end_date"),
-                    DashboardWorkflow.Status.fromId(rs.getInt("status"), false),
+                    IntEnum.fromId(WorkflowStatus.class, rs.getInt("status")),
                     WorkflowStop.WorkflowEndType.fromId(rs.getInt("end_type"))
             );
         }

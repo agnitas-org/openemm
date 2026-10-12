@@ -1,16 +1,16 @@
 package com.agnitas.emm.core.mailing.web;
 
 import com.agnitas.beans.factory.MailingFactory;
-import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
-import com.agnitas.emm.core.mailing.forms.validation.MailingSettingsFormValidator;
+import com.agnitas.emm.core.mailing.bean.impl.MailingValidatorLegacy;
+import com.agnitas.emm.core.mailing.settings.MailingSettingsFormValidator;
 import com.agnitas.emm.core.mailing.service.CopyMailingService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingParameterService;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.MailingSettingsService;
+import com.agnitas.emm.core.mailing.service.MailingSettingsUalService;
+import com.agnitas.emm.core.mailing.service.MailingSettingsUiService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.target.service.TargetService;
@@ -30,7 +30,55 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/mailing")
 public class MailingControllerOpenemm extends MailingController {
 
-	public MailingControllerOpenemm(ExtendedConversionService conversionService, MailingLightService mailingLightService, MailinglistService mailinglistService, TargetService targetService, MailingService mailingService, ConfigService configService, AdminService adminService, UserActivityLogService userActivityLogService, JavaMailService javaMailService, MailingBaseService mailingBaseService, MailingParameterService mailingParameterService, WorkflowService workflowService, MaildropService maildropService, CopyMailingService copyMailingService, MailingSettingsFormValidator mailingSettingsFormValidator, MailingFactory mailingFactory, MailinglistApprovalService mailinglistApprovalService, MailingExporter mailingExporter, GridServiceWrapper gridService, WebStorage webStorage, MailingSettingsService mailingSettingsService, MailingValidator mailingValidator, ApplicationContext applicationContext) {
-		super(conversionService, mailingLightService, mailinglistService, targetService, mailingService, configService, adminService, userActivityLogService, javaMailService, mailingBaseService, mailingParameterService, workflowService, maildropService, copyMailingService, mailingSettingsFormValidator, mailingFactory, mailinglistApprovalService, mailingExporter, gridService, webStorage, mailingSettingsService, mailingValidator, applicationContext);
-	}
+    public MailingControllerOpenemm(
+            ExtendedConversionService conversionService,
+            MailingLightService mailingLightService,
+            MailinglistService mailinglistService,
+            TargetService targetService,
+            MailingService mailingService,
+            ConfigService configService,
+            AdminService adminService,
+            UserActivityLogService userActivityLogService,
+            MailingSettingsUalService mailingSettingsUalService,
+            MailingBaseService mailingBaseService,
+            MailingParameterService mailingParameterService,
+            WorkflowService workflowService,
+            MaildropService maildropService,
+            CopyMailingService copyMailingService,
+            MailingSettingsFormValidator mailingSettingsFormValidator,
+            MailingFactory mailingFactory,
+            MailinglistApprovalService mailinglistApprovalService,
+            MailingExporter mailingExporter,
+            GridServiceWrapper gridService,
+            WebStorage webStorage,
+            MailingSettingsUiService MailingSettingsUiService,
+            MailingValidatorLegacy mailingValidator,
+            ApplicationContext applicationContext
+    ) {
+        super(
+                conversionService,
+                mailingLightService,
+                mailinglistService,
+                targetService,
+                mailingService,
+                configService,
+                adminService,
+                userActivityLogService,
+                mailingSettingsUalService,
+                mailingBaseService,
+                mailingParameterService,
+                workflowService,
+                maildropService,
+                copyMailingService,
+                mailingSettingsFormValidator,
+                mailingFactory,
+                mailinglistApprovalService,
+                mailingExporter,
+                gridService,
+                webStorage,
+                MailingSettingsUiService,
+                mailingValidator,
+                applicationContext
+        );
+    }
 }

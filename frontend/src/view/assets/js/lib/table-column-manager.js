@@ -29,7 +29,7 @@ Also, a `<th>` element must be created at the end of the header with the class `
       </div>
     </div>
     <div class="table-wrapper__body">
-      <table class="table--borderless">
+      <table class="table table--borderless">
         <thead>
           <tr>
             <th data-table-column>Name</th>

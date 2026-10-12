@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -16,8 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.backend.DBase;
+import com.agnitas.backend.Data;
 import com.agnitas.backend.DynCont;
 import com.agnitas.backend.DynName;
+import com.agnitas.backend.Messages;
 import com.agnitas.backend.StringOps;
 import com.agnitas.util.Log;
 
@@ -30,7 +32,7 @@ public class ContentDAO {
 		mailingID = forMailingID;
 	}
 	
-	public Map <Long, DynName> getDynamicContent (DBase dbase) throws SQLException {
+	public Map <Long, DynName> getDynamicContent (Data data, DBase dbase, boolean enabledAI) throws SQLException {
 		Map <Long, DynName>	names = new HashMap <> ();
 		
 		try (DBase.With with = dbase.with ()) {
@@ -61,6 +63,29 @@ public class ContentDAO {
 					dbase.logging(Log.DEBUG, "content", "Skip already recorded name " + name);
 			}
 			
+			Map <Long, DynCont.AI>	aiContent = new HashMap <> ();
+
+			if (enabledAI) {
+				rq = dbase.query (with.cursor (),
+						  "WITH conts AS (SELECT dyn_content_id FROM dyn_content_tbl WHERE company_id = :companyID AND mailing_id = :mailingID) " +
+						  "SELECT ai.dyn_content_id, ai.language, ai.tonality, ai.prompt, ai.word_count, ai.profile_field " +
+						  "FROM dyn_content_ai_settings_tbl ai" +
+						  "     INNER JOIN conts ON ai.dyn_content_id = conts.dyn_content_id",
+						  "mailingID", mailingID,
+						  "companyID", companyID);
+				if (rq.size () > 0) {
+					for (int n = 0; n < rq.size (); ++n) {
+						Map <String, Object>	row = rq.get (n);
+						DynCont.AI		ai = new DynCont.AI (dbase.asString (row.get ("language")),
+											     dbase.asString (row.get ("tonality")),
+											     dbase.asClob (row.get ("prompt")),
+											     dbase.asInt (row.get ("word_count")),
+											     dbase.asString (row.get ("profile_field")),
+											     data.messages ());
+						aiContent.put (dbase.asLong (row.get ("dyn_content_id")), ai);
+					}
+				}
+			}
 			rq = dbase.query (with.cursor (),
 					  "SELECT dyn_content_id, dyn_name_id, target_id, dyn_order, dyn_content FROM dyn_content_tbl " +
 					  "WHERE dyn_name_id IN (" +
@@ -78,7 +103,7 @@ public class ContentDAO {
 				DynName			name;
 
 				if ((name = names.get(nameID)) != null) {
-					name.add(new DynCont(dyncontID, targetID, order, content != null ? StringOps.convertOld2New(content) : null));
+					name.add(new DynCont(dyncontID, targetID, order, content != null ? StringOps.convertOld2New(content) : null, aiContent.get (dyncontID)));
 				} else {
 					dbase.logging(Log.WARNING, "content", "Found content for name-ID " + nameID + " without an entry in dyn_name_tbl");
 				}

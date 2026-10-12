@@ -2,11 +2,11 @@
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="dashboardForm" type="com.agnitas.emm.core.dashboard.form.DashboardForm"--%>
 <%--@elvariable id="mailinglist" type="com.agnitas.beans.PaginatedList<java.util.Map<java.lang.String, java.lang.Object>"--%>
-<%--@elvariable id="randomInactiveFeaturePackage" type="com.agnitas.emm.premium.bean.FeaturePackage"--%>
 <%--@elvariable id="layout" type="java.lang.String"--%>
 
 <div id="dashboard-tiles" class="tiles-container" data-controller="dashboard-grid" data-initializer="dashboard-grid">

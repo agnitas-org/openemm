@@ -6,7 +6,7 @@ name: badges_05_default-status
 parent: badges_04_status
 ---
 
-`.status` should always be combined with the default statuses, e.g. `.status.success`, `.status.warning`, `.status.error`.
+`.status` should always be combined with the default statuses, e.g. `.status.success`, `.status.warning`, `.status.error`, `.status.enabled`, `.status.disabled`.
 
 These can exist in text elements or standalone and denote the status of a mailing.
 
@@ -14,6 +14,8 @@ These can exist in text elements or standalone and denote the status of a mailin
 <span class="status-badge status.success"></span>
 <span class="status-badge status.warning"></span>
 <span class="status-badge status.error"></span>
+<span class="status-badge status.enabled"></span>
+<span class="status-badge status.disabled"></span>
 ```
 
 */
@@ -22,6 +24,8 @@ $default-status-badges-defs: (
   success:    (background: $badge-dark-green-var,   icon: $fa-var-check),
   error:      (background: $badge-dark-red-var,     icon: $fa-var-times),
   warning:    (background: $badge-dark-yellow-var,  icon: $fa-var-times),
+  enabled:    (background: $badge-green-var,        icon: $fa-var-toggle-on),
+  disabled:   (background: $stat-light-red,         icon: $fa-var-toggle-off),
   comment:    (background: $badge-blue-var,         icon: $fa-var-comment),
   push:       (background: $stat-violet,            icon: $fa-var-bell),
   clipboard:  (background: $badge-darkest-blue-var, icon: $fa-var-clipboard-list),

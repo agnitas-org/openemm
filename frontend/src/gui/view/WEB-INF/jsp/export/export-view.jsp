@@ -7,7 +7,6 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 <%--@elvariable id="timeZones" type="java.lang.String[]"--%>
 <%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="targetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
@@ -28,8 +27,6 @@
 <c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.GENERIC_TYPE_DATE %>" scope="page" />
 <c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>" scope="page" />
 <c:set var="BOUNCE_USER_STATUS_CODE" value="<%= UserStatus.Bounce.getStatusCode() %>" scope="page" />
-
-<c:set var="localeDatePattern" value="${fn:toLowerCase(localeDatePattern)}"/>
 
 <mvc:form cssClass="tiles-container" servletRelativeAction="/export/${id}/save.action" id="exportForm" modelAttribute="exportForm" data-form="resource"
           data-form-focus="shortname"

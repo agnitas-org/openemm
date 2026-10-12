@@ -787,7 +787,7 @@ Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, l
   justify-content: space-between;
 
   border-bottom: none;
-  flex: 0 0 40px;
+  flex: 0 0 $tile-header-height;
   background-color: transparent;
   padding: $gap-sm $gap $gap-x-sm $gap;
 
@@ -905,7 +905,7 @@ Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, l
 .tile--sm {
   > .tile-header {
     color: $body-color-var;
-    flex-basis: 40px;
+    flex-basis: $tile-header-height;
     padding: 0 $gap-sm;
   }
 

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -20,6 +20,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -70,6 +71,7 @@ import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.commons.exception.EntityNotFoundException;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.commons.util.DateUtil;
@@ -98,7 +100,7 @@ import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
-import com.agnitas.emm.core.target.exception.TargetNotExistException;
+import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
@@ -126,6 +128,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	private static final Logger logger = LogManager.getLogger(MailingServiceImpl.class);
 	private static final int DEFAULT_LOCKING_DURATION_SECONDS = 60; // 1 minute
+	private static final String NO_PREVIEW_THUMBNAIL_URI = "/assets/core/images/facelift/no_preview.svg";
 
 	protected MailingDao mailingDao;
 	protected ConfigService configService;
@@ -332,7 +335,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			Set<Integer> tGroups = new HashSet<>();
 			for (Integer targetID : model.getTargetIDList()) {
 				if (targetDao.getTarget(targetID, model.getCompanyId()) == null) {
-					throw new TargetNotExistException(targetID);
+					throw new TargetGroupNotFoundException(targetID);
 				}
 				tGroups.add(targetID);
 			}
@@ -518,6 +521,28 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
+	public boolean isActiveOrSent(Mailing mailing) {
+		if (mailing.getId() == 0) {
+			return false;
+		}
+		return maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
+	}
+
+	@Override
+	public int createMailingFromTemplate(int templateId, int companyId) {
+		Mailing template = getMailing(templateId, companyId, false);
+		if (template == null || !template.isIsTemplate()) {
+			throw new EntityNotFoundException("Template", templateId);
+		}
+		MailingModel model = new MailingModel();
+		model.setCompanyId(companyId);
+		model.setTemplateId(templateId);
+		model.setShortname(template.getShortname());
+		model.setDescription(template.getDescription());
+		return selfReference.addMailingFromTemplate(model);
+	}
+
+	@Override
 	@Transactional
 	public int addMailingFromTemplate(MailingModel model) {
 	    mailingModelValidator.assertIsValidToAddFromTemplate(model);
@@ -660,6 +685,28 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
+	public Mailing getMailingOnly(int id, int companyId) {
+		return mailingDao.findMailing(id, companyId)
+				.orElseThrow(() -> new MailingNotExistException(companyId, id));
+	}
+
+	@Override
+	public Mailing getTemplate(int id, int companyId) {
+		return mailingDao.findTemplate(id, companyId)
+				.orElseThrow(() -> new TemplateNotExistException(id));
+	}
+
+	@Override
+	public Optional<Mailing> findMailingOnly(int id, int companyId) {
+		return mailingDao.findMailing(id, companyId);
+	}
+
+	@Override
+	public Optional<Mailing> findTemplate(int id, int companyId) {
+		return mailingDao.findTemplate(id, companyId);
+	}
+
+	@Override
     public int getFollowUpFor(int mailingId) {
         try {
             return Integer.parseInt(mailingDao.getFollowUpFor(mailingId));
@@ -707,6 +754,25 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	public List<Mailing> getMailings(MailingModel model) {
 	    mailingModelValidator.assertCompany(model.getCompanyId());
 		return mailingDao.getMailings(model.getCompanyId(), model.isTemplate());
+	}
+
+	@Override
+	public void validateMailingExists(int id, int companyId) {
+		if (!mailingDao.exist(id, companyId, false)) {
+			throw new MailingNotExistException(companyId, id);
+		}
+	}
+
+	@Override
+	public void validateTemplateExists(int id, int companyId) {
+		if (!mailingDao.exist(id, companyId, true)) {
+			throw new TemplateNotExistException(id);
+		}
+	}
+
+	@Override
+	public boolean exists(int mailingID, int companyID, boolean isTemplate) {
+		return mailingDao.exist(mailingID, companyID, isTemplate);
 	}
 
 	@Override
@@ -787,6 +853,18 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	private List<LightweightMailingWithMailingList> listAllActionBasedMailingsForMailinglists(Set<Integer> ids, int companyId) {
 		return mailingDao.listAllActionBasedMailingsForMailinglists(ids, companyId);
+	}
+
+	@Override
+	public LightweightMailing getMailingLight(int mailingId, int companyId) {
+		validateMailingExists(mailingId, companyId);
+		return this.mailingDao.getLightweightMailing(companyId, mailingId);
+	}
+
+	@Override
+	public LightweightMailing getTemplateLight(int templateId, int companyId) {
+		validateTemplateExists(templateId, companyId);
+		return this.mailingDao.getLightweightMailing(companyId, templateId);
 	}
 
 	@Override
@@ -986,10 +1064,21 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		return mailingDao.saveMailing(mailing, preserveTrackableLinks);
 	}
 
+	@Override
+	public List<UserAction> deleteMailing(int mailingId, Admin admin) {
+		return deleteMailing(mailingId, admin, false);
+	}
+
     @Override
-    public List<UserAction> deleteMailing(int mailingId, Admin admin) {
-        Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
-        mailingBaseService.deleteMailing(mailingId, admin.getCompanyID());
+    public List<UserAction> deleteMailing(int id, Admin admin, boolean isTemplate) {
+		if (!exists(id, admin.getCompanyID(), isTemplate)) {
+			if (isTemplate) {
+				throw new TemplateNotExistException(id);
+			}
+			throw new MailingNotExistException(admin.getCompanyID(), id);
+		}
+        Mailing mailing = mailingDao.getMailing(id, admin.getCompanyID());
+        mailingBaseService.deleteMailing(id, admin.getCompanyID());
         return Collections.singletonList(getDeleteUserAction(mailing));
     }
 
@@ -1363,12 +1452,45 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
-	public Optional<Integer> getThumbnailComponentId(Mailing mailing) {
+	public String getThumbnailDataUri(int mailingId, int companyId) {
+		return Optional.ofNullable(mailingComponentDao.getComponent(companyId, mailingId, MailingComponentType.ThumbnailImage))
+				.map(this::toThumbnailDataUri)
+				.orElse(NO_PREVIEW_THUMBNAIL_URI);
+	}
+
+	@Override
+	public String getThumbnailDataUri(Mailing mailing) {
+		if (mailing.isOnlyPostType()) {
+			return "/assets/core/images/facelift/post_thumbnail.jpg";
+		}
+
+		return findThumbnailComponent(mailing)
+				.map(this::toThumbnailDataUri)
+				.orElse(NO_PREVIEW_THUMBNAIL_URI);
+	}
+
+	private String toThumbnailDataUri(MailingComponent component) {
+		if (component.getBinaryBlock() == null) {
+			return NO_PREVIEW_THUMBNAIL_URI;
+		}
+
+		return "data:%s;base64,%s".formatted(
+				component.getMimeType(),
+				Base64.getEncoder().encodeToString(component.getBinaryBlock())
+		);
+	}
+
+	private Optional<MailingComponent> findThumbnailComponent(Mailing mailing) {
 		return mailing.getComponents()
 				.values()
 				.stream()
 				.filter(c -> MailingComponentType.ThumbnailImage.equals(c.getType()))
-				.findAny()
+				.findAny();
+	}
+
+	@Override
+	public Optional<Integer> getThumbnailComponentId(Mailing mailing) {
+		return findThumbnailComponent(mailing)
 				.map(MailingComponent::getId);
 	}
 
@@ -1378,6 +1500,16 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 				.map(MediatypeEmail::getMailFormat)
 				.map(f -> MailingModel.Format.OFFLINE_HTML.getCode().equals(f))
 				.orElse(false);
+	}
+
+	@Override
+	public boolean isStandaloneSmsMailing(int mailingId, int companyId) {
+		return false;
+	}
+
+	@Override
+	public boolean isStandaloneSmsMailing(Mailing mailing) {
+		return false;
 	}
 
 	@Override
@@ -1482,5 +1614,4 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	public void setSelfReference(MailingService mailingService) {
 		this.selfReference = mailingService;
 	}
-
 }

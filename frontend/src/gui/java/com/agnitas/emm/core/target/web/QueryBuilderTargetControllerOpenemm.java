@@ -21,12 +21,37 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/target")
 public class QueryBuilderTargetControllerOpenemm extends QueryBuilderTargetController {
 
-    public QueryBuilderTargetControllerOpenemm(MailinglistApprovalService mailinglistApprovalService, TargetService targetService, RecipientService recipientService,
-                                               EditorContentSynchronizer editorContentSynchronizer, EqlFacade eqlFacade, TargetCopyService targetCopyService, TargetFactory targetFactory,
-                                               UserActivityLogService userActivityLogService, BirtStatisticsService birtStatisticsService, WebStorage webStorage, GridServiceWrapper gridService,
-                                               TargetEditFormValidator editFormValidator, ConfigService configService, TargetImporterExporter importerExporter) {
-        super(mailinglistApprovalService, targetService, recipientService, editorContentSynchronizer, eqlFacade, targetCopyService, targetFactory,
-                userActivityLogService, birtStatisticsService, webStorage, gridService, editFormValidator, configService, importerExporter);
+    public QueryBuilderTargetControllerOpenemm(
+            MailinglistApprovalService mailinglistApprovalService,
+            TargetService targetService,
+            RecipientService recipientService,
+            EditorContentSynchronizer editorContentSynchronizer,
+            EqlFacade eqlFacade,
+            TargetCopyService targetCopyService,
+            TargetFactory targetFactory,
+            UserActivityLogService userActivityLogService,
+            BirtStatisticsService birtStatisticsService,
+            WebStorage webStorage,
+            GridServiceWrapper gridService,
+            TargetEditFormValidator editFormValidator,
+            ConfigService configService,
+            TargetImporterExporter importerExporter
+    ) {
+        super(
+                mailinglistApprovalService,
+                targetService,
+                recipientService,
+                editorContentSynchronizer,
+                eqlFacade,
+                targetCopyService,
+                targetFactory,
+                userActivityLogService,
+                birtStatisticsService,
+                webStorage,
+                gridService,
+                editFormValidator,
+                configService,
+                importerExporter
+        );
     }
-
 }

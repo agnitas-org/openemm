@@ -152,7 +152,7 @@ function formatDateByLocale(date) {
 }
 reportContext.setGlobalVariable("formatDateByLocale", formatDateByLocale);
 
-figures = BirtReporUtils.unpackFigures(params["figures"]);
+figures = BirtReportUtils.unpackFigures(params["figures"]);
 reportContext.setGlobalVariable("figures", figures);
 
 recipientsStatisticDataSet = new RecipientsStatisticDataSet();
@@ -166,10 +166,10 @@ reportContext.setPersistentGlobalVariable("stopDateFormated", dateFormat(params[
 reportContext.setPersistentGlobalVariable("startDateFormated", dateFormat(params["startDate"]));
 
 recipientsDetailedStatisticDataSet = new RecipientsDetailedStatisticDataSet();
-if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {
+if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {
 	recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 }
-if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
+if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
 	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 }
 
@@ -2554,7 +2554,7 @@ return true;]]></method>
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="1769">
@@ -4550,7 +4550,7 @@ currentMailingListNumber++;]]></method>
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="1833">
@@ -5746,7 +5746,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="4861">
@@ -5762,7 +5762,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="2035">
@@ -8796,7 +8796,7 @@ function beforeGeneration(chart, icsc) {
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="2168">
@@ -8812,7 +8812,7 @@ function beforeGeneration(chart, icsc) {
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="2791">
@@ -11224,7 +11224,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="2867">
@@ -11528,7 +11528,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
+                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
                                 </structure>
                             </list-property>
                         </column>
@@ -11536,7 +11536,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
+                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
                                 </structure>
                             </list-property>
                         </column>
@@ -11965,7 +11965,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
+                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
                                 </structure>
                             </list-property>
                         </column>
@@ -11973,7 +11973,7 @@ function beforeDrawLegendItem( lerh, bounds, icsc )
                             <list-property name="visibility">
                                 <structure>
                                     <property name="format">all</property>
-                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
+                                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
                                 </structure>
                             </list-property>
                         </column>
@@ -13344,7 +13344,7 @@ function beforeGeneration( chart, icsc )
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="4521">
@@ -13359,7 +13359,7 @@ function beforeGeneration( chart, icsc )
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="2960">
@@ -14902,7 +14902,7 @@ currentMailingListNumber++;]]></method>
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="3143">
@@ -14917,7 +14917,7 @@ currentMailingListNumber++;]]></method>
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.MAILING_TYPE)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="3232">
@@ -16566,7 +16566,7 @@ currentMailingListNumber++;]]></method>
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="5108">

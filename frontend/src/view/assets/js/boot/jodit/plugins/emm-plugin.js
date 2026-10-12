@@ -6,7 +6,65 @@
 
   Jodit.modules.Icon.set('wrap-text-in-p', `<i class="icon icon-code"></i>`);
 
-  const IMAGES_MAP_CACHE = new Map();
+  const MAILING_IMAGES_MAP_CACHE = new Map();
+  let MEDIAPOOL_IMAGES;
+
+  // GWUA-7139
+  const NUMERIC_CHAR_REFERENCE_RE = /&#(x[0-9a-f]+|[0-9]+);/gi;
+
+  // Matches only the invisible/zero-width typographic characters
+  const LITERAL_INVISIBLE_RE = /[\u200B-\u200D\u2060\uFEFF]/g;
+
+  // Matches formatting-sensitive blocks (<pre>, <script>, <style>, <textarea>) OR line breaks
+  const PRESERVE_NEWLINES_BLOCKS_RE = /(<(pre|script|style|textarea)\b[^>]*>[\s\S]*?<\/\2>)|[\n\r]+/gi;
+
+  function removeWhitespaceHtmlEntities(html) {
+    if (!html) {
+      return html;
+    }
+    // handle entities if they survived in the raw HTML string
+    let result = html.replace(NUMERIC_CHAR_REFERENCE_RE, (match, ref) => {
+      const isHex = ref[0].toLowerCase() === 'x';
+      const codePoint = Number.parseInt(isHex ? ref.slice(1) : ref, isHex ? 16 : 10);
+
+      // do not remove Normal Spaces (32) and Tabs (9) with any encoding
+      if (codePoint === 32 || codePoint === 9) {
+        return match;
+      }
+      // remove control whitespaces (10: LF, 11: VT, 12: FF, 13: CR)
+      if (codePoint >= 10 && codePoint <= 13) {
+        return '';
+      }
+      try {
+        // Check if the decoded character falls into either of two categories:
+        // 1. /\s/ -> Standard Unicode whitespace characters (e.g., non-breaking space \u00A0, regular spaces, tabs)
+        // 2. /[\u200B-\u200D\u2060\uFEFF]/ -> Invisible/zero-width typographic characters
+        const char = String.fromCodePoint(codePoint);
+        if (/\s/.test(char) || /[\u200B-\u200D\u2060\uFEFF]/.test(char)) {
+          return ''; // out with empty string on any whitespace or invisible character
+        }
+      } catch (e) {
+        console.error("Error on whitespace handler", e);
+      }
+      // do not remove non-whitespace entities
+      return match;
+    });
+
+    // handle entities that Jodit/Browser already decoded into literals.
+    // This strips out zero-width spaces.
+    result = result.replace(LITERAL_INVISIBLE_RE, '');
+
+    // Remove literal \n and \r everywhere EXCEPT inside formatting-sensitive tags
+    result = result.replace(PRESERVE_NEWLINES_BLOCKS_RE, (match, preservedBlock) => {
+      // If a tag block (like <pre>...</pre>) was matched, return it exactly as-is
+      if (preservedBlock) {
+        return preservedBlock;
+      }
+      return '';
+    });
+
+    return result;
+  }
 
   const TOOLBARS = {
     Full: [
@@ -77,8 +135,12 @@
     }
 
     const mailingId = editor.options.emmMailingId;
-    if (!IMAGES_MAP_CACHE.get(mailingId)) {
-      IMAGES_MAP_CACHE.set(mailingId, getMailingImages(mailingId));
+    if (mailingId && !MAILING_IMAGES_MAP_CACHE.get(mailingId)) {
+      MAILING_IMAGES_MAP_CACHE.set(mailingId, getMailingImages(mailingId));
+    }
+
+    if (!MEDIAPOOL_IMAGES) {
+      MEDIAPOOL_IMAGES = getMediapoolImages();
     }
 
     if (mailingId && !window.isOpenEmm) {
@@ -126,7 +188,9 @@
         return content;
       }
 
+      content = removeWhitespaceHtmlEntities(content);
       content = processUrls(content, mailingId);
+      content = AGN.Lib.Helpers.prettifyHtml(content);
       content = AGN.Lib.Helpers.unescapeAgnTags(content);
       return AGN.Lib.Helpers.unescapeVelocityDirectives(content);
     }
@@ -284,14 +348,14 @@
       if (!html) {
         return html;
       }
-
+      html = removeWhitespaceHtmlEntities(html);
       html = AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
       return AGN.Lib.Helpers.escapeVelocityDirectives(html);
     }
 
-    editor.events.on('beforeSetValueToEditor', function (html) {
-      return escapeForNativeWrite(html);
-    });
+    editor.events.on('beforeSetValueToEditor', (html) => escapeForNativeWrite(html));
+
+    editor.events.on('beforePasteInsert', (html) => processContent(html));
 
     editor.events.on('beforeSetNativeEditorValue', function (data) {
       data.value = escapeForNativeWrite(data.value);
@@ -346,14 +410,19 @@
   }
 
   function replaceAgnImageTags(data, mailingId) {
-    const imagesUrlsMap = IMAGES_MAP_CACHE.get(mailingId);
-    if (!imagesUrlsMap) {
+    const mailingImagesUrlsMap = MAILING_IMAGES_MAP_CACHE.get(mailingId);
+    if (!mailingImagesUrlsMap && !Object.keys(MEDIAPOOL_IMAGES).length) {
       return data;
     }
 
     return AGN.Lib.Helpers.replaceAgnTags(data, (tag, tagHtml) => {
       if (tag.name === 'agnIMAGE' && tag.attributes['name']) {
-        const imageUrl = imagesUrlsMap[tag.attributes.name];
+        let imageUrl = mailingImagesUrlsMap[tag.attributes.name];
+        if (imageUrl) {
+          return encodeURI(imageUrl);
+        }
+
+        imageUrl = MEDIAPOOL_IMAGES[tag.attributes.name];
         if (imageUrl) {
           return encodeURI(imageUrl);
         }
@@ -366,10 +435,26 @@
   function getMailingImages(mailingId) {
     let result;
     $.ajax({
-      url: AGN.url('/wysiwyg/images/names-urls.action'),
+      url: AGN.url('/wysiwyg/mailing/images.action'),
       type: 'GET',
       async: false,
-      data: {mi: mailingId},
+      data: { mailingId },
+      success: json => result = json
+    });
+
+    return result;
+  }
+
+  function getMediapoolImages() {
+    if (window.isOpenEmm) {
+      return {};
+    }
+
+    let result;
+    $.ajax({
+      url: AGN.url('/wysiwyg/mediapool/images.action'),
+      type: 'GET',
+      async: false,
       success: json => result = json
     });
 
@@ -377,18 +462,23 @@
   }
 
   function processUrls(content, mailingId) {
-    const imagesUrlsMap = IMAGES_MAP_CACHE.get(mailingId);
-    if (!imagesUrlsMap) {
+    const mailingImagesUrlsMap = MAILING_IMAGES_MAP_CACHE.get(mailingId);
+    if (!mailingImagesUrlsMap && !Object.keys(MEDIAPOOL_IMAGES).length) {
       return content;
     }
     const urls = content.match(/https?:\/\/[\w\-._~:\/?#@!$&'()*+,;=%]+/g);
     if (!urls) {
       return content;
     }
-    const urlsImagesNamesMap = {};
-    Object.keys(imagesUrlsMap).forEach(key => {
-      urlsImagesNamesMap[imagesUrlsMap[key]] = key;
+    const urlToImageNameMap = {};
+    Object.keys(mailingImagesUrlsMap).forEach(key => {
+      urlToImageNameMap[mailingImagesUrlsMap[key]] = key;
     });
+
+    Object.keys(MEDIAPOOL_IMAGES).forEach(key => {
+      urlToImageNameMap[MEDIAPOOL_IMAGES[key]] = key;
+    });
+
     urls.forEach(url => {
       let normalizedUrl = url.replace(/(\/mediapool_element)(\/\d+)?(\/\d+\/\d+\/0\/\d+)(\.\w+)?/, function (match, $1, $2, $3) {
         return $1 + $3;
@@ -401,7 +491,7 @@
       }
 
       normalizedUrl = normalizedUrl.replaceAll('&amp;', '&');
-      const imageName = urlsImagesNamesMap[normalizedUrl];
+      const imageName = urlToImageNameMap[normalizedUrl];
       if (imageName) {
         content = content.replace(url, `[agnIMAGE name='${imageName}']`);
       }

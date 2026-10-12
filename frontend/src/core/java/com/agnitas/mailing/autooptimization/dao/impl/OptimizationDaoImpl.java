@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -21,7 +21,6 @@ import java.util.Map;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
 import com.agnitas.mailing.autooptimization.beans.Optimization;
@@ -97,8 +96,14 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 
 	@Override
 	public Optimization get(int optimizationID, int companyID) {
-	   String query = "SELECT " + StringUtils.join(TABLE_COLUMNS, ", ") + " FROM auto_optimization_tbl" +
-			   " WHERE optimization_id = ? AND company_id = ? AND (deleted = 0 OR deleted IS NULL)";
+		return get(optimizationID, companyID, false);
+	}
+
+	@Override
+	public Optimization get(int optimizationID, int companyID, boolean includeDeleted) {
+		String query = "SELECT " + StringUtils.join(TABLE_COLUMNS, ", ") + " FROM auto_optimization_tbl" +
+				" WHERE optimization_id = ? AND company_id = ?"
+				+ (includeDeleted ? "" : " AND (deleted = 0 OR deleted IS NULL)");
 		return selectObject(query, new OptimizationRowMapper(), optimizationID, companyID);
 	}
 
@@ -189,13 +194,6 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 	public String findName(int optimizationId, int companyId) {
 		String query = "SELECT shortname FROM auto_optimization_tbl WHERE optimization_id = ? AND company_id = ?";
 		return selectWithDefaultValue(query, String.class, "", optimizationId, companyId);
-	}
-
-	@Override
-	public List<Integer> findTargetDependentAutoOptimizations(int targetGroupId, int companyId) {
-		String query = "SELECT optimization_id FROM auto_optimization_tbl WHERE target_id = ? AND company_id = ? AND status NOT IN (?, ?)";
-		return select(query, IntegerRowMapper.INSTANCE,
-				targetGroupId, companyId, AutoOptimizationStatus.NOT_STARTED.getCode(), AutoOptimizationStatus.FINISHED.getCode());
 	}
 
 	@Override

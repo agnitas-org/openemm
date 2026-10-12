@@ -1,50 +1,94 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.binding.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.factory.BindingEntryFactory;
+import com.agnitas.beans.impl.BindingEntryImpl;
 import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.BindingEntryDao.BulkDeleteBindingsFilter;
+import com.agnitas.dao.BindingEntryDao.ListBindingsFilter;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.common.UpsertResult;
 import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.action.ActionNotFoundException;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.binding.BindingIdentifier;
+import com.agnitas.emm.core.binding.BulkDeleteBindingCommand;
+import com.agnitas.emm.core.binding.BulkUpsertBindingCommand;
+import com.agnitas.emm.core.binding.CreateBindingCommand;
+import com.agnitas.emm.core.binding.DeleteBindingCommand;
+import com.agnitas.emm.core.binding.GetBindingQuery;
+import com.agnitas.emm.core.binding.ListBindingsQuery;
+import com.agnitas.emm.core.binding.PatchBindingCommand;
+import com.agnitas.emm.core.binding.UpsertBindingResult;
 import com.agnitas.emm.core.binding.exception.BindingNotExistException;
+import com.agnitas.emm.core.binding.service.BindingCreateResult;
+import com.agnitas.emm.core.binding.service.BindingMapper;
 import com.agnitas.emm.core.binding.service.BindingModel;
 import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.core.binding.service.validation.BindingModelValidator;
+import com.agnitas.emm.core.commons.exception.EntityAlreadyExistsException;
+import com.agnitas.emm.core.commons.validation.DeleteResult;
 import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mailinglist.exception.MailinglistNotExistException;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.exception.RecipientNotExistException;
-import jakarta.annotation.Resource;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.velocity.Constants;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service("bindingService")
 public class BindingServiceImpl implements BindingService {
 
-	@Resource
-	private EmmActionService emmActionService;
-	private BindingEntryDao bindingEntryDao;
-	private MailinglistDao mailinglistDao;
-	private RecipientDao recipientDao;
-	private BindingEntryFactory bindingEntryFactory;
-	private BindingModelValidator bindingModelValidator;
-	private MailingDao mailingDao;
-	
+	private final EmmActionService emmActionService;
+	private final BindingEntryDao bindingEntryDao;
+	private final MailinglistService mailinglistService;
+	private final RecipientService recipientService;
+	private final BindingEntryFactory bindingEntryFactory;
+	private final BindingModelValidator bindingModelValidator;
+	private final MailingDao mailingDao;
+	private final BindingMapper bindingMapper;
+
+    public BindingServiceImpl(
+            EmmActionService emmActionService,
+            BindingEntryDao bindingEntryDao,
+			MailinglistService mailinglistService,
+            RecipientService recipientService,
+            BindingEntryFactory bindingEntryFactory,
+            BindingModelValidator bindingModelValidator,
+            MailingDao mailingDao,
+			BindingMapper bindingMapper
+    ) {
+        this.emmActionService = emmActionService;
+        this.bindingEntryDao = bindingEntryDao;
+        this.mailinglistService = mailinglistService;
+        this.recipientService = recipientService;
+        this.bindingEntryFactory = bindingEntryFactory;
+        this.bindingModelValidator = bindingModelValidator;
+        this.mailingDao = mailingDao;
+        this.bindingMapper = bindingMapper;
+    }
+
 	@Override
 	public boolean setBindingWithActionId(BindingModel model, boolean runActionInBackground) {
 	    bindingModelValidator.assertIsValidToSet(model);
@@ -93,10 +137,10 @@ public class BindingServiceImpl implements BindingService {
 	@Transactional
 	public void setBinding(BindingModel model) {
 		bindingModelValidator.assertIsValidToSet(model);
-		if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
+		if (!mailinglistService.exist(model.getMailinglistId(), model.getCompanyId())) {
 			throw new MailinglistNotExistException(model.getMailinglistId(), model.getCompanyId());
 		}
-		if (!recipientDao.exist(model.getCustomerId(), model.getCompanyId())) {
+		if (!recipientService.recipientExists(model.getCompanyId(), model.getCustomerId())) {
 			throw new RecipientNotExistException();
 		}
 		if (model.getExitMailingId() != 0 && !mailingDao.exist(model.getExitMailingId(), model.getCompanyId())) {
@@ -134,7 +178,7 @@ public class BindingServiceImpl implements BindingService {
 	@Transactional
 	public List<BindingEntry> getBindings(BindingModel model) {
 		bindingModelValidator.assertIsValidToList(model);
-		if (!recipientDao.exist(model.getCustomerId(), model.getCompanyId())) {
+		if (!recipientService.recipientExists(model.getCompanyId(), model.getCustomerId())) {
 			throw new RecipientNotExistException();
 		}
 		return bindingEntryDao.getBindings(model.getCompanyId(), model.getCustomerId());
@@ -151,31 +195,186 @@ public class BindingServiceImpl implements BindingService {
 	}
 
 	@Override
+	public int updateBindings(int companyId, List<BindingEntry> bindings) {
+		return bindingEntryDao.updateBindings(companyId, bindings);
+	}
+
+	@Override
+	public void updateBinding(PatchBindingCommand command, int companyId) {
+		BindingEntry binding = get(command.getQuery(), companyId);
+
+		command.userStatus().ifPresent(status -> binding.setUserStatus(status.getStatusCode()));
+		command.userRemark().ifPresent(binding::setUserRemark);
+		command.userType().ifPresent(userType -> binding.setUserType(userType != null ? userType.getTypeCode() : null));
+		command.referrer().ifPresent(binding::setReferrer);
+		command.entryMailingId().ifPresent(id -> binding.setEntryMailingID(id != null ? id : 0));
+		command.exitMailingId().ifPresent(id -> binding.setExitMailingID(id != null ? id : 0));
+
+		updateBindings(companyId, binding);
+	}
+
+	@Override
+	public boolean updateStatus(BindingEntry binding, int companyId) {
+		return bindingEntryDao.updateStatus(binding, companyId);
+	}
+
+	@Override
 	public int insertBindings(int companyId, BindingEntry... bindings) {
 		return bindingEntryDao.insertBindings(companyId, bindings);
 	}
 
-	public void setBindingEntryDao(BindingEntryDao bindingEntryDao) {
-		this.bindingEntryDao = bindingEntryDao;
+	@Override
+	public int insertBindings(int companyId, List<BindingEntry> bindings) {
+		return bindingEntryDao.insertBindings(companyId, bindings);
 	}
 
-	public void setMailinglistDao(MailinglistDao mailinglistDao) {
-		this.mailinglistDao = mailinglistDao;
+	@Override
+	public boolean exist(int recipientId, int companyId, int mailinglistId, MediaTypes mediatype) {
+		return bindingEntryDao.exist(recipientId, companyId, mailinglistId, mediatype.getMediaCode());
 	}
 
-	public void setRecipientDao(RecipientDao recipientDao) {
-		this.recipientDao = recipientDao;
+	@Override
+	public BindingEntry get(GetBindingQuery query, int companyId) {
+		return find(query, companyId).orElseThrow(() -> new BindingNotExistException(query.toString()));
 	}
 
-	public void setBindingEntryFactory(BindingEntryFactory bindingEntryFactory) {
-		this.bindingEntryFactory = bindingEntryFactory;
+	@Override
+	public Optional<BindingEntry> find(GetBindingQuery query, int companyId) {
+		return Optional.ofNullable(bindingEntryDao.get(
+				query.recipientId(),
+				companyId,
+				query.mailinglistId(),
+				query.mediatype().getMediaCode()
+		));
 	}
 
-	public void setMailingDao(MailingDao mailingDao) {
-		this.mailingDao = mailingDao;
+    @Override
+	public PaginatedList<BindingEntry> find(ListBindingsQuery query, int companyId) {
+		ListBindingsFilter filter = bindingMapper.toFilter(query);
+		return bindingEntryDao.find(filter, companyId);
 	}
 
-	public void setBindingModelValidator(BindingModelValidator bindingModelValidator) {
-		this.bindingModelValidator = bindingModelValidator;
+	@Override
+	public BindingCreateResult create(CreateBindingCommand command, int companyId) {
+		validateForCreate(command, companyId);
+
+		BindingEntryImpl binding = bindingMapper.toEntity(command);
+		insertBindings(companyId, binding);
+
+		return new BindingCreateResult(
+				get(bindingMapper.toGetQuery(command), companyId),
+				command.triggerId() > 0 ? executeBindingCreateAction(command, companyId) : null
+		);
+	}
+
+	@Override
+	public void deleteBinding(DeleteBindingCommand command, int companyId) {
+		validateRecipient(command.recipientId(), companyId);
+		validateMailinglist(command.mailinglistId(), companyId);
+		bindingEntryDao.delete(
+				command.recipientId(),
+				companyId,
+				command.mailinglistId(),
+				command.mediatype().getMediaCode()
+		);
+	}
+
+	@Override
+	public List<DeleteResult> bulkDelete(BulkDeleteBindingCommand command) {
+		BulkDeleteBindingsFilter filter = bindingMapper.toFilter(command);
+		List<Integer> deletedIds = bindingEntryDao.delete(filter);
+		return command.recipientIds()
+				.stream()
+				.map(id -> deletedIds.contains(id)
+						? DeleteResult.deleted(id)
+						: DeleteResult.notFound(id)
+				)
+				.toList();
+	}
+
+	private void validateForCreate(CreateBindingCommand query, int companyId) {
+		validateRecipient(query.recipientId(), companyId);
+		validateMailinglist(query.mailinglistId(), companyId);
+		if (exist(query.recipientId(), companyId, query.mailinglistId(), query.mediatype())) {
+			throw new EntityAlreadyExistsException("Binding");
+		}
+		if (query.triggerId() > 0 && !emmActionService.actionExists(query.triggerId(), companyId)) {
+			throw new ActionNotFoundException(query.triggerId());
+		}
+	}
+
+	private void validateRecipient(int recipientId, int companyId) {
+		if (!recipientService.recipientExists(companyId, recipientId)) {
+			throw new RecipientNotExistException(recipientId);
+		}
+	}
+
+	private void validateMailinglist(int mailinglistId, int companyId) {
+		if (!mailinglistService.exist(mailinglistId, companyId)) {
+			throw new MailinglistNotExistException(mailinglistId, companyId);
+		}
+	}
+
+	private String executeBindingCreateAction(CreateBindingCommand command, int companyId) {
+		EmmActionOperationErrors errors = new EmmActionOperationErrors();
+		Map<String, Object> params = Map.of(
+				"customerID", command.recipientId(),
+				Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, errors
+		);
+		Runnable task = () -> emmActionService.executeActions(
+				command.triggerId(),
+				companyId,
+				params,
+				errors
+		);
+		if (command.runActionAsynchronous()) {
+			Thread.startVirtualThread(task);
+			return "Action started";
+		} else {
+			task.run();
+			return errors.isEmpty() ? "Action executed" : errors.toString();
+		}
+	}
+
+	@Override
+	public List<UpsertBindingResult> upsert(BulkUpsertBindingCommand command, int companyId) {
+		ListBindingsFilter query = bindingMapper.toFilter(command);
+		Map<BindingIdentifier, UserStatus> existingState = bindingEntryDao.getExistingState(query, companyId);
+		List<CreateBindingCommand> inserts = new ArrayList<>();
+		List<CreateBindingCommand> updates = new ArrayList<>();
+		List<UpsertBindingResult> results = new ArrayList<>();
+
+		for (MediaTypes mediaType : command.mediatypes()) {
+			for (Integer mlId : command.mailinglistIds()) {
+				for (Integer recipientId : command.recipientIds()) {
+					UserStatus currentStatus = existingState.get(new BindingIdentifier(recipientId, mlId, mediaType));
+					if (currentStatus == null) {
+						inserts.add(CreateBindingCommand.builder()
+								.recipientId(recipientId)
+								.userType(UserType.World)
+								.userStatus(command.status())
+								.mailinglistId(mlId)
+								.mediatype(mediaType)
+								.userRemark(command.remark())
+								.build());
+						results.add(new UpsertBindingResult(mediaType, mlId, recipientId, UpsertResult.INSERTED));
+					} else if (currentStatus != command.status()) {
+						updates.add(CreateBindingCommand.builder()
+								.recipientId(recipientId)
+								.userStatus(command.status())
+								.mailinglistId(mlId)
+								.mediatype(mediaType)
+								.userRemark(command.remark())
+								.build());
+						results.add(new UpsertBindingResult(mediaType, mlId, recipientId, UpsertResult.UPDATED));
+					} else {
+						results.add(new UpsertBindingResult(mediaType, mlId, recipientId, UpsertResult.NOT_CHANGED));
+					}
+				}
+			}
+		}
+		bindingEntryDao.batchInsertBindings(inserts, companyId);
+		bindingEntryDao.batchUpdateBindings(updates, companyId);
+		return results;
 	}
 }

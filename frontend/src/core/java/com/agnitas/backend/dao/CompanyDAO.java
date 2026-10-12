@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -131,6 +131,14 @@ public class CompanyDAO {
 								row = rq.get (n);
 								typ = dbase.asString (row.get ("object_type"));
 							}
+						} else if (dbase.isPostgreSQL ()) {
+							rq = dbase.query (with.cursor (),
+									  "SELECT table_type FROM information_schema.tables WHERE lower(table_name) = :tableName",
+									  "tableName", table);
+							for (int n = 0; n < rq.size (); ++n) {
+								row = rq.get (n);
+								typ = dbase.asString (row.get ("table_type"));
+							}
 						} else {
 							if (dbase.queryInt (with.cursor (),
 									    "SELECT count(*) cnt FROM information_schema.views WHERE TABLE_SCHEMA = (select SCHEMA()) and table_name = :tableName",
@@ -143,6 +151,8 @@ public class CompanyDAO {
 
 							if (dbase.isOracle ()) {
 								query = "SELECT text FROM user_views WHERE view_name = :tableName";
+							} else if (dbase.isPostgreSQL ()) {
+								query = "SELECT definition FROM pg_views WHERE lower(viewname) = :tableName";
 							} else {
 								query = "SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = (select SCHEMA()) AND table_name = :tableName";
 							}

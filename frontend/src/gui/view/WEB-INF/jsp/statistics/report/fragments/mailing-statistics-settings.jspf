@@ -61,7 +61,7 @@
                                                         #datebased-mailings-stats,
                                                         #mailing-statistic-period"
                     data-field-vis-show="#normal-type-mailings-stats, #filter-normal-mailing">
-            <mvc:message code="Normal_Mailing"/>
+            <mvc:message code="mailing.Normal_Mailing"/>
         </mvc:option>
         <mvc:option value="4" data-field-vis-hide="#normal-type-mailings-stats,
                                                         #intervalbased-mailings-stats,

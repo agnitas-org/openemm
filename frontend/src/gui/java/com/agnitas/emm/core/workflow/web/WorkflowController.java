@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,6 +48,7 @@ import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.auto_import.bean.AutoImportLight;
 import com.agnitas.emm.core.auto_import.service.AutoImportService;
@@ -54,6 +56,7 @@ import com.agnitas.emm.core.autoexport.beans.AutoExport;
 import com.agnitas.emm.core.autoexport.service.AutoExportService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
+import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailing.bean.LightweightMailing;
@@ -73,6 +76,7 @@ import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
 import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
+import com.agnitas.emm.core.workflow.dto.WorkflowStatisticsResponse;
 import com.agnitas.emm.core.workflow.service.ChangingWorkflowStatusResult;
 import com.agnitas.emm.core.workflow.service.SampleWorkflowFactory;
 import com.agnitas.emm.core.workflow.service.SampleWorkflowFactory.SampleWorkflowType;
@@ -837,7 +841,7 @@ public class WorkflowController implements XssCheckAware {
     @RequiredPermission("workflow.show")
     public ResponseEntity<Integer> getMailingThumbnail(@PathVariable int mailingId, Admin admin) {
         int companyId = admin.getCompanyID();
-        int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage);
+        int componentId = componentDao.getComponentId(companyId, mailingId, MailingComponentType.ThumbnailImage);
         return ResponseEntity.ok(componentId);
     }
 
@@ -925,7 +929,6 @@ public class WorkflowController implements XssCheckAware {
         model.addAttribute("campaigns", campaignDao.getCampaignList(companyId, "lower(shortname)", 1));
         model.addAttribute("allMailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("localeDateTimePattern", admin.getDateTimeFormat().toPattern());
-        model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         model.addAttribute("adminTimezone", admin.getAdminTimezone());
         model.addAttribute("allWorkflows", workflowService.getWorkflowsOverview(admin));
         model.addAttribute("hasDeepTrackingTables", workflowService.hasCompanyDeepTrackingTables(companyId));
@@ -1183,8 +1186,8 @@ public class WorkflowController implements XssCheckAware {
             return false;
         }
 
-        var currentStatus = existedWorkflow.getStatus();
-        var newStatus = workflow.getStatus();
+        WorkflowStatus currentStatus = existedWorkflow.getStatus();
+        WorkflowStatus newStatus = workflow.getStatus();
 
         String statusAction = null;
 
@@ -1278,12 +1281,39 @@ public class WorkflowController implements XssCheckAware {
         model.addAttribute("statWorkflowId", workflowId);
         model.addAttribute("workflowName", workflow.getShortname());
         model.addAttribute("workflowStatMailings", workflowStatisticsService.getStatMailings(workflowId, admin));
-        model.addAttribute("birtUrl", workflowStatisticsService.getWorkflowStatUrl(workflow, admin, session.getId(), form));
+        if (admin.permissionAllowed(Permission.WORKFLOW_STAT_MIGRATION)) {
+            DateRange dateRange = workflowStatisticsService.getSelectedDateRange(workflow, form, admin);
+            model.addAttribute("fromDate", dateRange.getFrom());
+            model.addAttribute("toDate", dateRange.getTo());
+        } else {
+            model.addAttribute("birtUrl", workflowStatisticsService.getWorkflowStatUrl(workflow, admin, session.getId(), form));
+        }
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         model.addAttribute("yearlist", AgnUtils.getYearList(workflowStatisticsService.getStartYear(workflowId, admin)));
         model.addAttribute("isWorkflowStatistics", true);
+        if (workflowStatisticsService.isTotalStatisticAvailable(workflow, admin.getCompanyID())) {
+            model.addAttribute("isTotalAutoOpt", true);
+            model.addAttribute("targetlist", targetService.getTargetLights(admin));
+        }
 
         return "stats_mailing_view";
+    }
+
+    @GetMapping("/{workflowId:\\d+}/statistic/data.action")
+    @RequiredPermission("workflow.show")
+    public ResponseEntity<WorkflowStatisticsResponse> getStatistics(
+            @PathVariable int workflowId,
+            @RequestParam(value = "from", required = false) Instant from,
+            @RequestParam(value = "to", required = false) Instant to,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            Admin admin
+    ) {
+        return ResponseEntity.ok(workflowStatisticsService.getStatistics(
+                workflowId,
+                new DateRange(from, to),
+                targetGroups,
+                admin
+        ));
     }
 
 }

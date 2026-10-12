@@ -14,7 +14,7 @@ The basic structure is as follows:
 <div class="table-wrapper">
     <div class="table-wrapper__header"></div>
     <div class="table-wrapper__body">
-      <table class="table--borderless">
+      <table class="table table--borderless">
         <thead>
           <tr>
             <th>Name</th>
@@ -87,7 +87,7 @@ This is a full example showcasing what eventually makes up a complete table.
     </div>
 
     <div class="table-wrapper__body">
-        <table id="styleguide-full-table" class="table table--borderless js-table">
+        <table id="styleguide-full-table" class="table table table--borderless js-table">
             <thead>
             <tr>
                 <th class="mobile-hidden"><input class="form-check-input" type="checkbox" data-bulk-checkboxes=""></th>
@@ -365,7 +365,7 @@ It contains the table itself and takes up all the available space between the he
 ```htmlexample
 <div class="table-wrapper">
     <div class="table-wrapper__body">
-      <table class="table--borderless">
+      <table class="table table--borderless">
         <thead>
           <tr>
             <th>Name</th>
@@ -462,6 +462,23 @@ which is located inside the `.table-wrapper__rows-selection` container, as well 
       height: calc(var(--ag-rows-count) * #{$table-row-height} + 99px);
     }
   }
+
+  &--sm {
+    font-size: $font-size-sm;
+
+    .table-wrapper__header {
+      &:empty {
+        padding: 0;
+      }
+      border: none;
+      &::after {
+        left: 0;
+        right: 0;
+        border-top: $table-border;
+        @include border-top-radius($border-radius);
+      }
+    }
+  }
 }
 
 @include color-mode(dark) {
@@ -499,5 +516,25 @@ which is located inside the `.table-wrapper__rows-selection` container, as well 
 
   > .ps__rail-y {
     margin-top: $table-header-height;
+  }
+
+  .table {
+    --table-header-border-radius: 0;
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background-color: transparent;
+    }
+
+    th {
+      border-block: none;
+      padding: $table-spacing / 2 calc($table-spacing + var(--table-separator-width)) $table-spacing $table-spacing;
+
+      &:first-child, &:last-child {
+        border: none;
+      }
+    }
   }
 }

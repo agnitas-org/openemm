@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+    <info organisation="com.agnitas" module="rest-mcp">
+        <extends organisation="com.agnitas" module="core" revision="working@localhost"
+                 location="../../src/core/ivy.xml" extendType="all"/>
+    </info>
+
+    <configurations>
+        <conf name="compile"/>
+        <conf name="test-rest"/>
+    </configurations>
+
+    <dependencies>
+        <dependency org="org.springframework.boot" name="spring-boot-starter-web" rev="4.1.0" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="org.springframework.ai" name="spring-ai-starter-mcp-server-webmvc"  rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-model"                      rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-mcp"                        rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-mcp-annotations"            rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="mcp-spring-webmvc"                    rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="io.modelcontextprotocol.sdk" name="mcp" rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+
+        <dependency org="org.springaicommunity" name="mcp-server-security" rev="0.1.13" conf="compile->default;sources->sources(*)"/>
+
+        <!-- OpenAPI / JSON Schema -->
+        <dependency org="org.openapitools" name="jackson-databind-nullable"     rev="0.2.10" conf="compile->default;sources->sources(*)"/>
+        <dependency org="io.swagger.core.v3" name="swagger-annotations-jakarta" rev="2.2.38"  conf="compile->default;sources->sources(*)"/>
+
+        <!-- Jackson extras -->
+        <dependency org="tools.jackson.module"             name="jackson-module-kotlin"      rev="3.1.4"  conf="compile->default;sources->sources(*)"/>
+
+        <!-- Bean validation -->
+        <dependency org="org.springframework.boot"  name="spring-boot-validation"  rev="4.1.0"       conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.hibernate.validator"   name="hibernate-validator"     rev="9.0.1.Final" conf="compile->default;sources->sources(*)"/>
+
+        <!-- JSON Schema generation (victools suite; 5.x required by spring-ai-model 2.0.0) -->
+        <dependency org="com.github.victools" name="jsonschema-generator"        rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="com.github.victools" name="jsonschema-module-jackson"   rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="com.github.victools" name="jsonschema-module-swagger-2" rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+
+        <!-- JSON Schema validation (3.x required by io.modelcontextprotocol.sdk:mcp 2.0.0) -->
+        <dependency org="com.networknt" name="json-schema-validator" rev="3.0.0" conf="compile->default;sources->sources(*)"/>
+
+        <!-- Spring extras -->
+        <dependency org="org.springframework.data"     name="spring-data-commons"                    rev="4.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework"          name="spring-messaging"                       rev="7.0.8" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-config"                 rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-oauth2-jose"            rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.security" name="spring-security-oauth2-resource-server" rev="7.1.0" conf="compile->default;sources->sources(*)"/>
+
+        <!-- Test: Spring REST Docs + epages API spec — transitive=false, rest-v2 only extras -->
+        <dependency org="org.springframework.restdocs" name="spring-restdocs-core"                  rev="4.0.1"  conf="test-rest->default" transitive="false"/>
+        <dependency org="org.springframework.restdocs" name="spring-restdocs-mockmvc"               rev="4.0.1"  conf="test-rest->default" transitive="false"/>
+        <dependency org="org.springframework.restdocs" name="spring-restdocs-asciidoctor"           rev="4.0.1"  conf="test-rest->default" transitive="false"/>
+        <dependency org="com.epages"                   name="restdocs-api-spec"                     rev="0.20.0" conf="test-rest->default" transitive="false"/>
+        <dependency org="com.epages"                   name="restdocs-api-spec-mockmvc"             rev="0.20.0" conf="test-rest->default" transitive="false"/>
+        <dependency org="com.epages"                   name="restdocs-api-spec-model"               rev="0.20.0" conf="test-rest->default" transitive="false"/>
+        <dependency org="com.epages"                   name="restdocs-api-spec-openapi3-generator"  rev="0.20.0" conf="test-rest->default" transitive="false"/>
+
+        <!-- Old javax.validation 1.1 API — superseded by jakarta.validation-api-3.1.1 -->
+        <exclude org="javax.validation" module="validation-api"/>
+
+        <!-- Exclude embedded Tomcat — deployed on an external container -->
+        <exclude org="org.apache.tomcat.embed"/>
+        <exclude org="org.springframework.boot" module="spring-boot-starter-tomcat"/>
+        <exclude org="org.springframework.boot" module="spring-boot-starter-tomcat-runtime"/>
+        <exclude org="org.springframework.boot" module="spring-boot-tomcat"/>
+        <exclude org="org.springframework.boot" module="spring-boot-web-server"/>
+
+        <override org="org.antlr"         module="antlr4-runtime" rev="4.4-jakarta"/>
+        <override org="org.apache.xmlrpc" module="xmlrpc-common"  rev="3.1.3-jakarta"/>
+
+        <override org="org.springframework"            rev="7.0.8"/>
+        <override org="org.springframework.security"   rev="7.1.0"/>
+        <override org="org.springframework.boot"       rev="4.1.0"/>
+        <override org="org.springframework.data"       rev="4.1.0"/>
+        <override org="org.springframework.ai"         rev="2.0.0"/>
+        <override org="io.modelcontextprotocol.sdk"    rev="2.0.0"/>
+        <override org="io.swagger.core.v3"    module="swagger-annotations-jakarta" rev="2.2.38"/>
+        <override org="com.nimbusds"          module="nimbus-jose-jwt"             rev="10.9"/>
+        <override org="tools.jackson.core"             rev="3.1.4"/>
+        <override org="tools.jackson.module"           rev="3.1.4"/>
+        <override org="tools.jackson.dataformat"       rev="3.1.4"/>
+        <override org="org.jetbrains.kotlin"           rev="2.4.10"/>
+
+        <override org="io.projectreactor"              rev="3.7.12"/>
+        <override org="ch.qos.logback"                 rev="1.5.34"/>
+    </dependencies>
+</ivy-module>

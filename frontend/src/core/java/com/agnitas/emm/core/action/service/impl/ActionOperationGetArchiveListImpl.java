@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,7 +19,6 @@ import java.util.Objects;
 import com.agnitas.beans.IntEnum;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.action.bean.ArchiveOverviewActionLimitType;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
@@ -28,14 +27,14 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
 import com.agnitas.emm.core.mailing.service.MailingArchiveService;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
-import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
+public class ActionOperationGetArchiveListImpl implements EmmActionOperation<ActionOperationGetArchiveListParameters> {
 	
 	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveListImpl.class);
 
@@ -55,22 +54,29 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 	}
 
 	@Override
-	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors actionOperationErrors) {
-		final ActionOperationGetArchiveListParameters op =(ActionOperationGetArchiveListParameters) operation;
+	public boolean execute(
+			ActionOperationGetArchiveListParameters op,
+			Map<String, Object> params,
+			EmmActionOperationErrors errors
+	) {
 		final int companyID = op.getCompanyId();
 		final int campaignID = op.getCampaignID();
 
-		int customerID;
+		if (!params.containsKey("customerID")) {
+			errors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
+			return false;
+		}
 
-		if(params.get("customerID")!=null) {
-            customerID = ((Integer)params.get("customerID"));
-        } else {
-        	actionOperationErrors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
-	        return false;
+        Integer customerID;
+        try {
+            customerID = parseIntegerParam(params.get("customerID"));
+        } catch (Exception e) {
+			errors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
+			return false;
         }
 
         if (companyDao.getCompany(companyID) == null) {
-        	actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_COMPANY_ID);
+        	errors.addErrorCode(ErrorCode.UNKNOWN_COMPANY_ID);
         	return false;
         }
 
@@ -115,7 +121,8 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 
 			return true;
 		} catch (Exception e) {
-        	logger.error("Error creating list of mailng for archive {}", campaignID, e);
+        	logger.error("Error creating list of mailing for archive {}", campaignID, e);
+        	errors.addErrorCode(ErrorCode.GENERAL_ERROR);
         	return false;
         }
 	}

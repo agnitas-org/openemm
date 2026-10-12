@@ -50,6 +50,24 @@
     {{ } }}
 </template>
 
+<template id="url-cell">
+    <div class="d-flex align-items-center justify-content-between gap-1 w-100">
+        <div class="d-flex gap-inherit overflow-hidden">
+            <a href="#" type="button" data-copyable data-copyable-value="{{= value }}" data-tooltip="<mvc:message code="button.Copy" />">
+                <i class="icon icon-copy"></i>
+            </a>
+
+            <span class="text-truncate">{{= value }}</span>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+            <b><mvc:message code="report.total"/></b>
+            <span class="text-nowrap"><mvc:message code="report.mobile"/></span>
+            <span class="text-nowrap"><mvc:message code="statistics.share.anonymous"/></span>
+        </div>
+    </div>
+</template>
+
 <template id="links-category-table">
     <div class="table-wrapper no-truncate h-auto"></div>
 </template>

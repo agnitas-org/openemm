@@ -3,11 +3,12 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 <%--@elvariable id="isActiveMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailinglistDisabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="undoAvailable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTemplate" type="java.lang.Boolean"--%>
 <%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
@@ -70,9 +71,10 @@
             <c:set var="agnNavigationKey" value="${isMailingGrid ? 'GridMailingView' : 'mailingView'}" scope="request" />
 
             <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
-                <c:set target="${agnNavConditionsParams}" property="isActiveMailing"     value="${isActiveMailing}" />
-                <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
-                <c:set target="${agnNavConditionsParams}" property="isPostMailing"       value="${not empty isPostMailing and isPostMailing}" />
+                <c:set target="${agnNavConditionsParams}" property="isActiveMailing"        value="${isActiveMailing}" />
+                <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled"    value="${mailinglistDisabled}" />
+                <c:set target="${agnNavConditionsParams}" property="isPostMailing"          value="${not empty isPostMailing and isPostMailing}" />
+                <c:set target="${agnNavConditionsParams}" property="isStandaloneSmsMailing" value="${not empty isStandaloneSmsMailing and isStandaloneSmsMailing}" />
             </emm:instantiate>
         </c:otherwise>
     </c:choose>

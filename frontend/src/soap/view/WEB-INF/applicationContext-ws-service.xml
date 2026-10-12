@@ -59,8 +59,6 @@
 		<property name="configService" ref="ConfigService" />
 	</bean>
 
-
-
     <!-- emm ws part -->
 
 	<context:annotation-config/>

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.MailingComponent;
@@ -23,6 +24,7 @@ import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
 import com.agnitas.web.CdnImage;
 
 public interface MailingComponentDao {
+
 	 /**
      * Loads mailing component identified by component id and company id.
      *
@@ -33,6 +35,8 @@ public interface MailingComponentDao {
      * @return The MailingComponent or null on failure.
      */
     MailingComponent getMailingComponent(int compID, int companyID);
+
+    MailingComponent getComponent(int companyId, int mailingId, MailingComponentType componentType);
 
     /**
      * Loads mailing component identified by mailing id, component id and company id.
@@ -59,6 +63,10 @@ public interface MailingComponentDao {
      * @return The MailingComponent or null on failure.
      */
     MailingComponent getMailingComponentByName(int mailingID, int companyID, String name);
+
+    Optional<MailingComponent> findComponentByName(String name, int mailingId, int companyId);
+
+    Optional<MailingComponent> findComponentById(int componentId, int mailingId, int companyId);
 
     /**
      * Saves or updates mailing component.
@@ -143,8 +151,6 @@ public interface MailingComponentDao {
      */
     List<MailingComponent> getMailingComponents(int companyID, int mailingID, Set<Integer> componentIds);
     
-    List<MailingComponent> getMailingComponentsByType(int companyID, int mailingID, List<MailingComponentType> types);
-
     /**
      * Loads all components identified by mailing id, company id.
      * And type for these components should be MailingComponentType.Attachment or MailingComponentType.PersonalizedAttachment.
@@ -160,8 +166,6 @@ public interface MailingComponentDao {
     void updateHostImage(int mailingID, int companyID, int componentID, byte[] imageBytes);
 
 	Date getComponentTime(int companyID, int mailingID, String name);
-
-	List<MailingComponent> getMailingComponentsByType(MailingComponentType type, int companyID);
 
     Map<Integer, Integer> getImageSizes(int companyID, int mailingID);
 
@@ -179,7 +183,7 @@ public interface MailingComponentDao {
 
 	boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds);
 
-    int getImageComponent(int companyId, int mailingId, MailingComponentType componentType);
+    int getComponentId(int companyId, int mailingId, MailingComponentType componentType);
 
     CdnImage getCdnImage(int companyID, int mailingID, String imageName, boolean mobile);
 

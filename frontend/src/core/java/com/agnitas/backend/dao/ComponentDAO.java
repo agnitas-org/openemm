@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -183,10 +183,14 @@ public class ComponentDAO {
 		try (DBase.With with = dbase.with()) {
 			String query;
 
-			if (dbase.isOracle()) {
+			if (dbase.isOracle() || dbase.isPostgreSQL()) {
 				long cid;
 
-				query = "SELECT component_tbl_seq.nextval FROM dual";
+				if (dbase.isOracle ()) {
+					query = "SELECT component_tbl_seq.nextval FROM dual";
+				} else {
+					query = "SELECT nextval('component_tbl_component_id_seq')";
+				}
 				cid = dbase.queryLong(with.cursor(), query);
 				query = "INSERT INTO component_tbl (component_id, mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " + "VALUES (:componentID, :mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
 				dbase.update(with.cursor(), query, "componentID", cid, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -62,6 +62,7 @@ import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.exception.BadRequestException;
@@ -287,12 +288,12 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		}
 
 		if (jsonObject.containsPropertyKey("open_action_id")) {
-			mailing.setOpenActionID(actionIdMappings.get(jsonObject.get("open_action_id")));
+			mailing.setOpenActionID(actionIdMappings.getOrDefault(jsonObject.get("open_action_id"), 0));
 			warnings.put("warning.mailing.import.action", null);
 		}
 
 		if (jsonObject.containsPropertyKey("click_action_id")) {
-			mailing.setClickActionID(actionIdMappings.get(jsonObject.get("click_action_id")));
+			mailing.setClickActionID(actionIdMappings.getOrDefault(jsonObject.get("click_action_id"), 0));
 		}
 
 		if (jsonObject.containsPropertyKey("campaign_id")) {
@@ -383,7 +384,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				if (componentJsonObject.containsPropertyKey("target_id")) {
 					Integer targetID = targetIdMappings.get(componentJsonObject.get("target_id"));
 					if (targetID == null) {
-						throw new RuntimeException("Invalid target_id found for component: " + componentJsonObject.get("name"));
+						throw new TargetGroupNotFoundException("Invalid target_id found for component: " + componentJsonObject.get("name"));
 					}
 					mailingComponent.setTargetID(targetID);
 				}

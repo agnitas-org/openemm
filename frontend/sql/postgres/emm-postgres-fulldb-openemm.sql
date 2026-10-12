@@ -24,8 +24,8 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'webhook
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'webhooks.enable');
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.readonly', 'NegativePermissions', NULL, 3, NULL);
-UPDATE permission_tbl SET sub_category="webhooks" WHERE permission_name = 'webhooks.enable';
-UPDATE permission_tbl SET sub_category="webhooks" WHERE permission_name = 'webhooks.admin';
+UPDATE permission_tbl SET sub_category='webhooks' WHERE permission_name = 'webhooks.enable';
+UPDATE permission_tbl SET sub_category='webhooks' WHERE permission_name = 'webhooks.admin';
 
 INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Statistics', 'Reports', 3);
 

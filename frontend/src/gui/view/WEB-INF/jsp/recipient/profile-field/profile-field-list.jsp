@@ -84,18 +84,7 @@
 
                         <emm:column titleKey="profile.history.include" sortable="true" sortProperty="historized" data-table-column="">
                             <div class="flex-center">
-                                <c:choose>
-                                    <c:when test="${RecipientStandardField.isHistorized(field)}">
-                                        <span class="icon-badge" style="background: var(--badge-green)">
-                                            <i class="icon icon-toggle-on"></i>
-                                        </span>
-                                    </c:when>
-                                    <c:otherwise>
-                                       <span class="icon-badge" style="background: var(--badge-light-red)">
-                                            <i class="icon icon-toggle-off"></i>
-                                        </span>
-                                    </c:otherwise>
-                                </c:choose>
+                                <span class="status-badge status.${RecipientStandardField.isHistorized(field) ? 'enabled' : 'disabled'}"></span>
                             </div>
                         </emm:column>
 

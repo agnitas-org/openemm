@@ -40,7 +40,16 @@
                     <mvc:message code="logon.password"/>
                 </label>
 
-                <mvc:password path="password" id="password" cssClass="form-control" showPassword="true" data-controls-group="login" autocomplete="current-password" data-action="password-change" />
+                <div class="input-icon-container">
+                    <mvc:password path="password" id="password" cssClass="form-control" showPassword="true" data-controls-group="login"
+                                  autocomplete="current-password" data-action="password-change" />
+
+                    <label id="password-visibility-checkbox" class="icon-checkbox">
+                        <input type="checkbox" data-action="toggle-password">
+                        <i class="icon icon-eye" data-icon-off></i>
+                        <i class="icon icon-eye-slash" data-icon-on></i>
+                    </label>
+                </div>
             </div>
 
             <div class="col-12">

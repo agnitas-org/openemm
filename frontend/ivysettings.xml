@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ivysettings>
+    <!--
+        ivy.local.repo  — directory containing the pre-populated offline artifact store
+                          (libs-repo-local resolver). Populate via populate-local-ivy-repo.xml;
+                          distribute this directory to air-gapped build machines and in-house clients.
+
+        ivy.cache.dir   — Ivy's working cache for the current build.
+                          Default: a project-specific cache separate from libs-repo-local.
+                          populate-local-ivy-repo.xml overrides this to equal ivy.local.repo
+                          so that every resolved artifact lands directly in libs-repo-local.
+
+        ivy.default.resolver — resolver chain used by all ivy:resolve calls.
+                          Default: build-chain (online, hits Maven Central on cache miss).
+                          Override to offline-chain in build properties for air-gapped builds:
+                              ivy.default.resolver=offline-chain
+                              ivy.local.repo=/path/to/distributed/local-repo
+
+        ivy.effective.resolver — what <settings> actually uses; defaults to ivy.default.resolver.
+                          ivy.default.resolver is fixed for the whole build the moment
+                          ivy.properties loads (Ant properties are immutable once set), so a
+                          single target can't override it. ivy.effective.resolver is untouched
+                          by ivy.properties, so a target CAN set it (as an Ant property, before
+                          this file is first parsed) to force a different chain for just that
+                          target's resolves — see download-ivy-sources in build.xml.
+    -->
+    <property name="ivy.local.repo"          value="${user.home}/.ivy2/emm-local"    override="false"/>
+    <property name="ivy.cache.dir"           value="${user.home}/.ivy2/emm-cache"    override="false"/>
+    <property name="ivy.default.resolver"    value="build-chain"                     override="false"/>
+    <property name="ivy.effective.resolver"  value="${ivy.default.resolver}"         override="false"/>
+
+    <settings defaultResolver="${ivy.effective.resolver}"/>
+
+    <!--
+        Use a project-specific cache directory so this project's artifacts do not mix with other projects in the shared ~/.ivy2/cache.
+        The populate script overrides ivy.cache.dir to equal ivy.local.repo, making the two directories identical for that run.
+    -->
+    <caches defaultCacheDir="${ivy.cache.dir}"/>
+
+    <resolvers>
+        <!-- Git-committed private/migrated artifacts -->
+        <filesystem name="libs-repo-scm" m2compatible="true" checkconsistency="false">
+            <artifact pattern="${basedir}/libs/ivy-local/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            <ivy      pattern="${basedir}/libs/ivy-local/[organisation]/[module]/[revision]/[module]-[revision].pom"/>
+        </filesystem>
+
+        <!--
+            Local offline repository — populated by populate-local-ivy-repo.xml.
+        -->
+        <filesystem name="libs-repo-local" checkconsistency="false">
+            <artifact pattern="${ivy.local.repo}/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
+            <ivy      pattern="${ivy.local.repo}/[organisation]/[module]/ivy-[revision].xml"/>
+        </filesystem>
+
+        <!-- Remote repositories (used on first resolve; cached after) -->
+        <ibiblio name="libs-repo-remote-maven"  m2compatible="true" root="https://repo1.maven.org/maven2/"/>
+        <ibiblio name="libs-repo-remote-spring" m2compatible="true" root="https://repo.spring.io/release/"/>
+
+        <!-- Online: SCM-committed artifacts first, then local cache (speeds up repeat resolves), then remote -->
+        <chain name="build-chain">
+            <resolver ref="libs-repo-scm"/>
+            <resolver ref="libs-repo-local"/>
+            <resolver ref="libs-repo-remote-maven"/>
+            <resolver ref="libs-repo-remote-spring"/>
+        </chain>
+
+        <!-- Offline: SCM-committed + local repo only, no external access -->
+        <chain name="offline-chain" returnFirst="true">
+            <resolver ref="libs-repo-scm"/>
+            <resolver ref="libs-repo-local"/>
+        </chain>
+
+        <!-- Remote-only, used exclusively by the `download-ivy-sources` Ant target -->
+        <chain name="sources-chain">
+            <resolver ref="libs-repo-remote-maven"/>
+            <resolver ref="libs-repo-remote-spring"/>
+        </chain>
+    </resolvers>
+</ivysettings>

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -24,10 +24,8 @@ import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.EmmLayoutBase;
 import com.agnitas.beans.PaginatedList;
-import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.news.enums.NewsType;
@@ -47,7 +45,9 @@ public interface AdminService {
      *
      * @return {@link Admin} for given user name
      */
-	Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException;
+	Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws SupervisorException;
+
+    Admin getUiUser(String username, int companyId);
 
 	Optional<Admin> findAdminByCredentials(final String username, final String password);
 
@@ -56,6 +56,10 @@ public interface AdminService {
     List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
+
+    void deleteUiAdmin(int userId, int companyId);
+
+    void deleteUiAdmin(String username, int companyId);
 
 	ServiceResult<Admin> delete(Admin admin, int adminIdToDelete);
 
@@ -79,7 +83,13 @@ public interface AdminService {
      */
     Tuple<List<String>, List<String>> saveAdminPermissions(int companyID, int savingAdminID, Collection<String> tokens, int editorAdminID);
 
+    Optional<Admin> findUiUserById(int id, int companyId);
+
+    Admin getUiUserById(int id, int companyId);
+
     Admin getAdmin(int adminID, int companyID);
+
+    Admin getAdmin(String username);
 
     boolean adminExists(String username);
 
@@ -91,23 +101,7 @@ public interface AdminService {
 
     List<String> getRestfulUsernames(Integer companyId);
 
-    PaginatedList<AdminEntry> getAdminList(
-            int companyID,
-            String searchFirstName,
-            String searchLastName,
-            String searchEmail,
-            String searchCompanyName,
-            Integer filterCompanyId,
-            Integer filterAdminGroupId,
-            Integer filterMailinglistId,
-            String filterLanguage,
-            DateRange creationDate,
-            DateRange lastLoginDate,
-            String username,
-            String sort,
-            String direction,
-            int pageNumber,
-            int pageSize);
+    PaginatedList<AdminEntry> getAdminList(UserListOpts opts);
 
     PaginatedList<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
 
@@ -129,7 +123,9 @@ public interface AdminService {
 
     boolean isDarkmodeEnabled(Admin admin);
 
-	Optional<Admin> getAdminByName(String username);
+    Optional<Admin> findByEmail(String email);
+
+	Optional<Admin> findByUsername(String username);
 
 	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
 
@@ -143,29 +139,17 @@ public interface AdminService {
 
 	Admin getAdminByLogin(String name, String password);
 
+    Admin createUiUser(CreateUiUserCommand command, Admin editorAdmin);
+
+    void patchUiUser(String username, PatchUiUserCommand command, Admin admin);
+
     int getAccessLimitTargetId(Admin admin);
     
     boolean isExtendedAltgEnabled(Admin admin);
     
 	int getOpenEmmDemoAccountWaitingMailingID(String language);
 	
-	PaginatedList<AdminEntry> getRestfulUserList(
-            int companyID,
-            String searchFirstName,
-            String searchLastName,
-            String searchEmail,
-            String searchCompanyName,
-            Integer filterCompanyId,
-            Integer filterAdminGroupId,
-            Integer filterMailinglistId,
-            String filterLanguage,
-            DateRange creationDate,
-            DateRange lastLoginDate,
-            String username,
-            String sort,
-            String direction,
-            int pageNumber,
-            int pageSize);
+	PaginatedList<AdminEntry> getRestfulUserList(UserListOpts opts);
 	
 	List<Admin> getAdmins(int companyID, boolean restful);
 
@@ -202,4 +186,6 @@ public interface AdminService {
     SimpleServiceResult delete(int id, int companyId);
 
     void updateEmail(String email, int id, int companyId);
+
+    void patchUiUser(int id, PatchUiUserCommand command, Admin admin);
 }

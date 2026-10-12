@@ -649,14 +649,4 @@ Euer freundlicher EMM
     <bean id="nameModelValidator" class="com.agnitas.emm.core.dynname.validation.NameModelValidator">
         <constructor-arg value="validator-messages"/>
     </bean>
-    
-    <bean id="mailingSettingsFormValidator" class="com.agnitas.emm.core.mailing.forms.validation.MailingSettingsFormValidator">
-        <property name="mailingService" ref="MailingService"/>
-        <property name="characterEncodingValidator" ref="CharacterEncodingValidator"/>
-        <property name="mailinglistService" ref="mailinglistService"/>
-        <property name="workflowService" ref="WorkflowService"/>
-        <property name="linkService" ref="LinkService"/>
-        <property name="agnTagService" ref="AgnTagService"/>
-        <property name="configService" ref="ConfigService"/>
-    </bean>
 </beans>

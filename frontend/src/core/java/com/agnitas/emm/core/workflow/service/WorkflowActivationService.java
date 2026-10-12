@@ -1,16 +1,18 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.workflow.service;
 
 import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_ACTIVE;
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_TESTING;
 import static com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.resolveDeadline;
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -60,7 +63,9 @@ import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
 import com.agnitas.emm.core.workflow.beans.WorkflowDeadline;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
@@ -1450,7 +1455,7 @@ public class WorkflowActivationService {
 
         restoreWorkflowBeforePause(workflow, admin);
         boolean activated = activateWorkflow(workflow.getWorkflowId(), admin, false, true, true, warns, errors, userActions);
-        Workflow.WorkflowStatus newStatus = activated ? STATUS_ACTIVE : Workflow.WorkflowStatus.STATUS_FAILED;
+        WorkflowStatus newStatus = activated ? STATUS_ACTIVE : WorkflowStatus.STATUS_FAILED;
         workflowService.changeWorkflowStatus(workflow.getWorkflowId(), workflow.getCompanyId(), newStatus);
 
         if (!errors.isEmpty()) {
@@ -1861,5 +1866,57 @@ public class WorkflowActivationService {
 
 			return negation ? ("!" + expression) : expression;
 		}
+	}
+
+	public WorkflowStatus activate(int workflowId, int companyId) {
+		Workflow workflow = workflowService.getWorkflowOrThrow(workflowId, companyId);
+		WorkflowStatus currentStatus = workflow.getStatus();
+		if (EnumSet.of(STATUS_ACTIVE, STATUS_TESTING).contains(currentStatus)) {
+			throw ValidationException.exact("%s workflow can't be activated".formatted(currentStatus.getName()));
+		}
+		return toggleActiveness(workflow, companyId, true);
+	}
+
+	public WorkflowStatus deactivate(int workflowId, int companyId) {
+		Workflow workflow = workflowService.getWorkflowOrThrow(workflowId, companyId);
+		if (!EnumSet.of(STATUS_ACTIVE, STATUS_PAUSED).contains(workflow.getStatus())) {
+			throw ValidationException.exact("Workflow is already in test or active.");
+		}
+		return toggleActiveness(workflow, companyId, false);
+	}
+
+	private WorkflowStatus toggleActiveness(Workflow workflow, int companyId, boolean activate) {
+		Admin admin = adminService.getAdmin(workflowService.getWorkflowSenderId(workflow), companyId);
+
+		ServiceResult<ChangingWorkflowStatusResult> result = activate
+				? workflowService.activateWorkflow(workflow, admin)
+				: workflowService.deactivateWorkflow(workflow, admin);
+		if (!result.isSuccess()) {
+			throw new ValidationException(result.getResult().isChanged()
+					? result.getErrorMessages()
+					: result.getResult().getMessages()
+			);
+		}
+		return result.getResult().getNewStatus();
+	}
+
+	public WorkflowStatus pause(int workflowId, int companyId) {
+		Workflow workflow = workflowService.getWorkflowOrThrow(workflowId, companyId);
+		if (workflow.getStatus() == STATUS_PAUSED) {
+			throw ValidationException.exact("Workflow is already paused.");
+		}
+		if (workflow.getStatus() != STATUS_ACTIVE) {
+			throw ValidationException.exact("Workflow is not active and therefore can't be paused.");
+		}
+		workflowService.savePausedSchemaForUndo(workflow);
+		ChangingWorkflowStatusResult result = workflowService.changeWorkflowStatus(
+				workflow.getWorkflowId(),
+				companyId,
+				WorkflowStatus.STATUS_PAUSED
+		);
+		if (!result.isChanged()) {
+			throw new ValidationException(result.getMessages());
+		}
+		return result.getNewStatus();
 	}
 }

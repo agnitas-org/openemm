@@ -57,7 +57,7 @@ let cluster;
     // monitor: true, // prints simple stats to console. uncomment for debug purpose
     puppeteerOptions: {
       headless: "new",
-      protocolTimeout: 360_000, // 6 minutes. Default 3 minutes
+      protocolTimeout: 600_000, // 10 minutes
       args: minimal_args
     }
   });
@@ -114,7 +114,15 @@ const screenshotTask = async ({ page, data }) => {
 };
 
 const pdfTask = async ({ page, data }) => {
-  const { url, path, landscape, customCssPath, windowWaitStatus, timeout } = data;
+  const { url, path, landscape, customCssPath, windowWaitStatus, timeout, viewportWidth, scale, acceptLanguage } = data;
+
+  if (viewportWidth) {
+    await page.setViewport({ width: viewportWidth, height: page.viewport().height });
+  }
+
+  if (acceptLanguage) {
+    await page.setExtraHTTPHeaders({ 'Accept-Language': acceptLanguage });
+  }
 
   await page.setDefaultNavigationTimeout(timeout || 30000);
   await page.goto(url, { waitUntil: 'networkidle2' });
@@ -131,7 +139,7 @@ const pdfTask = async ({ page, data }) => {
   }
 
   const contentWidth = await page.evaluate(() => document.documentElement.clientWidth);
-  const scaleFactor = Math.min(1.5, Math.max(0.1, (page.viewport().width - (LEFT_MARGIN + RIGHT_MARGIN)) / contentWidth)); // valid range [0.1 - 2], but at values greater than 1.5 the image may become cropped
+  const scaleFactor = scale || Math.min(1.5, Math.max(0.1, (page.viewport().width - (LEFT_MARGIN + RIGHT_MARGIN)) / contentWidth)); // valid range [0.1 - 2], but at values greater than 1.5 the image may become cropped
 
   await page.pdf({
     path: path,

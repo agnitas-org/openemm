@@ -14,7 +14,7 @@
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
 <%--@elvariable id="emailSettingsEditable" type="java.lang.Boolean"--%>
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 
 <c:set var="isMailingGrid" value="${gridTemplateId > 0}"/>
 <c:set var="isNewGridMailing" value="${mailingId le 0 and isMailingGrid}"/>
@@ -115,7 +115,6 @@
     </emm:HideByPermission>
 
     <%@include file="fragments/mailing-settings-sms-sender-address.jspf" %>
-    <%@include file="fragments/mailing-settings-rcs-controls.jspf" %>
 </c:if>
 
 <c:if test="${param.isTabsView}">

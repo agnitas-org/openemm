@@ -9,9 +9,7 @@
             <label class="form-label" for="${param.containerId}-mailing-status-select"><mvc:message code="Status"/></label>
         </c:if>
         <select name="${param.statusName}" id="${param.containerId}-mailing-status-select" class="form-control" data-action="${param.baseMailingEditor}-status-change">
-            <c:if test="${param.containerId != 'mailing-editor'}">
-                <option value="all" id="${param.containerId}-mailings_status_all"><mvc:message code="default.All"/></option>
-            </c:if>
+            <option value="all" id="${param.containerId}-mailings_status_all"><mvc:message code="default.All"/></option>
             <option value="${param.status1}" id="${param.containerId}-mailings_status_${param.status1}"><mvc:message code="${param.message1}"/></option>
             <option value="${param.status2}" id="${param.containerId}-mailings_status_${param.status2}"><mvc:message code="${param.message2}"/></option>
         </select>
@@ -24,6 +22,8 @@
         <div class="d-flex gap-1">
             <select name="${param.selectName}" id="${param.containerId}-mailing-select" class="form-control"
                     data-action="${param.baseMailingEditor}-select-change"
+                    data-result-template="select2-badge-option"
+                    data-selection-template="select2-badge-option"
                     ${param.disabledSelection == 'true' ? 'disabled' : ''}>
             </select>
             <c:if test="${param.showMailingLinks and not emm:permissionAllowed('mailing.content.readonly', pageContext.request)}">

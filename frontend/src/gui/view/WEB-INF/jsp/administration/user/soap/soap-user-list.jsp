@@ -41,9 +41,11 @@
                             <label for="newClient" class="form-label">
                                 <mvc:message code="webserviceuser.company" />
                             </label>
-                            <mvc:select path="companyId" cssClass="form-control" id="newClient">
+                            <mvc:select path="companyId" cssClass="form-control" id="newClient" data-sort="alphabetic">
                                 <mvc:option value="-1"><mvc:message code="select.company"/></mvc:option>
-                                <mvc:options items="${companyList}" itemValue="companyId" itemLabel="shortname"/>
+                                <c:forEach var="client" items="${companyList}">
+                                    <mvc:option value="${client.companyId}">${client.shortname} (${client.companyId})</mvc:option>
+                                </c:forEach>
                             </mvc:select>
                         </div>
                     </emm:ShowByPermission>

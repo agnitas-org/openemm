@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -61,7 +61,7 @@ public class MigrationJobWorker extends JobWorkerBase {
      */
     @Override
     public String runJob() throws Exception {
-        List<File> migrationScriptFiles = findMigrationScriptFiles(isOracleDb() ? "oracle" : "mariadb");
+        List<File> migrationScriptFiles = findMigrationScriptFiles(dbVendorName());
         if (!migrationScriptFiles.isEmpty()) {
             Version latestMinAppVersion = readLatestMinAppVersion();
 
@@ -107,6 +107,23 @@ public class MigrationJobWorker extends JobWorkerBase {
     }
 
     private Optional<String> getMinReleaseVersion() {
+        String dateCondition;
+        String versionCondition;
+        String subqueryAlias;
+        if (isOracleDb()) {
+            dateCondition = "SYSDATE - ?";
+            versionCondition = "REGEXP_LIKE(version_number, '" + VERSION_REGEXP + "')";
+            subqueryAlias = "";
+        } else if (isPostgreSql()) {
+            dateCondition = "NOW() - (? * INTERVAL '1 day')";
+            versionCondition = "version_number ~ '" + VERSION_REGEXP + "'";
+            subqueryAlias = "AS sub";
+        } else {
+            dateCondition = "NOW() - INTERVAL ? DAY";
+            versionCondition = "version_number REGEXP '" + VERSION_REGEXP + "'";
+            subqueryAlias = "AS sub";
+        }
+
         String query = """
                 SELECT MIN(version)
                 FROM (
@@ -118,13 +135,7 @@ public class MigrationJobWorker extends JobWorkerBase {
                              GROUP BY application_name, host_name
                      ) %s
                 """
-                .formatted(
-                        isOracleDb() ? "SYSDATE - ?" : "NOW() - INTERVAL ? DAY",
-                        isOracleDb()
-                                ? "REGEXP_LIKE(version_number, '" + VERSION_REGEXP + "')"
-                                : "version_number REGEXP '" + VERSION_REGEXP + "'",
-                        isOracleDb() ? "" : "AS sub"
-                );
+                .formatted(dateCondition, versionCondition, subqueryAlias);
 
         return getJdbcTemplate().queryForList(
                         query,
@@ -197,8 +208,22 @@ public class MigrationJobWorker extends JobWorkerBase {
         return new Version(matcher.group(0));
     }
 
+    private String dbVendorName() {
+        if (isOracleDb()) {
+            return "oracle";
+        } else if (isPostgreSql()) {
+            return "postgres";
+        } else {
+            return "mariadb";
+        }
+    }
+
     private boolean isOracleDb() {
         return DbUtilities.checkDbVendorIsOracle(daoLookupFactory.getBeanDataSource());
+    }
+
+    private boolean isPostgreSql() {
+        return DbUtilities.checkDbVendorIsPostgreSQL(daoLookupFactory.getBeanDataSource());
     }
 
     private JdbcTemplate getJdbcTemplate() {

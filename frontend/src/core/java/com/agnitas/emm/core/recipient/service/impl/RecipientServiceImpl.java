@@ -1,24 +1,34 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.recipient.service.impl;
 
 import static com.agnitas.emm.core.binding.service.BindingUtils.getRecipientTypeTitleByLetter;
+import static com.agnitas.emm.core.commons.util.ConfigValue.AllowHtmlTagsInReferenceAndProfileFields;
 import static com.agnitas.emm.core.target.TargetExpressionUtils.SIMPLE_TARGET_EXPRESSION;
+import static com.agnitas.util.AgnUtils.normalizeEmail;
 import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNullElse;
+import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -28,21 +38,27 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.ImportStatus;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
@@ -59,15 +75,15 @@ import com.agnitas.beans.impl.BindingEntryImpl;
 import com.agnitas.beans.impl.RecipientImpl;
 import com.agnitas.beans.impl.RecipientLiteImpl;
 import com.agnitas.beans.impl.ViciousFormDataException;
-import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.common.UserStatus;
-import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.core.binding.service.BindingUtils;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -76,15 +92,22 @@ import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformati
 import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.validation.DeleteCheck;
+import com.agnitas.emm.core.commons.validation.DeleteResult;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import com.agnitas.emm.core.imports.service.RecipientImportService;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.profilefields.exception.ProfileFieldBulkUpdateException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
 import com.agnitas.emm.core.recipient.dto.BindingAction;
+import com.agnitas.emm.core.recipient.dto.BulkUpsertRecipientCommand;
+import com.agnitas.emm.core.recipient.dto.CreateRecipientCommand;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingDto;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
@@ -93,10 +116,13 @@ import com.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
 import com.agnitas.emm.core.recipient.dto.RecipientSearchParamsDto;
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
+import com.agnitas.emm.core.recipient.dto.Subscription;
+import com.agnitas.emm.core.recipient.dto.UpdateRecipientCommand;
 import com.agnitas.emm.core.recipient.exception.InvalidDataException;
 import com.agnitas.emm.core.recipient.exception.ProfileFieldNotExistException;
 import com.agnitas.emm.core.recipient.exception.RecipientNotExistException;
 import com.agnitas.emm.core.recipient.exception.RecipientUpdateException;
+import com.agnitas.emm.core.recipient.exception.SubscriberLimitExceededException;
 import com.agnitas.emm.core.recipient.service.DuplicatedRecipientsExportWorker;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.emm.core.recipient.service.RecipientModel;
@@ -108,6 +134,7 @@ import com.agnitas.emm.core.recipient.service.validation.RecipientModelValidator
 import com.agnitas.emm.core.recipient.utils.RecipientUtils;
 import com.agnitas.emm.core.report.enums.fields.RecipientMutableFields;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
@@ -117,10 +144,14 @@ import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.validator.ValidationException;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.exception.UiMessageException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.DataSourceService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ImportException;
 import com.agnitas.service.RecipientDuplicateSqlOptions;
@@ -130,11 +161,12 @@ import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.service.UserMessageException;
 import com.agnitas.util.AgnUtils;
-import com.agnitas.util.Const;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.SqlPreparedStatementManager;
+import com.agnitas.util.importvalues.Gender;
+import com.agnitas.util.importvalues.MailType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -151,10 +183,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecipientServiceImpl implements RecipientService {
 
 	private static final Logger logger = LogManager.getLogger(RecipientServiceImpl.class);
-	
+
+	private static final String EMAIL_COL = RecipientStandardField.Email.getColumnName();
+	private static final String CUSTOMER_ID_COL = RecipientStandardField.CustomerID.getColumnName();
+
 	public static final List<String> DEFAULT_COLUMNS = Arrays.asList(
-			RecipientStandardField.CustomerID.getColumnName(),
-			RecipientStandardField.Email.getColumnName(),
+			CUSTOMER_ID_COL,
+			EMAIL_COL,
 			RecipientStandardField.Firstname.getColumnName(),
 			RecipientStandardField.Lastname.getColumnName()
 	);
@@ -166,7 +201,7 @@ public class RecipientServiceImpl implements RecipientService {
 	protected ColumnInfoService columnInfoService;
 	protected RecipientQueryBuilder recipientQueryBuilder;
 	protected AdminService adminService;
-	protected BindingEntryDao bindingEntryDao;
+	protected BindingService bindingService;
 	protected BindingEntryFactory bindingEntryFactory;
 	protected ExtendedConversionService conversionService;
 	protected SubscriberLimitCheck subscriberLimitCheck;
@@ -182,7 +217,10 @@ public class RecipientServiceImpl implements RecipientService {
 	private RecipientWorkerFactory recipientWorkerFactory;
 	private RecipientModelValidator recipientModelValidator;
 	private MailinglistApprovalService mailinglistApprovalService;
-	private BulkActionValidationService<Integer, RecipientLightDto> bulkActionValidationService;
+	private RecipientFieldService fieldService;
+	private MailinglistService mailinglistService;
+	private DataSourceService dataSourceService;
+	private RecipientImportService recipientImportService;
 
 	@Override
 	public boolean isColumnsIndexed(List<String> columns, int companyId) {
@@ -244,7 +282,7 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public List<Recipient> getRecipients(int count, int lastId, int companyId, Set<String> columnNames) {
 		if (!recipientDao.tableExists(companyId)) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 
 		return recipientDao.getCustomersDataFromDb(companyId, lastId, count, columnNames)
@@ -275,7 +313,7 @@ public class RecipientServiceImpl implements RecipientService {
 			return recipientDao.getCustomerDataFromDb(model.getCompanyId(), sqlCode.getSql());
 		} catch (EqlParserException | CodeGeneratorException | ReferenceTableResolveException | ProfileFieldResolveException e) {
 			logger.warn("Error getting recipients (eql={})", model.getEql(), e);
-			return Collections.emptyList();
+			return emptyList();
 		}
 	}
 
@@ -329,7 +367,7 @@ public class RecipientServiceImpl implements RecipientService {
 					.map(mailing -> getBasicDataMap(mailing, uid, redirectUrl))
 					.collect(Collectors.toList());
 		} else {
-			return Collections.emptyList();
+			return emptyList();
 		}
 	}
 
@@ -379,7 +417,7 @@ public class RecipientServiceImpl implements RecipientService {
 	public int addSubscriber(RecipientModel model, final String username, final int companyId, List<UserAction> userActions) throws Exception {
 	    recipientModelValidator.assertIsValidToAdd(model);
 		recipientDao.checkParameters(model.getParameters(), model.getCompanyId());
-		
+
 		subscriberLimitCheck.checkSubscriberLimit(companyId);
 
 		int returnValue;
@@ -435,7 +473,8 @@ public class RecipientServiceImpl implements RecipientService {
 				// CLOB field
 				newCustomer.setCustParameters(name, value);
 			} else if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(typeName)
-					|| DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(typeName) || DbColumnType.GENERIC_TYPE_TIMESTAMP.equalsIgnoreCase(typeName)) {
+					|| DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(typeName) || DbColumnType.GENERIC_TYPE_TIMESTAMP.equalsIgnoreCase(typeName)
+					|| DbColumnType.GENERIC_TYPE_TIMESTAMPTZ.equalsIgnoreCase(typeName)) {
 				// Date field
 				Date newValue = null;
 				if (StringUtils.isNotEmpty(value)) {
@@ -583,7 +622,8 @@ public class RecipientServiceImpl implements RecipientService {
 				}
 			} else if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(typeName)
 					|| DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(typeName)
-					|| DbColumnType.GENERIC_TYPE_TIMESTAMP.equalsIgnoreCase(typeName)) {
+					|| DbColumnType.GENERIC_TYPE_TIMESTAMP.equalsIgnoreCase(typeName)
+					|| DbColumnType.GENERIC_TYPE_TIMESTAMPTZ.equalsIgnoreCase(typeName)) {
 				// Date field
 				Date newValue = null;
 				if (StringUtils.isNotEmpty(value)) {
@@ -631,14 +671,14 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public void batchUpdateData(Map<Integer, Map<String, ? extends Object>> data, int companyId) {
+	public void batchUpdateData(Map<Integer, Map<String, ?>> data, int companyId) {
 		if (data.isEmpty()) {
 			return;
 		}
 
 		List<String> columns = List.copyOf(data.values().iterator().next().keySet());
 		List<Integer> customerIds = new ArrayList<>(data.size());
-		List<Map<String, ? extends Object>> rowsData = new ArrayList<>(data.size());
+		List<Map<String, ?>> rowsData = new ArrayList<>(data.size());
 
 		data.forEach((customerId, rowData) -> {
 			customerIds.add(customerId);
@@ -756,7 +796,7 @@ public class RecipientServiceImpl implements RecipientService {
 					.collect(Collectors.toList());
 		}
 
-		return Collections.emptyList();
+		return emptyList();
 	}
 
 	@Override
@@ -827,12 +867,12 @@ public class RecipientServiceImpl implements RecipientService {
     protected void setRecipientDuplicateSqlOptionsBuilderExtendedParams(Admin admin, RecipientDuplicateSqlOptions.Builder builder) {
         // nothing to do
     }
-	
+
 	@Override
 	public PaginatedList<RecipientDto> getPaginatedRecipientList(Admin admin, RecipientSearchParamsDto searchParams, String sortColumn, String order, int page, int rownums, Map<String, String> fields) throws Exception {
 		String sort = StringUtils.defaultIfEmpty(sortColumn, "email");
 		RecipientSqlOptions options = getRecipientOptions(admin, StringUtils.defaultIfEmpty(sort, "email"), order, searchParams);
-		
+
 		final int companyID = admin.getCompanyID();
 
         SqlPreparedStatementManager sqlStatementManagerForDataSelect;
@@ -891,7 +931,7 @@ public class RecipientServiceImpl implements RecipientService {
             sqlStatementManagerForDataSelect.addWhereClause("1 = 0");
         }
 
-		PaginatedList<Map<String, Object>> paginatedList = 
+		PaginatedList<Map<String, Object>> paginatedList =
 			recipientDao.getPaginatedRecipientsData(companyID, fields.keySet(),
 				sqlStatementManagerForDataSelect.getPreparedSqlString().replaceAll("cust\\.bind", "bind"),
 				sqlStatementManagerForDataSelect.getPreparedSqlParameters(),
@@ -958,7 +998,7 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	public File getDuplicateAnalysisCsv(Admin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception {
-		sort = StringUtils.defaultIfEmpty(sort, RecipientStandardField.Email.getColumnName());
+		sort = StringUtils.defaultIfEmpty(sort, EMAIL_COL);
 		String tempFileName = String.format("duplicate-recipients-%s.csv", UUID.randomUUID());
         File duplicateRecipientsExportTempDirectory = AgnUtils.createDirectory(AgnUtils.getTempDir() + File.separator + "DuplicateRecipientExport");
         File exportTempFile = new File(duplicateRecipientsExportTempDirectory, tempFileName);
@@ -988,7 +1028,7 @@ public class RecipientServiceImpl implements RecipientService {
 		int customerId = NumberUtils.toInt((String) dataFromDb.get(RecipientStandardField.CustomerID.getColumnName()), 0);
 		String firstName = (String) dataFromDb.get(RecipientStandardField.Firstname.getColumnName());
 		String lastName = (String) dataFromDb.get(RecipientStandardField.Lastname.getColumnName());
-		String email = (String) dataFromDb.get(RecipientStandardField.Email.getColumnName());
+		String email = (String) dataFromDb.get(EMAIL_COL);
 		return new RecipientLightDto(customerId, firstName, lastName, email);
 	}
 
@@ -1049,7 +1089,7 @@ public class RecipientServiceImpl implements RecipientService {
 			return new ServiceResult<>(
 					new FieldsSaveResults(affectedRecipients, excludedImmutable),
 					true,
-					Collections.emptyList()
+					emptyList()
 			);
 		} catch (Exception e) {
 			return ServiceResult.errorKeys(ERROR_MSG);
@@ -1102,7 +1142,7 @@ public class RecipientServiceImpl implements RecipientService {
 		Set<String> immutableField = RecipientStandardField.getBulkImmutableRecipientStandardFieldColumnNames();
 		Collection<String> immutableFieldsToChange = CollectionUtils.retainAll(fieldChanges.keySet(), immutableField);
 		if (CollectionUtils.isNotEmpty(immutableFieldsToChange)) {
-			return ServiceResult.error(Message.of("error.bulkAction.field.immutable", StringUtils.join(immutableFieldsToChange, ", ")));
+			return ServiceResult.error(Message.of("error.bulkAction.field.immutable", join(immutableFieldsToChange, ", ")));
 		}
 
 		boolean success = true;
@@ -1136,12 +1176,12 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public final List<RecipientLiteImpl> listAdminAndTestRecipients(final Admin admin) {
+	public List<RecipientLiteImpl> listAdminAndTestRecipients(Admin admin) {
 		return recipientDao.listAdminAndTestRecipientsByAdmin(admin.getCompanyID(), admin.getAdminID());
 	}
 
 	@Override
-	public List<RecipientSalutationDto> getAdminAndTestRecipientsSalutation(final Admin admin) {
+	public List<RecipientSalutationDto> getAdminAndTestRecipientsSalutation(Admin admin) {
 		return recipientDao.getAdminAndTestRecipientsSalutation(admin.getCompanyID(), admin.getAdminID());
 	}
 
@@ -1486,7 +1526,7 @@ public class RecipientServiceImpl implements RecipientService {
 								aEntry.setReferrer(referrer);
 							}
 						}
-						bindingEntryDao.updateStatus(aEntry, companyID);
+						bindingService.updateStatus(aEntry, companyID);
 					}
 					break;
 				case WaitForConfirm, Active:
@@ -1499,7 +1539,7 @@ public class RecipientServiceImpl implements RecipientService {
 							aEntry.setUserRemark("User-Opt-Out: " + remoteAddr);
 							aEntry.setExitMailingID(mailingID);
 						}
-						bindingEntryDao.updateStatus(aEntry, companyID);
+						bindingService.updateStatus(aEntry, companyID);
 					}
 					break;
 				case Blacklisted:
@@ -1602,14 +1642,14 @@ public class RecipientServiceImpl implements RecipientService {
 
     @Override
     public void updateBindings(List<BindingEntry> bindings, int companyId) {
-        bindingEntryDao.updateBindings(companyId, bindings);
+        bindingService.updateBindings(companyId, bindings);
     }
 
 	@Override
 	public ServiceResult<Integer> saveRecipient(Admin admin, SaveRecipientDto recipientDto, List<UserAction> userActions) {
 		int companyId = admin.getCompanyID();
 		boolean isNew = recipientDto.getId() == 0;
-		
+
 		SubscriberLimitCheckResult subscriberLimitCheckResult = null;
 		if (isNew) {
 			subscriberLimitCheckResult = subscriberLimitCheck.checkSubscriberLimit(companyId);
@@ -1633,7 +1673,7 @@ public class RecipientServiceImpl implements RecipientService {
 				int recipientId = recipientDao.saveRecipient(companyId, recipientDto.getId(), rowValues);
 				recipientDto.setId(recipientId);
 			}
-			
+
 			if (subscriberLimitCheckResult != null && subscriberLimitCheckResult.isWithinGraceLimitation()) {
 				List<Message> warningMessages = new ArrayList<>();
 				warningMessages.add(Message.of(
@@ -1851,8 +1891,8 @@ public class RecipientServiceImpl implements RecipientService {
 				}
 			}
 
-			bindingEntryDao.insertBindings(companyId, insertBindings);
-			bindingEntryDao.updateBindings(companyId, updateBindings);
+			bindingService.insertBindings(companyId, insertBindings);
+			bindingService.updateBindings(companyId, updateBindings);
 
 			return new ServiceResult<>(bindingActions, true);
 		} catch (UiMessageException ume) {
@@ -1861,7 +1901,7 @@ public class RecipientServiceImpl implements RecipientService {
 			logger.error("Saving bindings failed: ", e);
 		}
 
-		return ServiceResult.error(Collections.emptyList());
+		return ServiceResult.error(emptyList());
 	}
 
 	protected void changeBindingUserTypeIfNeeded(RecipientBindingDto binding, BindingEntry existingBinding, Admin admin) {
@@ -1934,7 +1974,7 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public List<String> getReadableNames(Set<Integer> bulkIds, int companyID) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 
 		return recipientDao.getReadableNames(bulkIds, companyID);
@@ -2041,7 +2081,7 @@ public class RecipientServiceImpl implements RecipientService {
 				case USER_STATUS:
 				case EMAIL:
 					description = String.format("%s %s: %s",
-							StringUtils.join(descriptions, " "),
+							join(descriptions, " "),
 							fieldTitle,
 							I18nString.getLocaleString(mutableField.getTranslationKey(), locale));
 					break;
@@ -2195,27 +2235,27 @@ public class RecipientServiceImpl implements RecipientService {
 		return map;
     }
 
-	public final void setRecipientDao(final RecipientDao dao) {
+	public void setRecipientDao(RecipientDao dao) {
 		this.recipientDao = Objects.requireNonNull(dao, "Recipient DAO cannot be null");
 	}
 
-	public final void setUidService(final ExtensibleUIDService service) {
+	public void setUidService(ExtensibleUIDService service) {
 		this.uidService = Objects.requireNonNull(service, "UID service cannot be null");
 	}
 
-	public final void setCompanyDao(final CompanyDao dao) {
+	public void setCompanyDao(CompanyDao dao) {
 		this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
 	}
 
-	public final void setRecipientFactory(final RecipientFactory factory) {
+	public void setRecipientFactory(RecipientFactory factory) {
 		this.recipientFactory = Objects.requireNonNull(factory, "Recipient factory cannot be null");
 	}
 
-	public final void setConfigService(final ConfigService service) {
+	public void setConfigService(ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
 
-	public final void setSendActionbasedMailingService(final SendActionbasedMailingService service) {
+	public void setSendActionbasedMailingService(SendActionbasedMailingService service) {
 		this.sendActionbasedMailingService = Objects.requireNonNull(service, "Service to send action-based mailings is null");
 	}
 
@@ -2235,8 +2275,8 @@ public class RecipientServiceImpl implements RecipientService {
 		this.adminService = adminService;
 	}
 
-	public void setBindingEntryDao(BindingEntryDao bindingEntryDao) {
-		this.bindingEntryDao = bindingEntryDao;
+	public void setBindingService(BindingService bindingService) {
+		this.bindingService = bindingService;
 	}
 
 	public void setBindingEntryFactory(BindingEntryFactory bindingEntryFactory) {
@@ -2261,7 +2301,7 @@ public class RecipientServiceImpl implements RecipientService {
     public String getEmail(int recipientId, int companyId) {
         return recipientDao.getEmail(companyId, recipientId);
     }
-    
+
 	protected void addExtendedSearchOptions(Admin admin, SqlPreparedStatementManager sqlStatement, RecipientSqlOptions options) {
 		// Do nothing
 	}
@@ -2296,38 +2336,23 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public ServiceResult<List<RecipientLightDto>> getAllowedForDeletion(Set<Integer> ids, Admin admin) {
-		return bulkActionValidationService.checkAllowedForDeletion(ids, id -> getRecipientForDeletion(id, admin.getCompanyID(), admin));
+	public List<DeleteResult> delete(SequencedSet<Integer> ids, Admin admin) {
+		return ids.stream().map(id -> delete(id, admin)).toList();
 	}
 
 	@Override
-	public ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin) {
-		List<Integer> allowedIds = ids.stream()
-				.map(id -> getRecipientForDeletion(id, admin.getCompanyID(), admin))
-				.filter(ServiceResult::isSuccess)
-				.map(r -> r.getResult().getCustomerId())
-				.toList();
-
-		allowedIds.forEach(id -> recipientDao.deleteCustomerDataFromDb(admin.getCompanyID(), id));
-
-		return ServiceResult.success(
-				new UserAction(
-						"delete recipients",
-						String.format("Recipients IDs %s", StringUtils.join(allowedIds, ", "))
-				),
-				Message.of(Const.Mvc.SELECTION_DELETED_MSG)
-		);
-	}
-
-	@Override
-	public SimpleServiceResult delete(int id, int companyId, Admin admin) {
-		ServiceResult<RecipientLightDto> recipient = getRecipientForDeletion(id, companyId, admin);
-
-		if (recipient.isSuccess()) {
-			recipientDao.deleteCustomerDataFromDb(companyId, id);
+	public DeleteResult delete(int id, Admin admin) {
+		DeleteCheck check = canBeDeleted(id, admin);
+		if (!check.isAllowed()) {
+			return DeleteResult.from(check);
 		}
-
-		return SimpleServiceResult.of(recipient);
+		try {
+			recipientDao.deleteCustomerDataFromDb(admin.getCompanyID(), id);
+			return DeleteResult.deleted(id);
+		} catch (RuntimeException e) {
+			logger.error("Delete failed for recipient {}", id, e);
+			return DeleteResult.failed(id, "Error");
+		}
 	}
 
 	@Override
@@ -2341,25 +2366,283 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public List<Integer> getFilteredRecipientIDs(
-			int companyId,
-			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
-			Map<String, String> recipientFilters
-	) {
-		return recipientDao.getFilteredRecipientIDs(companyId, recipientFieldsMap, recipientFilters);
+	public DeleteCheck canBeDeleted(int id, Admin admin) {
+		if (mailinglistApprovalService.hasAnyDisabledRecipientBindingsForAdmin(admin, id)) {
+			return DeleteCheck.conflict(id, "error.access.limit.mailinglist");
+		}
+
+		RecipientLightDto recipient = getRecipientLightDto(admin.getCompanyID(), id);
+		if (recipient == null) {
+			return DeleteCheck.notFound(id);
+		}
+
+		return DeleteCheck.allowed(id);
 	}
 
-	private ServiceResult<RecipientLightDto> getRecipientForDeletion(int id, int companyId, Admin admin) {
-		if (mailinglistApprovalService.hasAnyDisabledRecipientBindingsForAdmin(admin, id)) {
-			return ServiceResult.errorKeys("error.access.limit.mailinglist");
+	@Override
+	public List<Map<String, Object>> list(Map<String, String> fieldFilters, Admin admin) {
+		int companyId = admin.getCompanyID();
+		CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields = fieldService.getVisibleFields(admin);
+		validateFieldFilter(fieldFilters, visibleFields);
+		List<Integer> recipientIds = recipientDao.getFilteredRecipientIDs(companyId, visibleFields, fieldFilters);
+		if (recipientIds.isEmpty()) {
+			return emptyList();
 		}
+		return getFields(recipientIds, companyId)
+				.stream()
+				.map(fields -> getFormattedFieldsMap(admin, fields))
+				.toList();
+	}
 
-		RecipientLightDto recipient = getRecipientLightDto(companyId, id);
-		if (recipient == null) {
-			return ServiceResult.errorKeys("error.general.missing");
+	private void validateFieldFilter(
+			Map<String, String> fieldFilters,
+			CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields
+	) {
+		List<String> unknownFields = fieldFilters.keySet()
+				.stream()
+				.filter(field -> !visibleFields.containsKey(field))
+				.toList();
+		if (isNotEmpty(unknownFields)) {
+			throw ValidationException.exact("Invalid recipient filter by unknown recipient profile fields: %s"
+					.formatted(unknownFields.stream().collect(Collectors.joining(", ", "[", "]"))));
 		}
+	}
 
-		return ServiceResult.success(recipient);
+	@Override
+	public Map<String, Object> getVisibleFieldValues(int recipientId, Admin admin) {
+		Map<String, Object> fields = getFields(recipientId, admin.getCompanyID());
+		if (MapUtils.isEmpty(fields)) {
+			throw new RecipientNotExistException(recipientId);
+		}
+		return getFormattedFieldsMap(admin, fields);
+	}
+
+	private Map<String, Object> getFormattedFieldsMap(Admin admin, Map<String, Object> values) {
+		DateTimeFormatter formatter = DateTimeFormatter
+				.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT)
+				.withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
+		Map<String, RecipientFieldDescription> visibleFields = fieldService.getVisibleFields(admin);
+		Map<String, Object> map = LinkedHashMap.newLinkedHashMap(values.size());
+		AgnUtils
+				.sortCollectionWithItemsFirst(values.keySet(), DEFAULT_COLUMNS.toArray(String[]::new)).stream()
+				.filter(name -> visibleFields.get(name) != null)
+				.map(String::toLowerCase)
+				.forEach(name -> map.put(name, getFieldValue(visibleFields.get(name), values.get(name), formatter)));
+		return map;
+	}
+
+	private static Object getFieldValue(RecipientFieldDescription field, Object value, DateTimeFormatter formatter) {
+		if (field.getSimpleDataType() == DbColumnType.SimpleDataType.Date && value instanceof Date date) {
+			return new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(date);
+		}
+		if (field.getSimpleDataType() == DbColumnType.SimpleDataType.DateTime && value instanceof Date dateTime) {
+			ZonedDateTime zdt = ZonedDateTime.ofInstant(dateTime.toInstant(), ZoneId.systemDefault());
+			return formatter.format(zdt);
+		}
+		return value;
+	}
+
+	@Override
+	public Recipient create(CreateRecipientCommand command) {
+		validateForCreate(command.fields(), command.admin());
+
+		RecipientImpl recipient = new RecipientImpl();
+		recipient.setCompanyID(command.admin().getCompanyID());
+
+		return save(recipient, command.fields(), command.subscription(), command.admin());
+	}
+
+	@Override
+	public ImportStatus create(BulkUpsertRecipientCommand command) {
+		command.recipients().forEach(fields -> validateForCreate(fields, command.admin()));
+		return recipientImportService.add(
+				command.recipients(),
+				command.subscription().mailinglistIds(),
+				command.subscription().mediatype(),
+				command.admin()
+		);
+	}
+
+	private void validateForCreate(Map<String, Object> fields, Admin admin) {
+		if (fields.containsKey(CUSTOMER_ID_COL)) {
+			throw ValidationException.exact("Internal field %s is included".formatted(CUSTOMER_ID_COL));
+		}
+		checkLimit(admin);
+		validateForChange(fields, admin);
+	}
+
+	private void checkLimit(Admin admin) {
+		try {
+			subscriberLimitCheck.checkSubscriberLimit(admin.getCompanyID(), 1);
+		} catch (SubscriberLimitExceededException e) {
+			throw new ValidationException("""
+                    Number of customer entries allowed is going to be exceeded.
+                    Number of existing customers would be '%s'.
+                    Maximum customer number limit is '%s'.""".formatted(e.getActual(), e.getMaximum())
+			);
+		}
+	}
+
+	@Override
+	public ImportStatus addOrUpdate(BulkUpsertRecipientCommand command) {
+		command.recipients().forEach(recipient -> validateForChange(recipient, command.admin()));
+		return recipientImportService.addAndUpdate(
+				command.recipients(),
+				command.subscription().mailinglistIds(),
+				command.subscription().mediatype(),
+				command.admin()
+		);
+	}
+
+	@Override
+	public void updatePartially(UpdateRecipientCommand command) {
+		int companyID = command.admin().getCompanyID();
+		validateForChange(command.fields(), command.admin());
+
+		RecipientImpl recipient = new RecipientImpl();
+		recipient.setCompanyID(companyID);
+		recipient.setCustParameters(getCustomerDataFromDb(companyID, command.id(), recipient.getDateFormat()));
+
+		save(recipient, command.fields(), command.subscription(), command.admin());
+	}
+
+	private Recipient save(
+			Recipient recipient,
+			Map<String, Object> fields,
+			Subscription subscription,
+			Admin admin
+	) {
+		fillRecipient(recipient, fields, admin);
+		recipient.setChangeFlag(true);
+		if (!update(recipient)) {
+			throw new ValidationException("Invalid data for recipient");
+		}
+		if (recipient.getCustomerID() <= 0) {
+			throw new IllegalStateException("Cannot create recipient");
+		}
+		if (subscription != null) {
+			subscribe(recipient, subscription, admin);
+		}
+		return recipient;
+	}
+
+	private void subscribe(Recipient recipient, Subscription subscription, Admin admin) {
+		validateMailinglists(subscription.mailinglistIds(), admin.getCompanyID());
+		for (int mailinglistId : emptyIfNull(subscription.mailinglistIds())) {
+			BindingEntry binding = createBinding(recipient.getCustomerID(), mailinglistId, subscription);
+			int updatedBindings = bindingService.updateBindings(admin.getCompanyID(), binding);
+			if (updatedBindings != 1 && !subscription.forAllMailinglists()) {
+				bindingService.insertBindings(admin.getCompanyID(), binding);
+			}
+		}
+	}
+
+	private void validateMailinglists(List<Integer> mailinglistIds, int companyId) {
+		for (Integer mailinglistId : emptyIfNull(mailinglistIds)) {
+			if (!mailinglistService.exist(mailinglistId, companyId)) {
+				throw ValidationException.exact("Invalid mailinglist: '%s'".formatted(mailinglistId));
+			}
+		}
+	}
+
+	private static BindingEntry createBinding(
+			int customerId,
+			int mailinglistId,
+			Subscription subscription
+	) {
+		BindingEntry bindingEntry = new BindingEntryImpl();
+		bindingEntry.setCustomerID(customerId);
+		bindingEntry.setMailinglistID(mailinglistId);
+		bindingEntry.setUserStatus(requireNonNullElse(subscription.status(), UserStatus.Active).getStatusCode());
+		bindingEntry.setUserType(BindingEntry.UserType.World.getTypeCode());
+		bindingEntry.setMediaType(requireNonNullElse(subscription.mediatype(), MediaTypes.EMAIL).getMediaCode());
+		bindingEntry.setUserRemark(subscription.remark());
+		return bindingEntry;
+	}
+
+	private void fillRecipient(Recipient recipient, Map<String, Object> fields, Admin admin) {
+		Map<String, Object> recipientParameters = recipient.getCustParameters();
+		removeTripleDateEntries(recipientParameters);
+
+		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, admin.getCompanyID())) {
+			recipientParameters.put(RecipientStandardField.DoNotTrack.getColumnName(), 1);
+		}
+		recipientParameters.putAll(fields);
+		if (!recipientParameters.containsKey("gender")) {
+			recipientParameters.put("gender", Gender.UNKNOWN.getStorageValue());
+		}
+		if (!recipientParameters.containsKey("mailtype")) {
+			recipientParameters.put("mailtype", MailType.HTML.getIntValue());
+		}
+		if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+			recipientParameters.put(EMAIL_COL, normalizeEmail((String) recipientParameters.get(EMAIL_COL)));
+		}
+		setDatasourceFields(admin, recipient);
+	}
+
+	private void setDatasourceFields(Admin admin, Recipient recipient) {
+		DatasourceDescription datasource = dataSourceService.getByDescription(
+				SourceGroupType.RestfulService, "RestfulService", admin.getCompanyID()
+		);
+		if (datasource == null) {
+			// Use fallback datasource for companyId 0
+			datasource = dataSourceService.getByDescription(SourceGroupType.RestfulService, "RestfulService", 0);
+		}
+		if (datasource != null) {
+			recipient.getCustParameters().put("datasource_id", datasource.getId());
+			recipient.getCustParameters().put("latest_datasource_id", datasource.getId());
+		}
+	}
+
+	private void removeTripleDateEntries(Map<String, Object> params) {
+		params.entrySet().removeIf(e -> Stream.of(
+						RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY,
+						RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH,
+						RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR,
+						RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR,
+						RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE,
+						RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND
+				)
+				.anyMatch(suf -> Strings.CI.endsWith(e.getKey(), suf)));
+	}
+
+
+	private void validateForChange(Map<String, Object> fields, Admin admin) {
+		int companyId = admin.getCompanyID();
+		int adminId = admin.getAdminID();
+		checkInnerColumns(fields, admin);
+
+		boolean allowHtmlTags = configService.getBooleanValue(AllowHtmlTagsInReferenceAndProfileFields, companyId);
+		Set<String> changeableFields = new HashSet<>(fieldService.getNamesOfChangeableFields(companyId, adminId));
+		changeableFields.addAll(List.of(RecipientStandardField.CustomerID.getColumnName(), EMAIL_COL));
+
+		fields.forEach((field, value) -> {
+			if (!changeableFields.contains(field)) {
+				throw ValidationException.exact("Invalid field %s. Allowed: %s".formatted(field, join(changeableFields, "', '")));
+			}
+			if (value instanceof String stringValue) {
+				validateFieldHtml(field, stringValue, allowHtmlTags);
+			}
+		});
+	}
+
+	private static void checkInnerColumns(Map<String, Object> fields, Admin admin) {
+		List<String> hiddenColumns = RecipientStandardField
+				.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
+		fields.keySet().stream()
+				.filter(field -> hiddenColumns.contains(field.toLowerCase()))
+				.findFirst()
+				.ifPresent(field -> {
+					throw ValidationException.exact("Internal field %s is included".formatted(field));
+				});
+	}
+
+	private static void validateFieldHtml(String field, String value, boolean allowHtmlTags) {
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(value, allowHtmlTags);
+		} catch (HtmlCheckerException e) {
+			throw ValidationException.exact("Invalid recipient data containing HTML for field: %s".formatted(field));
+		}
 	}
 
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
@@ -2390,7 +2673,7 @@ public class RecipientServiceImpl implements RecipientService {
 		this.eqlFacade = eqlFacade;
 	}
 
-	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
+	public void setSubscriberLimitCheck(SubscriberLimitCheck check) {
 		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
 	}
 
@@ -2398,7 +2681,19 @@ public class RecipientServiceImpl implements RecipientService {
 		this.mailinglistApprovalService = mailinglistApprovalService;
 	}
 
-	public void setBulkActionValidationService(BulkActionValidationService<Integer, RecipientLightDto> bulkActionValidationService) {
-		this.bulkActionValidationService = bulkActionValidationService;
+	public void setFieldService(RecipientFieldService fieldService) {
+		this.fieldService = fieldService;
+	}
+
+	public void setMailinglistService(MailinglistService mailinglistService) {
+		this.mailinglistService = mailinglistService;
+	}
+
+	public void setDataSourceService(DataSourceService dataSourceService) {
+		this.dataSourceService = dataSourceService;
+	}
+
+	public void setRecipientImportService(RecipientImportService recipientImportService) {
+		this.recipientImportService = recipientImportService;
 	}
 }

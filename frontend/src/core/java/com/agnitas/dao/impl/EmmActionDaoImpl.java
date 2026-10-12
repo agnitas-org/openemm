@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,8 +19,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.EmmActionDao;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -83,9 +85,17 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 	}
 	
 	@Override
-	public boolean actionExists(int actionID, int companyID) {
-		int count = selectInt("SELECT COUNT(action_id) FROM rdir_action_tbl WHERE action_id=? AND company_id=?", actionID, companyID);
-		return count > 0;
+	public boolean actionExists(int actionId, int companyId) {
+		return selectInt(
+                """
+                SELECT COUNT(action_id)
+                FROM rdir_action_tbl
+                WHERE action_id=?
+                  AND company_id=?
+                  AND deleted = 0""",
+				actionId,
+				companyId
+		) > 0;
 	}
 	
 	@Override
@@ -316,4 +326,43 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 		}
 	}
 
+	@Override
+	public Optional<EmmAction> find(int triggerId, int companyId) {
+        return Optional.ofNullable(selectObjectDefaultNull("""
+                SELECT action_id,
+                       company_id,
+                       description,
+                       shortname,
+                       action_type,
+                       active,
+                       creation_date,
+                       change_date,
+                       advertising
+                FROM rdir_action_tbl
+                WHERE action_id = ?
+                  AND deleted = 0
+                  AND company_id = ?
+                """, new EmmActionRowMapper(), triggerId, companyId
+        ));
+    }
+
+    @Override
+    public PaginatedList<EmmAction> find(int companyId, int page, int size) {
+        return selectPaginatedList("""
+                SELECT action_id,
+                       company_id,
+                       description,
+                       shortname,
+                       action_type,
+                       active,
+                       creation_date,
+                       change_date,
+                       advertising
+                FROM rdir_action_tbl
+                WHERE company_id = ?
+                  AND deleted = 0
+                ORDER BY shortname
+                """, page, size, new EmmActionRowMapper(), companyId
+		);
+	}
 }

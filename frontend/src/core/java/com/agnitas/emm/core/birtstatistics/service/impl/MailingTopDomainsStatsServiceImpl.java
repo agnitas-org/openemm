@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -18,15 +18,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.birtstatistics.dao.MailingTopDomainsStatsDao;
+import com.agnitas.emm.core.birtstatistics.dao.MailingTopDomainsStatsDao.Filter;
+import com.agnitas.emm.core.birtstatistics.dao.MailingTopDomainsStatsDao.TargetFilter;
+import com.agnitas.emm.core.birtstatistics.dto.StatisticMetric;
 import com.agnitas.emm.core.birtstatistics.service.MailingStatisticsService;
 import com.agnitas.emm.core.birtstatistics.service.MailingTopDomainsStatsService;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.StatisticMetric;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -44,76 +44,73 @@ public class MailingTopDomainsStatsServiceImpl implements MailingTopDomainsStats
     }
 
     @Override
-    public TopDomainStats getStats(TopDomainsStatsRequest req) {
+    public TopDomainStats getStats(TopDomainsStatsQuery query) {
+        List<LightTarget> targets = mailingStatsService.getTargetsWithAllSubscribersTarget(
+                query.targetIds(), query.companyId(), query.locale()
+        );
+
+        Filter filter = new Filter(query.mailingId(), query.companyId(), query.isTopLevel());
+        List<TargetFilter> targetFilters = targets.stream()
+                .map(t -> new TargetFilter(t.getId(), t.getTargetSQL()))
+                .toList();
+
+        Map<Integer, Map<String, Integer>> sentEmailsByTarget = mailingStatsService.isTrackingExists(query.mailingId(), query.companyId())
+                ? topDomainsStatsDao.getSentEmails(filter, targetFilters)
+                : emptyMap();
+        Map<Integer, Integer> sentTotalByTarget = totalsByTarget(sentEmailsByTarget);
+
         return new TopDomainStats(
-                getSentMailings(req),
-                targetToStatsMap(req.targets(), target -> getHardBounces(req, target.getTargetSQL())),
-                targetToStatsMap(req.targets(), target -> getSoftBounces(req, target.getTargetSQL())),
-                targetToStatsMap(req.targets(), target -> getOpeners(req, target.getTargetSQL())),
-                targetToStatsMap(req.targets(), target -> getClickers(req, target.getTargetSQL()))
+                toMetricsByTarget(sentEmailsByTarget, null, query.limit(), query.locale()),
+                toMetricsByTarget(topDomainsStatsDao.getHardBounces(filter, targetFilters), sentTotalByTarget, query.limit(), query.locale()),
+                toMetricsByTarget(topDomainsStatsDao.getSoftBounces(filter, targetFilters), sentTotalByTarget, query.limit(), query.locale()),
+                toMetricsByTarget(topDomainsStatsDao.getOpeners(filter, targetFilters), null, query.limit(), query.locale()),
+                toMetricsByTarget(topDomainsStatsDao.getClickers(filter, targetFilters), null, query.limit(), query.locale())
         );
     }
 
-    private Map<Integer, Map<String, StatisticMetric>> getSentMailings(TopDomainsStatsRequest req) {
-        if (!mailingStatsService.isTrackingExists(req.mailingId(), req.companyId())) {
-            return emptyMap();
-        }
-        return targetToStatsMap(req.targets(), target -> getSentMailings(req, target.getTargetSQL()));
+    private Map<Integer, Integer> totalsByTarget(Map<Integer, Map<String, Integer>> allDomainsByTarget) {
+        return allDomainsByTarget.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().values().stream().mapToInt(Integer::intValue).sum()
+                ));
     }
 
-    private Map<String, StatisticMetric> getSentMailings(TopDomainsStatsRequest req, String targetSql) {
-        int total = getSentCount(req.mailingId(), req.companyId(), targetSql);
-        Map<String, Integer> perDomain = topDomainsStatsDao.getSentEmails(req.filter(), targetSql);
-        putOtherDomainsEntry(perDomain, total, req.locale());
-        return domainToMetricsMap(perDomain, total);
-    }
-
-    private int getSentCount(int mailingId, int companyId, String targetSql) {
-        return mailingStatsService.getSentCountFromMailtrackTbl(mailingId, companyId, targetSql, new DateRange());
-    }
-
-    private Map<String, StatisticMetric> getHardBounces(TopDomainsStatsRequest req, String targetSql) {
-        int rateBase = getSentCount(req.mailingId(), req.companyId(), targetSql);
-        int total = topDomainsStatsDao.getHardBouncesTotal(req.filter(), targetSql);
-        Map<String, Integer> perDomain = topDomainsStatsDao.getHardBounces(req.filter(), targetSql);
-        putOtherDomainsEntry(perDomain, total, req.locale());
-        return domainToMetricsMap(perDomain, rateBase);
-    }
-
-    private Map<String, StatisticMetric> getSoftBounces(TopDomainsStatsRequest req, String targetSql) {
-        int rateBase = getSentCount(req.mailingId(), req.companyId(), targetSql);
-        int total = topDomainsStatsDao.getSoftBouncesTotal(req.filter(), targetSql);
-        Map<String, Integer> perDomain = topDomainsStatsDao.getSoftBounces(req.filter(), targetSql);
-        putOtherDomainsEntry(perDomain, total, req.locale());
-        return domainToMetricsMap(perDomain, rateBase);
-    }
-
-    private Map<String, StatisticMetric> getOpeners(TopDomainsStatsRequest req, String targetSql) {
-        int total = topDomainsStatsDao.getOpenersTotal(req.mailingId(), req.companyId(), targetSql);
-        Map<String, Integer> perDomain = topDomainsStatsDao.getOpeners(req.filter(), targetSql);
-        putOtherDomainsEntry(perDomain, total, req.locale());
-        return domainToMetricsMap(perDomain, total);
-    }
-
-    private Map<String, StatisticMetric> getClickers(TopDomainsStatsRequest req, String targetSql) {
-        int total = topDomainsStatsDao.getClickersTotal(req.mailingId(), req.companyId(), targetSql);
-        Map<String, Integer> perDomain = topDomainsStatsDao.getClickers(req.filter(), targetSql);
-        putOtherDomainsEntry(perDomain, total, req.locale());
-        return domainToMetricsMap(perDomain, total);
-    }
-
-    private Map<Integer, Map<String, StatisticMetric>> targetToStatsMap(
-            List<LightTarget> targets,
-            Function<LightTarget, Map<String, StatisticMetric>> getMetricsFunc
+    private Map<Integer, Map<String, StatisticMetric>> toMetricsByTarget(
+            Map<Integer, Map<String, Integer>> allDomainsByTarget,
+            Map<Integer, Integer> rateBaseByTarget,
+            int limit,
+            Locale locale
     ) {
-        return targets.stream().collect(Collectors.toMap(
-                LightTarget::getId,
-                getMetricsFunc,
-                (a, b) -> a, LinkedHashMap::new
-        ));
+        Map<Integer, Map<String, StatisticMetric>> result = new LinkedHashMap<>();
+        allDomainsByTarget.forEach((targetId, allDomains) -> {
+            int total = allDomains.values().stream().mapToInt(Integer::intValue).sum();
+            int rateBase = rateBaseByTarget != null ? rateBaseByTarget.getOrDefault(targetId, 0) : total;
+            result.put(targetId, toMetrics(allDomains, total, rateBase, limit, locale));
+        });
+        return result;
     }
 
-    private static Map<String, StatisticMetric> domainToMetricsMap(Map<String, Integer> perDomain, int rateBase) {
+    private Map<String, StatisticMetric> toMetrics(
+            Map<String, Integer> allDomains, int trueTotal, int rateBase, int limit, Locale locale
+    ) {
+        Map<String, Integer> topDomains = allDomains.entrySet()
+                .stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(limit)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+
+        putOtherDomainsEntry(topDomains, trueTotal, locale);
+
+        return domainToMetricsMap(topDomains, rateBase);
+    }
+
+    private static Map<String, StatisticMetric> domainToMetricsMap(Map<String, Integer> perDomain, long rateBase) {
         return perDomain.entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
                 e -> new StatisticMetric(e.getValue(), calculateRate(e.getValue(), rateBase)),
@@ -122,6 +119,9 @@ public class MailingTopDomainsStatsServiceImpl implements MailingTopDomainsStats
     }
 
     private static void putOtherDomainsEntry(Map<String, Integer> values, int total, Locale locale) {
+        if (total <= 0) {
+            return;
+        }
         values.put(t("statistic.Other", locale), total - values.values()
                 .stream()
                 .mapToInt(Integer::intValue)

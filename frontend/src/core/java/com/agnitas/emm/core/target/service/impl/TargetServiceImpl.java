@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,6 +12,7 @@ package com.agnitas.emm.core.target.service.impl;
 
 import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
 import static java.util.Collections.emptySet;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.dto.IntRange;
+import com.agnitas.emm.core.commons.exception.EntityAlreadyExistsException;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailing.forms.SplitSettings;
@@ -67,6 +69,8 @@ import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import com.agnitas.emm.core.target.complexity.bean.impl.TargetComplexityEvaluationCacheImpl;
 import com.agnitas.emm.core.target.complexity.service.TargetComplexityEvaluator;
+import com.agnitas.emm.core.target.dto.CreateTargetCommand;
+import com.agnitas.emm.core.target.dto.PatchTargetCommand;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
@@ -83,6 +87,7 @@ import com.agnitas.emm.core.target.exception.TargetGroupLockedException;
 import com.agnitas.emm.core.target.exception.TargetGroupNotCompatibleWithContentBlockException;
 import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
+import com.agnitas.emm.core.target.mapper.TargetMapper;
 import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
 import com.agnitas.emm.core.target.service.TargetGroupDependencyService;
@@ -90,6 +95,7 @@ import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.target.service.UserActivityLog;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
@@ -141,6 +147,7 @@ public class TargetServiceImpl implements TargetService {
     private EqlValidatorService eqlValidatorService;
     private MailingContentService mailingContentService;
 	private BulkActionValidationService<Integer, String> bulkActionValidationService;
+	private TargetMapper targetMapper;
 
     @Override
 	public SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin) {
@@ -311,6 +318,37 @@ public class TargetServiceImpl implements TargetService {
     }
 
 	@Override
+	public Target create(CreateTargetCommand command) {
+		Target targetItem = getTargetByName(command.name(), command.companyId());
+		if (targetItem != null) {
+			throw new EntityAlreadyExistsException(command.name());
+		}
+		try {
+			int targetId = saveTarget(targetMapper.toTarget(command));
+			return getTargetGroup(targetId, command.companyId());
+		} catch (EqlFormatException e) {
+			throw ValidationException.exact(e.getMessage());
+		} catch (TargetGroupPersistenceException e) {
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+	@Override
+	public void patch(PatchTargetCommand command) {
+		Target target = getTargetGroup(command.id(), command.companyId());
+
+		command.name().ifPresent(target::setTargetName);
+		command.description().ifPresent(target::setTargetDescription);
+		command.eql().ifPresent(target::setEQL);
+
+		try {
+			saveTarget(target);
+		} catch (TargetGroupPersistenceException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+	@Override
 	public int saveTarget(Target target) throws TargetGroupPersistenceException {
 		try {
 			final SimpleReferenceCollector referencedItemsCollector = new SimpleReferenceCollector();
@@ -452,6 +490,11 @@ public class TargetServiceImpl implements TargetService {
 	}
 
 	@Override
+	public String getTargetSqlOrEmpty(int targetId, int companyId) {
+		return StringUtils.defaultString(getTargetSQL(targetId, companyId));
+	}
+
+	@Override
 	public String getMailingSqlTargetExpression(int mailingId, int companyId, boolean appendListSplit) {
     	String expression = mailingDao.getTargetExpression(mailingId, companyId, appendListSplit);
     	return getSQLFromTargetExpression(expression, new TargetSqlCachingResolver(companyId));
@@ -537,7 +580,7 @@ public class TargetServiceImpl implements TargetService {
 	 * Removes recipients affected in a target group.
 	 */
 	@Override
-	public boolean deleteRecipients(int targetId, int companyId) {
+	public int deleteRecipients(int targetId, int companyId) {
 		Target target = targetDao.getTarget(targetId, companyId);
 		return recipientDao.deleteRecipients(companyId, target.getTargetSQL());
 	}
@@ -752,6 +795,10 @@ public class TargetServiceImpl implements TargetService {
 
 	@Override
 	public List<String> getTargetNamesByIds(final int companyId, final Set<Integer> targetIds) {
+		if (CollectionUtils.isEmpty(targetIds)) {
+			return Collections.emptyList();
+		}
+
 		return targetDao.getTargetNamesByIds(companyId, targetIds);
 	}
 
@@ -1233,6 +1280,20 @@ public class TargetServiceImpl implements TargetService {
 	}
 
 	@Override
+	public String getTargetSqlCombinedWithOr(Collection<Integer> targetIds, int companyId) {
+		if (isEmpty(targetIds)) {
+			return "";
+		}
+		String joined = targetIds.stream()
+				.filter(targetId -> targetId > 0)
+				.map(targetId -> getTargetSqlOrEmpty(targetId, companyId))
+				.filter(StringUtils::isNotBlank)
+				.map(sql -> "(" + sql + ")")
+				.collect(Collectors.joining(" OR "));
+		return joined.isEmpty() ? "" : "(" + joined + ")";
+	}
+
+	@Override
 	public List<TargetLight> getTargetLights(final int companyId) {
 		return targetDao.getTargetLights(companyId);
 	}
@@ -1322,6 +1383,16 @@ public class TargetServiceImpl implements TargetService {
 		this.configService = configService;
 	}
 
+	public void setTargetMapper(TargetMapper targetMapper) {
+		this.targetMapper = targetMapper;
+	}
+
+	// endregion
+
+	@Override
+	public Set<Integer> getAltgIds(Admin admin) {
+		return emptySet();
+	}
 
 	@Override
 	public Target getTargetByName(String targetName, int companyId) {
@@ -1333,5 +1404,4 @@ public class TargetServiceImpl implements TargetService {
 		return targetDao.getTestAndAdminTargetLights(adminId, companyId);
 	}
 
-	// endregion
 }

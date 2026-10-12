@@ -33,7 +33,7 @@
                         "property": "measuredOpeners"
                     },
                     {
-                        "label": "<mvc:message code="report.opens.invisibleWithoutNote" />",
+                        "label": "<mvc:message code="statistic.opener.invisible" />",
                         "property": "invisibleOpeners"
                     },
                     {
@@ -54,7 +54,7 @@
                     },
                     {
                         "label": "<mvc:message code="report.softbounces.undeliverable" />",
-                        "property": "withoutReceiptConfirmation"
+                        "property": "softBounces"
                     },
                     {
                         "label": "<mvc:message code="Revenue" />",
@@ -216,7 +216,7 @@
                 "sortable": false
             },
             {
-                "headerName": "<mvc:message code='report.opens.invisibleWithoutNote'/>",
+                "headerName": "<mvc:message code='statistic.opener.invisible'/>",
                 "cellRenderer": "MustacheTemplateCellRender",
                 "cellRendererParams": {"templateName": "stat-metric-cell"},
                 "field": "invisibleOpeners",
@@ -277,7 +277,7 @@
                 "headerName": "<mvc:message code='report.softbounces.undeliverable'/>",
                 "cellRenderer": "MustacheTemplateCellRender",
                 "cellRendererParams": {"templateName": "stat-metric-cell"},
-                "field": "withoutReceiptConfirmation",
+                "field": "softBounces",
                 "type": "textCaseInsensitiveColumn",
                 "autoHideIfAllNull": true,
                 "sortable": false

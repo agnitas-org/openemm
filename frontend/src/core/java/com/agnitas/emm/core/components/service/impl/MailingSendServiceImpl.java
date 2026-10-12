@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +62,7 @@ import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.components.entity.MailGenerationOptimizationMode;
 import com.agnitas.emm.core.components.entity.TestRunOption;
+import com.agnitas.emm.core.components.exception.InvalidMethodForMailingtypeException;
 import com.agnitas.emm.core.components.form.MailingTestSendForm;
 import com.agnitas.emm.core.components.logger.MailingSendLogWriter;
 import com.agnitas.emm.core.components.service.MailingBlockSizeService;
@@ -85,6 +87,7 @@ import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.target.service.TargetCopyService;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.exception.BadRequestException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
@@ -107,6 +110,7 @@ import org.springframework.stereotype.Service;
 public class MailingSendServiceImpl implements MailingSendService {
 
     private static final Logger logger = LogManager.getLogger(MailingSendServiceImpl.class);
+    private static final Message ALREADY_ACTIVE_MSG = Message.exact("Already active.");
 
     private static final List<Integer> SPEED_OPTIONS = Stream.of(BlocksizeSteppingOption.values())
             .map(BlocksizeSteppingOption::getMailsPerHour)
@@ -236,11 +240,11 @@ public class MailingSendServiceImpl implements MailingSendService {
         MailingType mailingType = mailing.getMailingType();
 
         if (mailingType != MailingType.FOLLOW_UP && maildropService.isActiveMailing(mailingID, companyID)) {
-            return ServiceResult.error();
+            return ServiceResult.error(ALREADY_ACTIVE_MSG);
         }
 
         if (mailingService.isPostMailing(mailing)) {
-            return ServiceResult.error();
+            return ServiceResult.error(Message.exact("Can't send Post mailing with this method"));
         }
 
         int numberOfRecipients = mailinglistDao.getNumberOfActiveWorldSubscribers(mailing.getTargetID(), companyID, mailing.getMailinglistID());
@@ -633,7 +637,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         int mailingID = mailing.getId();
 
         if (maildropService.isActiveMailing(mailingID, companyID)) {
-            return ServiceResult.error();
+            return ServiceResult.error(ALREADY_ACTIVE_MSG);
         }
 
         int numberOfRecipients = mailinglistDao.getNumberOfActiveWorldSubscribers(mailing.getTargetID(), companyID, mailing.getMailinglistID());
@@ -660,6 +664,10 @@ public class MailingSendServiceImpl implements MailingSendService {
 
         if (sendOptions.isCleanupTestsBeforeDelivery()) {
             clearTestActionsData(mailingID, companyID);
+        }
+
+        if (!sendOptions.isFromWorkflow()) {
+            mailingDao.updateStatus(companyID, mailingID, MailingStatus.ACTIVE, null);
         }
 
         logger.info("send mailing id: {} type: {}", mailingID, MaildropStatus.DATE_BASED.getCode());
@@ -698,7 +706,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         int mailingID = mailing.getId();
 
         if (maildropService.isActiveMailing(mailingID, companyID)) {
-            return ServiceResult.error();
+            return ServiceResult.error(ALREADY_ACTIVE_MSG);
         }
 
         SimpleServiceResult result = isRequiredDataAndComponentsExists(mailing);
@@ -719,6 +727,10 @@ public class MailingSendServiceImpl implements MailingSendService {
 
         if (sendOptions.isCleanupTestsBeforeDelivery()) {
             clearTestActionsData(mailingID, companyID);
+        }
+
+        if (!sendOptions.isFromWorkflow()) {
+            mailingDao.updateStatus(companyID, mailingID, MailingStatus.ACTIVE, null);
         }
 
         logger.info("send mailing id: {} type: {}", mailingID, MaildropStatus.ACTION_BASED.getCode());
@@ -788,7 +800,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         validateTestSendTargetEmails(emails, admin);
         Target oldTarget = targetService.getTargetByName(targetName, companyId);
         if (oldTarget != null && !oldTarget.isAdminTestDelivery()) {
-            throw new BadRequestException("error.target.namealreadyexists");
+            throw new ValidationException("error.target.namealreadyexists");
         }
         Mailing mailing = mailingService.getMailing(mailingId, companyId, false);
         List<Integer> recipientIds = recipientDao.insertTestRecipients(mailing.getCompanyID(), List.of(emails));
@@ -798,7 +810,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         List<Message> errors = new ArrayList<>();
         int newId = targetService.saveTarget(admin, newTarget, oldTarget, errors, new ArrayList<>());
         if (CollectionUtils.isNotEmpty(errors)) {
-            throw new BadRequestException(new HashSet<>(errors));
+            throw new ValidationException(errors);
         }
         return newId;
     }
@@ -834,24 +846,24 @@ public class MailingSendServiceImpl implements MailingSendService {
 
     private void validateTestSendTargetEmails(String[] emails, Admin admin) {
         if (ArrayUtils.isEmpty(emails)) {
-            throw new BadRequestException("error.email.empty");
+            throw new ValidationException("error.email.empty");
         }
         List<String> invalidEmails = Arrays.stream(emails)
                 .filter(email -> !AgnUtils.isEmailValid(email))
                 .toList();
         if (!invalidEmails.isEmpty()) {
-            throw new BadRequestException(Message.exact(
+            throw ValidationException.exact(
                     I18nString.t("error.email.invalid", admin.getLocale()) + ": " + String.join(", ", emails)
-            ));
+            );
         }
     }
 
     private void validateTestSendTargetName(String targetName) {
         if (StringUtils.length(targetName) < 3) {
-            throw new BadRequestException("error.name.too.short");
+            throw new ValidationException("error.name.too.short");
         }
         if (!targetService.checkIfTargetNameIsValid(targetName)) {
-            throw new BadRequestException("error.target.namenotallowed");
+            throw new ValidationException("error.target.namenotallowed");
         }
     }
 
@@ -1156,5 +1168,68 @@ public class MailingSendServiceImpl implements MailingSendService {
         if (!errors.isEmpty()) {
             throw new BadRequestException(errors.toArray(String[]::new));
         }
+    }
+
+    @Override
+    public ServiceResult<UserAction> sendTest(int mailingId, Admin admin, MailingSendOptions.Builder builder) {
+        builder.setDeliveryType(DeliveryType.TEST);
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        return sendMailing(mailing, builder.build(), admin);
+    }
+
+    @Override
+    public ServiceResult<UserAction> sendAdmin(int mailingId, Admin admin, MailingSendOptions.Builder builder) {
+        builder.setDeliveryType(DeliveryType.ADMIN);
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        return sendMailing(mailing, builder.build(), admin);
+    }
+
+    @Override
+    public ServiceResult<UserAction> sendWorld(int mailingId, Admin admin, MailingSendOptions.Builder builder) {
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        if (!EnumSet.of(MailingType.NORMAL, MailingType.FOLLOW_UP).contains(mailing.getMailingType())) {
+            throw new InvalidMethodForMailingtypeException(mailing.getMailingType());
+        }
+        return sendMailing(mailing, builder.build(), admin);
+    }
+
+    @Override
+    public ServiceResult<UserAction> activate(int mailingId, Admin admin, MailingSendOptions.Builder builder) {
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        MailingType type = mailing.getMailingType();
+        if (!EnumSet.of(MailingType.ACTION_BASED, MailingType.DATE_BASED, MailingType.INTERVAL).contains(type)) {
+            throw new InvalidMethodForMailingtypeException(mailing.getMailingType());
+        }
+        return sendMailing(mailing, builder.build(), admin);
+    }
+
+    @Override
+    public boolean deactivate(int mailingId, int companyId) {
+        Mailing mailing = mailingService.getMailing(companyId, mailingId);
+        if (!EnumSet
+                .of(MailingType.DATE_BASED, MailingType.ACTION_BASED, MailingType.INTERVAL)
+                .contains(mailing.getMailingType())) {
+            throw new InvalidMethodForMailingtypeException(mailing.getMailingType());
+        }
+        if (!isMailingActiveOrSent(mailing)) {
+            throw ValidationException.exact("Can't stop not active mailing");
+        }
+        return mailing.getMailingType() == MailingType.INTERVAL
+                ? deactivateIntervalMailing(mailing)
+                : deactivateMailing(mailing, companyId, false);
+    }
+
+    @Override
+    public boolean cancel(int mailingId, int companyId) {
+        Mailing mailing = mailingService.getMailing(companyId, mailingId);
+        if (!EnumSet
+                .of(MailingType.NORMAL, MailingType.FOLLOW_UP)
+                .contains(mailing.getMailingType())) {
+            throw new InvalidMethodForMailingtypeException(mailing.getMailingType());
+        }
+        if (!isMailingActiveOrSent(mailing)) {
+            throw ValidationException.exact("Can't stop not active mailing");
+        }
+        return cancelMailingDelivery(mailingId, companyId);
     }
 }

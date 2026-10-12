@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.mediatypes.service.impl;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,15 +40,43 @@ public class MediaTypesServiceImpl implements MediaTypesService {
     }
 
     @Override
+    public List<MediaTypes> getActiveMediaTypeTypes(int mailingId, int companyId) {
+        return getActiveMediaTypes(mailingId, companyId)
+                .stream()
+                .map(Mediatype::getMediaType)
+                .toList();
+    }
+
+    private List<Mediatype> getActiveMediaTypes(int mailingId, int companyId) {
+        Map<Integer, Mediatype> mediatypes = mediatypesDao.loadMediatypes(mailingId, companyId);
+        return getActiveMediaTypes(mediatypes);
+    }
+
+    private List<Mediatype> getActiveMediaTypes(Map<Integer, Mediatype> mediatypesMap) {
+        return mediatypesMap.entrySet()
+                .stream()
+                .sorted(Comparator.comparingInt(entry -> MediaTypes.getMediaTypeForCode(entry.getKey()).getDefaultTypePriority()))
+                .map(Map.Entry::getValue)
+                .filter(mediatype -> mediatype.getStatus() == MediaTypeStatus.Active.getCode())
+                .toList();
+    }
+
+    @Override
     public Mediatype getActiveMediaType(int companyId, int mailingId) {
         if (mailingId == 0 || companyId == 0) {
             return null;
         }
-        return mediatypesDao.loadMediatypes(mailingId, companyId)
-                .entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(Map.Entry::getValue)
-                .filter(mediatype -> mediatype.getStatus() == MediaTypeStatus.Active.getCode())
+
+        return getActiveMediaTypes(mailingId, companyId)
+                .stream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public Mediatype getActiveMediaType(Mailing mailing) {
+        return getActiveMediaTypes(mailing.getMediatypes())
+                .stream()
                 .findFirst()
                 .orElse(null);
     }

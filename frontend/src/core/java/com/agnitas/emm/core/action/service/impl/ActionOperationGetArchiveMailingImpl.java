@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -15,7 +15,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
@@ -30,16 +29,24 @@ import com.agnitas.preview.PreviewHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation {
+public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation<ActionOperationGetArchiveMailingParameters> {
 	
 	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveMailingImpl.class);
 
-	private PreviewFactory previewFactory;
-	private MailingDao mailingDao;
+	private final PreviewFactory previewFactory;
+	private final MailingDao mailingDao;
+
+	public ActionOperationGetArchiveMailingImpl(PreviewFactory previewFactory, MailingDao mailingDao) {
+		this.previewFactory = previewFactory;
+		this.mailingDao = mailingDao;
+	}
 
 	@Override
-	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
-		ActionOperationGetArchiveMailingParameters getArchiveActionOperation = (ActionOperationGetArchiveMailingParameters) operation;
+	public boolean execute(
+			ActionOperationGetArchiveMailingParameters getArchiveActionOperation,
+			Map<String, Object> params,
+			EmmActionOperationErrors actionOperationErrors
+	) {
 		int companyID = getArchiveActionOperation.getCompanyId();
 		int expireDay = getArchiveActionOperation.getExpireDay();
 		int expireMonth = getArchiveActionOperation.getExpireMonth();
@@ -53,6 +60,7 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 			GregorianCalendar now = new GregorianCalendar();
 
 			if (now.after(exp)) {
+				actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.ARCHIVE_EXPIRED);
 				return false;
 			}
 		}
@@ -66,8 +74,22 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 			return false;
 		}
 
-		int customerID = ((Number) params.get("customerID")).intValue();
-		int mailingID = ((Number) params.get("mailingID")).intValue();
+		Integer customerID;
+		try {
+            customerID = parseIntegerParam(params.get("customerID"));
+        } catch (Exception e) {
+			actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.INVALID_CUSTOMER_ID);
+			return false;
+		}
+
+		Integer mailingID;
+		try {
+			mailingID = parseIntegerParam(params.get("mailingID"));
+		} catch (Exception e) {
+			actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.INVALID_MAILING_ID);
+			return false;
+		}
+
 		ExtensibleUID uid = (ExtensibleUID) params.get ("_uid");
 		long sendDate = uid != null ? uid.getSendDate () : 0L;
 
@@ -98,6 +120,7 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 			return true;
 		} catch (Exception e) {
 			logger.error("archive problem: {}", e.getMessage(), e);
+			actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.GENERAL_ERROR);
 			return false;
 		}
 	}
@@ -123,13 +146,5 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 					+ "\n previewError: " + page.getError());
 		}
 		return page.getHTML();
-	}
-
-	public void setPreviewFactory(PreviewFactory previewFactory) {
-		this.previewFactory = previewFactory;
-	}
-
-	public void setMailingDao(MailingDao mailingDao) {
-		this.mailingDao = mailingDao;
 	}
 }

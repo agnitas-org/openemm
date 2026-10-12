@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -139,20 +139,21 @@ public class Workflow {
     }
 
     public enum WorkflowStatus implements IntEnum {
-        STATUS_NONE(0, true, "none"), // Just a special value, not a valid campaign's status
-        STATUS_OPEN(1, true, "open"),
-        STATUS_ACTIVE(2, false, "active"),
-        STATUS_INACTIVE(3, true, "inactive"),
-        STATUS_COMPLETE(4, false, "completed"),
-        STATUS_TESTING(5, false, "testing"),
-        STATUS_TESTED(6, true, "tested"),
-        STATUS_FAILED(7, true, "failed"),
-        STATUS_TESTING_FAILED(8, true, "testing_failed"),
-        STATUS_PAUSED(9, true, "paused");
+        STATUS_NONE(0, true, "none", ""), // Just a special value, not a valid campaign's status
+        STATUS_OPEN(1, true, "open", "workflow.view.status.open"),
+        STATUS_ACTIVE(2, false, "active", "workflow.view.status.active"),
+        STATUS_INACTIVE(3, true, "inactive", "workflow.view.status.inActive"),
+        STATUS_COMPLETE(4, false, "completed", "workflow.view.status.complete"),
+        STATUS_TESTING(5, false, "testing", "workflow.view.status.testing"),
+        STATUS_TESTED(6, true, "tested", "workflow.view.status.tested"),
+        STATUS_FAILED(7, true, "failed", "workflow.view.status.failed"),
+        STATUS_TESTING_FAILED(8, true, "testing_failed", "workflow.view.status.testing.failed"),
+        STATUS_PAUSED(9, true, "paused", "workflow.view.status.paused");
         
         private final int id;
         private final boolean changeable;
         private final String name;
+        private final String messageKey;
 
         public static WorkflowStatus fromId(int id) {
             return IntEnum.fromId(WorkflowStatus.class, id);
@@ -162,10 +163,11 @@ public class Workflow {
             return IntEnum.fromId(WorkflowStatus.class, id, safe);
         }
 
-        WorkflowStatus(int id, boolean changeable, String name) {
+        WorkflowStatus(int id, boolean changeable, String name, String messageKey) {
             this.id = id;
             this.changeable = changeable;
             this.name = name;
+            this.messageKey = messageKey;
         }
 
         @Override
@@ -180,5 +182,10 @@ public class Workflow {
         public String getName() {
             return name;
         }
+
+        public String getMessageKey() {
+            return messageKey;
+        }
+
     }
 }

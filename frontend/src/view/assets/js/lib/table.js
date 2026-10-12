@@ -546,6 +546,57 @@
       return !actionCondition || actionCondition(row);
     }
 
+    getUnsortedDataAsCsv(config) {
+      const savedState = this.api.getColumnState();
+      const unsortedState = savedState.map(col => ({
+        ...col,
+        sort: null,
+        sortIndex: null
+      }));
+
+      this.api.applyColumnState({
+        state: unsortedState,
+        applyOrder: true
+      });
+
+      const data = this.api.getDataAsCsv(config);
+
+      this.api.applyColumnState({
+        state: savedState,
+        applyOrder: true
+      });
+      return data;
+    }
+
+    exportCsv(config, keepOriginSort) {
+      if (!keepOriginSort) {
+        this.api.exportDataAsCsv(config);
+        return;
+      }
+      const savedState = this.api.getColumnState();
+      const unsortedState = savedState.map(col => ({
+        ...col,
+        sort: null,
+        sortIndex: null
+      }));
+
+      this.api.applyColumnState({
+        state: unsortedState,
+        applyOrder: true
+      });
+
+      this.api.exportDataAsCsv(config);
+
+      this.api.applyColumnState({
+        state: savedState,
+        applyOrder: true
+      });
+    }
+
+    exportUnsortedCsv(config) {
+      this.exportCsv(config, true);
+    }
+
     static get($needle) {
       return Table.getWrapper($needle).data(this.DATA_KEY);
     };

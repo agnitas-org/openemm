@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,21 +13,24 @@ package com.agnitas.service;
 import java.text.DateFormat;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
+import com.agnitas.service.UserActivityLogService.UserType;
 import com.agnitas.util.SqlPreparedStatementManager;
 
 public class ActivityLogExportWorker extends GenericExportWorker {
 
     private final UserActivityLogFilterBase filter;
     private final Admin admin;
-    private final UserActivityLogService.UserType userType;
+    private final UserType userType;
     private final UserActivityLogService userActivityLogService;
 
-    public ActivityLogExportWorker(UserActivityLogService.UserType userType, UserActivityLogFilterBase filter,
+    public ActivityLogExportWorker(UserType userType, UserActivityLogFilterBase filter,
                                    Admin admin, UserActivityLogService userActivityLogService) {
         super();
         this.filter = filter;
@@ -41,16 +44,13 @@ public class ActivityLogExportWorker extends GenericExportWorker {
         Objects.requireNonNull(userType, "User type is not defined!");
 
         try {
-            String sortColumn = "logtime";
-
-            if (UserActivityLogService.UserType.SOAP.equals(userType) || UserActivityLogService.UserType.REST.equals(userType)) {
-                sortColumn = "timestamp";
-            }
-
             SqlPreparedStatementManager sqlPreparedStatementManager = userActivityLogService.prepareSqlStatementForDownload(filter, userType, admin);
 
+            String sortColumn = UserType.GUI.equals(userType) ? "logtime" : "timestamp";
             selectStatement = sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY " + sortColumn + " ASC";
-            selectParameters = Arrays.asList(sqlPreparedStatementManager.getPreparedSqlParameters());
+            selectParameters = Optional.ofNullable(sqlPreparedStatementManager.getPreparedSqlParameters())
+                    .map(Arrays::asList)
+                    .orElse(Collections.emptyList());
 
             // Execute export
             super.call();
@@ -78,7 +78,7 @@ public class ActivityLogExportWorker extends GenericExportWorker {
         private ZoneId exportTimezone;
         private UserActivityLogFilterBase filter;
         private UserActivityLogService userActivityLogService;
-        private UserActivityLogService.UserType userType;
+        private UserType userType;
         private Admin admin;
 
         public Builder(DataSource dataSource) {
@@ -111,7 +111,7 @@ public class ActivityLogExportWorker extends GenericExportWorker {
             return this;
         }
 
-        public Builder setUserActivityType(UserActivityLogService.UserType userType) {
+        public Builder setUserActivityType(UserType userType) {
             this.userType = userType;
             return this;
         }

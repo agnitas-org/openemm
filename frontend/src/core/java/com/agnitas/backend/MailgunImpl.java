@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -176,6 +176,8 @@ public class MailgunImpl implements Mailgun {
 			if (data != null) {
 				if (unexpectedException) {
 					data.logging(Log.ERROR, "mailout", "Creation failed: " + e.toString(), e, true);
+				} else {
+					data.updateGenerateionStateForCancel ();
 				}
 				if (data.mailing.id() > 0) {
 					try (Destroyer d = new Destroyer (data.mailing.id ())) {
@@ -222,6 +224,7 @@ public class MailgunImpl implements Mailgun {
 		allBlocks = new BlockCollection();
 		data.setBlocks(allBlocks);
 		allBlocks.setupBlockCollection(data, data.previewInput);
+		data.setupImagepool();
 		
 		data.logging(Log.DEBUG, "prepare", "Parse blocks");
 		// read all tag names contained in the blocks into Hashtable

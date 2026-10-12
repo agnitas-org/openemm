@@ -115,9 +115,9 @@ reportContext.setPersistentGlobalVariable("reportName", recipientsStatisticDataS
 recipientsDetailedStatisticDataSet = new RecipientsDetailedStatisticDataSet();
 recipientsDetailedStatisticDataSet.initRecipientsStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 
-figures = BirtReporUtils.unpackFigures(params["figures"]);
+figures = BirtReportUtils.unpackFigures(params["figures"]);
 reportContext.setGlobalVariable("figures", figures);
-if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
+if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {
 	recipientsDetailedStatisticDataSet.initRecipientsDynamicStatistic(params["companyID"], params["mailingLists"], params["targetGroups"], params["startDate"], params["stopDate"], params["hiddenTargetId"]);
 }
 
@@ -1378,7 +1378,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="4677"/>
@@ -1391,7 +1391,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="4770"/>
@@ -1404,7 +1404,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="6772">
@@ -1429,7 +1429,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                     </structure>
                 </list-property>
                 <cell id="4655"/>
@@ -1444,7 +1444,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -1810,7 +1810,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -1916,7 +1916,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_DETAILED)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -2197,7 +2197,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -2264,7 +2264,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -2500,7 +2500,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -2606,7 +2606,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -2927,7 +2927,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -2989,7 +2989,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if ((figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) || (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL))) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -3267,7 +3267,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
                     </structure>
                 </list-property>
             </column>
@@ -3275,7 +3275,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) {false} else {true}</expression>
                     </structure>
                 </list-property>
             </column>
@@ -3283,7 +3283,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
                     </structure>
                 </list-property>
             </column>
@@ -3291,7 +3291,7 @@ return true;
                 <list-property name="visibility">
                     <structure>
                         <property name="format">all</property>
-                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
+                        <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL)) {false} else {true}</expression>
                     </structure>
                 </list-property>
             </column>
@@ -3488,7 +3488,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -3569,7 +3569,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -4276,7 +4276,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.MAILING_TYPE)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -4338,7 +4338,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.MAILING_TYPE)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -4673,7 +4673,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">
@@ -4735,7 +4735,7 @@ return true;
             <list-property name="visibility">
                 <structure>
                     <property name="format">all</property>
-                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
+                    <expression name="valueExpr" type="javascript">if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DOI)) {false} else {true}</expression>
                 </structure>
             </list-property>
             <list-property name="boundDataColumns">

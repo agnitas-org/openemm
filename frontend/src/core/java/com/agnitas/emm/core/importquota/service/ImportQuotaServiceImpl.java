@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -20,7 +20,7 @@ import java.util.Objects;
 
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.service.ImportException;
+import com.agnitas.emm.core.imports.exception.ImportValidationException;
 
 import com.agnitas.emm.core.importquota.common.ImportSize;
 import com.agnitas.emm.core.importquota.common.ImportType;
@@ -52,8 +52,9 @@ public final class ImportQuotaServiceImpl implements ImportQuotaRegisterService,
 			
 			final long importLineQuota = configService.getIntegerValue(ConfigValue.ImportQuota, companyID);
 			
-			if(linesAfterImport > importLineQuota)
-				throw new ImportException(false, "error.import.lineQuotaExceeded", importLineQuota);
+			if (linesAfterImport > importLineQuota) {
+				throw new ImportValidationException("error.import.lineQuotaExceeded", importLineQuota);
+			}
 		}
 	} 
 	

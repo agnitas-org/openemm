@@ -159,7 +159,7 @@
                 <label class="form-label" for="aoDecisionCriteria"><mvc:message code="campaign.autoopt.evaltype"/></label>
                 <select id="aoDecisionCriteria" name="aoDecisionCriteria" class="form-control"
                         data-action="decision-editor-criteria-change">
-                    <option value="${AO_CRITERIA_OPENRATE}"><mvc:message code="workflow.decision.OpeningRate"/></option>
+                    <option value="${AO_CRITERIA_OPENRATE}"><mvc:message code="statistic.openrate"/></option>
                     <option value="${AO_CRITERIA_CLICKRATE}"><mvc:message code="Clickrate"/></option>
                     <c:if test="${isRevenueCrteriaEnabled}">
                         <option value="${AO_CRITERIA_REVENUE}"><mvc:message code="statistic.revenue"/></option>

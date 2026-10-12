@@ -1,4 +1,8 @@
 <HelpBalloon>
 	<title><![CDATA[destinataire BCC]]></title>
-	<content><![CDATA[BCC Vous pouvez ins&eacute;rer une ou plusieurs adresses BCC (s&eacute;par&eacute;es par une virgule). Chaque e-mail envoy&eacute; sera &eacute;galement envoy&eacute; &agrave; cette ou ces adresses. Utilisez cette fonction pour archiver les e-mails envoy&eacute;s aux destinataires.]]></content>
+	<content><![CDATA[BCC Vous pouvez ins&eacute;rer une ou plusieurs adresses BCC (s&eacute;par&eacute;es par une virgule).
+			Chaque e-mail envoy&eacute; sera &eacute;galement envoy&eacute; &agrave; cette ou ces adresses. Utilisez cette fonction pour archiver les e-mails envoy&eacute;s aux destinataires.
+			<br><br>
+            <b>Remarque:</b> Cette fonctionnalit&#xE9; entra&#xEE;ne une augmentation du volume de vos e-mails. Veillez &#xE0; ce que la bo&#xEE;te de r&#xE9;ception dispose toujours d'un espace suffisant.
+]]></content>
 </HelpBalloon>

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -14,20 +14,26 @@ import java.io.File;
 import java.text.DateFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.TimeZone;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.ImportStatus;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.impl.RecipientLiteImpl;
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.validation.DeleteCheck;
+import com.agnitas.emm.core.commons.validation.DeleteResult;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.dto.BindingAction;
+import com.agnitas.emm.core.recipient.dto.BulkUpsertRecipientCommand;
+import com.agnitas.emm.core.recipient.dto.CreateRecipientCommand;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
@@ -35,7 +41,7 @@ import com.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
 import com.agnitas.emm.core.recipient.dto.RecipientSearchParamsDto;
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.recipient.dto.UpdateRecipientCommand;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
@@ -112,7 +118,7 @@ public interface RecipientService {
 	 * @param companyId
 	 *        company identifier used to resolve the customer table
 	 */
-    void batchUpdateData(Map<Integer, Map<String, ? extends Object>> data, int companyId);
+    void batchUpdateData(Map<Integer, Map<String, ?>> data, int companyId);
 
 	void updateRecipientWithEmailChangeConfiguration(Recipient recipient, int mailingID, String profileFieldForConfirmationCode) throws SendActionbasedMailingException;
 
@@ -201,11 +207,9 @@ public interface RecipientService {
 
 	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int id, MediaTypes email, String targetSql, List<String> profileFieldsToShow, List<UserStatus> userstatusList, TimeZone timeZone);
 
-    ServiceResult<List<RecipientLightDto>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+	List<DeleteResult> delete(SequencedSet<Integer> ids, Admin admin);
 
-	ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
-
-	SimpleServiceResult delete(int id, int companyId, Admin admin);
+	DeleteResult delete(int id, Admin admin);
 
 	void updateEmail(String newEmail, int id, int companyId);
 
@@ -217,9 +221,17 @@ public interface RecipientService {
 
     List<CaseInsensitiveMap<String, Object>> getFields(List<Integer> recipientIds, int companyId);
 
-    List<Integer> getFilteredRecipientIDs(
-			int companyId,
-			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
-			Map<String, String> recipientFilters
-	);
+	DeleteCheck canBeDeleted(int id, Admin admin);
+
+	List<Map<String, Object>> list(Map<String, String> fieldFilters, Admin admin);
+
+	Map<String, Object> getVisibleFieldValues(int recipientId, Admin admin);
+
+	Recipient create(CreateRecipientCommand command);
+
+	void updatePartially(UpdateRecipientCommand command);
+
+	ImportStatus create(BulkUpsertRecipientCommand command);
+
+	ImportStatus addOrUpdate(BulkUpsertRecipientCommand command);
 }

@@ -125,7 +125,12 @@
   });
 
   $(document).on('click', '[data-toggle-table-truncation]', function () {
-    const $tableWrapper = $(this).closest('.table-wrapper');
+    const $el = $(this);
+    let $tableWrapper = $($el.data('toggle-table-truncation'));
+    if (!$tableWrapper.exists()) {
+      $tableWrapper = $el.closest('.table-wrapper');
+    }
+
     const $table = $tableWrapper.find('table, .ag-body');
     $table.toggleClass('no-truncate');
     AGN.Lib.CoreInitializer.run(['truncated-text-popover', 'scrollable'], $tableWrapper);

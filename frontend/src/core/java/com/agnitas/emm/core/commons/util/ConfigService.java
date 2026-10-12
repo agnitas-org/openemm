@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -77,7 +77,6 @@ import com.agnitas.util.ServerCommand.Server;
 import com.agnitas.util.Systemconfig;
 import com.agnitas.util.Tuple;
 import com.agnitas.util.Version;
-import com.agnitas.util.XmlUtilities;
 import com.agnitas.web.perm.LicenseSignatureVerifier;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.MapUtils;
@@ -88,8 +87,6 @@ import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 /**
  * ConfigurationService for EMM
@@ -547,12 +544,9 @@ public class ConfigService {
 		}
 		
 		if (licenseDao.hasLicenseData()) {
-
-			byte[] licenseDataArray = licenseDao.getLicenseData();
-
 			Map<String, Map<Integer, String>> licenseData = licenseParser.parse();
 
-			int licenseID = Integer.parseInt((String) licenseData.get(ConfigValue.System_Licence.toString()).get(0));
+			int licenseID = Integer.parseInt(licenseData.get(ConfigValue.System_Licence.toString()).get(0));
 
 			if (licenseID == 0) {
 				// OpenEMM: No signature check, but remove all data for company_id > 1
@@ -612,7 +606,6 @@ public class ConfigService {
 				ConfigValue.System_License_MaximumVersion.toString(),
 				ConfigValue.System_License_MaximumNumberOfCompanies.toString(),
 				ConfigValue.System_License_MaximumNumberOfCompanies_Graceful.toString(),
-				ConfigValue.System_License_MaximumNumberOfAdmins.toString(),
 				ConfigValue.System_License_MaximumNumberOfGuiAdmins.toString(),
 				ConfigValue.System_License_MaximumNumberOfWebserviceUsers.toString(),
 				ConfigValue.System_License_MaximumNumberOfRestfulUsers.toString(),
@@ -625,6 +618,8 @@ public class ConfigService {
 				ConfigValue.System_License_AllowedPremiumConfigValues.toString(),
 				ConfigValue.System_License_MaximumNumberOfReferenceTables.toString(),
 				ConfigValue.System_License_MaximumNumberOfReferenceTables_Graceful.toString(),
+				ConfigValue.System_License_MaximumNumberOfVoucherTables.toString(),
+				ConfigValue.System_License_MaximumNumberOfVoucherTables_Graceful.toString(),
 				ConfigValue.System_License_AllowMailingSendForMasterCompany.toString(),
 				ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.toString(),
 				ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany_Graceful.toString(),
@@ -828,7 +823,7 @@ public class ConfigService {
 		if (companyID > 0) {
 			if (adminDao != null) {
 				// Check maximum number of admins
-				int maximumNumberOfAdmins = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAdmins, companyID);
+				int maximumNumberOfAdmins = getLicenseValue(ConfigValue.System_License_MaximumNumberOfGuiAdmins, companyID);
 				if (maximumNumberOfAdmins >= 0) {
 					int numberOfAdmins = adminDao.getNumberOfGuiAdmins(companyID);
 					if (numberOfAdmins > maximumNumberOfAdmins) {
@@ -928,6 +923,33 @@ public class ConfigService {
 									+ " Current number of reference tables: " + numberOfReferenceTables + "."
 									+ " Maximum number of reference tables: " + maximumNumberOfReferenceTables + "."
 									+ " Allowed by graceful limit extension: " + gracefulExtensionReferenceTables;
+							logger.error(licenseErrorText);
+							if (javaMailService != null) {
+								javaMailService.sendLicenseErrorMail(licenseErrorText);
+							}
+							licenseOK = false;
+						}
+					}
+				}
+
+				// Check maximum number of voucher tables
+				int maximumNumberOfVoucherTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfVoucherTables, companyID);
+				int gracefulExtensionVoucherTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfVoucherTables_Graceful, companyID);
+				if (maximumNumberOfVoucherTables >= 0) {
+					int numberOfVoucherTables;
+					try {
+						numberOfVoucherTables = licenseDao.getNumberOfCompanyVoucherTables(companyID);
+					} catch (Exception e) {
+						throw new LicenseError("Cannot detect number of voucher tables of company " + companyID + ": " + e.getMessage(), e);
+					}
+					if (numberOfVoucherTables > maximumNumberOfVoucherTables) {
+						if (numberOfVoucherTables > maximumNumberOfVoucherTables + gracefulExtensionVoucherTables) {
+							throw new LicenseError("Invalid Number of voucher tables of company " + companyID, maximumNumberOfVoucherTables, numberOfVoucherTables);
+						} else {
+							String licenseErrorText = "Invalid Number of voucher tables of company " + companyID + "."
+									+ " Current number of voucher tables: " + numberOfVoucherTables + "."
+									+ " Maximum number of voucher tables: " + maximumNumberOfVoucherTables + "."
+									+ " Allowed by graceful limit extension: " + gracefulExtensionVoucherTables;
 							logger.error(licenseErrorText);
 							if (javaMailService != null) {
 								javaMailService.sendLicenseErrorMail(licenseErrorText);
@@ -1592,6 +1614,14 @@ public class ConfigService {
 
 	public static void setApplicationVersionInstallationTime(Date applicationVersionInstallationTime) {
 		ConfigService.applicationVersionInstallationTime = applicationVersionInstallationTime;
+	}
+
+	public boolean isInternalOAuthServer() {
+		return getBooleanValue(ConfigValue.OAuth2InternalAuthServer);
+	}
+
+	public boolean isOAuthConfigured() {
+        return StringUtils.isNotBlank(getValue(ConfigValue.OAuth2Issuer)) && StringUtils.isNotBlank(getValue(ConfigValue.OAuth2ServerClientId));
 	}
 	
 	public boolean isBasicLB(int companyId) {

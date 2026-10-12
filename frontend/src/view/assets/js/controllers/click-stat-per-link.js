@@ -139,7 +139,7 @@ AGN.Lib.Controller.new('click-stat-per-link', function () {
       type: "textCaseInsensitiveColumn",
       field: "url",
       cellRenderer: "MustacheTemplateCellRender",
-      cellRendererParams: {"templateName": "summary-cell"},
+      cellRendererParams: {"templateName": "url-cell"},
       sortable: false
     }];
 

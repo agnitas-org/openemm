@@ -1,35 +1,63 @@
+<%@ page import="com.agnitas.emm.core.admin.UserOverviewAdditionalColumn" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<%--@elvariable id="adminListForm" type="com.agnitas.emm.core.admin.form.AdminListForm"--%>
 
 <c:set var="baseEndpoint" value="${param.restful ? '/restfulUser' : '/admin'}" />
+<c:set var="AVAILABLE_ADDITIONAL_COLUMNS" value="<%= UserOverviewAdditionalColumn.values() %>"/>
 
 <mvc:message var="passwordSendMsg" code="password.send" />
 <mvc:message var="deleteMsg"       code="settings.admin.delete" />
 <mvc:message var="adminBanMsg"     code="settings.admin.ban.tooltip" />
 
 <c:set var="sendAuthDataAllowed" value="${not param.restful and emm:permissionAllowed('admin.sendWelcome', pageContext.request)}" />
-<c:set var="deleteAllowed"       value="${emm:permissionAllowed('admin.delete', pageContext.request)}" />
+<c:set var="deleteAllowed"       value="${param.restful ? emm:permissionAllowed('restfulUser.delete', pageContext.request) : emm:permissionAllowed('admin.delete', pageContext.request)}" />
 
 <c:url var="sendAuthDataUrl" value="/admin/welcome.action" />
 <c:url var="deleteUrl"       value="/admin/delete.action">
     <c:param name="backToUrl" value="${param.restful ? '/restfulUser/list.action' : ''}" />
 </c:url>
 
-<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+<div class="filter-overview" data-controller="user-overview" data-initializer="user-overview" data-editable-view="${agnEditViewKey}">
     <mvc:form id="table-tile" servletRelativeAction="${baseEndpoint}/list.action" modelAttribute="adminListForm" method="GET" cssClass="tile" data-editable-tile="main">
+
+        <script id="config:user-overview" type="application/json">
+            {
+                "isRestfulPage": ${param.restful}
+            }
+        </script>
+
         <script type="application/json" data-initializer="web-storage-persist">
             {
                 "admin-overview": {
-                    "rows-count": ${adminListForm.numberOfRows}
+                    "rows-count": ${adminListForm.numberOfRows},
+                    "fields": ${emm:toJson(adminListForm.additionalColumns)}
                 }
             }
         </script>
 
         <div class="tile-body">
-            <div class="table-wrapper">
+            <div class="table-wrapper" data-table-column-manager data-action="update-columns">
+                <script type="application/json" data-table-column-manager-config>
+                    {
+                        "columns": [
+                        <c:forEach var="field" items="${AVAILABLE_ADDITIONAL_COLUMNS}" varStatus="loop_status">
+                            {
+                                "name": ${emm:toJson(field)},
+                                "text": "<mvc:message code="${field.messageKey}"/>",
+                                "selected": ${adminListForm.isSelectedColumn(field)}
+                            }${loop_status.index + 1 lt fn:length(AVAILABLE_ADDITIONAL_COLUMNS) ? ',' : ''}
+                        </c:forEach>
+                        ],
+                        "editMode": ${adminListForm.inEditColumnsMode}
+                    }
+                </script>
+
                 <div class="table-wrapper__header">
                     <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
                     <div class="table-wrapper__controls">
@@ -49,6 +77,7 @@
                             </div>
                         </div>
 
+                        <%@include file="../../common/table/edit-columns-btn.jspf" %>
                         <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
                         <jsp:include page="../../common/table/entries-label.jsp">
                             <jsp:param name="filteredEntries" value="${adminEntries.fullListSize}"/>
@@ -96,8 +125,41 @@
 
                         <emm:column titleKey="admin.login.last" sortable="true" property="loginDate" sortProperty="last_login_date" />
 
+                        <c:forEach var="additionalColumn" items="${adminListForm.additionalOverviewColumns}">
+                                <c:forEach var="availableAdditionalField" items="${AVAILABLE_ADDITIONAL_COLUMNS}">
+                                    <c:if test="${availableAdditionalField.property == additionalColumn.property}">
+                                        <c:choose>
+                                            <c:when test="${availableAdditionalField == UserOverviewAdditionalColumn.LANGUAGE}">
+                                                <emm:column titleKey="${additionalColumn.messageKey}"
+                                                            sortable="true"
+                                                            sortProperty="${additionalColumn}"
+                                                            data-table-column="${additionalColumn}">
+                                                    <mvc:message code="${admin.language.messageKey}"/>
+                                                </emm:column>
+                                            </c:when>
+                                            <c:when test="${availableAdditionalField == UserOverviewAdditionalColumn.USER_GROUP}">
+                                                <emm:column titleKey="${additionalColumn.messageKey}" data-table-column="${additionalColumn}">
+                                                    <span>
+                                                        <c:forEach var="group" items="${admin.groups.values()}" varStatus="status">
+                                                            ${group}<c:if test="${!status.last}">,</c:if><br/>
+                                                        </c:forEach>
+                                                    </span>
+                                                </emm:column>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <emm:column titleKey="${additionalColumn.messageKey}"
+                                                            sortable="true"
+                                                            sortProperty="${additionalColumn}"
+                                                            property="${additionalColumn.property}"
+                                                            data-table-column="${additionalColumn}"/>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </c:if>
+                                </c:forEach>
+                        </c:forEach>
+
                         <c:if test="${(sendAuthDataAllowed or deleteAllowed) and adminEntries.fullListSize gt 0}">
-                            <emm:column cssClass="table-actions">
+                            <emm:column cssClass="table-actions" headerClass="columns-picker">
                                 <div>
                                     <c:if test="${sendAuthDataAllowed}">
                                         <a href="${sendAuthDataUrl}?bulkIds=${admin.id}" class="icon-btn icon-btn--primary js-row-delete" data-tooltip="${passwordSendMsg}" data-bulk-action="send-auth-data">

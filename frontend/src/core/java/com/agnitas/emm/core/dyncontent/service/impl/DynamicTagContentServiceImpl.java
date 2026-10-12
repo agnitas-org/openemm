@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -31,7 +31,7 @@ import com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator;
 import com.agnitas.emm.core.dynname.exception.DynamicTagNameNotExistException;
 import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.target.exception.TargetNotExistException;
+import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
@@ -95,7 +95,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 			throw new DynamicTagNameNotExistException();
 		}
 		if (model.getTargetId() != 0 && targetDao.getTarget(model.getTargetId(), model.getCompanyId()) == null) {
-			throw new TargetNotExistException(model.getTargetId());
+			throw new TargetGroupNotFoundException(model.getTargetId());
 		}
         Map<Integer, DynamicTagContent> dContent = dynamicTag.getDynContent();
 
@@ -156,7 +156,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 
 		// Basically check new targetgroup settings
 		if (contentModel.getTargetId() != 0 && targetDao.getTarget(contentModel.getTargetId(), contentModel.getCompanyId()) == null) {
-			throw new TargetNotExistException(contentModel.getTargetId());
+			throw new TargetGroupNotFoundException(contentModel.getTargetId());
 		}
 		
 		int mailingId = dynamicTagContentForReadOnly.getMailingID();
@@ -186,7 +186,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 
 		// Re-check new targetgroup settings for DynamicTagContent loaded via mailing
 		if (contentModel.getTargetId() != 0 && targetDao.getTarget(contentModel.getTargetId(), contentModel.getCompanyId()) == null) {
-			throw new TargetNotExistException(contentModel.getTargetId());
+			throw new TargetGroupNotFoundException(contentModel.getTargetId());
 		}
 		
 		Map<Integer, DynamicTagContent> dynContentMap = dynamicTag.getDynContent();

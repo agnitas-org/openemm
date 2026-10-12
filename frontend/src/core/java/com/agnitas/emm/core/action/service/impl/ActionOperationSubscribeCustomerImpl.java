@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,7 +12,6 @@ package com.agnitas.emm.core.action.service.impl;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Company;
@@ -21,7 +20,6 @@ import com.agnitas.beans.Recipient;
 import com.agnitas.beans.impl.ViciousFormDataException;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
@@ -50,28 +48,51 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation {
+public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation<ActionOperationSubscribeCustomerParameters> {
 
     private static final Logger logger = LogManager.getLogger(ActionOperationSubscribeCustomerImpl.class);
     
     public static final String DEFAULT_GENDER = "2";
     public static final String DEFAULT_MAILTYPE = "1";
 
-	private ExtensibleUIDService uidService;
-	private CompanyDao companyDao;
-	private DatasourceDescriptionDao datasourceDescriptionDao;
-	private RecipientService recipientService;
-	private RecipientFieldService recipientFieldService;
-	private PushSubscriptionService pushSubscriptionService;	// Can be set to null
-	private MobilephoneNumberWhitelist mobilephoneNumberWhitelist;
+	private final ExtensibleUIDService uidService;
+	private final CompanyDao companyDao;
+	private final DatasourceDescriptionDao datasourceDescriptionDao;
+	private final RecipientService recipientService;
+	private final RecipientFieldService recipientFieldService;
+	private final PushSubscriptionService pushSubscriptionService;	// Can be null
+	private final MobilephoneNumberWhitelist mobilephoneNumberWhitelist;
+	private final BlacklistService blacklistService;
+	private final BeanLookupFactory beanLookupFactory;
+	private final ConfigService configService;
+	private final SubscriberLimitCheck subscriberLimitCheck;
 
-	protected BlacklistService blacklistService;
+	public ActionOperationSubscribeCustomerImpl(
+			ExtensibleUIDService uidService,
+			CompanyDao companyDao,
+			DatasourceDescriptionDao datasourceDescriptionDao,
+			RecipientService recipientService,
+			RecipientFieldService recipientFieldService,
+			PushSubscriptionService pushSubscriptionService,
+			MobilephoneNumberWhitelist mobilephoneNumberWhitelist,
+			BlacklistService blacklistService,
+			BeanLookupFactory beanLookupFactory,
+			ConfigService configService,
+			SubscriberLimitCheck subscriberLimitCheck
+	) {
+		this.uidService = uidService;
+		this.companyDao = companyDao;
+		this.datasourceDescriptionDao = datasourceDescriptionDao;
+		this.recipientService = recipientService;
+		this.recipientFieldService = recipientFieldService;
+		this.pushSubscriptionService = pushSubscriptionService;
+		this.mobilephoneNumberWhitelist = mobilephoneNumberWhitelist;
+		this.blacklistService = blacklistService;
+		this.beanLookupFactory = beanLookupFactory;
+		this.configService = configService;
+		this.subscriberLimitCheck = subscriberLimitCheck;
+	}
 
-	private BeanLookupFactory beanLookupFactory;
-	private ConfigService configService;
-	
-	private SubscriberLimitCheck subscriberLimitCheck;
-	
 	private int getDatasourceID(int companyID, String form) {
 		String description = "Form: " + form;
 		DatasourceDescription dsDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.AutoinsertForms, companyID, description);
@@ -146,7 +167,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 					// If number is ok, write back the number. Its in normalized form now.
 					reqParams.put(PARAM_NAME, number.toString());
 				} else {
-					actionOperationErrors.addErrorCode(ErrorCode.MOBILEPHONE_NUMBER_NOT_ALLOWED);
+					actionOperationErrors.addErrorCode(ErrorCode.MOBILEPHONE_NUMBER_NOT_WHITELISTED);
 				}
 			} catch(final NumberFormatException e) {
 				actionOperationErrors.addErrorCode(ErrorCode.MALFORMED_MOBILEPHONE_NUMBER);
@@ -156,14 +177,25 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 	}
 	
 	@Override
-	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
-		final ActionOperationSubscribeCustomerParameters op = (ActionOperationSubscribeCustomerParameters) operation;
+	public boolean execute(
+			ActionOperationSubscribeCustomerParameters op,
+			Map<String, Object> params,
+			EmmActionOperationErrors actionOperationErrors
+	) {
+		Integer customerId;
+		try {
+            customerId = parseIntegerParam(params.get("customerID"));
+        } catch (Exception e) {
+			actionOperationErrors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
+			return false;
+		}
+
 		final int companyID = op.getCompanyId();
 
 		@SuppressWarnings("unchecked")
 		final CaseInsensitiveMap<String, Object> reqParams = new CaseInsensitiveMap<>((Map<String, Object>) params.get("requestParameters")); // suppress warning for this cast
 
-		final Recipient aCust = prepareRecipient(companyID, (Integer) params.get("customerID"));
+		final Recipient aCust = prepareRecipient(companyID, customerId);
 		final HttpServletRequest request = (HttpServletRequest) params.get("_request");
 	
 		// no agnUID so try to find by key column
@@ -222,7 +254,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 
 		if (blacklistService.blacklistCheck(aCust.getEmail(), aCust.getCompanyID())) {
-			actionOperationErrors.addErrorCode(ErrorCode.EMAIL_ADDRESS_NOT_ALLOWED);
+			actionOperationErrors.addErrorCode(ErrorCode.EMAIL_ADDRESS_BLACKLISTED);
 			return false; // abort, EMAIL is not allowed
 		}
 
@@ -307,47 +339,4 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 	}
 
-	public void setUidService(ExtensibleUIDService service) {
-		this.uidService = Objects.requireNonNull(service, "UID service cannot be null");
-	}
-
-	public void setCompanyDao(CompanyDao dao) {
-		this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
-	}
-
-	public void setDatasourceDescriptionDao(DatasourceDescriptionDao dao) {
-		this.datasourceDescriptionDao = Objects.requireNonNull(dao, "Datasource description DAO cannot be null");
-	}
-
-	public void setRecipientService(RecipientService recipientService) {
-		this.recipientService = Objects.requireNonNull(recipientService, "Recipient Service cannot be null");
-	}
-	
-	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
-		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
-	}
-
-	public void setBlacklistService(BlacklistService blacklistService) {
-		this.blacklistService = Objects.requireNonNull(blacklistService, "Blacklist Service cannot be null");
-	}
-
-	public void setBeanLookupFactory(BeanLookupFactory factory) {
-		this.beanLookupFactory = Objects.requireNonNull(factory, "Bean lookup factory cannot be null");
-	}
-
-	public void setPushSubscriptionService(PushSubscriptionService service) {
-		this.pushSubscriptionService = service;
-	}
-	
-	public void setConfigService(ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
-	}
-	
-	public void setMobilephoneNumberWhitelist(MobilephoneNumberWhitelist whitelist) {
-		this.mobilephoneNumberWhitelist = Objects.requireNonNull(whitelist, "Mobilephone whitelist is null");
-	}
-	
-	public void setSubscriberLimitCheck(SubscriberLimitCheck check) {
-		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
-	}
 }

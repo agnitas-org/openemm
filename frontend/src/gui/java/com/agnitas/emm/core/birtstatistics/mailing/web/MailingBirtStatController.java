@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,16 +13,12 @@ package com.agnitas.emm.core.birtstatistics.mailing.web;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -43,7 +39,6 @@ import com.agnitas.beans.MailingSendStatus;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
@@ -56,9 +51,9 @@ import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingSummaryStatsResponse;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
-import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingBounceStatsPresenter;
-import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingSummaryStatsPresenter;
-import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingTopDomainsPresenter;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingBounceStatsUiService;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingSummaryStatsUiService;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingTopDomainsUiService;
 import com.agnitas.emm.core.birtstatistics.mailing.service.MailingEndDeviceStatisticsService;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.birtstatistics.service.ClickPerLinkMailingStatisticsService;
@@ -119,9 +114,6 @@ public class MailingBirtStatController implements XssCheckAware {
             SUMMARY_AUTO_OPT,
             CLICK_STATISTICS_PER_LINK,
             PROGRESS,
-            PROGRESS_OF_DELIVERY, // TODO: GWUA-6950: Remove after migration
-            PROGRESS_OF_OPENINGS, // TODO: GWUA-6950: Remove after migration
-            PROGRESS_OF_CLICKS, // TODO: GWUA-6950: Remove after migration
             TOP_DOMAINS,
             BOUNCES
     );
@@ -152,9 +144,9 @@ public class MailingBirtStatController implements XssCheckAware {
     private final CampaignService campaignService;
     private final ClickPerLinkMailingStatisticsService clickPerLinkStatisticsService;
     private final WorkflowStatisticsService workflowStatisticsService;
-    private final MailingSummaryStatsPresenter mailingSummaryStatsPresenter;
-    private final MailingTopDomainsPresenter mailingTopDomainsPresenter;
-    private final MailingBounceStatsPresenter bounceStatsPresenter;
+    private final MailingSummaryStatsUiService mailingSummaryStatsUiService;
+    private final MailingTopDomainsUiService mailingTopDomainsUiService;
+    private final MailingBounceStatsUiService bounceStatsPresenter;
     private final ProgressStatisticsService progressStatisticsService;
     private final MailingStatisticsService mailingStatisticsService;
     private final MailingEndDeviceStatisticsService endDeviceStatisticsService;
@@ -177,9 +169,9 @@ public class MailingBirtStatController implements XssCheckAware {
             CampaignService campaignService,
             ClickPerLinkMailingStatisticsService clickPerLinkStatisticsService,
             WorkflowStatisticsService workflowStatisticsService,
-            MailingSummaryStatsPresenter mailingSummaryStatsPresenter,
-            MailingTopDomainsPresenter mailingTopDomainsPresenter,
-            MailingBounceStatsPresenter bounceStatsPresenter,
+            MailingSummaryStatsUiService mailingSummaryStatsUiService,
+            MailingTopDomainsUiService mailingTopDomainsUiService,
+            MailingBounceStatsUiService bounceStatsPresenter,
             MailingStatisticsService mailingStatisticsService,
             ConfigService configService,
             ProgressStatisticsService progressStatisticsService,
@@ -202,10 +194,10 @@ public class MailingBirtStatController implements XssCheckAware {
         this.campaignService = campaignService;
         this.clickPerLinkStatisticsService = clickPerLinkStatisticsService;
         this.workflowStatisticsService = workflowStatisticsService;
-        this.mailingSummaryStatsPresenter = mailingSummaryStatsPresenter;
+        this.mailingSummaryStatsUiService = mailingSummaryStatsUiService;
         this.mailingStatisticsService = mailingStatisticsService;
         this.configService = configService;
-        this.mailingTopDomainsPresenter = mailingTopDomainsPresenter;
+        this.mailingTopDomainsUiService = mailingTopDomainsUiService;
         this.bounceStatsPresenter = bounceStatsPresenter;
         this.progressStatisticsService = progressStatisticsService;
         this.endDeviceStatisticsService = endDeviceStatisticsService;
@@ -314,7 +306,7 @@ public class MailingBirtStatController implements XssCheckAware {
             Admin admin
     ) {
         MailingStatisticDto statDto = getStatDtoForSummary(mailingId, form, admin);
-        return mailingSummaryStatsPresenter.ui(statDto, admin);
+        return mailingSummaryStatsUiService.ui(statDto, admin);
     }
 
     private MailingStatisticDto getStatDtoForSummary(int mailingId, MailingStatisticForm form, Admin admin) {
@@ -333,7 +325,7 @@ public class MailingBirtStatController implements XssCheckAware {
         MailingStatisticDto statDto = getStatDtoForSummary(mailingId, form, admin);
         userActivityLogService.writeUserActivityLog(admin, "mailing summary statistics", "csv export");
         return MvcUtils.csvFileResponse(
-                mailingSummaryStatsPresenter.csv(statDto, admin),
+                mailingSummaryStatsUiService.csv(statDto, admin),
                 "mailing_summary.csv"
         );
     }
@@ -341,7 +333,7 @@ public class MailingBirtStatController implements XssCheckAware {
     @GetMapping("/{mailingId:\\d+}/top-domains.action")
     @ResponseBody
     public TopDomainStats getTopDomainsStats(@PathVariable int mailingId, MailingStatisticForm form, Admin admin) {
-        return mailingTopDomainsPresenter.ui(mailingId, form, admin);
+        return mailingTopDomainsUiService.ui(mailingId, form, admin);
     }
 
     @GetMapping(value = "/{mailingId:\\d+}/top-domains/csv.action")
@@ -352,7 +344,7 @@ public class MailingBirtStatController implements XssCheckAware {
     ) throws Exception {
         userActivityLogService.writeUserActivityLog(admin, "mailing top domains statistics", "csv export");
         return MvcUtils.csvFileResponse(
-                mailingTopDomainsPresenter.csv(mailingId, form, admin),
+                mailingTopDomainsUiService.csv(mailingId, form, admin),
                 "top_domains.csv"
         );
     }
@@ -463,13 +455,11 @@ public class MailingBirtStatController implements XssCheckAware {
 
         userActivityLogService.writeUserActivityLog(admin, "view statistics", form.getShortname() + " (" + mailingId + ")" + " active tab - statistics", logger);
 
-        if (form.getStatisticType() == SUMMARY && admin.permissionAllowed(Permission.MAILING_SUMMARY_STAT_MIGRATION)) {
+        if (form.getStatisticType() == SUMMARY) {
             addAttrsForSummaryStat(model, admin, mailingStatisticDto, mailing);
         }
 
-        if (form.getStatisticType() == PROGRESS) {
-            addDateRangeAttributes(model, admin, mailingStatisticDto);
-        }
+        addDateRangeAttributes(model, admin, mailingStatisticDto);
 
         model.addAttribute("isMailtrackingActive", AgnUtils.isMailTrackingAvailable(admin));
 
@@ -491,7 +481,7 @@ public class MailingBirtStatController implements XssCheckAware {
                                                || mailingStatisticsService.isTrackingExists(mailing.getId(), admin.getCompanyID()));
 
         model.addAttribute("isTrackingAvailableForMailing", mailingStatisticsService.isTrackingAvailableForMailing(mailing.getId(), admin.getCompanyID()));
-        model.addAttribute("mailingThumbnailUrl", mailingBaseService.getThumbnailUrl(mailing));
+        model.addAttribute("mailingThumbnailUri", mailingBaseService.getThumbnailDataUri(mailing));
         addDateRangeAttributes(model, admin, mailingStatisticDto);
     }
 
@@ -563,31 +553,35 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     protected void processStatisticView(Admin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) {
-        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-        String birtUrl = getBirtUrl(admin, sessionId, mailingStatisticDto);
-        String birtDownloadUrl = "";
-        if (StringUtils.isNotBlank(birtUrl)) {
-            birtDownloadUrl = birtStatisticsService.changeFormat(birtUrl, "csv");
-        }
-        SimpleDateFormat localeFormat = admin.getDateFormat();
-
         model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID()));
         model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
         model.addAttribute("isMailingGrid", form.getTemplateId() > 0);
         model.addAttribute("targetlist", targetService.getTargetLights(admin));
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         model.addAttribute("yearlist", AgnUtils.getYearList(getStartYear(mailingStatisticDto.getMailingStartDate())));
-        model.addAttribute("localDatePattern", localeFormat.toPattern());
-        model.addAttribute("birtUrl", StringUtils.defaultString(birtUrl));
-        model.addAttribute("downloadBirtUrl", StringUtils.defaultString(birtDownloadUrl));
+        model.addAttribute("birtUrl", StringUtils.defaultString(getBirtUrl(mailingStatisticDto, admin)));
+        model.addAttribute("downloadBirtUrl", StringUtils.defaultString(getBirtDownloadUrl(mailingStatisticDto, admin)));
     }
 
-    protected String getBirtUrl(Admin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) {
+    // TODO: GWUA-7000: Remove after migration
+    private String getBirtUrl(MailingStatisticDto mailingStatisticDto, Admin admin) {
+        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
         if (mailingStatisticDto.getType() == null || mailingStatisticDto.getType() == StatisticType.BENCHMARK) {
             return null;
         }
 
         return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, mailingStatisticDto);
+    }
+
+    // TODO: GWUA-7000: Remove after migration
+    private String getBirtDownloadUrl(MailingStatisticDto mailingStatisticDto, Admin admin) {
+        String birtUrl = getBirtUrl(mailingStatisticDto, admin);
+        String birtDownloadUrl = "";
+        if (StringUtils.isNotBlank(birtUrl)) {
+            birtDownloadUrl = birtStatisticsService.changeFormat(birtUrl, "csv");
+        }
+
+        return birtDownloadUrl;
     }
 
     private StatisticType getReportType(StatisticType statisticType, AdminPreferences adminPreferences) {

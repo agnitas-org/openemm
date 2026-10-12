@@ -1,16 +1,15 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.components.web;
 
-import static com.agnitas.beans.MailingComponentType.HostedImage;
 import static com.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
@@ -32,7 +31,6 @@ import java.util.zip.ZipOutputStream;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
 import com.agnitas.emm.core.components.form.MailingImagesFormSearchParams;
@@ -177,14 +175,12 @@ public class MailingImagesController implements XssCheckAware {
 
     @GetMapping(value = "/delete.action")
     @RequiredPermission("mailing.components.change")
-    public String confirmDelete(@PathVariable int mailingId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
-        if (CollectionUtils.isEmpty(bulkIds)) {
-            popups.alert("bulkAction.nothing.image");
-            return MESSAGES_VIEW;
-        }
-        if (isImagesCantBeDeleted(bulkIds, mailingId, admin, popups)) {
-            return MESSAGES_VIEW;
-        }
+    public String confirmDelete(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> bulkIds,
+            Admin admin, Model model
+    ) {
+        mailingComponentsService.validateImagesCanBeDeleted(bulkIds, mailingId, admin);
 
         MvcUtils.addDeleteAttrs(model, mailingComponentsService.getImagesNames(mailingId, bulkIds, admin),
                 "mailing.Graphics_Component.delete", "image.delete.question",
@@ -194,43 +190,26 @@ public class MailingImagesController implements XssCheckAware {
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     @RequiredPermission("mailing.components.change")
-    public String delete(@PathVariable int mailingId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups, HttpSession session) {
-        if (isImagesCantBeDeleted(bulkIds, mailingId, admin, popups)) {
-            return MESSAGES_VIEW;
-        }
-
-        if (mailingComponentsService.deleteImages(admin.getCompanyID(), mailingId, bulkIds)) {
+    public String delete(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> bulkIds,
+            Admin admin,
+            Popups popups,
+            HttpSession session
+    ) {
+        if (mailingComponentsService.deleteImages(bulkIds, mailingId, admin)) {
             previewImageService.generateMailingPreview(admin, session.getId(), mailingId, true);
         }
-
-        writeUserActivityLog(admin, "delete mailing images", String.format("%s(%d), deleted images (IDS: %s)",
-                mailingBaseService.getMailingName(mailingId, admin.getCompanyID()), mailingId, StringUtils.join(bulkIds, ", ")));
+        String description = "%s(%d), deleted images (IDS: %s)".formatted(
+                mailingBaseService.getMailingName(mailingId, admin.getCompanyID()),
+                mailingId,
+                StringUtils.join(bulkIds, ", ")
+        );
+        writeUserActivityLog(admin, "delete mailing images", description);
         popups.selectionDeleted();
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
-    private boolean isImageCantBeDeleted(MailingComponent image, Popups popups) {
-        if (image != null && (image.getType() == HostedImage || image.getPresent() == 0)) {
-            return false;
-        }
-        popups.alert("error.mailing.image.delete", image == null ? "" : image.getComponentName());
-        return true;
-    }
-
-    private boolean isImagesCantBeDeleted(Set<Integer> imageIds, int mailingId, Admin admin, Popups popups) {
-        if (!isDeleteAllowed(mailingId, admin)) {
-            popups.permissionDenied();
-        }
-        return mailingComponentsService.getComponents(admin.getCompanyID(), mailingId, new HashSet<>(imageIds))
-                .stream().anyMatch(image -> isImageCantBeDeleted(image, popups));
-    }
-
-    private boolean isDeleteAllowed(int mailingId, Admin admin) {
-        return admin.permissionAllowed(
-            mailingBaseService.isTemplate(admin.getCompanyID(), mailingId)
-                ? Permission.TEMPLATE_CHANGE
-                : Permission.MAILING_CHANGE);
-    }
 
     @GetMapping("/bulkDownload.action")
     @RequiredPermission("mailing.components.show")
@@ -348,7 +327,7 @@ public class MailingImagesController implements XssCheckAware {
     @RequiredPermission("mailing.components.change")
     public String upload(@PathVariable int mailingId, UploadMailingImagesForm form, Admin admin, Popups popups, HttpSession session) {
         List<UploadMailingImageDto> images = new ArrayList<>(form.getImages().values());
-        validateNewImages(images, admin.getLocale(), popups);
+        mailingComponentsService.validateNewImages(images, mailingId, admin);
         if (!popups.hasAlertPopups()) {
             uploadImages(images, mailingId, admin, popups, session.getId());
         }

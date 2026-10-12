@@ -18185,9 +18185,9 @@
 
 (function() {
     var undefined;
-    var VERSION = "4.17.21";
+    var VERSION = "4.18.1";
     var LARGE_ARRAY_SIZE = 200;
-    var CORE_ERROR_TEXT = "Unsupported core-js use. Try https://npms.io/search?q=ponyfill.", FUNC_ERROR_TEXT = "Expected a function", INVALID_TEMPL_VAR_ERROR_TEXT = "Invalid `variable` option passed into `_.template`";
+    var CORE_ERROR_TEXT = "Unsupported core-js use. Try https://npms.io/search?q=ponyfill.", FUNC_ERROR_TEXT = "Expected a function", INVALID_TEMPL_VAR_ERROR_TEXT = "Invalid `variable` option passed into `_.template`", INVALID_TEMPL_IMPORTS_ERROR_TEXT = "Invalid `imports` option passed into `_.template`";
     var HASH_UNDEFINED = "__lodash_hash_undefined__";
     var MAX_MEMOIZE_SIZE = 500;
     var PLACEHOLDER = "__lodash_placeholder__";
@@ -20015,8 +20015,21 @@
         }
         function baseUnset(object, path) {
             path = castPath(path, object);
-            object = parent(object, path);
-            return object == null || delete object[toKey(last(path))];
+            var index = -1, length = path.length;
+            if (!length) {
+                return true;
+            }
+            while (++index < length) {
+                var key = toKey(path[index]);
+                if (key === "__proto__" && !hasOwnProperty.call(object, "__proto__")) {
+                    return false;
+                }
+                if ((key === "constructor" || key === "prototype") && index < length - 1) {
+                    return false;
+                }
+            }
+            var obj = parent(object, path);
+            return obj == null || delete obj[toKey(last(path))];
         }
         function baseUpdate(object, path, updater, customizer) {
             return baseSet(object, path, updater(baseGet(object, path)), customizer);
@@ -21328,7 +21341,7 @@
             var index = -1, length = pairs == null ? 0 : pairs.length, result = {};
             while (++index < length) {
                 var pair = pairs[index];
-                result[pair[0]] = pair[1];
+                baseAssignValue(result, pair[0], pair[1]);
             }
             return result;
         }
@@ -22718,8 +22731,13 @@
                 options = undefined;
             }
             string = toString(string);
-            options = assignInWith({}, options, settings, customDefaultsAssignIn);
-            var imports = assignInWith({}, options.imports, settings.imports, customDefaultsAssignIn), importsKeys = keys(imports), importsValues = baseValues(imports, importsKeys);
+            options = assignWith({}, options, settings, customDefaultsAssignIn);
+            var imports = assignWith({}, options.imports, settings.imports, customDefaultsAssignIn), importsKeys = keys(imports), importsValues = baseValues(imports, importsKeys);
+            arrayEach(importsKeys, function(key) {
+                if (reForbiddenIdentifierChars.test(key)) {
+                    throw new Error(INVALID_TEMPL_IMPORTS_ERROR_TEXT);
+                }
+            });
             var isEscaping, isEvaluating, index = 0, interpolate = options.interpolate || reNoMatch, source = "__p += '";
             var reDelimiters = RegExp((options.escape || reNoMatch).source + "|" + interpolate.source + "|" + (interpolate === reInterpolate ? reEsTemplate : reNoMatch).source + "|" + (options.evaluate || reNoMatch).source + "|$", "g");
             var sourceURL = "//# sourceURL=" + (hasOwnProperty.call(options, "sourceURL") ? (options.sourceURL + "").replace(/\s/g, " ") : "lodash.templateSources[" + ++templateCounter + "]") + "\n";
@@ -101822,8 +101840,16 @@ AGN.runAll = function($scope) {
                 offset: -5,
                 formatter: value => AGN.formatNumber(value) ?? value,
                 display: context => {
-                    const bar = context.chart.getDatasetMeta(context.datasetIndex).data[context.dataIndex];
-                    return bar.width >= 10;
+                    const {chart: chart} = context;
+                    if (chart.options.indexAxis === "y") {
+                        return true;
+                    }
+                    if (context.dataset.data[context.dataIndex].y === 0) {
+                        return false;
+                    }
+                    const bar = chart.getDatasetMeta(context.datasetIndex).data[context.dataIndex];
+                    const {width: width} = bar.getProps([ "width" ], true);
+                    return width >= 10;
                 }
             },
             legend: {
@@ -101915,10 +101941,10 @@ AGN.runAll = function($scope) {
     }
     class AgnDoughnutController extends Chart.DoughnutController {
         initialize() {
-            this._actualRealValues = this.chart.data.datasets[0].data;
-            this._initialRates = this.chart.data.datasets[0].rates;
-            this._exactPercentages = this._initialRates ?? AGN.Lib.ChartUtils.calcExactPercentages(this._actualRealValues);
-            this.chart.data.datasets[0].data = calcVisiblePercentages(this._actualRealValues);
+            this._actualValues = this.chart.data.datasets[0].data;
+            this._displayPercentages = this.chart.data.datasets[0].rates;
+            this._calculatedPercentages = AGN.Lib.ChartUtils.calcExactPercentages(this._actualValues);
+            this.chart.data.datasets[0].data = calcVisiblePercentages(this._actualValues);
             super.initialize();
         }
     }
@@ -101931,13 +101957,11 @@ AGN.runAll = function($scope) {
                     const controller = getChartController(legend.chart);
                     const actualValues = legend.legendItems.map((item, i) => {
                         if (legendItem.index === i) {
-                            return item.hidden ? controller._actualRealValues[i] : 0;
+                            return item.hidden ? controller._actualValues[i] : 0;
                         }
-                        return item.hidden ? 0 : controller._actualRealValues[i];
+                        return item.hidden ? 0 : controller._actualValues[i];
                     });
-                    if (!controller._initialRates) {
-                        controller._exactPercentages = AGN.Lib.ChartUtils.calcExactPercentages(actualValues);
-                    }
+                    controller._calculatedPercentages = AGN.Lib.ChartUtils.calcExactPercentages(actualValues);
                     legend.chart.data.datasets[0].data = calcVisiblePercentages(actualValues);
                     const originHandler = Chart.DoughnutController.overrides.plugins.legend.onClick;
                     originHandler(e, legendItem, legend);
@@ -101949,19 +101973,26 @@ AGN.runAll = function($scope) {
                     return AGN.Lib.Helpers.getColorLuminance(bgColor) < .57 ? "white" : "#4B4B4B";
                 },
                 formatter: (value, context) => {
-                    const exactPercentages = getChartController(context.chart)._exactPercentages;
-                    const percent = exactPercentages[context.dataIndex];
+                    const controller = getChartController(context.chart);
+                    const calculatedPercentages = controller._calculatedPercentages;
+                    const displayPercentages = controller._displayPercentages ?? calculatedPercentages;
+                    const segmentPercentage = calculatedPercentages[context.dataIndex];
+                    const labelPercentage = displayPercentages[context.dataIndex];
                     const {innerRadius: innerRadius, outerRadius: outerRadius} = context.chart.getDatasetMeta(0).data[0];
                     const labelRadius = (innerRadius + outerRadius) / 2;
-                    const angle = percent / 100 * 2 * Math.PI;
-                    const availableSegmentWidth = labelRadius * angle;
-                    return availableSegmentWidth < DONUT_LABEL_WIDTH ? "" : `${percent.toFixed(1)}%`;
+                    const segmentAngle = segmentPercentage / 100 * 2 * Math.PI;
+                    const availableLabelWidth = labelRadius * segmentAngle;
+                    if (availableLabelWidth < DONUT_LABEL_WIDTH) {
+                        return "";
+                    }
+                    const digits = labelPercentage > 0 && labelPercentage < .1 ? 2 : 1;
+                    return `${labelPercentage.toFixed(digits)}%`;
                 }
             },
             tooltip: {
                 callbacks: {
                     label: context => {
-                        const value = getChartController(context.chart)._actualRealValues[context.dataIndex];
+                        const value = getChartController(context.chart)._actualValues[context.dataIndex];
                         return AGN.formatNumber(value) ?? value;
                     }
                 }
@@ -102589,7 +102620,7 @@ window.onpopstate = function() {
 
 AGN.Opt.Templates["select2-result"] = "<span>{{- title ? title : text }}</span>";
 
-AGN.Opt.Templates["select2-badge-option"] = `\n<div class="d-flex align-items-center gap-1">\n    {{ if (value) { }}\n        <span class="status-badge {{- element.getAttribute('data-badge-class')}}"></span>\n    {{ } }}\n    <span>{{- text }}</span>\n</div>\n`;
+AGN.Opt.Templates["select2-badge-option"] = `\n<div class="d-flex align-items-center gap-1">\n    {{ let badgeClass = element.getAttribute('data-badge-class') ?? $(element).data('badge-class'); }}\n    {{ if (value && badgeClass) { }}\n        <span class="status-badge {{- badgeClass }}"></span>\n    {{ } }}\n    <span>{{- text }}</span>\n</div>\n`;
 
 AGN.Opt.Templates["statistics-number-cell"] = `<span>{{- AGN.formatNumber(value) ?? value }}</span>`;
 
@@ -102744,7 +102775,7 @@ if (window.agnTimeZoneId) {
                     }
                 } else if ($linkType.val() === "") {
                     const url = $url.val();
-                    if (!AGN.Lib.Helpers.isUrl(url)) {
+                    if (!AGN.Lib.Helpers.isUrl(url) && !AGN.Lib.Helpers.isAgnTag(url)) {
                         showFieldError($url, t("url.invalid"));
                         return false;
                     }
@@ -102823,7 +102854,43 @@ if (window.agnTimeZoneId) {
         return;
     }
     Jodit.modules.Icon.set("wrap-text-in-p", `<i class="icon icon-code"></i>`);
-    const IMAGES_MAP_CACHE = new Map;
+    const MAILING_IMAGES_MAP_CACHE = new Map;
+    let MEDIAPOOL_IMAGES;
+    const NUMERIC_CHAR_REFERENCE_RE = /&#(x[0-9a-f]+|[0-9]+);/gi;
+    const LITERAL_INVISIBLE_RE = /[\u200B-\u200D\u2060\uFEFF]/g;
+    const PRESERVE_NEWLINES_BLOCKS_RE = /(<(pre|script|style|textarea)\b[^>]*>[\s\S]*?<\/\2>)|[\n\r]+/gi;
+    function removeWhitespaceHtmlEntities(html) {
+        if (!html) {
+            return html;
+        }
+        let result = html.replace(NUMERIC_CHAR_REFERENCE_RE, (match, ref) => {
+            const isHex = ref[0].toLowerCase() === "x";
+            const codePoint = Number.parseInt(isHex ? ref.slice(1) : ref, isHex ? 16 : 10);
+            if (codePoint === 32 || codePoint === 9) {
+                return match;
+            }
+            if (codePoint >= 10 && codePoint <= 13) {
+                return "";
+            }
+            try {
+                const char = String.fromCodePoint(codePoint);
+                if (/\s/.test(char) || /[\u200B-\u200D\u2060\uFEFF]/.test(char)) {
+                    return "";
+                }
+            } catch (e) {
+                console.error("Error on whitespace handler", e);
+            }
+            return match;
+        });
+        result = result.replace(LITERAL_INVISIBLE_RE, "");
+        result = result.replace(PRESERVE_NEWLINES_BLOCKS_RE, (match, preservedBlock) => {
+            if (preservedBlock) {
+                return preservedBlock;
+            }
+            return "";
+        });
+        return result;
+    }
     const TOOLBARS = {
         Full: [ {
             buttons: [ "cut", "copy", "paste" ]
@@ -102919,8 +102986,11 @@ if (window.agnTimeZoneId) {
             }
         };
         const mailingId = editor.options.emmMailingId;
-        if (!IMAGES_MAP_CACHE.get(mailingId)) {
-            IMAGES_MAP_CACHE.set(mailingId, getMailingImages(mailingId));
+        if (mailingId && !MAILING_IMAGES_MAP_CACHE.get(mailingId)) {
+            MAILING_IMAGES_MAP_CACHE.set(mailingId, getMailingImages(mailingId));
+        }
+        if (!MEDIAPOOL_IMAGES) {
+            MEDIAPOOL_IMAGES = getMediapoolImages();
         }
         if (mailingId && !window.isOpenEmm) {
             const imagePopupMethod = Jodit.defaultOptions.controls.image.popup;
@@ -102955,7 +103025,9 @@ if (window.agnTimeZoneId) {
             if (!content) {
                 return content;
             }
+            content = removeWhitespaceHtmlEntities(content);
             content = processUrls(content, mailingId);
+            content = AGN.Lib.Helpers.prettifyHtml(content);
             content = AGN.Lib.Helpers.unescapeAgnTags(content);
             return AGN.Lib.Helpers.unescapeVelocityDirectives(content);
         }
@@ -103067,12 +103139,12 @@ if (window.agnTimeZoneId) {
             if (!html) {
                 return html;
             }
+            html = removeWhitespaceHtmlEntities(html);
             html = AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
             return AGN.Lib.Helpers.escapeVelocityDirectives(html);
         }
-        editor.events.on("beforeSetValueToEditor", function(html) {
-            return escapeForNativeWrite(html);
-        });
+        editor.events.on("beforeSetValueToEditor", html => escapeForNativeWrite(html));
+        editor.events.on("beforePasteInsert", html => processContent(html));
         editor.events.on("beforeSetNativeEditorValue", function(data) {
             data.value = escapeForNativeWrite(data.value);
         }, {
@@ -103116,13 +103188,17 @@ if (window.agnTimeZoneId) {
         }
     }
     function replaceAgnImageTags(data, mailingId) {
-        const imagesUrlsMap = IMAGES_MAP_CACHE.get(mailingId);
-        if (!imagesUrlsMap) {
+        const mailingImagesUrlsMap = MAILING_IMAGES_MAP_CACHE.get(mailingId);
+        if (!mailingImagesUrlsMap && !Object.keys(MEDIAPOOL_IMAGES).length) {
             return data;
         }
         return AGN.Lib.Helpers.replaceAgnTags(data, (tag, tagHtml) => {
             if (tag.name === "agnIMAGE" && tag.attributes["name"]) {
-                const imageUrl = imagesUrlsMap[tag.attributes.name];
+                let imageUrl = mailingImagesUrlsMap[tag.attributes.name];
+                if (imageUrl) {
+                    return encodeURI(imageUrl);
+                }
+                imageUrl = MEDIAPOOL_IMAGES[tag.attributes.name];
                 if (imageUrl) {
                     return encodeURI(imageUrl);
                 }
@@ -103133,28 +103209,44 @@ if (window.agnTimeZoneId) {
     function getMailingImages(mailingId) {
         let result;
         $.ajax({
-            url: AGN.url("/wysiwyg/images/names-urls.action"),
+            url: AGN.url("/wysiwyg/mailing/images.action"),
             type: "GET",
             async: false,
             data: {
-                mi: mailingId
+                mailingId: mailingId
             },
             success: json => result = json
         });
         return result;
     }
+    function getMediapoolImages() {
+        if (window.isOpenEmm) {
+            return {};
+        }
+        let result;
+        $.ajax({
+            url: AGN.url("/wysiwyg/mediapool/images.action"),
+            type: "GET",
+            async: false,
+            success: json => result = json
+        });
+        return result;
+    }
     function processUrls(content, mailingId) {
-        const imagesUrlsMap = IMAGES_MAP_CACHE.get(mailingId);
-        if (!imagesUrlsMap) {
+        const mailingImagesUrlsMap = MAILING_IMAGES_MAP_CACHE.get(mailingId);
+        if (!mailingImagesUrlsMap && !Object.keys(MEDIAPOOL_IMAGES).length) {
             return content;
         }
         const urls = content.match(/https?:\/\/[\w\-._~:\/?#@!$&'()*+,;=%]+/g);
         if (!urls) {
             return content;
         }
-        const urlsImagesNamesMap = {};
-        Object.keys(imagesUrlsMap).forEach(key => {
-            urlsImagesNamesMap[imagesUrlsMap[key]] = key;
+        const urlToImageNameMap = {};
+        Object.keys(mailingImagesUrlsMap).forEach(key => {
+            urlToImageNameMap[mailingImagesUrlsMap[key]] = key;
+        });
+        Object.keys(MEDIAPOOL_IMAGES).forEach(key => {
+            urlToImageNameMap[MEDIAPOOL_IMAGES[key]] = key;
         });
         urls.forEach(url => {
             let normalizedUrl = url.replace(/(\/mediapool_element)(\/\d+)?(\/\d+\/\d+\/0\/\d+)(\.\w+)?/, function(match, $1, $2, $3) {
@@ -103166,7 +103258,7 @@ if (window.agnTimeZoneId) {
                 console.error("Error with encoding URL: " + normalizedUrl);
             }
             normalizedUrl = normalizedUrl.replaceAll("&amp;", "&");
-            const imageName = urlsImagesNamesMap[normalizedUrl];
+            const imageName = urlToImageNameMap[normalizedUrl];
             if (imageName) {
                 content = content.replace(url, `[agnIMAGE name='${imageName}']`);
             }
@@ -107577,6 +107669,10 @@ if (window.agnTimeZoneId) {
 (() => {
     class StatsChart {
         constructor($el, data) {
+            const existingChart = Chart.getChart($el[0]);
+            if (existingChart) {
+                existingChart.destroy();
+            }
             this.$el = $el;
             this.data = data;
             this.$el.data("stat-chart", this);
@@ -107597,6 +107693,10 @@ if (window.agnTimeZoneId) {
             switch (type) {
               case "line":
                 new AGN.Lib.LineStatsChart($el, data);
+                break;
+
+              case "doughnut":
+                new AGN.Lib.DoughnutChart($el, data);
                 break;
 
               default:
@@ -107696,6 +107796,32 @@ if (window.agnTimeZoneId) {
         }
     }
     AGN.Lib.LineStatsChart = LineStatsChart;
+})();
+
+(() => {
+    class DoughnutChart extends AGN.Lib.StatsChart {
+        constructor($el, data) {
+            const defaultDatasetConfig = {
+                backgroundColor: AGN.Lib.Helpers.getStatColorsHexValues(),
+                barThickness: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+                borderWidth: 0
+            };
+            super($el, {
+                ...data,
+                datasets: data?.datasets?.map(dataset => ({
+                    ...defaultDatasetConfig,
+                    ...dataset
+                })) || []
+            });
+        }
+        render() {
+            new Chart(this.$el[0].getContext("2d"), {
+                type: "agnDoughnut",
+                data: this.data
+            });
+        }
+    }
+    AGN.Lib.DoughnutChart = DoughnutChart;
 })();
 
 (() => {
@@ -108087,7 +108213,7 @@ if (window.agnTimeZoneId) {
 })();
 
 (() => {
-    const Controller = function(func) {
+    const Controller = function(func = _.noop) {
         func = _.bind(func, this);
         func(this);
     };
@@ -108110,7 +108236,7 @@ if (window.agnTimeZoneId) {
         Controller.new(name, instance => {
             const baseController = AGN.Opt.Controllers[baseName];
             if (baseController) {
-                new Controller(baseController);
+                _.bind(baseController, instance)(instance);
             }
             _.bind(func, instance)(instance);
         });
@@ -108120,11 +108246,18 @@ if (window.agnTimeZoneId) {
             const name = $(this).data("controller");
             const init = AGN.Opt.Controllers[name];
             if (init) {
-                new AGN.Lib.Controller(init);
+                if (isClass(init)) {
+                    new init;
+                } else {
+                    new AGN.Lib.Controller(init);
+                }
                 AGN.Opt.Controllers[name] = undefined;
             }
         });
     };
+    function isClass(func) {
+        return /^class\s/.test(Function.prototype.toString.call(func));
+    }
     AGN.Lib.Controller = Controller;
 })();
 
@@ -110191,6 +110324,9 @@ if (window.agnTimeZoneId) {
             } catch (e) {}
             return html;
         },
+        isAgnTag(content) {
+            return this.findAgnTags(content).length === 1;
+        },
         findAgnTags: function(content, predicate = () => true) {
             const tags = [];
             this.replaceAgnTags(content, (tag, tagContent) => {
@@ -110405,6 +110541,20 @@ if (window.agnTimeZoneId) {
             json: [ "json" ],
             ods: [ "ods", "fods" ],
             xls: [ "xlsx", "xls", "xlsm" ]
+        },
+        downloadCsv: (csvStr, fileName = "export.csv") => {
+            const blob = new Blob([ csvStr ], {
+                type: "text/csv;charset=utf-8;"
+            });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
         },
         getFileExtension: filename => filename.lastIndexOf(".") !== -1 ? filename.split(".").pop().toLowerCase() : ""
     };
@@ -112624,6 +112774,48 @@ if (window.agnTimeZoneId) {
             const actionCondition = AGN.Opt.TableActionsConditions[cfg.name];
             return !actionCondition || actionCondition(row);
         }
+        getUnsortedDataAsCsv(config) {
+            const savedState = this.api.getColumnState();
+            const unsortedState = savedState.map(col => ({
+                ...col,
+                sort: null,
+                sortIndex: null
+            }));
+            this.api.applyColumnState({
+                state: unsortedState,
+                applyOrder: true
+            });
+            const data = this.api.getDataAsCsv(config);
+            this.api.applyColumnState({
+                state: savedState,
+                applyOrder: true
+            });
+            return data;
+        }
+        exportCsv(config, keepOriginSort) {
+            if (!keepOriginSort) {
+                this.api.exportDataAsCsv(config);
+                return;
+            }
+            const savedState = this.api.getColumnState();
+            const unsortedState = savedState.map(col => ({
+                ...col,
+                sort: null,
+                sortIndex: null
+            }));
+            this.api.applyColumnState({
+                state: unsortedState,
+                applyOrder: true
+            });
+            this.api.exportDataAsCsv(config);
+            this.api.applyColumnState({
+                state: savedState,
+                applyOrder: true
+            });
+        }
+        exportUnsortedCsv(config) {
+            this.exportCsv(config, true);
+        }
         static get($needle) {
             return Table.getWrapper($needle).data(this.DATA_KEY);
         }
@@ -113505,13 +113697,6 @@ AGN.Lib.LB.Definitions = {
                 url += "&type=" + typeAttr;
             }
             return url;
-        }
-        static resolveAgnRedirect(tag) {
-            const {column: column} = tag.attributes;
-            if (!column) {
-                return null;
-            }
-            return `${AgnTagsResolver.#getRdirDomain()}/redirect?url=##${column}##`;
         }
         static resolveAgnVoucher(tag) {
             const {name: name} = tag.attributes;
@@ -121482,7 +121667,7 @@ AGN.Lib.LB.Definitions = {
                             selected: selectedMailingValue == d.MAILING_ID
                         });
                         if (mailingEditorBase.isSentMailing(d.WORK_STATUS)) {
-                            $option.css("color", "#808080");
+                            $option.data("badge-class", d.WORK_STATUS);
                         }
                         $option.attr({
                             status: d.WORK_STATUS,
@@ -129436,6 +129621,7 @@ AGN.Lib.DomInitializer.new("workflow-pause-timer", function() {
                     this.el.data("tooltip-timeout-id", timeoutId);
                 }
             });
+            this.event.stopPropagation();
         }
     });
 })();
@@ -130196,7 +130382,11 @@ AGN.Lib.Action.new({
         e.preventDefault();
     });
     $(document).on("click", "[data-toggle-table-truncation]", function() {
-        const $tableWrapper = $(this).closest(".table-wrapper");
+        const $el = $(this);
+        let $tableWrapper = $($el.data("toggle-table-truncation"));
+        if (!$tableWrapper.exists()) {
+            $tableWrapper = $el.closest(".table-wrapper");
+        }
         const $table = $tableWrapper.find("table, .ag-body");
         $table.toggleClass("no-truncate");
         AGN.Lib.CoreInitializer.run([ "truncated-text-popover", "scrollable" ], $tableWrapper);
@@ -133367,7 +133557,6 @@ AGN.Lib.Dashboard.Def = {
 
 (() => {
     class BaseMailingStatisticsTile extends AGN.Lib.Dashboard.DraggableTile {
-        static FETCHED_DATA_CACHE=new AGN.Lib.InMemoryCache;
         constructor() {
             if (new.target === BaseMailingStatisticsTile) {
                 throw new TypeError("Cannot construct Abstract BaseMailingStatisticsTile instances directly!");
@@ -133378,11 +133567,10 @@ AGN.Lib.Dashboard.Def = {
                 this.#setupDisplayTypeChangeHandler();
             }
             this._chart = null;
-            this._chartData = {
-                names: [],
-                values: [],
-                mailingId: 0
-            };
+            this._mailingId = 0;
+            this._data = null;
+            this._colors = AGN.Lib.Helpers.getStatColorsHexValues();
+            this._cache = new AGN.Lib.InMemoryCache;
         }
         #setupDisplayTypeChangeHandler() {
             $(window).on("displayTypeChanged", (e, isMobileView) => {
@@ -133410,28 +133598,27 @@ AGN.Lib.Dashboard.Def = {
             }
         }
         async updateChart(forceUpdate = false) {
-            const mailingIdBefore = this._chartData.mailingId;
-            this._chartData.mailingId = this.$el.find("[data-statistics-mailing]").val();
-            const mailingChanged = this._chartData.mailingId !== mailingIdBefore;
+            const mailingIdBefore = this._mailingId;
+            this._mailingId = this.$el.find("[data-statistics-mailing]").val();
+            const mailingChanged = this._mailingId !== mailingIdBefore;
             if (!mailingChanged && !forceUpdate) {
                 return;
             }
             if (mailingChanged) {
-                const chartData = await this.#fetchChartData();
-                this.initChartData(this.extractStatisticsData(chartData));
+                this._data = await this.#fetchData();
             }
             this.drawChart();
         }
-        #fetchChartData() {
-            const mailingId = this._chartData.mailingId;
-            const cachedResult = BaseMailingStatisticsTile.FETCHED_DATA_CACHE.get(mailingId);
+        #fetchData() {
+            const mailingId = this._mailingId;
+            const cachedResult = this._cache.get(mailingId);
             if (cachedResult) {
                 return cachedResult;
             }
-            const dataExtractionPromise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 $.ajax({
                     type: "GET",
-                    url: AGN.url("/dashboard/statistics.action"),
+                    url: this.getStatisticsUrl(),
                     data: {
                         mailingId: mailingId
                     },
@@ -133439,15 +133626,11 @@ AGN.Lib.Dashboard.Def = {
                     error: error => reject(error)
                 });
             });
-            BaseMailingStatisticsTile.FETCHED_DATA_CACHE.set(mailingId, dataExtractionPromise);
-            return dataExtractionPromise;
+            this._cache.set(mailingId, promise);
+            return promise;
         }
-        extractStatisticsData(data) {
-            throw new Error("Extract statistics function not implemented for statistics tile!");
-        }
-        initChartData(fetchedData) {
-            this._chartData.names = fetchedData.names;
-            this._chartData.values = fetchedData.values;
+        getStatisticsUrl() {
+            throw new Error("#getStatisticsUrl function not implemented for statistics tile!");
         }
         drawChart() {
             this._chart?.destroy();
@@ -133475,31 +133658,33 @@ AGN.Lib.Dashboard.Def = {
             }
             super();
         }
-        extractStatisticsData(fetchedData) {
-            return {
-                percent: this.extractPercent(fetchedData)
+        getDeviceTypesMap() {
+            const DEVICE_TYPES = {
+                PC: t("statistics.device.desktop"),
+                TABLET: t("statistics.device.tablet"),
+                MOBILE: t("statistics.device.mobile"),
+                SMART_TV: t("statistics.device.smarttv"),
+                MULTIPLE: t("statistics.device.mixed")
             };
-        }
-        extractPercent(fetchedData) {}
-        initChartData(fetchedData) {
-            super.initChartData(fetchedData);
-            this._chartData.percent = fetchedData.percent;
+            return Object.fromEntries(Object.entries(this._data.byDevice).map(([deviceClass, value]) => [ DEVICE_TYPES[deviceClass], value ]));
         }
         getChartOptions() {
-            if (!this._chartData.colors) {
-                this._chartData.colors = [ this.$el.css("--chart-darkest-blue-color"), this.$el.css("--chart-dark-blue-color"), this.$el.css("--chart-blue-color"), this.$el.css("--chart-light-blue-color"), this.$el.css("--chart-light-cyan-color") ];
-            }
+            const deviceTypesMap = this.getDeviceTypesMap();
             return {
                 type: "agnDoughnut",
                 data: {
-                    labels: this._chartData.names,
+                    labels: Object.keys(deviceTypesMap),
                     datasets: [ {
-                        data: this._chartData.values,
-                        backgroundColor: this._chartData.colors,
+                        data: Object.values(deviceTypesMap),
+                        backgroundColor: this._colors,
                         borderWidth: 0
                     } ]
                 }
             };
+        }
+        getTotalValue() {
+            const values = Object.values(this._data.byDevice);
+            return AGN.Lib.ChartUtils.getTotal(values);
         }
     }
     AGN.Lib.Dashboard.BaseMailingDeviceStatisticsTile = BaseMailingDeviceStatisticsTile;
@@ -133564,27 +133749,25 @@ AGN.Lib.Dashboard.Def = {
 (() => {
     class StatisticsTile extends AGN.Lib.Dashboard.BaseMailingStatisticsTile {
         static ID="statistics";
-        extractStatisticsData(data) {
-            const names = [];
-            const values = [];
-            for (let i = 0; i < data["common"].length; i++) {
-                names.push(data["common"][i][0]);
-                values.push(parseInt(data["common"][i][1]));
-            }
+        getMetrics() {
             return {
-                names: names,
-                values: values
+                [t("statistics.default.sent")]: this._data.sent,
+                [t("statistics.default.openers")]: this._data.openers,
+                [t("statistics.default.clicker")]: this._data.clickers,
+                [t("statistics.optOuts")]: this._data.optOuts,
+                [t("statistics.default.hardBounces")]: this._data.hardBounces
             };
         }
         getChartOptions() {
             const isMobileView = this._isMobileView;
             const barColor = this.$el.css("--chart-blue-color");
+            const metrics = this.getMetrics();
             return {
                 type: "bar",
                 data: {
-                    labels: this._chartData.names,
+                    labels: Object.keys(metrics),
                     datasets: [ {
-                        data: this._chartData.values,
+                        data: Object.values(metrics),
                         backgroundColor: barColor,
                         categoryPercentage: isMobileView ? .7 : .9,
                         minBarLength: 2
@@ -133626,6 +133809,9 @@ AGN.Lib.Dashboard.Def = {
         needsRedrawOnMobile() {
             return true;
         }
+        getStatisticsUrl() {
+            return AGN.url("/dashboard/statistics.action");
+        }
     }
     AGN.Lib.Dashboard.StatisticsTile = StatisticsTile;
 })();
@@ -133633,28 +133819,17 @@ AGN.Lib.Dashboard.Def = {
 (() => {
     class ClickersTile extends AGN.Lib.Dashboard.BaseMailingDeviceStatisticsTile {
         static ID="clickers";
-        extractStatisticsData(fetchedData) {
-            const names = [];
-            const values = [];
-            const data = fetchedData["clickers"];
-            for (let i = 0; i < data.length; i++) {
-                const value = parseFloat(data[i][1]);
-                names.push(data[i][0]);
-                values.push(value);
-            }
-            return _.extend(super.extractStatisticsData(fetchedData), {
-                names: names,
-                values: values
-            });
-        }
         drawChart() {
-            const totalValue = AGN.Lib.ChartUtils.getTotal(this._chartData.values);
+            const totalValue = this.getTotalValue();
             const $canvas = this.findCanvas$();
             $canvas.toggleClass("hidden", totalValue === 0);
             $canvas.next().toggleClass("hidden", totalValue > 0);
             if (totalValue > 0) {
                 super.drawChart();
             }
+        }
+        getStatisticsUrl() {
+            return AGN.url("/dashboard/statistic/clickers.action");
         }
     }
     AGN.Lib.Dashboard.ClickersTile = ClickersTile;
@@ -133663,40 +133838,22 @@ AGN.Lib.Dashboard.Def = {
 (() => {
     class OpenersTile extends AGN.Lib.Dashboard.BaseMailingDeviceStatisticsTile {
         static ID="openers";
-        extractStatisticsData(fetchedData) {
-            const names = [];
-            const values = [];
-            const data = fetchedData["openers"];
-            for (let i = 0; i < data.length; i++) {
-                const value = parseFloat(data[i][1]);
-                names.push(data[i][0]);
-                values.push(value);
-            }
-            return _.extend(super.extractStatisticsData(fetchedData), {
-                names: names,
-                values: values
-            });
-        }
-        extractPercent(fetchedData) {
-            return fetchedData["openersPercent"][0];
+        getStatisticsUrl() {
+            return AGN.url("/dashboard/statistic/openers.action");
         }
         drawChart() {
-            const totalValue = AGN.Lib.ChartUtils.getTotal(this._chartData.values);
+            const totalValue = this.getTotalValue();
             const $canvas = this.findCanvas$().parent();
             $canvas.toggleClass("hidden", totalValue === 0);
             $canvas.next().toggleClass("hidden", totalValue === 0);
             $canvas.next().next().toggleClass("hidden", totalValue > 0);
             if (totalValue > 0) {
                 super.drawChart();
-                this.#updateOpenersPercent(this._chartData.percent);
+                this.#updateOpenersPercent(this._data.percent);
             }
         }
         #updateOpenersPercent(percent) {
-            percent = this.#roundTo(percent * 100, 1);
-            this.$el.find("#statistics-openers-percent").text(`${percent}%`);
-        }
-        #roundTo(number, fractionalDigits) {
-            return parseFloat(number).toFixed(fractionalDigits) * 1;
+            this.$el.find("#statistics-openers-percent").text(`${percent.toFixed(1)}%`);
         }
     }
     AGN.Lib.Dashboard.OpenersTile = OpenersTile;
@@ -136437,16 +136594,39 @@ AGN.Lib.MailingContent.Def = {
 
 (() => {
     const Messaging = AGN.Lib.Messaging;
+    const JsonMessages = AGN.Lib.JsonMessages;
+    const Select = AGN.Lib.Select;
     class AiEditor {
         constructor(dynTagEditor) {
             this.dynTagEditor = dynTagEditor;
+            AGN.Lib.Controller.init(this.$container);
+            AGN.runAll(this.$container);
+        }
+        loadAiSettings() {
+            if (!this.saveEnabled) {
+                return;
+            }
+            Messaging.resubscribe("mailing-content:save-ai-settings", settings => this.saveAiSettings(settings));
+            this.resetSettings();
+            this.toggleSaveAiSettingsBtn();
+            if (this.contentId > 0) {
+                $.get(AGN.url(`/mailing/content/${this.contentId}/ai-settings.action`)).done(settings => this.fillSettings(settings));
+            }
+        }
+        get saveEnabled() {
+            return this.$container.exists() && this.$saveAiSettingsBtn.exists();
+        }
+        get $saveAiSettingsBtn() {
+            return $("#save-ai-settings");
+        }
+        get $container() {
+            return $("#tab-content-ai-text-generation");
         }
         get generatedText() {
             return $("[data-ai-result]").val()?.trim();
         }
         isAiTextGeneratedAndNotApplied() {
-            const $textGenerationBlock = $("#tab-content-ai-text-generation");
-            const notApplied = $textGenerationBlock.is(":visible") && this.generatedText;
+            const notApplied = this.$container.is(":visible") && this.generatedText;
             if (notApplied) {
                 const dynTagName = this.dynTagEditor.currentDynTag?.name;
                 this.showApplyGeneratedTextModal(dynTagName);
@@ -136464,6 +136644,41 @@ AGN.Lib.MailingContent.Def = {
             }
             Messaging.send("mailing-content:applyGeneratedText", $("#ai-apply-text-btn"));
             this.dynTagEditor.saveDynTags();
+        }
+        saveAiSettings(settings) {
+            if (this.dynTagEditor.currentContentBlock) {
+                $.post(AGN.url(`/mailing/content/${this.contentId}/ai-settings.action`), settings).done(resp => {
+                    JsonMessages(resp.popups);
+                    if (resp.success) {
+                        this.dynTagEditor.updateMailingPreview();
+                    }
+                });
+            }
+        }
+        get contentId() {
+            return this.dynTagEditor.currentContentBlock.id;
+        }
+        fillSettings(settings) {
+            if (!settings) {
+                return;
+            }
+            $("[data-ai-numberofwords]").val(settings.numberOfWords);
+            $("[data-ai-contentdescription]").val(settings.contentDescription);
+            Select.get($("[data-ai-language]")).selectValue(settings.language);
+            Select.get($("[data-ai-tonality]")).selectValue(settings.tonality);
+            Select.get($("[data-ai-profilefield]")).selectValue(settings.profileField);
+        }
+        toggleSaveAiSettingsBtn() {
+            this.$saveAiSettingsBtn.prop("disabled", this.contentId <= 0);
+        }
+        resetSettings() {
+            this.fillSettings({
+                numberOfWords: 0,
+                contentDescription: "",
+                language: window.adminLocale,
+                tonality: "NONE",
+                profileField: ""
+            });
         }
     }
     AGN.Lib.MailingContent.AiEditor = AiEditor;
@@ -136592,6 +136807,7 @@ AGN.Lib.MailingContent.Def = {
     const Template = AGN.Lib.Template;
     const Select = AGN.Lib.Select;
     const Messaging = AGN.Lib.Messaging;
+    const Form = AGN.Lib.Form;
     const Def = AGN.Lib.MailingContent.Def;
     class DynTagEditor {
         constructor(dynTag) {
@@ -136604,12 +136820,11 @@ AGN.Lib.MailingContent.Def = {
             this.currentDynTag = dynTag;
             this.currentContentBlock = undefined;
             this.currentDynTag.currentContentBlock = this.currentContentBlock;
+            this.aiEditor = new AiEditor(this);
             this.selectContentBlock(this.currentDynTag.contentBlocks[0] || this.currentDynTag.createNewContentBlock());
             AGN.runAll(this.$el);
             this.#initInterestGroup();
             this.targetsManager = new TargetsManager(this);
-            this.aiEditor = new AiEditor(this);
-            AGN.Lib.Controller.init(Def.$dynTagSettings);
         }
         get $interestGroup() {
             return $('[data-action="change-interest-group"]');
@@ -136631,6 +136846,9 @@ AGN.Lib.MailingContent.Def = {
         }
         get $activeTab() {
             return $(Def.$dynTagSettings.find("[data-toggle-tab].active").data("toggle-tab"));
+        }
+        updateMailingPreview() {
+            Form.get($("#preview-form")).submit();
         }
         resizeAceIfShown() {
             if (this.isAceTabActive) {
@@ -136654,6 +136872,7 @@ AGN.Lib.MailingContent.Def = {
             this.setEditorsContent(contentBlock === undefined ? "" : contentBlock.content);
             this.currentContentBlock = contentBlock;
             this.updateTargetsOptions();
+            this.aiEditor.loadAiSettings();
         }
         updateTargetsOptions() {
             const $targets = Template.dom("mailing-content-select-template", {
@@ -136859,9 +137078,11 @@ AGN.Lib.MailingContent.Def = {
                 url: AGN.url(this.saveUrl),
                 contentType: "application/json",
                 data: data
-            }).done(popups => {
-                AGN.Lib.JsonMessages(popups, true);
-                Form.get($("#preview-form")).submit();
+            }).done(res => {
+                AGN.Lib.JsonMessages(res.popups, true);
+                this.editor.updateMailingPreview();
+                this.setCreatedContentIds(res.data);
+                this.editor.aiEditor.toggleSaveAiSettingsBtn();
                 this.markAsClean();
             });
         }
@@ -136873,6 +137094,22 @@ AGN.Lib.MailingContent.Def = {
                 }
             }));
             return dynTagsToSave;
+        }
+        setCreatedContentIds(savedDynTags) {
+            const savedTagsMap = new Map(savedDynTags.map(tag => [ tag.id, tag ]));
+            this.dynTags.filter(dynTag => dynTag.modified).forEach(dynTag => {
+                const savedTag = savedTagsMap.get(dynTag.id);
+                if (!savedTag?.contentBlocks || !dynTag.contentBlocks) {
+                    return;
+                }
+                const savedContentsMap = new Map(savedTag.contentBlocks.map(content => [ content.targetId, content ]));
+                dynTag.contentBlocks.forEach(content => {
+                    const savedContent = savedContentsMap.get(content.targetId);
+                    if (!content.id && savedContent?.id) {
+                        content.id = savedContent.id;
+                    }
+                });
+            });
         }
     }
     AGN.Lib.MailingContent.BlocksManager = BlocksManager;
@@ -137025,6 +137262,983 @@ AGN.Lib.Controller.new("mailing-content-controller", function() {
         }
     });
 });
+
+class StatisticsReportBaseController extends AGN.Lib.Controller {
+    static MAX_COLUMNS_PER_TABLE=3;
+    static CHART_FONT_SIZE=11;
+    static MAX_BAR_THICKNESS=StatisticsReportBaseController.CHART_FONT_SIZE + 1;
+    static MIN_BAR_LENGTH=1;
+    constructor() {
+        super();
+        Chart.defaults.font.size = StatisticsReportBaseController.CHART_FONT_SIZE;
+        Chart.defaults.datasets.bar.maxBarThickness = StatisticsReportBaseController.MAX_BAR_THICKNESS;
+        Chart.defaults.datasets.bar.minBarLength = StatisticsReportBaseController.MIN_BAR_LENGTH;
+        Chart.register({
+            id: "customCanvasBackground",
+            beforeDraw: (chart, args, options) => {
+                const {ctx: ctx} = chart;
+                ctx.save();
+                let bgColor = "transparent";
+                if (typeof options.color === "function") {
+                    bgColor = options.color(chart);
+                } else if (typeof options.color === "string") {
+                    bgColor = options.color;
+                }
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        });
+        const self = this;
+        this.addDomInitializer("statistics-report", function() {
+            self.config = this.config;
+            self.$container = this.el;
+            self.figures = self.config?.figures || [];
+            self.render();
+            window.matchMedia?.("print")?.addEventListener("change", event => {
+                if (event.matches) {
+                    Object.values(Chart.instances).forEach(chart => chart.resize());
+                }
+            });
+            window.waitStatus = self.config?.windowWaitStatus;
+        });
+    }
+    render() {
+        throw new Error("render() not implemented!");
+    }
+    get backgroundColorPlugin() {
+        return {
+            customCanvasBackground: {
+                color: () => getComputedStyle(document.body).getPropertyValue("--bs-body-bg").trim()
+            }
+        };
+    }
+    chunkBalanced(items, maxPerChunk) {
+        if (items.length === 0) {
+            return [];
+        }
+        const chunkCount = Math.ceil(items.length / maxPerChunk);
+        const baseSize = Math.floor(items.length / chunkCount);
+        const remainder = items.length % chunkCount;
+        const chunks = [];
+        let offset = 0;
+        for (let i = 0; i < chunkCount; i++) {
+            const chunkSize = baseSize + (i < remainder ? 1 : 0);
+            chunks.push(items.slice(offset, offset + chunkSize));
+            offset += chunkSize;
+        }
+        return chunks;
+    }
+    renderChunkedTables($container, items, maxPerChunk, buildTemplateData) {
+        this.chunkBalanced(items, maxPerChunk).forEach((chunk, idx) => {
+            const [templateName, templateData] = buildTemplateData(chunk, idx);
+            $container.append(AGN.Lib.Template.text(templateName, templateData));
+        });
+    }
+    metricValue(raw) {
+        if (raw == null) {
+            return 0;
+        }
+        return typeof raw === "object" ? raw.value : raw;
+    }
+    formatRateCell(raw) {
+        const metric = raw || {
+            value: 0,
+            rate: 0
+        };
+        return `${AGN.formatNumber(metric.value) ?? metric.value} (${metric.rate.toFixed(2)}%)`;
+    }
+    formatCountCell(raw) {
+        return raw == null ? 0 : AGN.formatNumber(raw) ?? raw;
+    }
+    formatCurrencyCell(raw) {
+        return AGN.formatNumber(raw ?? 0);
+    }
+    assignColors(metricDefs) {
+        const colors = AGN.Lib.Helpers.getStatColorsHexValues();
+        metricDefs.forEach((m, i) => m.color = colors[i % colors.length]);
+    }
+    toTargets(targetGroupsData) {
+        return targetGroupsData.map(tgData => ({
+            id: tgData.targetId,
+            name: tgData.targetName
+        }));
+    }
+    indexByTargetId(targetGroupsData) {
+        const byTargetId = {};
+        targetGroupsData.forEach(tgData => byTargetId[tgData.targetId] = tgData);
+        return byTargetId;
+    }
+    appendSectionHeading($container, title, forceNewPage = true) {
+        $container.append(AGN.Lib.Template.text("section-heading", {
+            title: title,
+            forceNewPage: forceNewPage
+        }));
+    }
+    renderDoughnutChart($canvas, chartMetrics, values) {
+        return new Chart($canvas.getContext("2d"), {
+            type: "agnDoughnut",
+            data: {
+                labels: chartMetrics.map(m => m.label),
+                datasets: [ {
+                    data: values,
+                    backgroundColor: chartMetrics.map(m => m.color),
+                    borderWidth: 0
+                } ]
+            },
+            options: {
+                plugins: {
+                    ...this.backgroundColorPlugin,
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    renderStatSection($container, title, targets, metricDefs, getValue) {
+        this.assignColors(metricDefs);
+        const $section = AGN.Lib.Template.dom("stat-section", {
+            title: title,
+            forceNewPage: true
+        });
+        $container.append($section);
+        const chartMetrics = metricDefs.filter(m => m.chartSlice !== false);
+        const $charts = $section.find("[data-charts]");
+        targets.forEach(tg => {
+            const values = chartMetrics.map(m => this.metricValue(getValue(tg.id, m)));
+            const hasData = values.some(v => v);
+            const $tile = AGN.Lib.Template.dom("stat-donut-tile", {
+                targetName: tg.name,
+                hasData: hasData
+            });
+            $charts.append($tile);
+            if (!hasData) {
+                return;
+            }
+            this.renderDoughnutChart($tile.find("canvas")[0], chartMetrics, values);
+        });
+        this.renderLegendTable($section.find("[data-table]"), title, targets, metricDefs, getValue);
+    }
+    renderLegendTable($container, title, targets, metricDefs, getValue) {
+        this.renderChunkedTables($container, targets, this.constructor.MAX_COLUMNS_PER_TABLE, (chunk, idx) => {
+            const rows = metricDefs.map(m => ({
+                label: m.label,
+                color: m.noColor ? null : m.color,
+                bold: !!m.bold,
+                cells: chunk.map(target => this.formatRateCell(getValue(target.id, m)))
+            }));
+            return [ "stat-legend-table", {
+                title: title,
+                targets: chunk,
+                rows: rows,
+                idx: idx
+            } ];
+        });
+    }
+}
+
+AGN.Lib.StatisticsReportBaseController = StatisticsReportBaseController;
+
+class MailingStatisticsReportController extends AGN.Lib.StatisticsReportBaseController {
+    static DEVICE_CLASS_LABELS={
+        DESKTOP: () => t("statistics.device.desktop"),
+        TABLET: () => t("statistics.device.tablet"),
+        MOBILE: () => t("statistics.device.mobile"),
+        SMARTTV: () => t("statistics.device.smarttv")
+    };
+    static DEVICE_CLASSES=Object.keys(MailingStatisticsReportController.DEVICE_CLASS_LABELS);
+    static SHARE_ROW_DEFS=[ {
+        key: "total",
+        label: () => t("statistics.default.total"),
+        bold: true
+    }, {
+        key: "mobile",
+        label: () => t("statistics.default.mobileShare")
+    }, {
+        key: "anonymous",
+        label: () => t("statistics.default.anonymousShare")
+    } ];
+    static MAIL_FORMAT_COLUMN_DEFS=[ {
+        figure: "HTML",
+        field: "html",
+        label: () => t("mailing.default.mailFormat.html")
+    }, {
+        figure: "TEXT",
+        field: "text",
+        label: () => t("mailing.default.mailFormat.text")
+    }, {
+        figure: "OFFLINE_HTML",
+        field: "offlineHtml",
+        label: () => t("mailing.default.mailFormat.html_offline")
+    } ];
+    static LINK_CLICK_METRICS=[ {
+        field: "clickers",
+        label: () => t("statistics.default.clickers")
+    }, {
+        field: "clicks",
+        label: () => t("statistics.default.clicks")
+    } ];
+    static DEVICE_TYPE_METRICS=[ {
+        figure: "OPENERS_AFTER_DEVICE",
+        field: "openersByDeviceType",
+        totalField: "openersMeasured",
+        label: () => t("statistics.report.openersMeasured")
+    }, {
+        figure: "CLICKERS_AFTER_DEVICE",
+        field: "clickersByDeviceType",
+        totalField: "clickers",
+        label: () => t("statistics.default.clicker")
+    } ];
+    static DEVICE_NAME_METRICS=[ {
+        figure: "OPENERS_DEVICES",
+        field: "openersByDeviceName",
+        label: () => t("statistics.default.openers")
+    }, {
+        figure: "CLICKER_DEVICES",
+        field: "clickersByDeviceName",
+        label: () => t("statistics.default.clickers")
+    } ];
+    static BOUNCE_TYPE_METRICS=[ {
+        figure: "SOFTBOUNCES",
+        field: "softBounces",
+        label: () => t("statistics.report.softBounces"),
+        includeUndelivered: true
+    }, {
+        figure: "HARDBOUNCES",
+        field: "hardBounces",
+        label: () => t("statistics.default.hardBounces"),
+        includeUndelivered: false
+    } ];
+    static LINK_CATEGORIES=[ {
+        key: "leadingLinks",
+        label: () => t("statistics.report.leadingLinks")
+    }, {
+        key: "administrativeLinks",
+        label: () => t("statistics.report.adminLinks")
+    } ];
+    static DOMAIN_METRICS=[ {
+        field: "emailsSent",
+        label: () => t("statistics.default.sentEmails")
+    }, {
+        field: "hardBounces",
+        label: () => t("statistics.default.hardBounces")
+    }, {
+        field: "softBounces",
+        label: () => t("statistics.report.softBounces")
+    }, {
+        field: "openers",
+        label: () => t("statistics.default.openers")
+    }, {
+        field: "clickers",
+        label: () => t("statistics.default.clickers")
+    } ];
+    static MAX_BARS_PER_CHART=60;
+    render() {
+        this.#renderReportSections();
+        this.#renderSummaryCharts();
+        this.#renderSummaryTables();
+        this.#renderDeviceStats();
+        this.#renderBouncesAndLinksSummary();
+        this.#renderLinkClicksDetail();
+        this.#renderDomainStats();
+    }
+    #renderReportSections() {
+        const hasMailTypeStats = [ "HTML", "TEXT", "OFFLINE_HTML" ].some(f => this.figures.includes(f));
+        const hasSummaryStats = this.#getSummaryMetrics().some(metric => this.figures.includes(metric.figure));
+        this.config.mailingIds?.forEach((mailingId, idx) => {
+            const data = this.config.mailingsData[mailingId];
+            this.$container.append(AGN.Lib.Template.text("mailing-report-section", {
+                forceNewPage: idx > 0,
+                generalInfoRows: data.generalInfo ? this.#buildGeneralInfoRows(data.generalInfo) : null,
+                thumbnailUrl: data.thumbnailUrl,
+                mailFormatColumns: hasMailTypeStats ? this.#buildMailFormatColumns(data.recipientsByMailFormat) : null,
+                hasSummary: hasSummaryStats && data.targetGroupsData?.length > 0,
+                mailingId: mailingId
+            }));
+        });
+    }
+    #buildGeneralInfoRows(info) {
+        return this.#getGeneralInfoRowDefs(info).filter(row => this.figures.includes(row.figure));
+    }
+    #getGeneralInfoRowDefs(info) {
+        return [ {
+            figure: "MAILING_NAME",
+            label: t("statistics.report.mailingName"),
+            value: info.name ?? ""
+        }, {
+            figure: "MAILING_ID",
+            label: t("statistics.report.mailingId"),
+            value: info.id ?? ""
+        }, {
+            figure: "DESCRIPTION",
+            label: t("statistics.report.description"),
+            value: info.description ?? ""
+        }, {
+            figure: "ARCHIVE",
+            label: t("statistics.report.archive"),
+            value: info.archive ?? ""
+        }, {
+            figure: "MAIL_FORMAT",
+            label: t("statistics.report.mailFormat"),
+            value: this.#getMailTypeLabel(info.mailType)
+        }, {
+            figure: "AVERAGE_SIZE",
+            label: t("statistics.report.averageSize"),
+            value: info.avgMailSizeKb != null ? AGN.formatNumber(info.avgMailSizeKb) : ""
+        }, {
+            figure: "SUBJECT",
+            label: t("statistics.report.subject"),
+            value: info.subject ?? ""
+        }, {
+            figure: "MAILING_LIST",
+            label: t("statistics.report.mailingList"),
+            value: info.mailinglist ?? ""
+        }, {
+            figure: "TARGET_GROUPS",
+            label: t("statistics.report.targets"),
+            value: info.targetGroups?.length > 0 ? info.targetGroups.map(name => _.escape(name)).join("<br>") : _.escape(t("statistics.default.allRecipients")),
+            rawHtml: true
+        }, {
+            figure: "NR_OF_RECIPIENTS_WITH_TRACK_VETO",
+            label: t("statistics.report.recipientsNoTracking"),
+            value: `${info.recipientsCount != null ? AGN.formatNumber(info.recipientsCount) : ""} (${info.anonymousRecipientsCount != null ? AGN.formatNumber(info.anonymousRecipientsCount) : ""})`
+        }, {
+            figure: "SENDING_STARTED",
+            label: t("statistics.report.sendingStarted"),
+            value: info.sendingStarted ?? ""
+        }, {
+            figure: "SENDING_FINISHED",
+            label: t("statistics.report.sendingFinished"),
+            value: info.sendingFinished ?? ""
+        }, {
+            figure: "SENDER_INFO",
+            label: t("statistics.report.senderInfo"),
+            value: this.#getNameEmailLabel(info.senderName, info.senderEmail)
+        }, {
+            figure: "REPLY_TO_INFO",
+            label: t("statistics.report.replyInfo"),
+            value: this.#getNameEmailLabel(info.replyName, info.replyEmail)
+        } ];
+    }
+    #getMailTypeLabel(mailType) {
+        return mailType ? t(`mailing.default.mailFormat.${mailType.toLowerCase()}`) : "";
+    }
+    #getNameEmailLabel(name, email) {
+        if (!name) {
+            return email ?? "";
+        }
+        return `${name} <${email ?? ""}>`;
+    }
+    #buildMailFormatColumns(recipientsByType) {
+        const defs = MailingStatisticsReportController.MAIL_FORMAT_COLUMN_DEFS.filter(d => this.figures.includes(d.figure));
+        if (defs.length === 0 || !recipientsByType) {
+            return null;
+        }
+        const total = recipientsByType.html + recipientsByType.text + recipientsByType.offlineHtml;
+        return defs.map(d => {
+            const value = recipientsByType[d.field];
+            return {
+                label: d.label(),
+                value: AGN.formatNumber(value) ?? value,
+                percent: total > 0 ? Math.round(value / total * 100) : 0
+            };
+        });
+    }
+    #getSummaryMetrics() {
+        const rate = raw => this.formatRateCell(raw);
+        const count = raw => this.formatCountCell(raw);
+        const currency = raw => this.formatCurrencyCell(raw);
+        return [ {
+            figure: "SENT_MAILS",
+            field: "sentMails",
+            label: t("statistics.default.sentEmails"),
+            color: "darkest-blue",
+            formatCell: rate
+        }, {
+            figure: "EMAILS_ACCEPTED",
+            field: "emailsAccepted",
+            label: t("statistics.default.acceptedEmails"),
+            color: "blue",
+            formatCell: rate
+        }, {
+            figure: "OPENERS_MEASURED",
+            field: "openersMeasured",
+            label: t("statistics.report.openersMeasured"),
+            color: "dark-cyan",
+            formatCell: rate,
+            subField: "openersProxy",
+            subLabel: t("statistics.report.openersProxy"),
+            subColor: "light-cyan"
+        }, {
+            figure: "OPENERS_INVISIBLE",
+            field: "openersInvisible",
+            label: t("statistics.report.openersInvisible"),
+            color: "cyan",
+            formatCell: rate
+        }, {
+            figure: "OPENERS_TOTAL",
+            field: "openersTotal",
+            label: t("statistics.default.totalOpeners"),
+            color: "darkest-cyan",
+            formatCell: rate
+        }, {
+            figure: "OPENINGS_ANONYMOUS",
+            field: "anonymousOpenings",
+            label: t("statistics.progress.anonymousOpenings"),
+            color: "light-blue",
+            formatCell: count
+        }, {
+            figure: "CLICKERS_TOTAL",
+            field: "clickers",
+            label: t("statistics.default.clicker"),
+            color: "dark-yellow",
+            formatCell: rate
+        }, {
+            figure: "CLICKERS_AFTER_DEVICE",
+            field: "clicks",
+            label: t("statistics.default.clicks"),
+            color: "orange",
+            formatCell: rate
+        }, {
+            figure: "CLICKS_ANONYMOUS",
+            field: "anonymousClicks",
+            label: t("statistics.progress.anonymousClicks"),
+            color: "yellow",
+            formatCell: count
+        }, {
+            figure: "SIGNED_OFF",
+            field: "optOuts",
+            label: t("statistics.optOuts"),
+            color: "violet",
+            formatCell: rate
+        }, {
+            figure: "SOFTBOUNCES",
+            field: "softBounces",
+            label: t("statistics.report.softBounces"),
+            color: "light-violet",
+            formatCell: rate
+        }, {
+            figure: "HARDBOUNCES",
+            field: "hardBounces",
+            label: t("statistics.default.hardBounces"),
+            color: "dark-red",
+            formatCell: rate
+        }, {
+            figure: "REVENUE",
+            field: "revenue",
+            label: t("statistics.default.revenue"),
+            color: "darkest-violet",
+            formatCell: currency
+        } ];
+    }
+    #renderSummaryCharts() {
+        const metrics = this.#getSummaryMetrics().filter(metric => this.figures.includes(metric.figure));
+        if (metrics.length === 0) {
+            return;
+        }
+        Object.entries(this.config.mailingsData).forEach(([mailingId, data]) => {
+            const {targetGroupsData: targetGroupsData} = data;
+            if (!targetGroupsData?.length) {
+                return;
+            }
+            const $canvas = $(`[data-summary-chart="${mailingId}"]`);
+            const summary = targetGroupsData[0].summary;
+            new Chart($canvas[0].getContext("2d"), {
+                type: "bar",
+                data: this.#buildSummaryChartData(metrics, summary),
+                options: {
+                    indexAxis: "y",
+                    animation: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            display: false
+                        },
+                        y: {
+                            stacked: true,
+                            afterFit: scale => {
+                                scale.width += 16;
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...this.backgroundColorPlugin,
+                        datalabels: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    }
+    #buildSummaryChartData(metrics, summary) {
+        const labels = [];
+        const mainVals = [];
+        const mainColors = [];
+        const subVals = [];
+        const subColors = [];
+        metrics.forEach(metric => {
+            const total = this.metricValue(summary[metric.field]);
+            labels.push(metric.label);
+            mainColors.push(AGN.Lib.Helpers.getStatColorHexByName(metric.color));
+            if (metric.subField) {
+                const subVal = this.metricValue(summary[metric.subField]);
+                mainVals.push(total - subVal);
+                subVals.push(subVal);
+                subColors.push(AGN.Lib.Helpers.getStatColorHexByName(metric.subColor));
+            } else {
+                mainVals.push(total);
+                subVals.push(0);
+                subColors.push("rgba(0,0,0,0)");
+            }
+        });
+        return {
+            labels: labels,
+            datasets: [ {
+                data: mainVals,
+                backgroundColor: mainColors
+            }, {
+                data: subVals,
+                backgroundColor: subColors,
+                minBarLength: 0
+            } ]
+        };
+    }
+    #renderSummaryTables() {
+        const metrics = this.#getSummaryMetrics().filter(metric => this.figures.includes(metric.figure));
+        Object.entries(this.config.mailingsData).forEach(([mailingId, data]) => {
+            const targetGroupsData = data.targetGroupsData;
+            if (!targetGroupsData?.length) {
+                return;
+            }
+            this.renderChunkedTables($(`[data-summary-tables="${mailingId}"]`), targetGroupsData, this.constructor.MAX_COLUMNS_PER_TABLE, (chunk, idx) => {
+                const rows = metrics.map(metric => this.#buildSummaryTableRow(metric, chunk));
+                const rowCount = rows.length + rows.filter(row => row.subLabel).length;
+                return [ "mailing-summary-table", {
+                    columns: chunk,
+                    rows: rows,
+                    rowCount: rowCount,
+                    idx: idx
+                } ];
+            });
+        });
+    }
+    #buildSummaryTableRow(metric, chunk) {
+        return {
+            label: metric.label,
+            color: AGN.Lib.Helpers.getStatColorHexByName(metric.color),
+            subLabel: metric.subField ? metric.subLabel : null,
+            subColor: metric.subField ? AGN.Lib.Helpers.getStatColorHexByName(metric.subColor) : null,
+            cells: chunk.map(col => metric.formatCell(col.summary[metric.field])),
+            subCells: metric.subField ? chunk.map(col => this.formatRateCell(col.summary[metric.subField])) : null
+        };
+    }
+    #getDeviceClassLabel(deviceClass) {
+        return MailingStatisticsReportController.DEVICE_CLASS_LABELS[deviceClass]();
+    }
+    #renderDeviceTypeSection($container, title, targetGroupsData, fieldName, totalField, totalLabel) {
+        const targets = this.toTargets(targetGroupsData);
+        const byTargetId = this.indexByTargetId(targetGroupsData);
+        const metricDefs = [ {
+            key: "total",
+            label: totalLabel,
+            chartSlice: false
+        }, {
+            key: "pc",
+            label: t("statistics.device.desktop")
+        }, {
+            key: "tablet",
+            label: t("statistics.device.tablet")
+        }, {
+            key: "mobile",
+            label: t("statistics.device.mobile")
+        }, {
+            key: "smartTv",
+            label: t("statistics.device.smarttv")
+        }, {
+            key: "multi",
+            label: t("statistics.device.mixed")
+        } ];
+        this.renderStatSection($container, title, targets, metricDefs, (targetId, m) => {
+            const tgData = byTargetId[targetId];
+            if (!tgData) {
+                return null;
+            }
+            if (m.key === "total") {
+                return tgData.summary[totalField];
+            }
+            return tgData[fieldName]?.[m.key] ?? null;
+        });
+    }
+    #renderDeviceNameSection($container, title, targetGroupsData, fieldName, deviceClass) {
+        const targets = this.toTargets(targetGroupsData);
+        const deviceRowsByTargetId = {};
+        targetGroupsData.forEach(tgData => deviceRowsByTargetId[tgData.targetId] = tgData[fieldName]?.[deviceClass] || []);
+        const seen = new Map;
+        Object.values(deviceRowsByTargetId).forEach(rows => {
+            rows.forEach(row => {
+                if (!seen.has(row.deviceName)) {
+                    seen.set(row.deviceName, row.other ? t("statistics.other") : row.deviceName);
+                }
+            });
+        });
+        if (seen.size === 0) {
+            return;
+        }
+        const orderedKeys = Array.from(seen.keys()).sort((a, b) => (a === null) - (b === null));
+        const metricDefs = orderedKeys.map(key => ({
+            key: key,
+            label: seen.get(key)
+        }));
+        const deviceValueByTargetId = {};
+        Object.entries(deviceRowsByTargetId).forEach(([targetId, rows]) => {
+            const map = {};
+            rows.forEach(row => map[row.deviceName] = row.value);
+            deviceValueByTargetId[targetId] = map;
+        });
+        this.renderStatSection($container, title, targets, metricDefs, (targetId, m) => deviceValueByTargetId[targetId]?.[m.key] ?? null);
+    }
+    #renderDeviceStats() {
+        const deviceTypeMetrics = MailingStatisticsReportController.DEVICE_TYPE_METRICS.filter(m => this.figures.includes(m.figure));
+        const deviceNameMetrics = MailingStatisticsReportController.DEVICE_NAME_METRICS.filter(m => this.figures.includes(m.figure));
+        if (!deviceTypeMetrics.length && !deviceNameMetrics.length) {
+            return;
+        }
+        Object.entries(this.config.mailingsData).forEach(([mailingId, data]) => {
+            const {targetGroupsData: targetGroupsData} = data;
+            if (!targetGroupsData?.length) {
+                return;
+            }
+            const $container = $(`[data-device-stats="${mailingId}"]`);
+            const devicesTitle = t("statistics.report.devices");
+            deviceTypeMetrics.forEach(metric => this.#renderDeviceTypeSection($container, `${devicesTitle}: ${metric.label()}`, targetGroupsData, metric.field, metric.totalField, metric.label()));
+            deviceNameMetrics.forEach(metric => MailingStatisticsReportController.DEVICE_CLASSES.forEach(deviceClass => this.#renderDeviceNameSection($container, `${devicesTitle}: ${this.#getDeviceClassLabel(deviceClass)} ${metric.label()}`, targetGroupsData, metric.field, deviceClass)));
+        });
+    }
+    #renderBounceTypeSection($container, title, targetGroupsData, reasonsField, includeUndelivered) {
+        const UNDELIVERED_KEY = "__undelivered__";
+        const targets = this.toTargets(targetGroupsData);
+        const byTargetId = this.indexByTargetId(targetGroupsData);
+        const referenceData = targetGroupsData[0];
+        const reasons = referenceData.bounces?.[reasonsField];
+        if (!reasons?.length) {
+            return;
+        }
+        const metricDefs = reasons.map((r, i) => {
+            const isTotalRow = i === reasons.length - 1;
+            return {
+                key: r.reason,
+                label: r.reason,
+                chartSlice: !isTotalRow,
+                noColor: isTotalRow,
+                bold: isTotalRow
+            };
+        });
+        if (includeUndelivered) {
+            metricDefs.push({
+                key: UNDELIVERED_KEY,
+                label: t("statistics.bounce.undelivered"),
+                chartSlice: false,
+                noColor: true
+            });
+        }
+        this.assignColors(metricDefs);
+        const getValue = (targetId, m) => {
+            const col = byTargetId[targetId];
+            if (!col?.bounces) {
+                return null;
+            }
+            if (m.key === UNDELIVERED_KEY) {
+                return col.bounces.undelivered;
+            }
+            return col.bounces[reasonsField]?.find(x => x.reason === m.key)?.value ?? null;
+        };
+        const chartMetrics = metricDefs.filter(m => m.chartSlice !== false);
+        const referenceTarget = targets[0];
+        const values = chartMetrics.map(m => this.metricValue(getValue(referenceTarget.id, m)));
+        const hasData = values.some(v => v);
+        const $section = AGN.Lib.Template.dom("bounce-section", {});
+        $container.append($section);
+        $section.find("[data-chart]").append(AGN.Lib.Template.text("stat-donut-tile", {
+            targetName: title,
+            hasData: hasData
+        }));
+        if (hasData) {
+            this.renderDoughnutChart($section.find("canvas")[0], chartMetrics, values);
+        }
+        this.renderLegendTable($section.find("[data-table]"), title, targets, metricDefs, getValue);
+    }
+    #renderLinkClicksSummaryTable($container, targetGroupsData) {
+        const targets = this.toTargets(targetGroupsData);
+        const byTargetId = this.indexByTargetId(targetGroupsData);
+        const shareRow = (def, categoryKey, chunkTargets) => ({
+            label: def.label(),
+            cells: chunkTargets.map(target => {
+                const stats = byTargetId[target.id]?.linkClicks;
+                const share = stats ? stats[categoryKey].summary[def.key] : null;
+                return this.formatRateCell(share?.clickers);
+            })
+        });
+        const buildGroup = (label, categoryKey, chunkTargets) => ({
+            label: label,
+            rows: MailingStatisticsReportController.SHARE_ROW_DEFS.map(def => shareRow(def, categoryKey, chunkTargets))
+        });
+        const totalCellsFor = chunkTargets => chunkTargets.map(tg => {
+            const stats = byTargetId[tg.id]?.linkClicks;
+            if (!stats) {
+                return this.formatRateCell(null);
+            }
+            const leading = stats.leadingLinks.summary.total.clickers || {
+                value: 0,
+                rate: 0
+            };
+            const admin = stats.administrativeLinks.summary.total.clickers || {
+                value: 0,
+                rate: 0
+            };
+            return this.formatRateCell({
+                value: leading.value + admin.value,
+                rate: leading.rate + admin.rate
+            });
+        });
+        this.renderChunkedTables($container, targets, this.constructor.MAX_COLUMNS_PER_TABLE, (chunk, idx) => {
+            const groups = MailingStatisticsReportController.LINK_CATEGORIES.map(cat => buildGroup(cat.label(), cat.key, chunk));
+            return [ "link-clicks-summary-table", {
+                title: `${t("statistics.default.summary")} (${t("statistics.default.clickers")})`,
+                targets: chunk,
+                groups: groups,
+                totalCells: totalCellsFor(chunk),
+                idx: idx
+            } ];
+        });
+    }
+    #renderBouncesAndLinksSummary() {
+        const bounceMetrics = MailingStatisticsReportController.BOUNCE_TYPE_METRICS.filter(m => this.figures.includes(m.figure));
+        const hasLinks = this.figures.includes("ACTIVATE_LINK_STATISTICS");
+        if (!bounceMetrics.length && !hasLinks) {
+            return;
+        }
+        Object.entries(this.config.mailingsData).forEach(([mailingId, data]) => {
+            const {targetGroupsData: targetGroupsData} = data;
+            if (!targetGroupsData?.length) {
+                return;
+            }
+            const $container = $(`[data-bounces-and-links="${mailingId}"]`);
+            const $bounces = $('<div class="mb-2"></div>');
+            bounceMetrics.forEach(metric => this.#renderBounceTypeSection($bounces, metric.label(), targetGroupsData, metric.field, metric.includeUndelivered));
+            if ($bounces.children().length) {
+                this.appendSectionHeading($container, t("statistics.report.bounces"));
+                $container.append($bounces);
+            }
+            if (hasLinks) {
+                this.#renderLinkClicksSummaryTable($container, targetGroupsData);
+            }
+        });
+    }
+    #sortLinksByVolume(links, metricField) {
+        return links.slice().sort((a, b) => {
+            const aVal = a.stats?.total?.[metricField]?.value ?? 0;
+            const bVal = b.stats?.total?.[metricField]?.value ?? 0;
+            return bVal - aVal;
+        });
+    }
+    #getReferenceLinks(targetGroupsData, categoryKey) {
+        const category = targetGroupsData[0].linkClicks?.[categoryKey];
+        return category?.links || [];
+    }
+    #findLinkStatsForTarget(byTargetId, targetId, categoryKey, linkId) {
+        const category = byTargetId[targetId]?.linkClicks?.[categoryKey];
+        return category?.links.find(l => l.linkId === linkId)?.stats ?? null;
+    }
+    #linkEntryValue(byTargetId, target, metricField, entry) {
+        const stats = this.#findLinkStatsForTarget(byTargetId, target.id, entry.categoryKey, entry.link.linkId);
+        return stats?.total?.[metricField]?.value ?? 0;
+    }
+    #renderLinkClicksBarChart($container, sectionTitle, metricField, targets, byTargetId, categorized) {
+        const entries = categorized.flatMap(c => c.refLinks.map(link => ({
+            link: link,
+            categoryKey: c.key
+        })));
+        if (!entries.length) {
+            return false;
+        }
+        const hasData = entries.some(entry => targets.some(target => this.#linkEntryValue(byTargetId, target, metricField, entry)));
+        if (!hasData) {
+            return false;
+        }
+        const colors = AGN.Lib.Helpers.getStatColorsHexValues();
+        const maxLinksPerChart = Math.max(1, Math.floor(MailingStatisticsReportController.MAX_BARS_PER_CHART / targets.length));
+        let numberOffset = 0;
+        this.chunkBalanced(entries, maxLinksPerChart).forEach(chunkEntries => {
+            const datasets = targets.map((target, i) => ({
+                label: target.name,
+                data: chunkEntries.map(entry => this.#linkEntryValue(byTargetId, target, metricField, entry)),
+                backgroundColor: colors[i % colors.length]
+            }));
+            const legends = targets.map((tg, i) => ({
+                name: tg.name,
+                color: colors[i % colors.length]
+            }));
+            const $page = AGN.Lib.Template.dom("link-clicks-chart-page", {
+                title: sectionTitle,
+                legends: legends
+            });
+            $container.append($page);
+            const $canvas = $page.find("canvas");
+            new Chart($canvas[0].getContext("2d"), {
+                type: "bar",
+                data: {
+                    labels: chunkEntries.map((entry, idx) => String(numberOffset + idx + 1)),
+                    datasets: datasets
+                },
+                options: {
+                    indexAxis: "y",
+                    animation: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            display: false
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            top: 0,
+                            right: 100
+                        }
+                    },
+                    plugins: {
+                        ...this.backgroundColorPlugin,
+                        legend: {
+                            display: false
+                        },
+                        datalabels: {
+                            offset: 0,
+                            align: "right"
+                        }
+                    }
+                }
+            });
+            numberOffset += chunkEntries.length;
+        });
+        return true;
+    }
+    #renderLinkDetailTables($container, metricField, targets, byTargetId, category, numberOffset, firstChunkForcesNewPage) {
+        const {label: categoryLabel, key: categoryKey, refLinks: refLinks} = category;
+        if (!refLinks.length) {
+            return;
+        }
+        const buildLinks = chunkTargets => refLinks.map((refLink, idx) => ({
+            number: numberOffset + idx + 1,
+            url: refLink.url,
+            rows: MailingStatisticsReportController.SHARE_ROW_DEFS.map((def, defIdx) => {
+                const classes = [];
+                if (def.bold) {
+                    classes.push("fw-medium");
+                }
+                if (defIdx === MailingStatisticsReportController.SHARE_ROW_DEFS.length - 1) {
+                    classes.push("table-row-divider");
+                }
+                return {
+                    label: def.label(),
+                    rowClass: classes.join(" "),
+                    cells: chunkTargets.map(target => {
+                        const stats = this.#findLinkStatsForTarget(byTargetId, target.id, categoryKey, refLink.linkId);
+                        const share = stats?.[def.key]?.[metricField];
+                        return this.formatRateCell(share);
+                    })
+                };
+            })
+        }));
+        this.renderChunkedTables($container, targets, this.constructor.MAX_COLUMNS_PER_TABLE, (chunk, idx) => [ "link-category-table", {
+            title: categoryLabel,
+            forceNewPage: idx === 0 ? firstChunkForcesNewPage : false,
+            targets: chunk,
+            links: buildLinks(chunk),
+            idx: idx
+        } ]);
+    }
+    #renderLinkClicksDetail() {
+        if (!this.figures.includes("ACTIVATE_LINK_STATISTICS")) {
+            return;
+        }
+        Object.entries(this.config.mailingsData).forEach(([mailingId, data]) => {
+            const {targetGroupsData: targetGroupsData} = data;
+            if (!targetGroupsData?.length || !targetGroupsData[0].linkClicks) {
+                return;
+            }
+            const targets = this.toTargets(targetGroupsData);
+            const byTargetId = this.indexByTargetId(targetGroupsData);
+            const $container = $(`[data-link-clicks-detail="${mailingId}"]`);
+            MailingStatisticsReportController.LINK_CLICK_METRICS.forEach(({field: metricField, label: label}) => {
+                const categorized = MailingStatisticsReportController.LINK_CATEGORIES.map(cat => ({
+                    key: cat.key,
+                    label: cat.label(),
+                    refLinks: this.#sortLinksByVolume(this.#getReferenceLinks(targetGroupsData, cat.key), metricField)
+                }));
+                if (!categorized.some(c => c.refLinks.length)) {
+                    return;
+                }
+                const sectionTitle = `${t("statistics.report.clickStatistics")}: ${label()}`;
+                const chartRendered = this.#renderLinkClicksBarChart($container, sectionTitle, metricField, targets, byTargetId, categorized);
+                let numberOffset = 0;
+                categorized.forEach((c, catIdx) => {
+                    this.#renderLinkDetailTables($container, metricField, targets, byTargetId, c, numberOffset, catIdx > 0 || chartRendered);
+                    numberOffset += c.refLinks.length;
+                });
+            });
+        });
+    }
+    #renderDomainStats() {
+        if (!this.figures.includes("TOP_DOMAINS")) {
+            return;
+        }
+        Object.entries(this.config.mailingsData).forEach(([mailingId, data]) => {
+            const {targetGroupsData: targetGroupsData} = data;
+            if (!targetGroupsData?.length || !targetGroupsData[0].domainStats) {
+                return;
+            }
+            const targets = this.toTargets(targetGroupsData);
+            const byTargetId = this.indexByTargetId(targetGroupsData);
+            const domainsByTarget = field => {
+                const result = {};
+                targets.forEach(target => {
+                    const stats = byTargetId[target.id].domainStats;
+                    result[target.id] = stats?.[field] || [];
+                });
+                return result;
+            };
+            const $container = $(`[data-domain-stats="${mailingId}"]`);
+            const domainsTitle = t("statistics.report.domains");
+            this.appendSectionHeading($container, domainsTitle);
+            MailingStatisticsReportController.DOMAIN_METRICS.forEach(metric => this.#renderDomainTable($container, metric.label(), targets, domainsByTarget(metric.field)));
+        });
+    }
+    #renderDomainTable($container, title, targets, domainsByTargetId) {
+        const referenceDomains = domainsByTargetId[targets[0].id];
+        if (!referenceDomains.length) {
+            return;
+        }
+        const rows = referenceDomains.map(entry => ({
+            domain: entry.domain,
+            cells: targets.map(target => {
+                const match = domainsByTargetId[target.id].find(d => d.domain === entry.domain);
+                return this.formatRateCell(match?.value ?? null);
+            })
+        }));
+        $container.append(AGN.Lib.Template.text("domain-table", {
+            title: title,
+            targets: targets,
+            rows: rows
+        }));
+    }
+}
+
+AGN.Lib.Controller.new("mailing-statistics-report", MailingStatisticsReportController);
 
 AGN.Lib.Controller.new("action-view", function() {
     const Form = AGN.Lib.Form;
@@ -137755,6 +138969,19 @@ AGN.Lib.Controller.new("ai-text-generation", function() {
             });
         }
     });
+    this.addAction({
+        click: "save-ai-settings"
+    }, function() {
+        const $scope = getParentScope$(this.el);
+        if (isSettingsValidForSave($scope)) {
+            const settings = getSettingsFromUi($scope);
+            Messaging.send("mailing-content:save-ai-settings", settings);
+        }
+    });
+    function isSettingsValidForSave($scope) {
+        const $profileField = $scope.find("[data-ai-profileField]");
+        return validateSettings($scope) && validateMissingValue($profileField);
+    }
     function validateSettings($scope) {
         let isValid = true;
         const $numberOfWords = $scope.find("[data-ai-numberOfWords]");
@@ -137769,13 +138996,16 @@ AGN.Lib.Controller.new("ai-text-generation", function() {
         } else {
             Form.cleanFieldFeedback$($numberOfWords);
         }
-        if (!$.trim($contentDescription.val())) {
-            isValid = false;
-            Form.showFieldError$($contentDescription, t("fields.required.errors.missing"));
-        } else {
-            Form.cleanFieldFeedback$($contentDescription);
-        }
+        isValid &= validateMissingValue($contentDescription);
         return isValid;
+    }
+    function validateMissingValue($el) {
+        if (!$.trim($el.val())) {
+            Form.showFieldError$($el, t("fields.required.errors.missing"));
+            return false;
+        }
+        Form.cleanFieldFeedback$($el);
+        return true;
     }
     function applyGeneratedText($el) {
         const $scope = getParentScope$($el);
@@ -137821,6 +139051,7 @@ AGN.Lib.Controller.new("ai-text-generation", function() {
             language: $scope.find("[data-ai-language]").val(),
             numberOfWords: $scope.find("[data-ai-numberOfWords]").val(),
             tonality: $scope.find("[data-ai-tonality]").val(),
+            profileField: $scope.find("[data-ai-profileField]").val(),
             contentDescription: $scope.find("[data-ai-contentDescription]").val()
         };
     }
@@ -138267,24 +139498,20 @@ AGN.Lib.Controller.new("blacklist-list", function() {
     this.addAction({
         click: "save"
     }, function() {
-        $.ajax(this.el.data("url"), {
-            type: "POST",
-            data: {
-                email: $("#new-entry-email").val(),
-                reason: $("#new-entry-reason").val()
-            },
-            success: resp => submitForm(resp)
-        });
+        $.post(this.el.data("url"), {
+            email: $("#new-entry-email").val(),
+            reason: $("#new-entry-reason").val()
+        }).done(resp => submitTableForm(resp)).fail(jqXHR => AGN.Lib.RenderMessages($(jqXHR.responseText)));
     });
     this.addAction({
         click: "save-edit"
     }, function() {
         const $el = this.el;
         AGN.Lib.Form.get($el).submit().done(resp => {
-            submitForm(resp, () => AGN.Lib.Modal.getInstance($el).hide());
+            submitTableForm(resp, () => AGN.Lib.Modal.getInstance($el).hide());
         });
     });
-    function submitForm(resp, callback) {
+    function submitTableForm(resp, callback) {
         if (resp.success === true) {
             AGN.Lib.Form.get($("#blacklist-overview")).submit().done(() => AGN.Lib.JsonMessages(resp.popups, true));
             if (callback) {
@@ -138406,7 +139633,7 @@ AGN.Lib.Controller.new("click-stat-per-link", function() {
             field: "url",
             cellRenderer: "MustacheTemplateCellRender",
             cellRendererParams: {
-                templateName: "summary-cell"
+                templateName: "url-cell"
             },
             sortable: false
         } ];
@@ -140030,11 +141257,6 @@ AGN.Lib.Controller.newExtended("grid-template-css", "grid-template-base", functi
 
 AGN.Lib.Controller.newExtended("grid-template-settings", "grid-template-base", function() {
     const Messages = AGN.Lib.Messages;
-    const EMAIL_CHANGED_MSG_KEYS = {
-        11: "mailing.default.sender_and_reply_emails_changed",
-        10: "mailing.default.sender_email_changed",
-        "01": "mailing.default.reply_email_changed"
-    };
     let lastSelectedTargetsIds = [];
     let mailinglists = [];
     this.addDomInitializer("grid-template-settings", function() {
@@ -140075,27 +141297,35 @@ AGN.Lib.Controller.newExtended("grid-template-settings", "grid-template-base", f
         $targetModeBox.toggle(show);
         $("#regular-targets-box").toggleClass("border rounded p-2", show && $targetModeBox.is(":visible"));
     }
-    this.addAction({
-        change: "select-mailinglist"
-    }, function() {
-        const mailinglist = mailinglists.find(data => data.id === parseInt(this.el.val()));
+    function updateSenderAndReplyToFields(mailinglistId) {
+        const mailinglist = mailinglists.find(data => data.id === +mailinglistId);
         if (!mailinglist) {
             return;
         }
-        const $senderEmail = $("#sender-email");
-        const $replyEmail = $("#reply-email");
-        const changeSenderEmail = mailinglist.senderEmail && $senderEmail.val() !== mailinglist.senderEmail;
-        const changeReplyEmail = mailinglist.replyEmail && $replyEmail.val() !== mailinglist.replyEmail;
-        if (changeSenderEmail) {
-            $senderEmail.val(mailinglist.senderEmail).trigger("change");
+        const changedLabels = [ {
+            value: mailinglist.senderEmail,
+            $field: $("#sender-email")
+        }, {
+            value: mailinglist.replyEmail,
+            $field: $("#reply-email")
+        }, {
+            value: mailinglist.senderName,
+            $field: $("#sender-name")
+        }, {
+            value: mailinglist.replyToName,
+            $field: $("#reply-name")
+        } ].filter(({value: value, $field: $field}) => value && $field.val() !== value).map(({value: value, $field: $field}) => {
+            $field.val(value).trigger("change");
+            return $(`label[for="${$field.attr("id")}"]`).text().trim().replaceAll(/\s*\*/g, "");
+        });
+        if (changedLabels.length) {
+            Messages.info("mailing.default.sender_and_reply_emails_changed");
         }
-        if (changeReplyEmail) {
-            $replyEmail.val(mailinglist.replyEmail);
-        }
-        const msgKey = _.result(EMAIL_CHANGED_MSG_KEYS, `${+!!changeSenderEmail}${+!!changeReplyEmail}`);
-        if (msgKey) {
-            Messages.info(msgKey);
-        }
+    }
+    this.addAction({
+        change: "select-mailinglist"
+    }, function() {
+        updateSenderAndReplyToFields(this.el.val());
     });
 });
 
@@ -141598,6 +142828,11 @@ AGN.Lib.Controller.new("login", function() {
         setSettings(settings);
     }
     this.addAction({
+        change: "toggle-password"
+    }, function() {
+        $("#password").attr("type", this.el.is(":checked") ? "text" : "password");
+    });
+    this.addAction({
         keydown: "password-change"
     }, function() {
         if (isCapsLockEnabled(this.event)) {
@@ -141847,7 +143082,9 @@ AGN.Lib.Controller.new("mailing-bounce-stats", function() {
         renderUndeliveredTable();
     }
     function renderTable(statName) {
-        new Table($(`#${statName}-table`), getTableColumnDefinitions(statName), toAgGridRows(data[statName]), getDefaultTableOptions());
+        const rows = toAgGridRows(data[statName]);
+        rows.at(-1).preventColor = true;
+        new Table($(`#${statName}-table`), getTableColumnDefinitions(statName), rows, getDefaultTableOptions());
     }
     function renderUndeliveredTable() {
         if (!config.isMailtrackingActive) {
@@ -141869,33 +143106,13 @@ AGN.Lib.Controller.new("mailing-bounce-stats", function() {
         })) ], [ row ], getDefaultTableOptions());
     }
     function renderChart(statName) {
-        new Chart($(`#${statName}-chart`)[0].getContext("2d"), {
-            type: "bar",
-            data: {
-                labels: _.keys(data[statName][1]),
-                datasets: [ {
-                    data: _.values(data[statName][1]).map(({value: value}) => value),
-                    backgroundColor: AGN.Lib.Helpers.getStatColorsHexValues(),
-                    barThickness: parseFloat(getComputedStyle(document.documentElement).fontSize)
-                } ]
-            },
-            options: {
-                indexAxis: "y",
-                responsive: true,
-                scales: {
-                    x: {
-                        display: false
-                    }
-                },
-                plugins: {
-                    datalabels: {
-                        display: false
-                    },
-                    legend: {
-                        display: false
-                    }
-                }
-            }
+        const targetObj = data[statName][1];
+        const chartData = _.omit(targetObj, _.last(_.keys(targetObj)));
+        AGN.Lib.StatsChart.create("doughnut", $(`#${statName}-chart`), {
+            labels: _.keys(chartData),
+            datasets: [ {
+                data: _.values(chartData).map(({value: value}) => value)
+            } ]
         });
     }
     function getTableColumnDefinitions(statName) {
@@ -141948,7 +143165,7 @@ AGN.Lib.Controller.new("mailing-end-device-stat", function() {
     };
     const metrics = {
         openings: t("statistics.default.openings"),
-        clicks: t("statistics.default.openings")
+        clicks: t("statistics.default.clicks")
     };
     const tableOptions = {
         pagination: false,
@@ -142023,6 +143240,7 @@ AGN.Lib.Controller.new("mailing-end-device-stat", function() {
                 labels: data.map(d => d.deviceName),
                 datasets: [ {
                     data: data.map(d => d.value),
+                    rates: data.map(d => d.rate),
                     backgroundColor: data.map(d => colorsMap.get(d.deviceName)),
                     borderWidth: 0
                 } ]
@@ -142030,14 +143248,10 @@ AGN.Lib.Controller.new("mailing-end-device-stat", function() {
         });
     }
     function prepareChartData(entries) {
-        const totals = new Map;
-        entries.forEach(({deviceName: deviceName, allRecipients: allRecipients}) => {
-            const current = totals.get(deviceName) || 0;
-            totals.set(deviceName, current + allRecipients.value);
-        });
-        return Array.from(totals, ([deviceName, value]) => ({
+        return entries.map(({deviceName: deviceName, allRecipients: allRecipients}) => ({
             deviceName: deviceName,
-            value: value
+            value: allRecipients.value,
+            rate: allRecipients.rate
         }));
     }
     function renderTables(resp, metricName) {
@@ -142159,6 +143373,222 @@ AGN.Lib.Controller.new("mailing-images", function() {
         $modal.css("opacity", 0);
     });
 });
+
+class MailingNumTrackingPointsStatBaseController extends AGN.Lib.Controller {
+    constructor() {
+        super();
+        this._tableOptions = {
+            pagination: false,
+            domLayout: "autoHeight",
+            showRecordsCount: "simple"
+        };
+        this._colors = AGN.Lib.Helpers.getStatColorsHexValues();
+        const self = this;
+        this.addDomInitializer(this.getInitializerName(), function() {
+            self.$container = this.el;
+            self.config = this.config;
+            self.selectedTargetsMap = self.#getSelectedTargetsMap();
+            self.#fetchData().done(resp => {
+                self.render(resp);
+                $("#stat-loader").addClass("hidden");
+                self.$container.removeClass("invisible");
+            });
+        });
+    }
+    #fetchData() {
+        return $.get(AGN.url(this.getDataUrl(this.config.mailingId)), {
+            from: this.config.from,
+            to: this.config.to,
+            hourScale: this.config.isHourScale,
+            targetGroups: this.config.selectedTargets
+        });
+    }
+    getDataUrl(mailingId) {
+        throw new Error("Data URL not defined!");
+    }
+    getInitializerName() {
+        throw new Error("Initializer name not defined!");
+    }
+    render() {}
+    getProgressChartOptions(buckets) {
+        return {
+            type: "bar",
+            data: {
+                datasets: this.prepareDataSetsForProgressChart(buckets)
+            },
+            options: {
+                layout: {
+                    padding: {
+                        top: 20,
+                        right: 0
+                    }
+                },
+                scales: {
+                    x: {
+                        type: "time",
+                        time: {
+                            unit: this.config.isHourScale ? "hour" : "day",
+                            displayFormats: {
+                                day: this.config.isHourScale ? "" : window.adminDateFormat,
+                                hour: this.config.isHourScale ? "HH:mm" : ""
+                            },
+                            tooltipFormat: window.adminDateFormat
+                        },
+                        ticks: {
+                            maxRotation: 0
+                        },
+                        min: this.config.from,
+                        max: this.config.to
+                    },
+                    y: {
+                        display: false
+                    }
+                },
+                plugins: {
+                    datalabels: {
+                        formatter: v => AGN.formatNumber(v.y)
+                    },
+                    legend: {
+                        display: true,
+                        position: "bottom"
+                    }
+                }
+            }
+        };
+    }
+    prepareDataSetsForProgressChart(buckets) {
+        const datasets = [];
+        const targetGroupIds = [ null, ...new Set(buckets.flatMap(b => Object.keys(b.targetGroups)).map(id => Number(id))) ];
+        targetGroupIds.forEach((targetGroupId, idx) => {
+            const dataPoints = buckets.map(b => {
+                const groupData = this.isAllRecipientsTargetGroup(targetGroupId) ? b.allRecipients : b.targetGroups[targetGroupId];
+                return {
+                    x: b.timestamp,
+                    y: groupData.sum
+                };
+            });
+            datasets.push({
+                label: this.selectedTargetsMap.get(targetGroupId).targetName,
+                data: dataPoints,
+                backgroundColor: this._colors[idx % this._colors.length],
+                categoryPercentage: 1
+            });
+        });
+        return datasets;
+    }
+    getKeyFiguresColumnDefinitions(title) {
+        const columns = [ {
+            headerName: title ?? t("statistics.default.keyFigures"),
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: "key-figures-cell"
+            },
+            type: "textCaseInsensitiveColumn",
+            field: "timestamp",
+            sortable: false
+        } ];
+        this.selectedTargetsMap.values().forEach(tg => columns.push(this.getKeyFigureTargetGroupColumnDefinition(tg)));
+        return columns;
+    }
+    getKeyFigureTargetGroupColumnDefinition(targetGroup) {
+        return {
+            headerName: targetGroup.targetName,
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: "key-figures-tg-cell"
+            },
+            field: this.isAllRecipientsTargetGroup(targetGroup.id) ? "allRecipients" : this.makeTargetGroupPropertyKey(targetGroup.id),
+            type: "textCaseInsensitiveColumn",
+            sortable: false
+        };
+    }
+    prepareKeyFiguresTableRows(buckets, currency = "") {
+        const dateFormat = this.config.isHourScale ? window.adminDateTimeFormat : window.adminDateFormat;
+        return buckets.map(b => {
+            const row = {
+                timestamp: AGN.Lib.DateFormat.format(new Date(b.timestamp), dateFormat),
+                currency: currency,
+                allRecipients: b.allRecipients
+            };
+            Object.entries(b.targetGroups).forEach(([tgId, data]) => row[this.makeTargetGroupPropertyKey(tgId)] = data);
+            return row;
+        });
+    }
+    isAllRecipientsTargetGroup(targetGroupId) {
+        return this.getAllRecipientsTargetGroup().id === targetGroupId;
+    }
+    getAllRecipientsTargetGroup() {
+        return {
+            id: null,
+            targetName: t("statistics.default.allRecipients")
+        };
+    }
+    makeTargetGroupPropertyKey(targetId) {
+        return `target${targetId}`;
+    }
+    #getSelectedTargetsMap() {
+        const targetGroupsMap = new Map(this.config.targetGroups.map(t => [ t.id, t ]));
+        const allRecipientsTg = this.getAllRecipientsTargetGroup();
+        return new Map([ [ allRecipientsTg.id, allRecipientsTg ], ...this.config.selectedTargets.map(id => targetGroupsMap.get(+id)).map(t => [ t.id, t ]) ]);
+    }
+    get tableOptions() {
+        return this._tableOptions;
+    }
+    get colors() {
+        return this._colors;
+    }
+}
+
+AGN.Lib.MailingNumTrackingPointsStatBaseController = MailingNumTrackingPointsStatBaseController;
+
+(() => {
+    const Template = AGN.Lib.Template;
+    const Table = AGN.Lib.Table;
+    class MailingTrackingPointsStatController extends AGN.Lib.MailingNumTrackingPointsStatBaseController {
+        render(resp) {
+            if (resp.trackingPoints.length) {
+                resp.trackingPoints.forEach(tp => this.#renderTrackingPointStats(tp));
+            } else {
+                this.$container.append(Template.text("no-results-found"));
+            }
+        }
+        #renderTrackingPointStats(data) {
+            const $stat = Template.dom("num-tracking-point-stat", {
+                shortname: data.trackingPointName
+            });
+            this.$container.append($stat);
+            this.#renderProgressChart($stat.find("canvas"), data.buckets);
+            this.#renderTotalTable($stat.find("[data-total-stat-table]"), data.trackingPointName, data.currency, data.totals);
+            this.#renderKeyFiguresTable($stat.find("[data-key-figures-table]"), data.trackingPointName, data.currency, data.buckets);
+        }
+        #renderProgressChart($chart, buckets) {
+            if (!buckets.length) {
+                $chart.replaceWith(Template.dom("no-results-found"));
+                return;
+            }
+            new Chart($chart[0].getContext("2d"), this.getProgressChartOptions(buckets));
+        }
+        #renderKeyFiguresTable($table, trackingPointName, currency, buckets) {
+            const rows = this.prepareKeyFiguresTableRows(buckets, currency);
+            new Table($table, this.getKeyFiguresColumnDefinitions(trackingPointName), rows, this.tableOptions);
+        }
+        #renderTotalTable($table, trackingPointName, currency, data) {
+            const row = {
+                currency: currency,
+                allRecipients: data.allRecipients
+            };
+            Object.entries(data.targetGroups).forEach(([tgId, d]) => row[this.makeTargetGroupPropertyKey(tgId)] = d);
+            new Table($table, this.getKeyFiguresColumnDefinitions(trackingPointName), [ row ], this.tableOptions);
+        }
+        getDataUrl(mailingId) {
+            return `/statistics/mailing/${mailingId}/numTrackingPoints.action`;
+        }
+        getInitializerName() {
+            return "numeric-tracking-points-stat-view";
+        }
+    }
+    AGN.Lib.Controller.new("mailing-num-tracking-points-stat", MailingTrackingPointsStatController);
+})();
 
 AGN.Lib.Controller.new("mailing-overview", function() {
     const Form = AGN.Lib.Form;
@@ -142795,6 +144225,62 @@ AGN.Lib.Controller.new("reference-content-settings", function() {
     });
 });
 
+(() => {
+    const Table = AGN.Lib.Table;
+    class MailingRevenueStatController extends AGN.Lib.MailingNumTrackingPointsStatBaseController {
+        render(resp) {
+            this.#renderProgressChart(resp.revenue);
+            this.#renderDeviceTypeChart(resp.deviceTypes);
+            this.#renderDeviceTypeTable(resp.deviceTypes);
+            this.#renderConversionRatesTable(resp.conversions);
+            this.#renderKeyFiguresTable(resp.revenue);
+        }
+        #renderProgressChart(buckets) {
+            const $chart = $("#progress-chart");
+            if (!buckets.length) {
+                $chart.replaceWith(AGN.Lib.Template.dom("no-results-found"));
+                return;
+            }
+            new Chart($chart[0].getContext("2d"), this.getProgressChartOptions(buckets));
+        }
+        #renderDeviceTypeChart(rows) {
+            const $chart = $("#device-type-chart");
+            if (rows.every(row => !row.value)) {
+                $chart.closest(".tile").addClass("hidden");
+                return;
+            }
+            new Chart($chart[0].getContext("2d"), {
+                type: "agnDoughnut",
+                data: {
+                    labels: rows.map(r => r.deviceType),
+                    datasets: [ {
+                        data: rows.map(r => r.value),
+                        backgroundColor: rows.map((r, idx) => this.colors[idx % this.colors.length]),
+                        borderWidth: 0
+                    } ]
+                }
+            });
+        }
+        #renderDeviceTypeTable(rows) {
+            new Table($("#device-type-table"), $("#device-type-table-column-definitions").json(), rows, this.tableOptions);
+        }
+        #renderConversionRatesTable(rows) {
+            new Table($("#conversion-rates-table"), $("#conversion-rates-table-column-definitions").json(), rows, this.tableOptions);
+        }
+        #renderKeyFiguresTable(buckets) {
+            const rows = this.prepareKeyFiguresTableRows(buckets);
+            new Table($("#key-figures-table"), this.getKeyFiguresColumnDefinitions(), rows, this.tableOptions);
+        }
+        getDataUrl(mailingId) {
+            return `/statistics/mailing/${mailingId}/revenue.action`;
+        }
+        getInitializerName() {
+            return "revenue-stat-view";
+        }
+    }
+    AGN.Lib.Controller.new("mailing-revenue-stat", MailingRevenueStatController);
+})();
+
 AGN.Lib.Controller.new("mailing-send", function() {
     const Form = AGN.Lib.Form, Confirm = AGN.Lib.Confirm, Page = AGN.Lib.Page, Template = AGN.Lib.Template, ChartUtils = AGN.Lib.ChartUtils, Messages = AGN.Lib.Messages;
     const RECIPIENT_TEST_RUN_OPTION = "RECIPIENT";
@@ -143364,8 +144850,6 @@ AGN.Lib.Controller.new("mailing-send", function() {
         }).done(resp => {
             if (resp.success === true) {
                 changeSaveTestRunTargetBtnState(true);
-            } else {
-                AGN.Lib.JsonMessages(resp.popups);
             }
         });
     }
@@ -143458,11 +144942,6 @@ AGN.Lib.Controller.new("mailing-settings-base-view", function() {
     const Messaging = AGN.Lib.Messaging;
     const Messages = AGN.Lib.Messages;
     const Form = AGN.Lib.Form;
-    const EMAIL_CHANGED_MSG_KEYS = {
-        11: "mailing.default.sender_and_reply_emails_changed",
-        10: "mailing.default.sender_email_changed",
-        "01": "mailing.default.reply_email_changed"
-    };
     let selectedRemovedMailinglistId;
     let mailinglists = [];
     Messaging.subscribe("mailing-settings:updateMailinglistForFollowUp", () => {
@@ -143492,27 +144971,33 @@ AGN.Lib.Controller.new("mailing-settings-base-view", function() {
             Form.get($(this.el)).cleanFieldError("mailinglistId");
             selectedRemovedMailinglistId = null;
         }
-        const mailinglistData = mailinglists.find(data => data.id == mailinglistId);
-        if (mailinglistData) {
-            const $senderEmail = $("#emailSenderMail");
-            const $replyEmail = $("#emailReplyEmail");
-            if (!$senderEmail.exists() && !$replyEmail.exists()) {
-                return;
-            }
-            const changeSenderEmail = mailinglistData.senderEmail && $senderEmail.val() !== mailinglistData.senderEmail;
-            const changeReplyEmail = mailinglistData.replyEmail && $replyEmail.val() !== mailinglistData.replyEmail;
-            if (changeSenderEmail) {
-                $senderEmail.val(mailinglistData.senderEmail).trigger("change");
-            }
-            if (changeReplyEmail) {
-                $replyEmail.val(mailinglistData.replyEmail);
-            }
-            const msgKey = _.result(EMAIL_CHANGED_MSG_KEYS, `${+!!changeSenderEmail}${+!!changeReplyEmail}`);
-            if (msgKey) {
-                Messages.info(msgKey);
-            }
-        }
+        updateSenderAndReplyToFields(mailinglistId);
     });
+    function updateSenderAndReplyToFields(mailinglistId) {
+        const mailinglist = mailinglists.find(data => data.id === +mailinglistId);
+        if (!mailinglist) {
+            return;
+        }
+        const changedLabels = [ {
+            value: mailinglist.senderEmail,
+            $field: $("#emailSenderMail")
+        }, {
+            value: mailinglist.replyEmail,
+            $field: $("#emailReplyEmail")
+        }, {
+            value: mailinglist.senderName,
+            $field: $("#emailSenderName")
+        }, {
+            value: mailinglist.replyToName,
+            $field: $("#emailReplyName")
+        } ].filter(({value: value, $field: $field}) => value && $field.val() !== value).map(({value: value, $field: $field}) => {
+            $field.val(value).trigger("change");
+            return $(`label[for="${$field.attr("id")}"]`).text().trim().replaceAll(/\s*\*/g, "");
+        });
+        if (changedLabels.length) {
+            Messages.info("mailing.default.sender_and_reply_emails_changed");
+        }
+    }
     this.addAction({
         "change input": "change-mailing-base-info"
     }, function() {
@@ -143562,6 +145047,7 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
     const Select = AGN.Lib.Select;
     const Modal = AGN.Lib.Modal;
     const Messages = AGN.Lib.Messages;
+    const Template = AGN.Lib.Template;
     const Messaging = AGN.Lib.Messaging;
     const recipientsCountRelatedFields = [ "#settingsGeneralMailingList", "#settingsTargetgroupsListSplit", "#settingsTargetgroupsListSplitPart", "#lightWeightMailingList", "#assignTargetGroups", "#targetGroupIds", "#altgIds", "#followUpType", "#followup-exclude-proxy-openers" ];
     let config;
@@ -143571,9 +145057,11 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
     let lastMailingListId = 0;
     let lastDataForCountingRecipients;
     let mediaTypePriorityChanged = false;
+    let isStandaloneSmsMailing = false;
+    let mailingType;
     let $form;
     Messaging.subscribe("mailing-settings:mailinglistChanged", mailinglistId => {
-        if (!isFollowUpMailing($("#settingsGeneralMailType").val())) {
+        if (!isFollowUpMailing()) {
             lastMailingListId = mailinglistId;
         }
     });
@@ -143581,6 +145069,8 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
         config = this.config;
         addRecipientsCountListener();
         $form = $("#mailingSettingsForm");
+        isStandaloneSmsMailing = config.isStandaloneSmsMailing;
+        mailingType = config.mailingType;
         lastSelectedTargetsIds = $("#targetGroupIds").val() || [];
         displayTargetModeToggle(lastSelectedTargetsIds.length > 1);
         mailingListSelect = Select.get($("#settingsGeneralMailingList"));
@@ -143589,7 +145079,8 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
             lastMailingListId = mailingListSelect.selectOption(lastMailingListId);
             mailingListSelect.$el.trigger("change");
         }
-        updateGeneralMailingTypeView(config.mailingType);
+        drawMailingTypeSettings();
+        updateGeneralMailingTypeView();
         configureFormChangesTracking();
         refreshTargetModeLabel();
         onMediatypesUpdate();
@@ -143725,39 +145216,47 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
     this.addAction({
         change: "change-general-mailing-type"
     }, function() {
-        const mailingType = this.el.val();
+        mailingType = this.el.val();
         mailingListSelect.setReadonly(false);
         if (lastMailingListId > 0) {
             mailingListSelect.selectOption(lastMailingListId);
         }
-        updateGeneralMailingTypeView(mailingType);
+        updateGeneralMailingTypeView();
     });
     this.addAction({
         change: "change-target-mode"
     }, refreshTargetModeLabel);
-    function isFollowUpMailing(mailingType) {
+    function isFollowUpMailing() {
         return config.FOLLOWUP_MAILING_TYPE == mailingType;
     }
-    function isActionBasedMailing(mailingType) {
+    function isActionBasedMailing() {
         return config.ACTIONBASED_MAILING_TYPE == mailingType;
     }
-    function isDateBasedMailing(mailingType) {
+    function isDateBasedMailing() {
         return config.DATEBASED_MAILING_TYPE == mailingType;
     }
-    function updateGeneralMailingTypeView(mailingType) {
+    function drawMailingTypeSettings() {
+        const $settings = $("#mailing-type-settings-block");
+        $settings.html(Template.text("mailing-type-settings", {
+            mailingType: mailingType,
+            isStandaloneSmsMailing: isStandaloneSmsMailing
+        }));
+        AGN.runAll($settings);
+    }
+    function updateGeneralMailingTypeView() {
         let showFollowUpControls = false;
         if (config.followUpAllowed) {
-            if (isFollowUpMailing(mailingType)) {
+            if (isFollowUpMailing()) {
                 Messaging.send("mailing-settings:updateMailinglistForFollowUp");
                 showFollowUpControls = true;
             }
             toggle(showFollowUpControls, "#followUpControls");
             $("#followUpControls").all(":input").each((i, el) => $(el).prop("disabled", !showFollowUpControls));
         }
-        const showBccRecipients = isDateBasedMailing(mailingType);
+        const showBccRecipients = isDateBasedMailing();
         toggle(showBccRecipients, "#mailing-bcc-recipients");
         $("#mailing-bcc-recipients").prop("disabled", !showBccRecipients);
-        const showTargetGroups = isActionBasedMailing(mailingType) ? config.campaignEnableTargetGroups : true;
+        const showTargetGroups = isActionBasedMailing() ? config.campaignEnableTargetGroups : true;
         toggle(showTargetGroups, "#regular-targets-box, #calculate-recipients-box");
     }
     function toggle(show, selector) {
@@ -143773,111 +145272,21 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
         }
     }
     this.addAction({
-        change: "chooseRcsSenderIconFile"
-    }, function() {
-        const files = this.el.prop("files");
-        const $categoryBlock = $("#rcs-sender-icon-category").parent();
-        const $senderIconName = $("#rcsSenderIconName");
-        if (files?.length) {
-            const file = files[0];
-            if (file.type === "image" || file.type.match("image/.*")) {
-                const reader = new FileReader;
-                reader.onload = e => {
-                    $categoryBlock.removeClass("hidden");
-                    updateRcsSenderIconPreview(e.target.result, file.name, file.name);
-                };
-                reader.readAsDataURL(file);
-                $senderIconName.val("");
-                return;
-            }
-        }
-        clearSenderIconFile(this.el);
-        updateRcsSenderIconPreview();
-        $senderIconName.val("");
-    });
-    this.addAction({
-        click: "deleteRcsSenderIcon"
-    }, function() {
-        clearSenderIconFile();
-        $("#rcsSenderIconLabel").text("");
-        $("#rcsSenderIconName").val("");
-        $("#rcsSenderIconPreview").attr("src", config.noPreviewImageLink);
-    });
-    this.addAction({
-        click: "chooseRcsSenderIcon"
-    }, function() {
-        const $file = $("#rcs-sender-icon-file");
-        if (!!$file.val()) {
-            $file.trigger("click");
-        } else {
-            AGN.Lib.Confirm.request(AGN.url("/mediapool/image/pick.action")).done(image => {
-                $("#rcsSenderIconName").val(image.fileName);
-                clearSenderIconFile($file);
-                updateRcsSenderIconPreview(image.src, image.fileName, image.title);
-            });
-        }
-    });
-    function clearSenderIconFile($file = $("#rcs-sender-icon-file")) {
-        AGN.Lib.Helpers.clearFormField($file);
-        const $category = $("#rcs-sender-icon-category");
-        $category.parent().addClass("hidden");
-        $category.val("");
-        Form.cleanFieldFeedback$($category);
-    }
-    function updateRcsSenderIconPreview(src, name, title) {
-        const $img = $("#rcsSenderIconPreview");
-        const $label = $("#rcsSenderIconLabel");
-        if ($img.attr("src") !== src) {
-            $img.attr("src", src ?? config.noPreviewImageLink);
-        }
-        $img.attr("title", title ?? "");
-        $label.text(name ?? "");
-    }
-    function uploadUnsavedImages() {
-        const $senderIconFile = $("#rcs-sender-icon-file");
-        const files = $senderIconFile.exists() ? $senderIconFile.prop("files") : [];
-        if (!files?.length) {
-            return Promise.resolve();
-        }
-        const $category = $("#rcs-sender-icon-category");
-        const categoryId = Number.parseInt($category.val());
-        if (Number.isNaN(categoryId) || categoryId <= 0) {
-            Form.showFieldError$($category, t("error.grid.noCategorySelected"));
-            return Promise.reject();
-        }
-        Form.cleanFieldFeedback$($category);
-        const image = files[0];
-        const data = new FormData;
-        data.append("uploads[0].file", image);
-        data.append("uploads[0].fileName", image.name);
-        data.append("uploads[0].title", image.name);
-        data.append("uploads[0].categoryId", categoryId);
-        return $.ajax(AGN.url("/mediapool/upload.action?asJson=true"), {
-            type: "POST",
-            dataType: "json",
-            enctype: "multipart/form-data",
-            processData: false,
-            contentType: false,
-            data: data
-        }).then(resp => {
-            if (!resp.success) {
-                AGN.Lib.JsonMessages(resp.popups);
-                return Promise.reject();
-            }
-            $("#rcsSenderIconName").val(image.name);
-            clearSenderIconFile($senderIconFile);
-        });
-    }
-    this.addAction({
         change: "change-mediatype"
     }, function() {
         const $el = $(this.el);
+        const $switches = $("#email-mediatype-switch, #sms-mediatype-switch, #rcs-mediatype-switch");
+        const activeMediatypes = $switches.filter(":checked").map((_, el) => $(el).closest(".mediatype-item").data("mediatype")).get();
         const active = isMediatypeListElemActive($el);
         redrawMediatypeCheckboxes($el, active);
-        const showEditFrameContentBtn = $("#email-mediatype-switch, #sms-mediatype-switch, #rcs-mediatype-switch").is(":checked");
-        $("#edit-frame-content-btn").toggle(showEditFrameContentBtn);
+        $("#edit-frame-content-btn").toggle($switches.is(":checked"));
         if ($el.data("mediatype") === "rcs") {
             syncSmsSwitchWithRcs(active);
+        }
+        const isStandaloneSmsMailingBefore = isStandaloneSmsMailing;
+        isStandaloneSmsMailing = activeMediatypes.length === 1 && activeMediatypes.includes("sms");
+        if (isStandaloneSmsMailingBefore !== isStandaloneSmsMailing) {
+            drawMailingTypeSettings();
         }
     });
     function lockSmsSwitchWhenRcsActive() {
@@ -143974,12 +145383,10 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
         submission: "save"
     }, saveMailing);
     function saveMailing() {
-        uploadUnsavedImages().then(() => {
-            const form = Form.get($form);
-            setMediatypesPrioritiesToForm(form);
-            setParamsToForm(form);
-            form.submit();
-        });
+        const form = Form.get($form);
+        setMediatypesPrioritiesToForm(form);
+        setParamsToForm(form);
+        form.submit();
     }
     function setMediatypesPrioritiesToForm(form) {
         _.each($("#mediatypes-list li"), function(el, i) {
@@ -144026,6 +145433,161 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
     }, function() {
         Form.get(this.el).validateField(this.el);
     });
+});
+
+AGN.Lib.Controller.new("mailing-simple-tracking-points-stat", function() {
+    const Template = AGN.Lib.Template;
+    const BAR_HEIGHT_PX = 15;
+    const SINGLE_TARGET_BAR_HEIGHT_PX = 25;
+    const CATEGORY_PERCENTAGE = .8;
+    const BAR_PERCENTAGE = .8;
+    const CHART_PADDING_PX = 16;
+    let config;
+    let $container;
+    let selectedTargets;
+    const metrics = {
+        net: t("statistics.trackingPoint.netRequests"),
+        gross: t("statistics.trackingPoint.grossRequests")
+    };
+    const tableOptions = {
+        pagination: false,
+        domLayout: "autoHeight",
+        showRecordsCount: "simple"
+    };
+    this.addDomInitializer("simple-tracking-points-stat-view", function() {
+        config = this.config;
+        $container = this.el;
+        selectedTargets = getSelectedTargets();
+        assignColors();
+        fetchData().done(resp => {
+            render(resp.trackingPoints);
+            $("#stat-loader").addClass("hidden");
+            $container.removeClass("invisible");
+        });
+    });
+    function getSelectedTargets() {
+        const targetGroupsMap = new Map(config.targetGroups.map(target => [ target.id, target ]));
+        const result = config.selectedTargets.map(id => targetGroupsMap.get(parseInt(id)));
+        result.unshift(getAllRecipientsTargetGroup());
+        return result;
+    }
+    function assignColors() {
+        const colors = AGN.Lib.Helpers.getStatColorsHexValues();
+        selectedTargets.forEach((tg, idx) => tg.color = colors[idx % colors.length]);
+    }
+    function fetchData() {
+        return $.get(AGN.url(`/statistics/mailing/${config.mailingId}/simpleTrackingPoints.action`), {
+            targetGroups: config.selectedTargets
+        });
+    }
+    function render(trackingPoints) {
+        Object.entries(metrics).forEach(([metricName, metricLabel]) => {
+            const $row = Template.dom("tracking-point-metric-row", {
+                metricName: metricName,
+                metricLabel: metricLabel,
+                chartHeight: `${getChartHeightInPx(trackingPoints)}px`
+            });
+            $container.append($row);
+            renderMetric(trackingPoints, metricName, $row);
+        });
+    }
+    function getBarHeightPx() {
+        return selectedTargets.length === 1 ? SINGLE_TARGET_BAR_HEIGHT_PX : BAR_HEIGHT_PX;
+    }
+    function getChartHeightInPx(trackingPoints) {
+        const axisLength = trackingPoints.length * selectedTargets.length * getBarHeightPx() / (CATEGORY_PERCENTAGE * BAR_PERCENTAGE);
+        return Math.ceil(axisLength) + CHART_PADDING_PX;
+    }
+    function renderMetric(trackingPoints, metricName, $row) {
+        const $metric = $row.find(`[data-stat-metric="${metricName}"]`);
+        renderChart(trackingPoints, metricName, $metric.find("canvas"));
+        renderTable(trackingPoints, metricName, $metric.find(".table-wrapper"));
+    }
+    function renderChart(trackingPoints, metricName, $canvas) {
+        new Chart($canvas[0].getContext("2d"), {
+            type: "bar",
+            data: {
+                labels: trackingPoints.map(tp => tp.trackingPointName),
+                datasets: prepareChartDatasets(trackingPoints, metricName)
+            },
+            options: {
+                indexAxis: "y",
+                scales: {
+                    x: {
+                        display: false
+                    }
+                },
+                plugins: {
+                    datalabels: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    function prepareChartDatasets(trackingPoints, metricName) {
+        return selectedTargets.map(tg => ({
+            label: tg.targetName,
+            data: trackingPoints.map(tp => resolveMetricValue(tp, tg, metricName)),
+            backgroundColor: tg.color,
+            categoryPercentage: CATEGORY_PERCENTAGE,
+            barPercentage: BAR_PERCENTAGE,
+            minBarLength: 2
+        }));
+    }
+    function renderTable(trackingPoints, metricName, $tableWrapper) {
+        const rows = prepareTableRows(trackingPoints, metricName);
+        new AGN.Lib.Table($tableWrapper, getTableColumnsDefinitions(trackingPoints, metricName), rows, tableOptions);
+    }
+    function prepareTableRows(trackingPoints, metricName) {
+        return selectedTargets.map(tg => {
+            const row = {
+                targetGroup: tg.targetName,
+                color: tg.color
+            };
+            trackingPoints.forEach(tp => row[makeTrackingPointPropertyKey(tp.id)] = resolveMetricValue(tp, tg, metricName));
+            return row;
+        });
+    }
+    function resolveMetricValue(trackingPoint, targetGroup, metricName) {
+        const entry = trackingPoint.metrics[metricName].find(item => item.targetGroupId === targetGroup.id);
+        return entry?.value ?? 0;
+    }
+    function getTableColumnsDefinitions(trackingPoints, metricName) {
+        const columns = [ {
+            headerName: metrics[metricName],
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: "tracking-point-tg-cell"
+            },
+            type: "textCaseInsensitiveColumn",
+            field: "targetGroup",
+            sortable: false
+        } ];
+        trackingPoints.forEach(tp => columns.push(getTrackingPointColumnDefinition(tp)));
+        return columns;
+    }
+    function getTrackingPointColumnDefinition(trackingPoint) {
+        return {
+            headerName: trackingPoint.trackingPointName,
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: "statistics-number-cell"
+            },
+            field: makeTrackingPointPropertyKey(trackingPoint.id),
+            type: "textCaseInsensitiveColumn",
+            sortable: false
+        };
+    }
+    function getAllRecipientsTargetGroup() {
+        return {
+            id: null,
+            targetName: t("statistics.default.allRecipients")
+        };
+    }
+    function makeTrackingPointPropertyKey(trackingPointId) {
+        return `trackingPoint${trackingPointId}`;
+    }
 });
 
 AGN.Lib.Controller.new("mailing-stat", function() {
@@ -144082,6 +145644,7 @@ AGN.Lib.Controller.new("mailing-summary-stats", function() {
             return row;
         });
     };
+    const getSummaryTable$ = () => $("#key-figures-table");
     this.addDomInitializer("mailing-summary-stats", function() {
         form = Form.get($("#stat-form"));
         loader = new ProcessingLoader($("#overview-tile .tile-body"), "#stat-form");
@@ -144212,7 +145775,7 @@ AGN.Lib.Controller.new("mailing-summary-stats", function() {
         });
     }
     function renderKeyFiguresTable() {
-        new Table($("#key-figures-table").empty(), getKeyFiguresColumnDefinitions(), toAgGridRows(data.keyFigures), getDefaultTableOptions());
+        new Table(getSummaryTable$().empty(), getKeyFiguresColumnDefinitions(), toAgGridRows(data.keyFigures), getDefaultTableOptions());
     }
     function getKeyFiguresColumnDefinitions() {
         return [ {
@@ -144246,14 +145809,16 @@ AGN.Lib.Controller.new("mailing-summary-stats", function() {
     function renderEventByDeviceTypeTable(data, metric) {
         new Table($(`#${metric}-by-device-table`), getEventByDeviceTypeColumnDefinitions(data, metric), toAgGridRows(data), getDefaultTableOptions());
     }
-    function renderEventByDeviceTypeChart(stat, metirc) {
-        new Chart($(`#${metirc}-by-device-chart`)[0].getContext("2d"), {
+    function renderEventByDeviceTypeChart(stat, metric) {
+        const meta = _.values(_.omit(metadata.deviceTypes, "TOTAL"));
+        const data = _.values(_.omit(stat[1], "TOTAL")).map(({val: val}) => val);
+        new Chart($(`#${metric}-by-device-chart`)[0].getContext("2d"), {
             type: "agnDoughnut",
             data: {
-                labels: _.values(metadata.deviceTypes).map(({label: label}) => label),
+                labels: meta.map(({label: label}) => label),
                 datasets: [ {
-                    data: _.values(stat[1]).map(({val: val}) => val),
-                    backgroundColor: _.values(metadata.deviceTypes).map(({color: color}) => Helpers.getStatColorHexByName(color)),
+                    data: data,
+                    backgroundColor: meta.map(({color: color}) => Helpers.getStatColorHexByName(color)),
                     borderWidth: 0
                 } ]
             },
@@ -144305,14 +145870,9 @@ AGN.Lib.Controller.new("mailing-summary-stats", function() {
     }
     this.addAction({
         click: "export-csv"
-    }, function() {
-        const table = AGN.Lib.Table.get($("#key-figures-table"));
-        if (table && table.api) {
-            table.api.exportDataAsCsv({
-                fileName: "mailing-stats.csv"
-            });
-        }
-    });
+    }, () => Table.get(getSummaryTable$()).exportUnsortedCsv({
+        fileName: "mailing-stats.csv"
+    }));
     function showNetto() {
         return $("#showNetto").prop("checked");
     }
@@ -144368,7 +145928,7 @@ AGN.Lib.Controller.new("mailing-top-domain-stats", function() {
     }, loadStatistic);
     function loadStatistic() {
         const $container = Template.dom("top-domain-stats-template", {});
-        $("#overview-tile > .tile-body").empty().append($container);
+        $("#top-domains-container").empty().append($container);
         const form = Form.get($("#stat-form"));
         const loader = new ProcessingLoader($container, "#stat-form");
         loader.show();
@@ -144380,20 +145940,22 @@ AGN.Lib.Controller.new("mailing-top-domain-stats", function() {
     }
     function renderChartsAndTables() {
         renderChartAndTable("sentEmails");
-        renderChartAndTable("hardBounces");
-        renderChartAndTable("softBounces");
         renderChartAndTable("openers");
         renderChartAndTable("clickers");
+        renderChartAndTable("softBounces");
+        renderChartAndTable("hardBounces");
     }
-    function renderChartAndTable(sentEmails) {
-        renderChart(sentEmails);
-        renderTable(sentEmails);
+    function renderChartAndTable(statName) {
+        renderChart(statName);
+        renderTable(statName);
     }
     function renderTable(statName) {
-        new Table($(`#${statName}-table`), getTableColumnDefinitions(statName), toAgGridRows(data[statName]), getDefaultTableOptions());
+        new Table($(`#${statName}-table`).toggle(hasData(data[statName])), getTableColumnDefinitions(statName), toAgGridRows(data[statName]), getDefaultTableOptions());
     }
     function renderChart(statName) {
-        new Chart($(`#${statName}-chart`)[0].getContext("2d"), {
+        const $chart = $(`#${statName}-chart`);
+        $chart.closest(".tile").toggle(hasData(data[statName]));
+        new Chart($chart[0].getContext("2d"), {
             type: "bar",
             data: {
                 labels: _.keys(data[statName][1]),
@@ -144457,6 +146019,9 @@ AGN.Lib.Controller.new("mailing-top-domain-stats", function() {
             ...Select.get($("#targetGroupSelect")).selectedValues()
         };
     }
+    function hasData(stat) {
+        return _.some(stat, value => !_.isEmpty(value));
+    }
 });
 
 AGN.Lib.Controller.new("mailinglist-list", function() {
@@ -144507,6 +146072,116 @@ AGN.Lib.Controller.new("mailinglist-list", function() {
         return AGN.Lib.Table.get($el)?.api;
     }
 });
+
+class MailinglistViewController extends AGN.Lib.Controller {
+    constructor() {
+        super();
+        const self = this;
+        this.addDomInitializer("mailinglist-view", function() {
+            self.onMailinglistViewInit(this.config);
+        });
+        this.addAction({
+            click: "reload-stats"
+        }, () => this.reloadStats());
+        this.addAction({
+            click: "export-csv"
+        }, () => this.exportCsv());
+    }
+    onMailinglistViewInit(config) {
+        this.config = config;
+        this.reloadStats();
+    }
+    reloadStats() {
+        const loader = new AGN.Lib.ProcessingLoader($("#mailinglist-stats"));
+        loader.show();
+        const params = {
+            month: this.statsMonth,
+            year: this.statsYear
+        };
+        $.get(AGN.url(`/mailinglist/${this.config.mailinglistId}/stats.action`), params).done(data => {
+            this.renderStatChart(data);
+            this.renderStatTable(data);
+            loader.hide();
+        });
+    }
+    get tableColumns() {
+        return [ {
+            headerName: t("defaults.date"),
+            field: "period"
+        }, {
+            headerName: t("statistics.optIns"),
+            headerColor: true,
+            field: "optIns"
+        }, {
+            headerName: t("statistics.optOuts"),
+            headerColor: true,
+            field: "optOuts"
+        }, {
+            headerName: t("statistics.bounced"),
+            headerColor: true,
+            field: "bounced"
+        }, {
+            headerName: t("statistics.optInWithoutConfirm"),
+            headerColor: true,
+            field: "optInWithoutConfirm"
+        }, {
+            headerName: t("statistics.blocklisted"),
+            headerColor: true,
+            field: "blocklisted"
+        } ];
+    }
+    renderStatChart(stats) {
+        AGN.Lib.StatsChart.create("line", $("#line-chart"), {
+            labels: _.map(stats, row => row.period),
+            datasets: [ {
+                data: _.map(stats, row => row.optIns)
+            }, {
+                data: _.map(stats, row => row.optOuts)
+            }, {
+                data: _.map(stats, row => row.bounced)
+            }, {
+                data: _.map(stats, row => row.optInWithoutConfirm)
+            }, {
+                data: _.map(stats, row => row.blocklisted)
+            } ]
+        });
+    }
+    renderStatTable(data) {
+        data.push(this.getSumTableRow(data));
+        new AGN.Lib.Table($("#period-table").empty(), this.tableColumns, data, {
+            pagination: false,
+            showRecordsCount: "simple",
+            domLayout: "autoHeight"
+        });
+    }
+    getSumTableRow(data) {
+        return {
+            period: t("statistics.sum"),
+            optIns: _.sumBy(data, "optIns"),
+            optOuts: _.sumBy(data, "optOuts"),
+            bounced: _.sumBy(data, "bounced"),
+            optInWithoutConfirm: _.sumBy(data, "optInWithoutConfirm"),
+            blocklisted: _.sumBy(data, "blocklisted"),
+            csvSkip: true
+        };
+    }
+    get statsMonth() {
+        return Number.parseInt($("#statMoth").val());
+    }
+    get statsYear() {
+        return Number.parseInt($("#statYear").val());
+    }
+    exportCsv() {
+        AGN.Lib.Table.get($("#period-table")).exportUnsortedCsv({
+            fileName: "recipient_progress.csv",
+            shouldRowBeSkipped: params => params.node.data?.csvSkip,
+            columnSeparator: ";",
+            suppressQuotes: true
+        });
+    }
+}
+
+AGN.Lib.Controller.new("mailinglist-view", MailinglistViewController);
 
 AGN.Lib.Controller.new("mailings-comparison-stat-view", function() {
     const BAR_HEIGHT = 20;
@@ -145057,9 +146732,7 @@ AGN.Lib.Controller.new("monthly-overview-stat", function() {
                 scales: {
                     x: {
                         ticks: {
-                            autoSkip: false,
-                            maxRotation: 90,
-                            minRotation: 0
+                            display: false
                         }
                     },
                     y: {
@@ -145893,7 +147566,15 @@ AGN.Lib.Controller.new("progress-stat", function() {
             backgroundColor: ChartUtils.getDarkestBlueColor(),
             categoryPercentage: 1
         } ];
-        drawProgressBarChart($canvas, datasets, getTimeBarChartOptions());
+        const options = getTimeBarChartOptions(window.adminDateTimeFormat, {
+            scales: {
+                x: {
+                    min: config.from,
+                    max: config.to
+                }
+            }
+        });
+        drawProgressBarChart($canvas, datasets, options);
     }
     function drawEventProgressTiles(entries, metrics) {
         const deviceClassIds = collectDeviceClassIds(entries);
@@ -145978,7 +147659,7 @@ AGN.Lib.Controller.new("progress-stat", function() {
             options: options
         });
     }
-    function getTimeBarChartOptions(dateFormat = window.adminDateTimeFormat, customOptions = {}) {
+    function getTimeBarChartOptions(dateFormat, customOptions = {}) {
         return _.merge({}, {
             layout: {
                 padding: {
@@ -145993,15 +147674,13 @@ AGN.Lib.Controller.new("progress-stat", function() {
                         unit: config.isHourScale ? "hour" : "day",
                         displayFormats: {
                             day: config.isHourScale ? "" : dateFormat,
-                            hour: config.isHourScale ? "hh:mm" : ""
+                            hour: config.isHourScale ? "HH:mm" : ""
                         },
                         tooltipFormat: dateFormat
                     },
                     ticks: {
                         maxRotation: 0
-                    },
-                    min: config.from,
-                    max: config.to
+                    }
                 },
                 y: {
                     display: false
@@ -146018,6 +147697,8 @@ AGN.Lib.Controller.new("progress-stat", function() {
 
 AGN.Lib.Controller.new("recipient-distribution-stats", function() {
     const StatsChart = AGN.Lib.StatsChart;
+    const Table = AGN.Lib.Table;
+    const getTable$ = () => $("#table");
     let data;
     let metrics;
     this.addDomInitializer("recipient-distribution-stats", function() {
@@ -146027,7 +147708,7 @@ AGN.Lib.Controller.new("recipient-distribution-stats", function() {
         renderTable();
     });
     function renderTable() {
-        new AGN.Lib.Table($("#table").empty(), getTableColumnDefinitions(), data, getDefaultTableOptions());
+        new Table(getTable$().empty(), getTableColumnDefinitions(), data, getDefaultTableOptions());
     }
     function renderChart() {
         const labels = data.map(r => r.month);
@@ -146086,14 +147767,9 @@ AGN.Lib.Controller.new("recipient-distribution-stats", function() {
     }
     this.addAction({
         click: "export-csv"
-    }, function() {
-        const table = AGN.Lib.Table.get($("#table"));
-        if (table?.api) {
-            table.api.exportDataAsCsv({
-                fileName: "recipient_distribution.csv"
-            });
-        }
-    });
+    }, () => Table.get(getTable$()).exportUnsortedCsv({
+        fileName: "recipient_distribution.csv"
+    }));
 });
 
 AGN.Lib.Controller.new("recipient-duplicates-list", function() {
@@ -146721,42 +148397,199 @@ AGN.Lib.Controller.new("recipient-list", function() {
     }
 });
 
-AGN.Lib.Controller.new("recipient-statistics-view", function() {
-    this.addAction({
-        change: "type-change"
-    }, function() {
-        const $el = this.el;
-        const selectedOption = $el.find("option:selected");
-        const $mailinglist = $("#mailinglist-select");
-        if (selectedOption.is("[data-mailinglist-required]") && $mailinglist.val() === "0") {
-            AGN.Lib.Select.get($mailinglist).selectNext();
-        }
-        AGN.Lib.Form.get($el).submit();
-    });
-});
-
 AGN.Lib.Controller.new("recipient-stats", function() {
     const ProcessingLoader = AGN.Lib.ProcessingLoader;
     const StatsChart = AGN.Lib.StatsChart;
+    const Messages = AGN.Lib.Messages;
     const Template = AGN.Lib.Template;
+    const Helpers = AGN.Lib.Helpers;
     const Select = AGN.Lib.Select;
     const Form = AGN.Lib.Form;
     const Table = AGN.Lib.Table;
-    this.addDomInitializer("recipient-stats", loadStats);
+    const COLORS = AGN.Lib.Helpers.getStatColorsHexValues();
+    const TABLE_OPTIONS = {
+        pagination: false,
+        showRecordsCount: "simple",
+        domLayout: "autoHeight"
+    };
+    const TABLE_COLUMNS = {
+        progress: [ {
+            headerName: t("defaults.date"),
+            field: "period"
+        }, {
+            headerName: t("statistics.optIns"),
+            headerColor: true,
+            field: "optIns"
+        }, {
+            headerName: t("statistics.optOuts"),
+            headerColor: true,
+            field: "optOuts"
+        }, {
+            headerName: t("statistics.bounced"),
+            headerColor: true,
+            field: "bounced"
+        }, {
+            headerName: t("statistics.optInWithoutConfirm"),
+            headerColor: true,
+            field: "optInWithoutConfirm"
+        }, {
+            headerName: t("statistics.blocklisted"),
+            headerColor: true,
+            field: "blocklisted"
+        } ],
+        "opt-ins": [ {
+            headerName: t("defaults.date"),
+            field: "period"
+        }, {
+            headerName: t("statistics.doubleOptIn"),
+            headerColor: true,
+            field: "byDoiConfirmation"
+        }, {
+            headerName: t("statistics.imports"),
+            headerColor: true,
+            field: "byImports"
+        }, {
+            headerName: t("statistics.byUser"),
+            headerColor: true,
+            field: "byUser"
+        }, {
+            headerName: t("statistics.byAhv"),
+            headerColor: true,
+            field: "byAhv"
+        }, {
+            headerName: t("statistics.other"),
+            headerColor: true,
+            field: "other"
+        } ],
+        "opt-outs": [ {
+            headerName: t("defaults.date"),
+            field: "period"
+        }, {
+            headerName: t("statistics.feedbackLoop"),
+            headerColor: true,
+            field: "byFeedbackLoop"
+        }, {
+            headerName: t("statistics.byCsaLink"),
+            headerColor: true,
+            field: "byCsaLink"
+        }, {
+            headerName: t("statistics.mailings"),
+            headerColor: true,
+            field: "byMailings"
+        }, {
+            headerName: t("statistics.imports"),
+            headerColor: true,
+            field: "byImports"
+        }, {
+            headerName: t("statistics.wsOrIndividual"),
+            headerColor: true,
+            field: "other"
+        }, {
+            headerName: t("statistics.byUser"),
+            headerColor: true,
+            field: "byUser"
+        } ],
+        "status-info": [ {
+            headerName: t("statistics.statusInfo"),
+            field: "name",
+            cellStyle: {
+                "user-select": "text"
+            },
+            cellRenderer: "NotEscapedStringCellRenderer"
+        }, {
+            headerName: t("defaults.value"),
+            field: "value",
+            cellStyle: {
+                "user-select": "text"
+            },
+            cellRenderer: "NotEscapedStringCellRenderer"
+        } ],
+        "mail-format": [ {
+            headerName: t("statistics.mailFormat"),
+            type: "colorBadge",
+            field: "name"
+        }, {
+            headerName: "",
+            field: "value",
+            valueFormatter: ({value: value}) => `${value}%`
+        } ],
+        "recipient-status": [ {
+            headerName: t("statistics.overallStatus"),
+            field: "name"
+        }, {
+            headerName: "",
+            field: "value"
+        }, {
+            colId: "status",
+            headerName: t("defaults.status"),
+            field: "name",
+            hide: true
+        }, {
+            colId: "amount",
+            headerName: t("statistics.amount"),
+            field: "value",
+            hide: true
+        } ],
+        doi: [ {
+            headerName: t("statistics.doi"),
+            type: "colorBadge",
+            field: "type"
+        }, {
+            colId: "amount",
+            headerName: t("statistics.amount"),
+            field: "value",
+            hide: true
+        }, {
+            colId: "percent",
+            headerName: t("statistics.percent"),
+            field: "percent",
+            valueGetter: params => `${Math.floor(params.data.percent)}%`,
+            hide: true
+        }, {
+            headerName: "",
+            field: "value",
+            suppressSizeToFit: true,
+            valueGetter: params => {
+                const percent = params.data.percent;
+                return `${params.data.value} (${percent.toFixed(2)}%)`;
+            }
+        } ]
+    };
+    const getSelectedType = () => $("#stats-type").val();
+    let config;
+    this.addDomInitializer("recipient-stats", function() {
+        config = this.config;
+        loadStats();
+    });
     this.addAction({
         change: "change-stats"
     }, loadStats);
     this.addAction({
-        click: "reload-stats"
+        click: "reload-stats",
+        change: "reload-stats"
     }, loadStats);
     this.addAction({
         click: "export-csv"
     }, exportCsv);
-    function loadStats() {
-        const mailinglistSelect = Select.get($("#mailinglist-select"));
-        if (Select.get($("#stats-type")).$selectedOption.is("[data-mailinglist-required]") && mailinglistSelect.getSelectedValue() === "0") {
-            mailinglistSelect.selectNext();
+    function validateSelectedPeriod() {
+        const $startDate = $("#startDate");
+        const $endDate = $("#endDate");
+        const startDate = $startDate.datepicker("getDate");
+        const endDate = $endDate.datepicker("getDate");
+        const selectedDays = startDate && endDate ? moment(endDate).diff(moment(startDate), "days") : 0;
+        if (selectedDays > config.daysPeriodLimit) {
+            $endDate.datepicker("setDate", moment(startDate).add(config.daysPeriodLimit, "days").toDate());
+            Messages.warn(t("statistics.default.periodExceeded", config.daysPeriodLimit));
         }
+    }
+    const controlMailinglistSelect = () => {
+        const mailinglistSelect = Select.get($("#mailinglist-select"));
+        const isDoi = $("#stats-type").val() === "doi";
+        mailinglistSelect.disableOptionsByPredicate(option => isDoi && $(option).val() === "0", true);
+    };
+    function loadStats() {
+        validateSelectedPeriod();
+        controlMailinglistSelect();
         const $container = Template.dom(`${getSelectedType()}-stats-template`, {});
         $("#overview-tile > .tile-body").empty().append($container);
         const form = Form.get($("#stat-form"));
@@ -146765,9 +148598,6 @@ AGN.Lib.Controller.new("recipient-stats", function() {
         form.setActionOnce(AGN.url(`/statistics/recipient/${getSelectedType()}.action`));
         form.submit().done(stats => renderStats(stats)).always(() => loader.hide());
     }
-    function getSelectedType() {
-        return $("#stats-type").val();
-    }
     function renderStats(stats) {
         switch (getSelectedType()) {
           case "progress":
@@ -146775,60 +148605,313 @@ AGN.Lib.Controller.new("recipient-stats", function() {
             renderProgressTable(stats);
             break;
 
+          case "opt-ins":
+            renderOptInsChart(stats);
+            renderOptInsTable(stats);
+            break;
+
+          case "opt-outs":
+            renderOptOutsChart(stats);
+            renderOptOutsTable(stats);
+            break;
+
+          case "status-info":
+            renderStatusInfoTables(stats);
+            break;
+
+          case "mail-format":
+            renderMailFormatChart(stats);
+            stats.push({
+                name: t("statistics.default.total"),
+                value: 100,
+                preventColor: true
+            });
+            renderTable("mail-format", stats);
+            break;
+
+          case "recipient-status":
+            renderRecipientStatusChart(stats);
+            renderTable("recipient-status", stats);
+            break;
+
+          case "doi":
+            stats.at(-1).preventColor = true;
+            stats.at(-1).csvSkip = true;
+            renderTable("doi", stats);
+            renderDoiChart(stats);
+            break;
+
           default:
-            logger.error("Invalid statistic type.");
+            console.error("Invalid statistic type.");
         }
     }
-    function renderProgressChart(data) {
-        const months = {};
-        _.forEach(data, (progress, dateStr) => {
-            const [, month, year] = dateStr.split(".").map(Number);
-            const monthKey = `${year}-${String(month).padStart(2, "0")}`;
-            if (!months[monthKey]) {
-                months[monthKey] = {
-                    optIns: 0,
-                    optOuts: 0,
-                    bounced: 0,
-                    doubleOptIn: 0,
-                    blocklisted: 0
-                };
-            }
-            months[monthKey].optIns += progress.optIns;
-            months[monthKey].optOuts += progress.optOuts;
-            months[monthKey].bounced += progress.bounced;
-            months[monthKey].doubleOptIn += progress.doubleOptIn;
-            months[monthKey].blocklisted += progress.blocklisted;
+    function renderProgressChart(stats) {
+        renderPeriodChart({
+            labels: _.map(stats, row => row.period),
+            datasets: [ {
+                data: _.map(stats, row => row.optIns)
+            }, {
+                data: _.map(stats, row => row.optOuts)
+            }, {
+                data: _.map(stats, row => row.bounced)
+            }, {
+                data: _.map(stats, row => row.optInWithoutConfirm)
+            }, {
+                data: _.map(stats, row => row.blocklisted)
+            } ]
         });
-        const labels = _.keys(months).sort();
-        const datasets = [ {
-            data: labels.map(m => months[m].optIns)
-        }, {
-            data: labels.map(m => months[m].optOuts)
-        }, {
-            data: labels.map(m => months[m].bounced)
-        }, {
-            data: labels.map(m => months[m].doubleOptIn)
-        }, {
-            data: labels.map(m => months[m].blocklisted)
-        } ];
-        new StatsChart("line", $("#progress-chart"), {
-            labels: labels,
-            datasets: datasets
+    }
+    function renderOptInsChart(stats) {
+        renderPeriodChart({
+            labels: _.map(stats, row => row.period),
+            datasets: [ {
+                data: _.map(stats, row => row.byDoiConfirmation)
+            }, {
+                data: _.map(stats, row => row.byImports)
+            }, {
+                data: _.map(stats, row => row.byUser)
+            }, {
+                data: _.map(stats, row => row.byAhv)
+            }, {
+                data: _.map(stats, row => row.other)
+            } ]
         });
+    }
+    function renderOptOutsChart(stats) {
+        renderPeriodChart({
+            labels: _.map(stats, row => row.period),
+            datasets: [ {
+                data: _.map(stats, row => row.byFeedbackLoop)
+            }, {
+                data: _.map(stats, row => row.byCsaLink)
+            }, {
+                data: _.map(stats, row => row.byMailings)
+            }, {
+                data: _.map(stats, row => row.byImports)
+            }, {
+                data: _.map(stats, row => row.other)
+            }, {
+                data: _.map(stats, row => row.byUser)
+            } ]
+        });
+    }
+    function renderPeriodChart(data) {
+        StatsChart.create("line", $("#line-chart"), data);
     }
     function renderProgressTable(data) {
-        new AGN.Lib.Table($("#table").empty(), data, getDefaultTableOptions());
+        data.push({
+            period: t("statistics.sum"),
+            optIns: _.sumBy(data, "optIns"),
+            optOuts: _.sumBy(data, "optOuts"),
+            bounced: _.sumBy(data, "bounced"),
+            optInWithoutConfirm: _.sumBy(data, "optInWithoutConfirm"),
+            blocklisted: _.sumBy(data, "blocklisted"),
+            csvSkip: true
+        });
+        renderPeriodTable(TABLE_COLUMNS["progress"], data);
     }
-    function getDefaultTableOptions() {
-        return {
-            pagination: false,
-            showRecordsCount: "simple",
-            autoHeight: true
-        };
+    function renderOptInsTable(data) {
+        data.push({
+            period: t("statistics.sum"),
+            other: _.sumBy(data, "other"),
+            byUser: _.sumBy(data, "byUser"),
+            byImports: _.sumBy(data, "byImports"),
+            byDoiConfirmation: _.sumBy(data, "byDoiConfirmation"),
+            byAhv: _.sumBy(data, "byAhv"),
+            csvSkip: true
+        });
+        renderPeriodTable(TABLE_COLUMNS["opt-ins"], data);
+    }
+    function renderOptOutsTable(data) {
+        data.push({
+            period: t("statistics.sum"),
+            other: _.sumBy(data, "other"),
+            byUser: _.sumBy(data, "byUser"),
+            byImports: _.sumBy(data, "byImports"),
+            byFeedbackLoop: _.sumBy(data, "byFeedbackLoop"),
+            byCsaLink: _.sumBy(data, "byCsaLink"),
+            byMailings: _.sumBy(data, "byMailings"),
+            csvSkip: true
+        });
+        renderPeriodTable(TABLE_COLUMNS["opt-outs"], data);
+    }
+    function renderPeriodTable(columnDefs, data) {
+        new Table($("#period-table"), columnDefs, data, {
+            ...TABLE_OPTIONS,
+            autoHeight: true,
+            domLayout: "normal"
+        });
+    }
+    function renderStatusInfoTables(data) {
+        new Table($("#summed-table"), TABLE_COLUMNS["status-info"], data.filter(row => row.isSummed), TABLE_OPTIONS);
+        new Table($("#not-summed-table"), TABLE_COLUMNS["status-info"], data.filter(row => !row.isSummed), TABLE_OPTIONS);
+    }
+    function renderMailFormatChart(stat) {
+        StatsChart.create("doughnut", $(`#mail-format-chart`), {
+            labels: stat.map(({name: name}) => name),
+            datasets: [ {
+                data: stat.map(({value: value}) => value),
+                backgroundColor: COLORS,
+                borderWidth: 0
+            } ]
+        });
+    }
+    function renderDoiChart(data) {
+        data.pop();
+        StatsChart.create("doughnut", $(`#doi-chart`), {
+            labels: data.map(({type: type}) => type),
+            datasets: [ {
+                data: data.map(({value: value}) => value),
+                backgroundColor: COLORS,
+                borderWidth: 0
+            } ]
+        });
+    }
+    function renderRecipientStatusChart(stat) {
+        new Chart($("#recipient-status-chart")[0].getContext("2d"), {
+            type: "bar",
+            data: {
+                labels: [ "Count" ],
+                datasets: stat.map((row, index) => ({
+                    label: row.name,
+                    data: [ row.value ],
+                    backgroundColor: COLORS[index],
+                    categoryPercentage: .4,
+                    barPercentage: .8,
+                    maxBarThickness: 50
+                }))
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "bottom"
+                    }
+                },
+                scales: {
+                    x: {
+                        type: "category",
+                        offset: true,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            display: false
+                        },
+                        border: {
+                            display: true,
+                            color: Helpers.getColorByVar("--chart-axis-color")
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...stat.map(s => s.value)) * 1.03,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function renderTable(statsType, data) {
+        new Table($(`#${statsType}-table`), TABLE_COLUMNS[statsType], data, TABLE_OPTIONS);
     }
     function exportCsv() {
-        return Table.get($("#progress-table"))?.api.exportDataAsCsv({
-            fileName: "recipient_progress.csv"
+        switch (getSelectedType()) {
+          case "progress":
+            exportPeriodCsv("recipient_progress.csv");
+            break;
+
+          case "opt-ins":
+            exportPeriodCsv("recipient_optins.csv");
+            break;
+
+          case "opt-outs":
+            exportPeriodCsv("recipient_optouts.csv");
+            break;
+
+          case "status-info":
+            exportStatusInfoCsv();
+            break;
+
+          case "recipient-status":
+            exportRecipientStatusCsv();
+            break;
+
+          case "mail-format":
+            exportMailFormatCsv();
+            break;
+
+          case "doi":
+            exportDoiCsv();
+            break;
+
+          default:
+            console.error("Invalid statistic type.");
+        }
+    }
+    function exportPeriodCsv(fileName = "export.csv") {
+        Table.get($("#period-table")).exportUnsortedCsv({
+            fileName: fileName,
+            shouldRowBeSkipped: params => params.node.data?.csvSkip,
+            columnSeparator: ";",
+            suppressQuotes: true
+        });
+    }
+    function exportStatusInfoCsv() {
+        const summedCsv = Table.get($(`#summed-table`)).getUnsortedDataAsCsv({
+            columnSeparator: ";",
+            suppressQuotes: true
+        });
+        const notSummedCsv = Table.get($(`#not-summed-table`)).getUnsortedDataAsCsv({
+            skipColumnHeaders: true,
+            columnSeparator: ";",
+            suppressQuotes: true
+        });
+        const mergedCsv = summedCsv + (notSummedCsv ? "\n" + notSummedCsv + "\n" : "");
+        Helpers.downloadCsv(mergedCsv, "recipient_remarks.csv");
+    }
+    function exportMailFormatCsv() {
+        const rows = [];
+        Table.get($(`#mail-format-table`)).api.forEachNode(node => {
+            rows.push(node.data);
+        });
+        const items = rows.filter(({name: name, value: value}) => name !== "Total" && Number(value) > 0);
+        const reversed = [ ...items ].reverse();
+        const lines = [ `${t("recipient.mailingType")};;`, ...reversed.map(({name: name, value: value}) => `${name};${value}`), `${t("statistics.mailFormat")};in %`, ";" ];
+        items.forEach(({name: name, value: value}, index) => {
+            lines.push(`;${name}`, String(value));
+            if (index < items.length - 1) {
+                lines.push(";");
+            }
+        });
+        lines.push(";;", ";");
+        Helpers.downloadCsv(lines.join("\n") + "\n", "recipient_mailtype.csv");
+    }
+    function exportDoiCsv() {
+        Table.get($(`#doi-table`)).exportUnsortedCsv({
+            fileName: "recipient_doi.csv",
+            columnKeys: [ "type", "amount", "percent" ],
+            columnSeparator: ";",
+            suppressQuotes: true,
+            shouldRowBeSkipped: params => params.node.data?.csvSkip
+        });
+    }
+    function exportRecipientStatusCsv() {
+        Table.get($(`#recipient-status-table`)).exportUnsortedCsv({
+            fileName: "recipient_status.csv",
+            columnKeys: [ "status", "amount" ],
+            columnSeparator: ";",
+            suppressQuotes: true,
+            shouldRowBeSkipped: params => params.node.data?.value <= 0
         });
     }
 });
@@ -147626,6 +149709,14 @@ AGN.Lib.Controller.new("system-status", function() {
         sessionStorage.setItem(SYSTEM_UPDATE_DISMISS_KEY, version);
         $panel.remove();
     });
+    this.addAction({
+        change: "toggle-csrf"
+    }, function() {
+        const enable = this.el.is(":checked");
+        $.post(AGN.url("/serverstatus/csrf/toggle.action"), {
+            enable: enable
+        }).done(resp => AGN.Lib.JsonMessages(resp.popups));
+    });
 });
 
 AGN.Lib.Controller.new("target-group-stat", function() {
@@ -148272,6 +150363,41 @@ AGN.Lib.Controller.new("user-and-groups-permissions", function() {
     }
 });
 
+AGN.Lib.Controller.new("user-overview", function() {
+    let isRestfulPage;
+    this.addDomInitializer("user-overview", function() {
+        isRestfulPage = this.config.isRestfulPage;
+    });
+    this.addAction({
+        "table-column-manager:add": "update-columns"
+    }, function() {
+        const form = AGN.Lib.Form.get(this.el);
+        form.setValueOnce("additionalColumns", this.data.columns);
+        form.setValueOnce("inEditColumnsMode", true);
+        form.submit();
+    });
+    this.addAction({
+        "table-column-manager:apply": "update-columns"
+    }, function() {
+        const additionalColumns = this.data.columns;
+        $.ajax({
+            type: "POST",
+            url: AGN.url(`/${isRestfulPage ? "restfulUser" : "admin"}/list/setAdditionalColumns.action`),
+            traditional: true,
+            data: {
+                additionalColumns: additionalColumns
+            }
+        }).done(resp => {
+            if (resp.success) {
+                AGN.Lib.WebStorage.extend("admin-overview", {
+                    fields: additionalColumns
+                });
+            }
+            AGN.Lib.JsonMessages(resp.popups);
+        });
+    });
+});
+
 AGN.Lib.Controller.new("userform-images", function() {
     const Modal = AGN.Lib.Modal;
     const Template = AGN.Lib.Template;
@@ -148535,6 +150661,336 @@ AGN.Lib.Controller.newExtended("workflow-list", "activeness-overview", function(
             });
         });
     });
+});
+
+AGN.Lib.Controller.new("workflow-stat", function() {
+    const Template = AGN.Lib.Template;
+    const Helpers = AGN.Lib.Helpers;
+    let config;
+    let $container;
+    const METRICS = [ {
+        name: "sentEmails",
+        label: t("statistics.default.sentEmails")
+    }, {
+        name: "acceptedEmails",
+        label: t("statistics.default.acceptedEmails")
+    }, {
+        name: "measuredOpeners",
+        label: t("statistics.default.measuredOpeners")
+    }, {
+        name: "invisibleOpeners",
+        label: t("statistics.default.invisibleOpeners")
+    }, {
+        name: "totalOpeners",
+        label: t("statistics.default.totalOpeners")
+    }, {
+        name: "anonymousOpenersCount",
+        label: t("statistics.progress.anonymousOpenings")
+    }, {
+        name: "clickers",
+        label: t("statistics.default.clickers")
+    }, {
+        name: "anonymousClickersCount",
+        label: t("statistics.progress.anonymousClicks")
+    }, {
+        name: "optOuts",
+        label: t("statistics.optOuts")
+    }, {
+        name: "hardBounces",
+        label: t("statistics.default.hardBounces")
+    }, {
+        name: "softBounces",
+        label: t("statistics.bounce.undelivered")
+    }, {
+        name: "revenue",
+        label: t("statistics.default.revenue")
+    }, {
+        name: "avgMailingSize",
+        label: t("statistics.default.avgMailSize"),
+        tableTemplate: "stat-size-cell",
+        unit: "KB"
+    } ];
+    const deviceTypeColors = Helpers.getStatColorsNames();
+    const DEVICE_TYPES = [ {
+        key: "TOTAL",
+        label: t("statistics.default.total")
+    }, {
+        key: "PC",
+        label: t("statistics.device.desktop")
+    }, {
+        key: "TABLET",
+        label: t("statistics.device.tablet")
+    }, {
+        key: "MOBILE",
+        label: t("statistics.device.mobile")
+    }, {
+        key: "SMART_TV",
+        label: t("statistics.device.smarttv")
+    }, {
+        key: "MULTIPLE",
+        label: t("statistics.device.mixed")
+    } ].map((type, index) => ({
+        ...type,
+        color: deviceTypeColors[index % deviceTypeColors.length]
+    }));
+    const OPENER_DEVICE_ROWS = DEVICE_TYPES.map(type => ({
+        field: type.key === "TOTAL" ? "measuredOpeners" : null,
+        mapField: type.key === "TOTAL" ? null : "openersByDeviceType",
+        deviceKey: type.key,
+        label: type.label,
+        color: type.color,
+        isTotalRow: type.key === "TOTAL"
+    }));
+    const CLICKER_DEVICE_ROWS = DEVICE_TYPES.map(type => ({
+        field: type.key === "TOTAL" ? "clickers" : null,
+        mapField: type.key === "TOTAL" ? null : "clickersByDeviceType",
+        deviceKey: type.key,
+        label: type.label,
+        color: type.color,
+        isTotalRow: type.key === "TOTAL"
+    }));
+    const REACTION_ROWS = [ {
+        field: "openingsGross",
+        label: t("statistics.default.openingsGross")
+    }, {
+        field: "clicksGross",
+        label: t("statistics.default.clicksGross")
+    }, {
+        field: "activityRate",
+        label: t("statistics.default.activityRate"),
+        isPercent: true
+    } ];
+    const tableOptions = {
+        pagination: false,
+        domLayout: "autoHeight",
+        showRecordsCount: "simple"
+    };
+    let availableMetrics = [];
+    this.addDomInitializer("workflow-stat", function() {
+        config = this.config;
+        $container = this.el;
+        fetchData().done(resp => {
+            render(resp);
+            $("#stat-loader").addClass("hidden");
+            $container.removeClass("invisible");
+        });
+    });
+    function fetchData() {
+        const params = {
+            targetGroups: config.selectedTargets
+        };
+        if (config.from) {
+            params.from = config.from;
+        }
+        if (config.to) {
+            params.to = config.to;
+        }
+        return $.get(AGN.url(`/workflow/${config.workflowId}/statistic/data.action`), params);
+    }
+    function render(resp) {
+        const {mailings: mailings, total: total} = resp;
+        if (!mailings.length) {
+            $("#workflow-stat-content").html(Template.text("no-results-found"));
+            return;
+        }
+        const colors = Helpers.getStatColorsHexValues();
+        assignColors(mailings, colors);
+        const rows = total ? [ buildTotalRow(total, colors), ...mailings ] : mailings;
+        availableMetrics = getAvailableMetrics(rows);
+        renderOptimizationInfo(resp);
+        renderChart(rows);
+        renderTable(rows);
+        renderDevicesBlock(resp);
+    }
+    function renderOptimizationInfo(resp) {
+        const info = resp.optimizationInfo;
+        const $container = $("#auto-optimization-info");
+        $container.toggleClass("hidden", !info);
+        if (!info) {
+            return;
+        }
+        $container.html(Template.text("auto-optimization-info-template", info));
+        AGN.runAll($container);
+    }
+    function renderDevicesBlock(resp) {
+        const hasData = !!(resp.openersByDevice || resp.clickersByDevice);
+        $("#device-stat-block").toggleClass("hidden", !hasData);
+        if (!hasData) {
+            return;
+        }
+        $("#reactions-table-block").removeClass("hidden");
+        const columnMailings = orderMailingsFinalFirst(resp.mailings, resp.optimizationInfo);
+        renderDeviceChart("#openers-device-chart", resp.openersByDevice);
+        renderDeviceTypeTable("#openers-device-table", columnMailings, OPENER_DEVICE_ROWS, t("statistics.default.openersByDevices"));
+        renderDeviceChart("#clickers-device-chart", resp.clickersByDevice);
+        renderDeviceTypeTable("#clickers-device-table", columnMailings, CLICKER_DEVICE_ROWS, t("statistics.default.clickersByDevices"));
+        renderDeviceTypeTable("#reactions-table", columnMailings, REACTION_ROWS, t("statistics.default.reactions"), "stat-reaction-value-cell", "stat-label-cell");
+    }
+    function orderMailingsFinalFirst(mailings, optimizationInfo) {
+        const finalMailingId = optimizationInfo?.groups?.find(group => group.finalMailing)?.mailingId;
+        const finalMailing = mailings.find(mailing => mailing.mailingId === finalMailingId);
+        if (!finalMailing) {
+            return mailings;
+        }
+        return [ finalMailing, ...mailings.filter(mailing => mailing.mailingId !== finalMailingId) ];
+    }
+    function renderDeviceChart(canvasSelector, deviceData) {
+        if (!deviceData) {
+            return;
+        }
+        const slices = DEVICE_TYPES.filter(type => type.key !== "TOTAL" && deviceData[type.key] != null);
+        new Chart($(canvasSelector)[0].getContext("2d"), {
+            type: "agnDoughnut",
+            data: {
+                labels: slices.map(type => type.label),
+                datasets: [ {
+                    data: slices.map(type => deviceData[type.key].value),
+                    backgroundColor: slices.map(type => Helpers.getStatColorHexByName(type.color)),
+                    borderWidth: 0
+                } ]
+            }
+        });
+    }
+    function renderDeviceTypeTable(containerSelector, mailings, rowsConfig, cornerLabel, valueTemplate = "stat-metric-cell", labelTemplate = "device-type-label-cell") {
+        const rows = rowsConfig.map(rowDef => {
+            const row = {
+                label: rowDef.label,
+                color: rowDef.color,
+                isPercent: !!rowDef.isPercent
+            };
+            mailings.forEach(mailing => {
+                const metric = rowDef.field ? mailing.data[rowDef.field] : mailing.data[rowDef.mapField]?.[rowDef.deviceKey];
+                row[mailing.mailingId] = rowDef.isTotalRow && metric != null ? {
+                    value: metric.value,
+                    rate: metric.value > 0 ? 100 : metric.rate
+                } : metric;
+            });
+            return row;
+        });
+        const columns = [ {
+            headerName: cornerLabel,
+            field: "label",
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: labelTemplate
+            },
+            type: "textCaseInsensitiveColumn",
+            sortable: false
+        }, ...mailings.map(mailing => ({
+            headerName: mailing.name,
+            field: `${mailing.mailingId}`,
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: valueTemplate
+            },
+            sortable: false
+        })) ];
+        new AGN.Lib.Table($(containerSelector), columns, rows, tableOptions);
+    }
+    function assignColors(mailings, colors) {
+        mailings.forEach((mailing, idx) => mailing.color = colors[(idx + 1) % colors.length]);
+    }
+    function buildTotalRow(total, colors) {
+        return {
+            mailingId: 0,
+            name: t("statistics.default.total"),
+            color: colors[0],
+            data: total
+        };
+    }
+    function renderChart(mailings) {
+        new Chart($("#workflow-stat-chart")[0].getContext("2d"), {
+            type: "bar",
+            data: {
+                labels: availableMetrics.map(metric => metric.label),
+                datasets: collectDataSets(mailings)
+            },
+            options: {
+                indexAxis: "x",
+                layout: {
+                    padding: {
+                        top: 20,
+                        right: 0
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 90,
+                            minRotation: 0
+                        }
+                    },
+                    y: {
+                        display: false
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: context => {
+                                const metric = availableMetrics[context.dataIndex];
+                                const unit = metric?.unit ? ` ${metric.unit}` : "";
+                                return `${context.dataset.label}: ${AGN.formatNumber(context.parsed.y)}${unit}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    function collectDataSets(mailings) {
+        return mailings.map(mailing => ({
+            label: mailing.name,
+            data: collectDataSetData(mailing),
+            backgroundColor: mailing.color,
+            categoryPercentage: .8,
+            barPercentage: .9
+        }));
+    }
+    function collectDataSetData(mailing) {
+        return availableMetrics.map(metric => {
+            const metricValue = mailing.data[metric.name];
+            if (metricValue == null) {
+                return 0;
+            }
+            return Helpers.isNumber(metricValue) ? metricValue : metricValue.value;
+        });
+    }
+    function renderTable(mailings) {
+        new AGN.Lib.Table($("#workflow-stat-table"), getTableColumnsDefinition(), mailings, tableOptions);
+    }
+    function getTableColumnsDefinition() {
+        const columns = [ {
+            headerName: "",
+            cellRenderer: "MustacheTemplateCellRender",
+            cellRendererParams: {
+                templateName: "workflow-mailing-cell"
+            },
+            field: "name",
+            type: "textCaseInsensitiveColumn",
+            sortable: false
+        } ];
+        availableMetrics.forEach(metric => {
+            columns.push({
+                headerName: metric.label,
+                cellRenderer: "MustacheTemplateCellRender",
+                cellRendererParams: {
+                    templateName: metric.tableTemplate || "stat-metric-cell"
+                },
+                field: `data.${metric.name}`,
+                type: "textCaseInsensitiveColumn",
+                sortable: false
+            });
+        });
+        return columns;
+    }
+    function getAvailableMetrics(mailings) {
+        return METRICS.filter(metric => mailings.some(mailing => mailing.data[metric.name] != null));
+    }
 });
 
 AGN.Lib.Controller.new("workflow-view", function() {
@@ -148889,9 +151345,9 @@ AGN.Lib.Controller.new("workflow-view", function() {
             return previousMailingIds;
         };
         baseMailingEditorBase.getMailingsByWorkStatus = function(status, sort, order, selectedMailValue) {
-            var mailingEditorBase = this;
-            var $mailingsList = $(this.formNameJId + " " + this.selectNameJId);
-            var previousMailingIds = _.uniq(this.findPreviousMailingIds()).toString();
+            const mailingEditorBase = this;
+            const $mailingsList = $(this.formNameJId + " " + this.selectNameJId);
+            const previousMailingIds = _.uniq(this.findPreviousMailingIds()).toString();
             $mailingsList.attr("readonly", "readonly");
             $.ajax({
                 url: AGN.url("/workflow/getMailingsByWorkStatus.action"),
@@ -148908,18 +151364,12 @@ AGN.Lib.Controller.new("workflow-view", function() {
                 },
                 success: function(data) {
                     $mailingsList.html("");
-                    $mailingsList.append('<option value="0">' + t("workflow.defaults.no_mailing") + "</option>");
-                    for (var i = 0; i < data.length; i++) {
-                        var obj = data[i];
-                        var mailingFontColor = "";
-                        var selected = "";
-                        if (obj.WORK_STATUS == "mailing.status.sent" || obj.WORK_STATUS == "mailing.status.norecipients") {
-                            mailingFontColor = "style='color: #808080;'";
-                        }
-                        if (selectedMailValue == obj.MAILING_ID) {
-                            selected = "selected";
-                        }
-                        $mailingsList.append("<option " + mailingFontColor + " value='" + obj.MAILING_ID + "' status='" + obj.WORK_STATUS + "' senddate='" + obj.SENDDATE + "' " + selected + ">" + obj.SHORTNAME + "</option>");
+                    $mailingsList.append(`<option value="0">${t("workflow.defaults.no_mailing")}</option>`);
+                    for (let i = 0; i < data.length; i++) {
+                        const obj = data[i];
+                        const selected = selectedMailValue == obj.MAILING_ID ? "selected" : "";
+                        const badgeClass = [ "mailing.status.sent", "mailing.status.norecipients" ].includes(obj.WORK_STATUS) ? obj.WORK_STATUS : "";
+                        $mailingsList.append(`\n                <option data-badge-class="${badgeClass}" value="${obj.MAILING_ID}" status="${obj.WORK_STATUS}" senddate="${obj.SENDDATE}" ${selected}>\n                  ${obj.SHORTNAME}\n                </option>\n            `);
                     }
                     $mailingsList.removeAttr("readonly");
                     mailingEditorBase.mailingsStatus = status;
@@ -149434,11 +151884,11 @@ AGN.Lib.Controller.new("wysiwyg-image-browser", function() {
         window.opener.AGN.Lib.Messaging.send(`image-browser:selectedLink:${editorId}`, link);
         window.close();
     }
-    function normalizeName(fname) {
-        if (fname.substr(0, 4).toLowerCase() !== "http") {
-            return `${config.rdirDomain}/image?ci=${config.companyId}&mi=${mailingId}&name=${encodeURIComponent(fname)}`;
+    function normalizeName(name) {
+        if (name.substr(0, 4).toLowerCase() !== "http") {
+            return `${config.rdirDomain}/image?nc=true&ci=${config.companyId}&mi=${mailingId}&name=${encodeURIComponent(name)}`;
         }
-        return encodeURI(fname);
+        return encodeURI(name);
     }
     function getOtherImgSelectVal() {
         return $("#image-dropdown").val();

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -51,7 +51,7 @@ import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -115,16 +115,16 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             mailingListIds.add(Integer.parseInt(mailingListIdString));
         }
 
-        List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
+        List<BirtReportUtils.BirtReportFigure> figures = BirtReportUtils.unpackFigures(figuresOptions);
         int tempTableId = createRecipientsStatisticTempTable();
 
         insertEmptyRowsIntoTempTable(companyId, tempTableId, mailingListIds, selectedTargets);
 
-        if (figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.MAILING_TYPE)) {
             addRecipientStatMailtype(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, hiddenFilterTargetIdStr);
         }
 
-        if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DOI)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DOI)) {
             addRecipientStatDoi(companyId, tempTableId, mailingListIds, startDateString, stopDateString);
         }
 
@@ -133,12 +133,12 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, false, hiddenFilterTargetIdStr);
 
         // we need active in the end of period for crossTab
-        if (figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_STATUS)
-                || figures.contains(BirtReporUtils.BirtReportFigure.MAILING_TYPE)
-                || figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)
-                || figures.contains(BirtReporUtils.BirtReportFigure.ACTIVITY_ANALYSIS)
-                || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
-                || figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_STATUS)
+                || figures.contains(BirtReportUtils.BirtReportFigure.MAILING_TYPE)
+                || figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET)
+                || figures.contains(BirtReportUtils.BirtReportFigure.ACTIVITY_ANALYSIS)
+                || figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)
+                || figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL)) {
             addRecipientStatUserStatus(companyId, tempTableId, mailingListIds, selectedTargets, startDateString, stopDateString, true, hiddenFilterTargetIdStr);
         }
 
@@ -393,19 +393,19 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             endDate = parseDate(endDateString, DATE_PARAMETER_FORMAT);
         }
 
-        List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
+        List<BirtReportUtils.BirtReportFigure> figures = BirtReportUtils.unpackFigures(figuresOptions);
         int tempTableId = createTempTable();
 
         // add active recipients
         addActiveRecipients(companyId, targetGroups, mailingListIds, startDateString, endDateString, tempTableId,
-                tempTableInfoInRowId, figures.contains(BirtReporUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET), hiddenFilterTargetStr);
+                tempTableInfoInRowId, figures.contains(BirtReportUtils.BirtReportFigure.RECIPIENT_DEVELOPMENT_NET), hiddenFilterTargetStr);
 
-        if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL) || figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL) || figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
             insertClickersIntoTempTable(tempTableId, companyId, targetGroups, mailingListIds, startDate, endDate,
-                    figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE), hiddenFilterTargetStr);
+                    figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE), hiddenFilterTargetStr);
         }
 
-        if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)) {
             insertOpenersIntoTempTable(tempTableId, companyId, targetGroups, mailingListIds, startDate, endDate, hiddenFilterTargetStr);
         }
 
@@ -737,9 +737,9 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
      * @param targetGroups list of selected target groups
      * @param figures      report checkbox parameters
      */
-    private void updateAllRates(int tempTableId, int companyId, List<LightTarget> targetGroups, List<BirtReporUtils.BirtReportFigure> figures) {
-        if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)
-                || figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
+    private void updateAllRates(int tempTableId, int companyId, List<LightTarget> targetGroups, List<BirtReportUtils.BirtReportFigure> figures) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL)
+                || figures.contains(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
             updateRates(tempTableId, companyId, targetGroups,
                     new Object[]{CommonKeys.ALL_SUBSCRIBERS_INDEX, CLICKER_TRACKED_END_DATE_INDEX},
                     new Integer[]{CLICKER_TRACKED_END_DATE_INDEX, CLICKER_PC_END_DATE_INDEX,
@@ -747,8 +747,8 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                             CLICKER_SMARTTV_END_DATE_INDEX, CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX});
         }
 
-        if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
-                || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED)
+                || figures.contains(BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
             updateRates(tempTableId, companyId, targetGroups,
                     new Object[]{CommonKeys.ALL_SUBSCRIBERS_INDEX, OPENERS_TRACKED_END_DATE_INDEX},
                     new Integer[]{OPENERS_TRACKED_END_DATE_INDEX, OPENERS_PC_END_DATE_INDEX,

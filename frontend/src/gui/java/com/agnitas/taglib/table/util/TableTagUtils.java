@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,7 +12,7 @@ package com.agnitas.taglib.table.util;
 
 import static org.springframework.web.servlet.support.RequestContextUtils.getLocale;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -90,7 +90,11 @@ public class TableTagUtils {
 
         try {
             if (bean.getClass().isRecord()) {
-                return FieldUtils.readField(bean, property, true);
+                Field field = FieldUtils.getField(bean.getClass(), property, true);
+                if (field != null) {
+                    return FieldUtils.readField(field, bean, true);
+                }
+                return bean.getClass().getMethod(property).invoke(bean);
             }
             return PropertyUtils.getSimpleProperty(bean, property);
         } catch (Exception e) {

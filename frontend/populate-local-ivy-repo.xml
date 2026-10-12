@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    populate-local-ivy-repo.xml
+    ===========================
+    Downloads every project dependency (JARs + Ivy descriptors) into the local
+    offline repository so that subsequent builds can run without internet access.
+
+    Usage (from project root):
+        ant -f populate-local-ivy-repo.xml
+
+    Default paths and resolver chain are read from ivy.properties.
+    Any property can be overridden on the command line: -Divy.local.repo=/some/shared/path
+
+    After running, distribute the ivy.local.repo directory to air-gapped machines.
+    On those machines set in ivy.properties (or pass via -D):
+        ivy.default.resolver=offline-chain
+        ivy.local.repo=/path/to/distributed/local-repo
+
+    How it works:
+        Ivy's working cache is redirected to equal ivy.local.repo for this run.
+        Because ivysettings.xml defines the libs-repo-local resolver with the same
+        path patterns as Ivy's cache layout, every artifact downloaded during
+        resolve lands directly in libs-repo-local — no separate install step needed.
+        This includes JAR artifacts, Ivy XML descriptors, and POM-only BOM files.
+-->
+<project name="populate-local-ivy-repo" basedir="." default="populate" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+    <taskdef uri="antlib:org.apache.ivy.ant" resource="org/apache/ivy/ant/antlib.xml" classpath="lib_ant/ivy-2.5.3.jar"/>
+
+    <!-- Always resolve online - the whole point of this script is to download from remote repos -->
+    <property name="ivy.default.resolver" value="build-chain"/>
+
+    <!-- Load shared Ivy configuration (ivy.default.resolver above takes precedence) -->
+    <available file="ivy.properties" property="isIvyPropertiesAvailable"/>
+    <fail message="Missing ivy.properties: copy ivy.properties.default to ivy.properties and adjust the settings">
+        <condition><not><isset property="isIvyPropertiesAvailable"/></not></condition>
+    </fail>
+
+    <!-- Load ivy.properties but skip the ivy.cache.dir line so we can override it below -->
+    <loadproperties srcFile="ivy.properties">
+        <filterchain>
+            <linecontainsregexp negate="true">
+                <regexp pattern="^\s*ivy\.cache\.dir\s*="/>
+            </linecontainsregexp>
+        </filterchain>
+    </loadproperties>
+
+    <!-- Redirect Ivy's working cache to libs-repo-local for this run -->
+    <property name="ivy.cache.dir" value="${ivy.local.repo}"/>
+
+    <target name="populate" description="Populate the local repository for offline builds">
+        <ivy:settings file="ivysettings.xml"/>
+
+        <!--
+            Remove stale resolve-outcome files from any previous interrupted run.
+            These files record whether a particular module resolved successfully;
+            if a run was killed mid-way they can contain failure entries that
+            prevent Ivy from retrying successfully-downloadable modules.
+            Artifact files (JARs and descriptors) already on disk are reused as-is.
+        -->
+        <delete>
+            <fileset dir="${ivy.local.repo}" includes="resolved-*.properties" erroronmissingdir="false"/>
+        </delete>
+
+        <echo message="=== Populating local repository ==="/>
+        <echo message="Target: ${ivy.local.repo}"/>
+        <echo message=""/>
+
+        <echo message="[1/4] core — compile + test"/>
+        <ivy:resolve file="src/core/ivy.xml"    conf="compile,test"/>
+
+        <echo message="[2/4] gui — compile"/>
+        <ivy:resolve file="src/gui/ivy.xml"     conf="compile"/>
+
+        <echo message="[3/4] soap — compile"/>
+        <ivy:resolve file="src/soap/ivy.xml"    conf="compile"/>
+
+        <echo message="[4/4] rest-mcp — compile + test-rest"/>
+        <ivy:resolve file="src/rest-mcp/ivy.xml" conf="compile,test-rest"/>
+
+        <echo message=""/>
+        <echo message="=== Done ==="/>
+        <echo message="Local repository ready at: ${ivy.local.repo}"/>
+        <echo message=""/>
+        <echo message="To build offline, add to the build properties file:"/>
+        <echo message="  ivy.default.resolver=offline-chain"/>
+        <echo message="  ivy.local.repo=/path/to/this/directory"/>
+    </target>
+
+</project>

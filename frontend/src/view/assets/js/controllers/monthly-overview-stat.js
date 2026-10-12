@@ -82,9 +82,7 @@ AGN.Lib.Controller.new('monthly-overview-stat', function () {
         scales: {
           x: {
             ticks: {
-              autoSkip: false,
-              maxRotation: 90,
-              minRotation: 0
+              display: false
             }
           },
           y: {

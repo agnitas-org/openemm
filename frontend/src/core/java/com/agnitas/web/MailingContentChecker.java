@@ -1,24 +1,26 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.web;
 
+import java.util.Optional;
+
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
+import com.agnitas.messages.Message;
 import com.agnitas.web.mvc.Popups;
 import org.apache.commons.lang3.Strings;
 
 public class MailingContentChecker {
 
 	private MailingContentChecker() {
-
 	}
 
     public static void checkHtmlWarningConditions(String htmlContentString, Popups popups) {
@@ -35,4 +37,21 @@ public class MailingContentChecker {
     		}
     	}
     }
+
+	public static Optional<Message> checkHtmlWarningConditions(String htmlContentString) {
+		if (Strings.CI.contains(htmlContentString, "background=\"#")) {
+			// the attribute background causes ActionForms to load twice or multiple, because background.value should be an image and not a color-code
+			return Optional.of(Message.of("warning.problematical_htmlcontent", "background=\"# ..."));
+		}
+		return Optional.empty();
+	}
+
+	public static Optional<Message> checkHtmlWarningConditions(Mailing mailing) {
+		for (MailingComponent component : mailing.getComponents().values()) {
+			if (Strings.CI.equals("text/html", component.getMimeType())) {
+				return checkHtmlWarningConditions(component.getEmmBlock());
+			}
+		}
+		return Optional.empty();
+	}
 }

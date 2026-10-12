@@ -20,6 +20,10 @@
         <put-attribute name="formContent" value="/WEB-INF/jsp/login/login.jsp" type="template"/>
     </definition>
 
+    <definition name="oauth_login" extends="login_base">
+        <put-attribute name="formContent" value="/WEB-INF/jsp/login/oauth-login.jsp" type="template"/>
+    </definition>
+
     <definition name="login_password_reset_request" extends="login_base">
         <put-attribute name="formContent" value="/WEB-INF/jsp/login/password/password-reset-request.jsp" type="template"/>
     </definition>
@@ -120,6 +124,11 @@
     <definition name="restful_useractivitylog_list" extends="base">
         <put-attribute name="body" value="/WEB-INF/jsp/administration/activity-log/restful-useractivitylog-list.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/activity-log/restful-useractivitylog-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mcp_useractivitylog_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/activity-log/mcp-useractivitylog-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/activity-log/mcp-useractivitylog-list-setup.jsp" type="template"/>
     </definition>
 
     <definition name="soap_useractivitylog_list" extends="base">
@@ -460,11 +469,6 @@
         <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/mailing-comparison/mailing-comparison-view-setup.jsp" type="template"/>
     </definition>
 
-    <definition name="stats_birt_recipient_stat" extends="base">
-        <put-attribute name="body" value="/WEB-INF/jsp/statistics/recipient/recipient-stat.jsp" type="template"/>
-        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/recipient/recipient-stat-setup.jsp" type="template"/>
-    </definition>
-
     <definition name="recipient_stats" extends="base">
         <put-attribute name="body" value="/WEB-INF/jsp/statistics/recipient/recipient-stats.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/recipient/recipient-stats-setup.jsp" type="template"/>
@@ -588,14 +592,9 @@
         <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/profile-field/profile-field-evaluation-stat-setup.jsp" type="template"/>
     </definition>
 
-    <definition name="stats_birt_month_stat" extends="base">
+    <definition name="monthly_overview_stat" extends="base">
         <put-attribute name="body" value="/WEB-INF/jsp/statistics/monthly/month-stats.jsp" type="template"/>
         <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/monthly/month-stats-setup.jsp" type="template"/>
-    </definition>
-
-    <definition name="monthly_overview_stat" extends="base">
-        <put-attribute name="body" value="/WEB-INF/jsp/statistics/monthly/month-stats-new.jsp" type="template"/>
-        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/monthly/month-stats-new-setup.jsp" type="template"/>
     </definition>
 
     <definition name="mailing_content" extends="base">
@@ -682,6 +681,8 @@
     </definition>
 
     <definition name="server_status_external_view" template="/WEB-INF/jsp/administration/server-status/serverstatus-external-view.jsp"/>
+
+    <definition name="report_print" template="/WEB-INF/jsp/statistics/report/report-print.jsp"/>
 
     <definition name="mailing_recipients_list" extends="base">
         <put-attribute name="body" value="/WEB-INF/jsp/mailing/recipients/mailing-recipients-list.jsp" type="template"/>

@@ -138,22 +138,22 @@ function isVisibleByGlobalVaribaleKeys() {
 }
 reportContext.setGlobalVariable("isVisibleByGlobalVaribaleKeys", isVisibleByGlobalVaribaleKeys);
 /******************************************************************************************************/
-reportContext.setPersistentGlobalVariable("openers_total_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("clickers_total_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("hardbounces_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.HARDBOUNCES.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("signed_off_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SIGNED_OFF.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("openers_total_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS_TOTAL.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("clickers_total_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("hardbounces_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.HARDBOUNCES.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("signed_off_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SIGNED_OFF.value, params["figures"].value) ? "true" : "false");
 
-reportContext.setPersistentGlobalVariable("openers_measured_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("openers_invisible_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("anonymous_openings_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("anonymous_clicks_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("openers_measured_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS_MEASURED.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("openers_invisible_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS_INVISIBLE.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("anonymous_openings_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("anonymous_clicks_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKS_ANONYMOUS.value, params["figures"].value) ? "true" : "false");
 
-reportContext.setPersistentGlobalVariable("openers_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("clickers_show",  BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("openers_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("clickers_show",  BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, params["figures"].value) ? "true" : "false");
 
-reportContext.setPersistentGlobalVariable("type_html_show", BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.HTML.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("type_text_show", BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TEXT.value, params["figures"].value) ? "true" : "false");
-reportContext.setPersistentGlobalVariable("type_offline_show", BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("type_html_show", BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.HTML.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("type_text_show", BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TEXT.value, params["figures"].value) ? "true" : "false");
+reportContext.setPersistentGlobalVariable("type_offline_show", BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OFFLINE_HTML.value, params["figures"].value) ? "true" : "false");
 
 
 //BIRT label report item onCreate Script

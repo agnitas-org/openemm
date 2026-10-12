@@ -20,7 +20,7 @@
 <%--@elvariable id="emailSettingsDisabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMediatypeActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="archives" type="java.util.List<com.agnitas.beans.Campaign>"--%>
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 <%--@elvariable id="prioritizedMediatypes" type="java.util.List<com.agnitas.emm.core.mediatypes.common.MediaTypes>"--%>
 
 <c:set var="NORMAL_MAILING_TYPE" value="<%= MailingType.NORMAL %>"/>
@@ -62,27 +62,36 @@
     <c:set var="mailingTypeContainerClass" value=""/>
     <%@include file="fragments/mailing-settings-followup-notice.jspf" %>
 
-    <div class="${mailingTypeContainerClass}">
-        <label class="form-label">
-            <label for="settingsGeneralMailType"><mvc:message code="mailing.Mailing_Type"/></label>
-            <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/MailingTypeMsg.xml"></a>
-        </label>
-        <mvc:select path="mailingType" id="settingsGeneralMailType" cssClass="form-control"
-                    data-action="change-general-mailing-type"
-                    data-workflow-driven="${workflowDriven}"
-                    disabled="${not MAILING_EDITABLE or workflowDriven or not emailSettingsEditable or isSettingsReadonly}">
-            <mvc:option value="${NORMAL_MAILING_TYPE}">
-                <mvc:message code="Normal_Mailing"/>
-            </mvc:option>
-            <mvc:option value="${ACTIONBASED_MAILING_TYPE}">
-                <mvc:message code="mailing.action.based.mailing"/>
-            </mvc:option>
-            <mvc:option value="${DATEBASED_MAILING_TYPE}">
-                <mvc:message code="mailing.Rulebased_Mailing"/>
-            </mvc:option>
-            <%@include file="fragments/mailingtype-extended-options.jspf" %>
-        </mvc:select>
-        ${followupNotice}
+    <div id="mailing-type-settings-block" class="${mailingTypeContainerClass}">
+        <mvc:hidden path="mailingType" />
+
+        <script id="mailing-type-settings" type="text/x-mustache-template">
+            <label class="form-label">
+                <label for="settingsGeneralMailType">
+                    <mvc:message code="default.Type"/>
+                </label>
+                <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/MailingTypeMsg.xml"></a>
+            </label>
+            <select id="settingsGeneralMailType" name="mailingType" class="form-control"
+                        data-action="change-general-mailing-type"
+                        data-workflow-driven="${workflowDriven}"
+                        ${not MAILING_EDITABLE or workflowDriven or not emailSettingsEditable or isSettingsReadonly ? 'disabled' : ''}>
+                <option value="${NORMAL_MAILING_TYPE}" {{ print(mailingType === '${NORMAL_MAILING_TYPE}' ? 'selected' : '') }}>
+                        <mvc:message code="Normal"/>
+                </option>
+
+                <option value="${ACTIONBASED_MAILING_TYPE}" {{ print(mailingType === '${ACTIONBASED_MAILING_TYPE}' ? 'selected' : '') }}>
+                        <mvc:message code="mailing.event"/>
+                </option>
+
+                <option value="${DATEBASED_MAILING_TYPE}" {{ print(mailingType === '${DATEBASED_MAILING_TYPE}' ? 'selected' : '') }}>
+                        <mvc:message code="mailing.date"/>
+                </option>
+
+                <%@include file="fragments/mailingtype-extended-options.jspf" %>
+            </select>
+            ${followupNotice}
+        </script>
     </div>
     <%@include file="fragments/mailing-settings-followup-additional-inputs.jspf" %>
 </emm:ShowByPermission>
@@ -120,7 +129,7 @@
                                             <c:set var="fieldsToToggle" value="#sms-address-field, #sms-content-tile"/>
                                         </c:when>
                                         <c:when test="${mediaTypeName eq 'rcs'}">
-                                            <c:set var="fieldsToToggle" value="#rcs-sender-icon-block, #rcs-content-tile"/>
+                                            <c:set var="fieldsToToggle" value="#rcs-content-tile"/>
                                         </c:when>
                                         <c:otherwise>
                                             <c:set var="fieldsToToggle" value=""/>
@@ -238,31 +247,34 @@
     </emm:HideByPermission>
 
     <emm:ShowByPermission token="campaign.show">
-        <div>
-            <label class="form-label">
-                <label for="settings_general_campaign"><mvc:message code="mailing.archive"/></label>
-                <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/CampaignMsg.xml"></a>
-            </label>
-            <mvc:select path="archiveId" id="settings_general_campaign" cssClass="form-control" disabled="${workflowDriven or isSettingsReadonly}" data-workflow-driven="${workflowDriven}">
-                <mvc:option value="0"><mvc:message code="mailing.NoCampaign"/></mvc:option>
-                <c:forEach var="archive" items="${archives}" end="500">
-                    <mvc:option value="${archive.id}">${archive.shortname}</mvc:option>
-                </c:forEach>
-            </mvc:select>
-        </div>
-        <div>
-            <div class="form-check form-switch mt-auto">
-                <mvc:checkbox cssClass="form-check-input" path="archived" disabled="${not emailSettingsEditable or workflowDriven or isSettingsReadonly}" role="switch" data-workflow-driven="${workflowDriven}"/>
-                <label class="form-label form-check-label">
-                    <mvc:message code="mailing.archived"/>
-                    <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/ShowInOnlineArchive.xml"></a>
+            <div data-field="toggle-vis" data-field-vis-scope="#mailingSettingsForm">
+                <label class="form-label">
+                    <label for="settings_general_campaign"><mvc:message code="mailing.archive"/></label>
+                    <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/CampaignMsg.xml"></a>
                 </label>
+                <mvc:select path="archiveId" id="settings_general_campaign" cssClass="form-control" disabled="${workflowDriven or isSettingsReadonly}" data-field-vis="">
+                    <mvc:option value="0" data-field-vis-hide="#online-archive">
+                        <mvc:message code="mailing.NoCampaign"/>
+                    </mvc:option>
+                    <c:forEach var="archive" items="${archives}" end="500">
+                        <mvc:option value="${archive.id}" data-field-vis-show="#online-archive">${archive.shortname}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+                <div class="hidden" data-field-vis-default="" data-field-vis-hide="#online-archive"></div>
             </div>
-        </div>
-    </emm:ShowByPermission>
-    <emm:HideByPermission token="campaign.show">
-        <mvc:hidden path="archiveId"/>
-    </emm:HideByPermission>
+            <div id="online-archive">
+                <div class="form-check form-switch mt-auto">
+                    <mvc:checkbox cssClass="form-check-input" path="archived" disabled="${not emailSettingsEditable or workflowDriven or isSettingsReadonly}" role="switch" data-workflow-driven="${workflowDriven}" />
+                    <label class="form-label form-check-label">
+                        <mvc:message code="mailing.archived"/>
+                        <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/ShowInOnlineArchive.xml"></a>
+                    </label>
+                </div>
+            </div>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="campaign.show">
+            <mvc:hidden path="archiveId"/>
+        </emm:HideByPermission>
 
     <%@include file="fragments/mailing-settings-frequency-toggle.jspf" %>
 </c:if>

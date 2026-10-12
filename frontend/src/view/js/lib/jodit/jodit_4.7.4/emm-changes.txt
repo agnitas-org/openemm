@@ -10,4 +10,7 @@ Fixed adding of several <div> tags when increasing indent when 'enter' option is
 Fixed unwrapping of text from the <b> tag when clicking on the bold icon (GWUA-6845)
 Fixed table header on appendColumn(table, selectedCell, insertAfter = true) (GWUA-6907)
 Fixed pasting text from Word (GWUA-6928)
-Fixed content removal when merging near `<br>` tags on backspace
+Fixed content removal when merging near <br> tags on backspace (GWUA-6974)
+Fixed line breaks in text content when pasting from Word using the 'Clean' option (INSERT_AS_TEXT) — Word wraps its HTML source at ~80 chars, leaving \r\n inside <span> text nodes; replaced with spaces after cleanFromWord() to prevent words from merging when HTML is processed externally (e.g. WordPress) (GWUA-6928)
+Fixed the Jodit editor shrinking while typing on the EMC page (GWUA-6974)
+Fixed the SVG resizing (GWUA-7129)

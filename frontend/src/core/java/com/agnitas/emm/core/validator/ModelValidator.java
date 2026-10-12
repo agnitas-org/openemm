@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,7 +12,6 @@ package com.agnitas.emm.core.validator;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -25,21 +24,17 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
-import com.agnitas.emm.core.validator.annotation.Validate;
 import org.apache.bval.jsr.ApacheValidationProvider;
 import org.apache.bval.jsr.ApacheValidatorConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 
-@Aspect
 public class ModelValidator {
 
 	private static final Logger logger = LogManager.getLogger(ModelValidator.class);
 	
-    private ResourceBundle messagesBundle;
+    private final ResourceBundle messagesBundle;
 
     private final Validator validator;
 
@@ -56,33 +51,6 @@ public class ModelValidator {
         }
     }
     
-    @Before(value = "@annotation(annotation) && args(model, ..)")
-    public void validate(Validate annotation, Object model) {
-    	if(logger.isDebugEnabled()) {
-            logger.debug("formGroups:{}, model:{}", Arrays.toString(annotation.groups()), model.getClass().getName());
-    	}
-
-    	validate(model, annotation.groups());
-	}
-
-	@Before(value="@annotation(annotation) && args(model, username)", argNames="annotation, model, username")
-	public void validate(Validate annotation, Object model, String username) {
-    	if(logger.isDebugEnabled()) {
-            logger.debug("formGroups:{}, model:{}, username: {}", Arrays.toString(annotation.groups()), model.getClass().getName(), username);
-    	}
-
-		validate(model, annotation.groups());
-	}
-
-	@Before(value = "@annotation(annotation) && args(model, username, companyId, ..)", argNames = "annotation,model,username,companyId")
-	public void validate(Validate annotation, Object model, String username, int companyId) {
-    	if(logger.isDebugEnabled()) {
-            logger.debug("formGroups:{}, model:{}, username: {}", Arrays.toString(annotation.groups()), model.getClass().getName(), username);
-    	}
-
-		validate(model, annotation.groups());
-	}
-
 	public void validate(final Object model, final Class<?>... groups) {
     	final Set<ConstraintViolation<Object>> violations = validator.validate(model, groups);
     	checkResults(violations);

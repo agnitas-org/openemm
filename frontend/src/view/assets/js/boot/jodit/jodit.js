@@ -170,7 +170,7 @@
           }
         } else if ($linkType.val() === '') {
           const url = $url.val();
-          if (!AGN.Lib.Helpers.isUrl(url)) {
+          if (!AGN.Lib.Helpers.isUrl(url) && !AGN.Lib.Helpers.isAgnTag(url)) {
             showFieldError($url, t('url.invalid'));
             return false;
           }

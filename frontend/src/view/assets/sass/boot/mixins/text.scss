@@ -1,6 +1,6 @@
-@mixin text-truncate-lines() {
+@mixin text-truncate-lines($default: 2) {
   display: -webkit-box;
-  -webkit-line-clamp: var(--text-truncate-lines);
+  -webkit-line-clamp: var(--text-truncate-lines, #{$default});
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

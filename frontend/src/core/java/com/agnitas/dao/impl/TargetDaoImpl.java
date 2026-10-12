@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -33,6 +33,7 @@ import com.agnitas.beans.factory.TargetFactory;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.TargetDao;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
 import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
 import com.agnitas.dao.impl.mapper.TargetRowMapper;
 import com.agnitas.emm.core.beans.Dependent;
@@ -139,17 +140,9 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 
 	@Override
 	public List<String> getTargetNamesByIds(int companyId, Set<Integer> targetIds) {
-		List<String> resultList = new ArrayList<>();
-		if (targetIds.isEmpty()) {
-			return resultList;
-		}
-		String sql = "SELECT target_shortname FROM dyn_target_tbl WHERE company_id = ? AND target_id in (" + StringUtils.join(targetIds, ", ") + ")";
-		List<Map<String, Object>> list = select(sql, companyId);
-		for (Map<String, Object> map : list) {
-			String targetName = (String) map.get("target_shortname");
-			resultList.add(targetName);
-		}
-		return resultList;
+		String sql = "SELECT target_shortname FROM dyn_target_tbl WHERE company_id = ? AND "
+				+ makeBulkInClauseForInteger("target_id", targetIds);
+		return select(sql, StringRowMapper.INSTANCE, companyId);
 	}
 
 	@Override

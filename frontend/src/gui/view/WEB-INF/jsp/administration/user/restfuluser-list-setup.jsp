@@ -13,7 +13,7 @@
 <c:set var="agnHelpKey" 			value="User" 				      scope="request" />
 <c:set var="agnEditViewKey" 	    value="restful-admins-overview"   scope="request" />
 
-<emm:ShowByPermission token="admin.new">
+<emm:ShowByPermission token="restfulUser.new">
     <emm:instantiate var="newResourceSettings" type="java.util.LinkedHashMap" scope="request">
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${newResourceSettings}" property="0" value="${element}"/>

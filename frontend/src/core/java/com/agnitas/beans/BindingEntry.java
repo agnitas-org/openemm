@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -87,6 +87,25 @@ public interface BindingEntry extends Serializable {
     		return Stream.of(UserType.values())
 					.filter(UserType::isVip)
 					.toList();
+		}
+
+		public static UserType parse(String raw) {
+			return tryParse(raw).orElseThrow(() -> new IllegalArgumentException("Invalid UserType: " + raw));
+		}
+
+		public static UserType parseOrNull(String raw) {
+			return tryParse(raw).orElse(null);
+		}
+
+		public static Optional<UserType> tryParse(String raw) {
+			if (raw == null) {
+				return Optional.empty();
+			}
+			try {
+				return Optional.of(getUserTypeByString(raw));
+			} catch (IllegalArgumentException ex) {
+				return Optional.empty();
+			}
 		}
     }
 

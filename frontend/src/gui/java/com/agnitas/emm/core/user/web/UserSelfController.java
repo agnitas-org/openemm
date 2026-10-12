@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -40,32 +40,41 @@ import com.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
 import com.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import com.agnitas.emm.core.commons.password.util.PasswordUtil;
 import com.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.emm.core.loginmanager.bean.LoginData;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
+import com.agnitas.emm.core.oauth.exception.OAuthAccountLinkingNotAllowedException;
+import com.agnitas.emm.core.oauth.exception.OAuthNotConfiguredException;
+import com.agnitas.emm.core.oauth.service.OAuth2ExternalIdentityService;
 import com.agnitas.emm.core.user.form.UserSelfForm;
 import com.agnitas.emm.core.user.service.UserSelfService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
+import com.agnitas.spring.security.config.OAuth2ConfigConstants;
 import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils;
 import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 public class UserSelfController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(UserSelfController.class);
 
+    private static final String REDIRECT_TO_VIEW = "redirect:/user/self/view.action";
     private static final String EDIT_USER_STR = "edit user";
 
     protected final ConfigService configService;
@@ -79,11 +88,22 @@ public class UserSelfController implements XssCheckAware {
     private final EmmLayoutBaseDao layoutBaseDao;
     private final LogonService logonService;
     private final UserSelfService userSelfService;
+    private final OAuth2ExternalIdentityService oAuth2ExternalIdentityService;
 
-    public UserSelfController(WebStorage webStorage, CompanyDao companyDao, AdminPreferencesDao adminPreferencesDao, AdminService adminService,
-                              AdminGroupDao adminGroupDao, ConfigService configService, UserActivityLogService userActivityLogService, PasswordCheck passwordCheck,
-                              EmmLayoutBaseDao layoutBaseDao, LogonService logonService, UserSelfService userSelfService) {
-
+    public UserSelfController(
+            WebStorage webStorage,
+            CompanyDao companyDao,
+            AdminPreferencesDao adminPreferencesDao,
+            AdminService adminService,
+            AdminGroupDao adminGroupDao,
+            ConfigService configService,
+            UserActivityLogService userActivityLogService,
+            PasswordCheck passwordCheck,
+            EmmLayoutBaseDao layoutBaseDao,
+            LogonService logonService,
+            UserSelfService userSelfService,
+            OAuth2ExternalIdentityService oAuth2ExternalIdentityService
+    ) {
         this.webStorage = webStorage;
         this.companyDao = companyDao;
         this.adminPreferencesDao = adminPreferencesDao;
@@ -95,10 +115,54 @@ public class UserSelfController implements XssCheckAware {
         this.layoutBaseDao = layoutBaseDao;
         this.logonService = logonService;
         this.userSelfService = userSelfService;
+        this.oAuth2ExternalIdentityService = oAuth2ExternalIdentityService;
+    }
+
+    @ExceptionHandler(OAuthNotConfiguredException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleOAuthNotConfigured(HttpHeaders headers) {
+        return HttpUtils.isAjax(headers) ? MESSAGES_VIEW : REDIRECT_TO_VIEW;
+    }
+
+    @ExceptionHandler(OAuthAccountLinkingNotAllowedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String handleOAuthAccountLinkingNotAllowed(HttpHeaders headers) {
+        return HttpUtils.isAjax(headers) ? MESSAGES_VIEW : REDIRECT_TO_VIEW;
+    }
+
+    @GetMapping("/oauth/linked.action")
+    public String onOAuthLinked(Popups popups) {
+        popups.success("GWUA.oauth.accountLinked");
+        return REDIRECT_TO_VIEW;
+    }
+
+    @GetMapping("/oauth/link-conflict.action")
+    public String onOAuthLinkConflict(Popups popups) {
+        popups.alert("GWUA.oauth.error.identityConflict");
+        return REDIRECT_TO_VIEW;
+    }
+
+    @GetMapping("/oauth/link.action")
+    public String linkOAuth() {
+        if (configService.isInternalOAuthServer()) {
+            throw new OAuthAccountLinkingNotAllowedException();
+        }
+
+        if (!configService.isOAuthConfigured()) {
+            throw new OAuthNotConfiguredException();
+        }
+
+        return "redirect:/oauth2/authorization/" + OAuth2ConfigConstants.EMM_REGISTRATION_ID;
+    }
+
+    @PostMapping("/oauth/unlink.action")
+    public String unlinkOAuth(Admin admin, Popups popups) {
+        oAuth2ExternalIdentityService.deleteByAdminForConfiguredIssuer(admin.getAdminID());
+        popups.success("GWUA.oauth.accountUnlinked");
+        return REDIRECT_TO_VIEW;
     }
 
     @RequestMapping("/view.action")
-    @AlwaysAllowed
     public String view(Admin admin, @ModelAttribute("selfForm") UserSelfForm form, Model model) {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.ADMIN_LOGIN_LOG_OVERVIEW, form);
 
@@ -111,17 +175,24 @@ public class UserSelfController implements XssCheckAware {
     protected void prepareModelAttributesForViewPage(Model model, Admin admin) {
         int companyID = admin.getCompanyID();
 
-        List<LoginData> loginTrackingList = userSelfService.getLoginTrackingList(admin, UserSelfService.DEFAULT_LOGIN_MIN_PERIOD_DAYS, admin.getDateTimeFormatWithSeconds());
-
-        model.addAttribute("loginTrackingList", loginTrackingList);
+        model.addAttribute("loginTrackingList", userSelfService.getLoginTrackingList(admin, UserSelfService.DEFAULT_LOGIN_MIN_PERIOD_DAYS, admin.getDateTimeFormatWithSeconds()));
         model.addAttribute("availableAdminGroups", adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, admin.getGroupIds()));
         model.addAttribute("availableTimezones", TimeZone.getAvailableIDs());
         model.addAttribute("availableLayouts", adminService.getEmmLayoutsBase(admin));
         model.addAttribute("passwordPolicy", PasswordPolicyUtil.loadCompanyPasswordPolicy(companyID, configService).getPolicyName());
+        addModelAttributesForOAuth(admin, model);
+    }
+
+    private void addModelAttributesForOAuth(Admin admin, Model model) {
+        if (configService.isInternalOAuthServer()) {
+            return;
+        }
+
+        model.addAttribute("oAuthAccountLinkingAllowed", true);
+        model.addAttribute("oAuthAccountLinked", oAuth2ExternalIdentityService.isLinkedForConfiguredIssuer(admin.getAdminID()));
     }
 
     @PostMapping("/save.action")
-    @AlwaysAllowed
     public String save(Admin admin, @ModelAttribute UserSelfForm form, Popups popups, HttpSession session) {
         AdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
 
@@ -284,10 +355,6 @@ public class UserSelfController implements XssCheckAware {
         form.setLivePreviewPosition(adminPreferences.getLivePreviewPosition());
         form.setStatisticLoadType(adminPreferences.getStatisticLoadType());
         form.setMailingSettingsViewType(adminPreferences.getMailingSettingsViewType());
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("loadAdmin: admin {} loaded", form.getId());
-        }
     }
 
     private void writeUserPreferencesChangesLog(Admin admin, AdminPreferences adminPreferences, UserSelfForm form) {

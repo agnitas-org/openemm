@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -31,20 +31,29 @@ public class DbSchemaSnapshotLoader implements InitializingBean {
     private final DbSchemaSnapshotService snapshotService;
     private final ServletContext servletContext;
 
-    public DbSchemaSnapshotLoader(DbSchemaSnapshotService snapshotService, @Autowired(required = false) ServletContext servletContext) {
+    public DbSchemaSnapshotLoader(
+            DbSchemaSnapshotService snapshotService,
+            @Autowired(required = false) ServletContext servletContext
+    ) {
         this.snapshotService = snapshotService;
         this.servletContext = servletContext;
     }
 
     @Override
     public void afterPropertiesSet() {
-        // hack for junit tests
-        if (servletContext == null || servletContext.getClass().getName().equals("org.springframework.mock.web.MockServletContext")) {
+        if (servletContext == null) {
             return;
         }
 
         String vendorName = snapshotService.getVendorName();
-        File sqlDir = new File(servletContext.getRealPath("/WEB-INF/sql/" + vendorName));
+        String sqlDirPath = servletContext.getRealPath("/WEB-INF/sql/" + vendorName);
+
+        if (sqlDirPath == null) {
+            logger.warn("Can't find SQL directory for DB vendor {}!", vendorName);
+            return;
+        }
+
+        File sqlDir = new File(sqlDirPath);
 
         if (!sqlDir.exists() || !sqlDir.isDirectory()) {
             logger.warn("Can't find SQL directory for DB vendor {}!", vendorName);

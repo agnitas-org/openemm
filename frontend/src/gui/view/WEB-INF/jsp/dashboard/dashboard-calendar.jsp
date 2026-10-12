@@ -9,7 +9,6 @@
 <%--@elvariable id="dashboardForm" type="com.agnitas.emm.core.dashboard.form.DashboardForm"--%>
 <%--@elvariable id="dashboardCalendarForm" type="com.agnitas.emm.core.calendar.form.DashboardCalendarForm"--%>
 <%--@elvariable id="mailinglist" type="com.agnitas.beans.PaginatedList<java.util.Map<java.lang.String, java.lang.Object>"--%>
-<%--@elvariable id="randomInactiveFeaturePackage" type="com.agnitas.emm.premium.bean.FeaturePackage"--%>
 <%--@elvariable id="layout" type="java.lang.String"--%>
 <%--@elvariable id="showALlCalendarEntries" type="java.lang.Boolean"--%>
 <%--@elvariable id="companyAdmins" type="java.util.Map<java.lang.String, java.lang.String>"--%>

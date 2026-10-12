@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -256,7 +256,7 @@ public class DBase implements Closeable {
 			
 			public CursorNative (DBase dbase, DataSource dataSource) {
 				synchronized (this) {
-					mynr =++nr;
+					mynr = ++nr;
 				}
 				this.dbase = dbase;
 				this.dataSource = dataSource;
@@ -565,6 +565,7 @@ public class DBase implements Closeable {
 	private static final int DB_UNSET = 0;
 	private static final int DB_MYSQL = 1;
 	private static final int DB_ORACLE = 2;
+	private static final int DB_POSTGRES = 3;
 	// general retry counter
 	private static final int RETRY = 5;
 
@@ -614,7 +615,7 @@ public class DBase implements Closeable {
 		}
 		db.setup (data, this, DATASOURCE);
 		cursorCache = new ArrayList <> ();
-		cursorTrace ("created");
+		cursorTrace (null, "created");
 	}
 	
 	@Override
@@ -628,19 +629,19 @@ public class DBase implements Closeable {
 	 * @trhows Exception
 	 */
 	public DBase done() {
-		cursorTrace ("releasing");
+		cursorTrace (null, "releasing");
 		while (! cursorCache.isEmpty ()) {
 			@SuppressWarnings("resource")
 			Cursor	cursor = cursorCache.remove (0);
 			
 			try {
 				cursor.close ();
-				cursorTrace ("close " + cursor.name ());
+				cursorTrace (cursor, "close");
 			} catch (IOException e) {
-				cursorTrace ("close " + cursor.name () + " failed: " + e.toString ());
+				cursorTrace (cursor, "close failed: " + e.toString ());
 			}
 		}
-		cursorTrace ("released");
+		cursorTrace (null, "released");
 		if (defaultCursor != null) {
 			try {
 				defaultCursor.close ();
@@ -667,6 +668,8 @@ public class DBase implements Closeable {
 				dbType = DB_ORACLE;
 			} else if (dbms.equals("mysql") || dbms.equals("mariadb")) {
 				dbType = DB_MYSQL;
+			} else if (dbms.equals ("postgres") || dbms.equals ("postgresql") || dbms.equals ("pg")) {
+				dbType = DB_POSTGRES;
 			} else {
 				throw new Exception("Unsupported dbms found: " + dbms);
 			}
@@ -674,7 +677,9 @@ public class DBase implements Closeable {
 			if (data.dbDriver() == null) {
 				throw new Exception("No configured database driver found");
 			}
-			if ((data.dbDriver().toLowerCase().indexOf("mysql") == -1) && (data.dbDriver().toLowerCase().indexOf("mariadb") == -1)) {
+			if (data.dbDriver().toLowerCase().indexOf("postgresql") != -1) {
+				dbType = DB_POSTGRES;
+			} else if ((data.dbDriver().toLowerCase().indexOf("mysql") == -1) && (data.dbDriver().toLowerCase().indexOf("mariadb") == -1)) {
 				dbType = DB_ORACLE;
 			} else {
 				dbType = DB_MYSQL;
@@ -744,8 +749,11 @@ public class DBase implements Closeable {
 	public boolean isOracle() {
 		return dbType == DB_ORACLE;
 	}
+	public boolean isPostgreSQL () {
+		return dbType == DB_POSTGRES;
+	}
 
-	private boolean existing (String object, String name, String oracleStatement, String mysqlStatement) throws SQLException {
+	private boolean existing (String object, String name, String oracleStatement, String mysqlStatement, String postgresStatement) throws SQLException {
 		synchronized (existingCache) {
 			Map <String, Boolean>	objectCache = existingCache.get (object);
 			
@@ -765,6 +773,9 @@ public class DBase implements Closeable {
 						break;
 					case DB_MYSQL:
 						statement = mysqlStatement;
+						break;
+					case DB_POSTGRES:
+						statement = postgresStatement;
 						break;
 					default:
 						statement = null;
@@ -793,7 +804,8 @@ public class DBase implements Closeable {
 				 "table",
 				 table,
 				 "SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:tableName)",
-				 "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) AND table_schema=(SELECT SCHEMA())"
+				 "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) AND table_schema=(SELECT SCHEMA())",
+				 "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) AND table_type = \"BASE TABLE\""
 		);
 	}
 
@@ -809,7 +821,8 @@ public class DBase implements Closeable {
 				 "view",
 				 view,
 				 "SELECT count(*) FROM user_views WHERE lower(view_name) = lower(:viewName)",
-				 "SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:viewName) AND table_schema=(SELECT SCHEMA())"
+				 "SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:viewName) AND table_schema=(SELECT SCHEMA())",
+				 "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) AND table_type = \"VIEW\""
 		);
 	}
 
@@ -825,6 +838,7 @@ public class DBase implements Closeable {
 				 "synonym",
 				 synonym,
 				 "SELECT count(*) FROM user_synonyms WHERE lower(synonym_name) = lower(:synonymName)",
+				 null,
 				 null
 		);
 	}
@@ -960,11 +974,11 @@ public class DBase implements Closeable {
 	public Cursor request() throws SQLException {
 		if (cursorCache.isEmpty ()) {
 			Cursor c = db.cursor ();
-			cursorTrace ("request: create new " + c.name ());
+			cursorTrace (c, "request: create new");
 			return c;
 		} else {
 			Cursor c = cursorCache.remove (cursorCache.size () - 1);
-			cursorTrace ("request: pop from cache " + c.name ());
+			cursorTrace (c, "request: pop from cache");
 			return c;
 		}
 	}
@@ -984,7 +998,7 @@ public class DBase implements Closeable {
 		return request();
 	}
 
-	public Cursor  request(String query) throws SQLException {
+	public Cursor request(String query) throws SQLException {
 		return request(query, null);
 	}
 
@@ -998,14 +1012,14 @@ public class DBase implements Closeable {
 		flush (cursor);
 		if (cursor != defaultCursor) {
 			cursorCache.add (cursor);
-			cursorTrace ("release: added cursor " + cursor.name ());
+			cursorTrace (cursor, "release: added cursor");
 		} else {
-			cursorTrace ("release: found default cursor " + cursor.name ());
+			cursorTrace (cursor, "release: found default cursor");
 		}
 	}
-	private final void cursorTrace (String message) {
+	private final void cursorTrace (Cursor cursor, String message) {
 		if (cursorTrace) {
-			logging(Log.NOTICE, "cursortrace[" + cursorCache.size () + "]", message);
+			logging(Log.NOTICE, "cursortrace[" + cursorCache.size () + "]" + (cursor == null ? "" : (" (" + cursor.name () + ")")), message);
 		}
 	}
 

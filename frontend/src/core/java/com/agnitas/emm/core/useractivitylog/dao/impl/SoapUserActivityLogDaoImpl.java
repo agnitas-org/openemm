@@ -1,17 +1,15 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.useractivitylog.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -27,6 +25,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implements SoapUserActivityLogDao {
+
+    private final RowMapper<SoapUserActivityAction> userActionRowMapper = (rs, rowNum) ->
+            new SoapUserActivityAction(
+                    rs.getString("username"),
+                    rs.getString("endpoint"),
+                    rs.getString("client_ip"),
+                    rs.getTimestamp("timestamp")
+            );
 
     @Override
     public void deleteByUsernames(Set<String> usernames) {
@@ -49,8 +55,8 @@ public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl imple
         StringBuilder query = new StringBuilder();
         List<Object> params = buildOverviewSelectQuery(query, filter);
 
-        PaginatedList<SoapUserActivityAction> list = selectPaginatedList(query.toString(), "webservice_usage_log_tbl",
-                filter, new SoapUserActionRowMapper(), params.toArray());
+        PaginatedList<SoapUserActivityAction> list = selectPaginatedList(query.toString(), getTableName(),
+                filter, userActionRowMapper, params.toArray());
 
         if (filter.isUiFiltersSet()) {
             list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
@@ -104,21 +110,6 @@ public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl imple
 
         query.append(" WHERE (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?))");
         return new ArrayList<>(List.of(companyId, companyId));
-    }
-
-    private static final class SoapUserActionRowMapper implements RowMapper<SoapUserActivityAction> {
-
-        @Override
-        public SoapUserActivityAction mapRow(ResultSet rs, int rowNum) throws SQLException {
-            SoapUserActivityAction userAction = new SoapUserActivityAction();
-
-            userAction.setTimestamp(rs.getTimestamp("timestamp"));
-            userAction.setEndpoint(rs.getString("endpoint"));
-            userAction.setUsername(rs.getString("username"));
-            userAction.setClientIp(rs.getString("client_ip"));
-
-            return userAction;
-        }
     }
 
     @Override

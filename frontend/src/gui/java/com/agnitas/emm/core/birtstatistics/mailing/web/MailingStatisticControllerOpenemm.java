@@ -3,9 +3,9 @@ package com.agnitas.emm.core.birtstatistics.mailing.web;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
-import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingSummaryStatsPresenter;
-import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingTopDomainsPresenter;
-import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingBounceStatsPresenter;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingSummaryStatsUiService;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingTopDomainsUiService;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingBounceStatsUiService;
 import com.agnitas.emm.core.birtstatistics.mailing.service.MailingEndDeviceStatisticsService;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.birtstatistics.service.ClickPerLinkMailingStatisticsService;
@@ -50,9 +50,9 @@ public class MailingStatisticControllerOpenemm extends MailingBirtStatController
 			CampaignService campaignService,
 			ClickPerLinkMailingStatisticsService clickPerLinkStatisticsService,
 			WorkflowStatisticsService workflowStatisticsService,
-			MailingSummaryStatsPresenter mailingSummaryStatsPresenter,
-			MailingBounceStatsPresenter bounceStatsPresenter,
-			MailingTopDomainsPresenter mailingTopDomainsPresenter,
+			MailingSummaryStatsUiService mailingSummaryStatsUiService,
+			MailingBounceStatsUiService mailingBounceStatsUiService,
+			MailingTopDomainsUiService mailingTopDomainsUiService,
 			MailingStatisticsService mailingStatisticsService,
 			ConfigService configService,
 			ProgressStatisticsService progressStatisticsService,
@@ -75,9 +75,9 @@ public class MailingStatisticControllerOpenemm extends MailingBirtStatController
 				campaignService,
 				clickPerLinkStatisticsService,
 				workflowStatisticsService,
-				mailingSummaryStatsPresenter,
-				mailingTopDomainsPresenter,
-				bounceStatsPresenter,
+				mailingSummaryStatsUiService,
+				mailingTopDomainsUiService,
+				mailingBounceStatsUiService,
 				mailingStatisticsService,
 				configService,
 				progressStatisticsService,

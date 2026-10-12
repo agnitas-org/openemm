@@ -2,8 +2,6 @@
 
   class BaseMailingStatisticsTile extends AGN.Lib.Dashboard.DraggableTile {
 
-    static FETCHED_DATA_CACHE = new AGN.Lib.InMemoryCache();
-
     constructor() {
       if (new.target === BaseMailingStatisticsTile) {
         throw new TypeError("Cannot construct Abstract BaseMailingStatisticsTile instances directly!");
@@ -17,7 +15,10 @@
       }
 
       this._chart = null;
-      this._chartData = {names: [], values: [], mailingId: 0};
+      this._mailingId = 0;
+      this._data = null;
+      this._colors = AGN.Lib.Helpers.getStatColorsHexValues();
+      this._cache = new AGN.Lib.InMemoryCache();
     }
 
     #setupDisplayTypeChangeHandler() {
@@ -52,51 +53,45 @@
     }
 
     async updateChart(forceUpdate = false) {
-      const mailingIdBefore = this._chartData.mailingId;
-      this._chartData.mailingId = this.$el.find('[data-statistics-mailing]').val();
+      const mailingIdBefore = this._mailingId;
+      this._mailingId = this.$el.find('[data-statistics-mailing]').val();
 
-      const mailingChanged = this._chartData.mailingId !== mailingIdBefore
+      const mailingChanged = this._mailingId !== mailingIdBefore
       if (!mailingChanged && !forceUpdate) {
         return;
       }
 
       if (mailingChanged) {
-        const chartData = await this.#fetchChartData();
-        this.initChartData(this.extractStatisticsData(chartData));
+        this._data = await this.#fetchData();
       }
 
       this.drawChart();
     }
 
-    #fetchChartData() {
-      const mailingId = this._chartData.mailingId;
+    #fetchData() {
+      const mailingId = this._mailingId;
 
-      const cachedResult = BaseMailingStatisticsTile.FETCHED_DATA_CACHE.get(mailingId);
+      const cachedResult = this._cache.get(mailingId);
       if (cachedResult) {
         return cachedResult;
       }
 
-      const dataExtractionPromise = new Promise((resolve, reject) => {
+      const promise = new Promise((resolve, reject) => {
         $.ajax({
           type: "GET",
-          url: AGN.url('/dashboard/statistics.action'),
-          data: {mailingId},
+          url: this.getStatisticsUrl(),
+          data: { mailingId },
           success: data => resolve(data),
           error: error => reject(error)
         });
       });
 
-      BaseMailingStatisticsTile.FETCHED_DATA_CACHE.set(mailingId, dataExtractionPromise);
-      return dataExtractionPromise;
+      this._cache.set(mailingId, promise);
+      return promise;
     }
 
-    extractStatisticsData(data) {
-      throw new Error("Extract statistics function not implemented for statistics tile!");
-    }
-
-    initChartData(fetchedData) {
-      this._chartData.names = fetchedData.names;
-      this._chartData.values = fetchedData.values;
+    getStatisticsUrl() {
+      throw new Error("#getStatisticsUrl function not implemented for statistics tile!");
     }
 
     drawChart() {

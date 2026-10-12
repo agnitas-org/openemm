@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -161,10 +162,53 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 
 	@Override
 	public MailingComponent getMailingComponent(int mailingId, int componentId, int companyId) {
-		String sqlGetComponent = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp " +
-				"FROM component_tbl WHERE mailing_id = ? AND component_id = ? AND company_id = ?";
+		return getComponentInternal(companyId, mailingId, componentId, null);
+	}
 
-		return selectObjectDefaultNull(sqlGetComponent, new MailingComponentRowMapper(), mailingId, componentId, companyId);
+	@Override
+	public MailingComponent getComponent(int companyId, int mailingId, MailingComponentType componentType) {
+		return getComponentInternal(companyId, mailingId, null, componentType);
+	}
+
+	private MailingComponent getComponentInternal(
+			int companyId, int mailingId, Integer componentId, MailingComponentType componentType
+	) {
+		StringBuilder sql = new StringBuilder("""
+            SELECT company_id,
+                   mailing_id,
+                   component_id,
+                   compname,
+                   comptype,
+                   comppresent,
+                   emmblock,
+                   binblock,
+                   mtype,
+                   target_id,
+                   url_id,
+                   description,
+                   timestamp
+            FROM component_tbl
+            WHERE mailing_id = ?
+              AND company_id = ?
+            """);
+
+		List<Object> params = new ArrayList<>(List.of(mailingId, companyId));
+
+		if (componentId != null) {
+			sql.append(" AND component_id = ?");
+			params.add(componentId);
+		}
+
+		if (componentType != null) {
+			sql.append(" AND comptype = ?");
+			params.add(componentType.getCode());
+		}
+
+		return selectObjectDefaultNull(
+				componentId != null ? sql.toString() : addRowLimit(sql.toString(), 1),
+				new MailingComponentRowMapper(),
+				params.toArray()
+		);
 	}
 
 	@Override
@@ -189,7 +233,63 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
-	@Override
+    @Override
+    public Optional<MailingComponent> findComponentByName(String name, int mailingId, int companyId) {
+        String sizeClause = isOracleDB()
+                ? "COALESCE(DBMS_LOB.GETLENGTH(binblock), 0) comp_size"
+                : "COALESCE(OCTET_LENGTH(binblock), 0) comp_size";
+        String sql = """
+                     SELECT company_id,
+                            mailing_id,
+                            component_id,
+                            compname,
+                            comptype,
+                            comppresent,
+                            emmblock,
+                            binblock,
+                            mtype,
+                            target_id,
+                            url_id,
+                            description,
+                            timestamp,
+                            %s
+                     FROM component_tbl
+                     WHERE (mailing_id = ? OR mailing_id = 0)
+                       AND company_id = ?
+                       AND compname = ?
+                     ORDER BY component_id DESC""".formatted(sizeClause);
+        return findObject(sql, new MailingComponentRowMapper(), mailingId, companyId, name);
+    }
+
+    @Override
+    public Optional<MailingComponent> findComponentById(int componentId, int mailingId, int companyId) {
+        String sizeClause = isOracleDB()
+                ? "COALESCE(DBMS_LOB.GETLENGTH(binblock), 0) comp_size"
+                : "COALESCE(OCTET_LENGTH(binblock), 0) comp_size";
+        String sql = """
+            SELECT company_id,
+                   mailing_id,
+                   component_id,
+                   compname,
+                   comptype,
+                   comppresent,
+                   emmblock,
+                   binblock,
+                   mtype,
+                   target_id,
+                   url_id,
+                   description,
+                   timestamp,
+                   %s
+            FROM component_tbl
+            WHERE component_id = ?
+              AND mailing_id = ?
+              AND company_id = ?
+            """.formatted(sizeClause);
+        return findObject(sql, new MailingComponentRowMapper(), componentId, mailingId, companyId);
+    }
+
+    @Override
 	@DaoUpdateReturnValueCheck
 	public void saveMailingComponent(MailingComponent mailingComponent) {
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
@@ -355,12 +455,6 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
             logger.error("Error getting time of component {}", name, e);
 			return null;
 		}
-	}
-
-	@Override
-	public List<MailingComponent> getMailingComponentsByType(MailingComponentType componentType, int companyID) {
-		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND comptype = ? ORDER BY compname ASC";
-		return select(componentSelect, new MailingComponentRowMapper(), companyID, componentType.getCode());
 	}
 
 	private boolean exists(int mailingID, int companyID, int componentID) {
@@ -536,17 +630,6 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return new ArrayList<>(List.of(companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()));
 	}
 
-	@Override
-    public List<MailingComponent> getMailingComponentsByType(int companyID, int mailingID, List<MailingComponentType> types) {
-		if (CollectionUtils.isEmpty(types)) {
-			return new ArrayList<>();
-		}
-        String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND mailing_id = ?"
-        	+ " AND comptype IN (" + types.stream().map(e -> Integer.toString(e.getCode())).collect(Collectors.joining(", ")) + ") ORDER BY comptype DESC, compname ASC";
-
-		return select(componentSelect, new MailingComponentRowMapper(), companyID, mailingID);
-    }
-
 	protected class MailingComponentRowMapper implements RowMapper<MailingComponent> {
 
 		private final boolean includeContent;
@@ -621,10 +704,15 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	}
 
 	@Override
-    public int getImageComponent(int companyId, int mailingId, MailingComponentType componentType) {
-		String query = "SELECT component_id FROM component_tbl " +
-				"WHERE company_id = ? AND mailing_id = ? AND comptype = ? " +
-				"ORDER BY timestamp DESC";
+    public int getComponentId(int companyId, int mailingId, MailingComponentType componentType) {
+		String query = """
+				SELECT component_id
+				FROM component_tbl
+				WHERE company_id = ?
+				  AND mailing_id = ?
+				  AND comptype = ?
+				ORDER BY timestamp DESC
+				""";
 
         return selectInt(addRowLimit(query, 1), companyId, mailingId, componentType.getCode());
     }

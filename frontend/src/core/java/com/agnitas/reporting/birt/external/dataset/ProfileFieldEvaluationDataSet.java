@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -22,7 +22,6 @@ import com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.util.CsvWriter;
-import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -80,9 +79,10 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
     private String sanitizeColumnName(String columnName) { return columnName.replaceAll("[^a-zA-Z0-9_]", ""); }
 
     public byte[] csv(ProfileFieldStatForm form) throws Exception {
-        return CsvWriter.csv(ListUtils.union(
-            List.of(getHeaderForCsv(form.getLocale())),
-            getRowsForCsv(form)));
+        return CsvWriter.csv(
+            getHeaderForCsv(form.getLocale()),
+            getRowsForCsv(form)
+        );
     }
 
     private List<List<String>> getRowsForCsv(ProfileFieldStatForm form) {

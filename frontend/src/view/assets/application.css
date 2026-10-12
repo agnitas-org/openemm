@@ -7669,7 +7669,7 @@ h4 {
 }
 .h5,
 h5 {
-  font-size: 1.25rem
+  font-size: .714rem
 }
 .h6,
 h6 {
@@ -15783,7 +15783,7 @@ fieldset:disabled .permission-categories__btn {
 .inbox-preview-result-client-card .tile-body label,
 .notification-simple span,
 .switch:has(>span) > span,
-.table--borderless th,
+.table th,
 .table-wrapper__controls .btn span,
 .table-wrapper__controls .form-builder-dialog.positioned .button-wrap button span,
 .table-wrapper__controls .form-switch label,
@@ -16751,7 +16751,7 @@ fieldset:disabled .permission-categories__btn {
   font-size: .857rem!important
 }
 .fs-5 {
-  font-size: 1.25rem!important
+  font-size: .714rem!important
 }
 .fs-6 {
   font-size: 1rem!important
@@ -26011,7 +26011,6 @@ input[type=checkbox]:focus-visible {
   --badge-dark-cyan: #11A98E;
   --badge-darkest-cyan: #086F76;
   --badge-dark-red: #880010;
-  --badge-light-red: #E12E59;
   --badge-dark-yellow: #F8CE39;
   --chart-light-blue-color: #80C7FF;
   --chart-blue-color: #569AFF;
@@ -26238,6 +26237,9 @@ input[type=checkbox]:focus-visible {
 .flex-1 {
   flex: 1!important
 }
+.d-contents {
+  display: contents!important
+}
 .dashboard-calendar-day,
 .unselectable {
   -moz-user-select: -moz-none;
@@ -26249,7 +26251,7 @@ input[type=checkbox]:focus-visible {
 .text-truncate-lines {
   --text-truncate-lines: 2;
   display: -webkit-box;
-  -webkit-line-clamp: var(--text-truncate-lines);
+  -webkit-line-clamp: var(--text-truncate-lines,2);
   -webkit-box-orient: vertical;
   overflow: hidden
 }
@@ -26812,6 +26814,11 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   flex: none;
   border: 1px solid var(--badge-border-color)
 }
+.square-badge--sm {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px
+}
 #pageCampaignEditorContainer [data-bs-theme=light-contrast] .node-connect-button,
 [data-bs-theme=light-contrast] #pageCampaignEditorContainer .node-connect-button,
 [data-bs-theme=light-contrast] .icon-badge,
@@ -26885,6 +26892,18 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
 }
 .status\.warning:before {
   content: "\f00d"
+}
+.status\.enabled {
+  background-color: var(--badge-green)
+}
+.status\.enabled:before {
+  content: "\f205"
+}
+.status\.disabled {
+  background-color: #e12e59
+}
+.status\.disabled:before {
+  content: "\f204"
 }
 .status\.comment {
   background-color: var(--badge-blue)
@@ -27422,15 +27441,79 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
 .badge--stat-black {
   background: #0a0a0a
 }
-.table--borderless {
+.table {
+  --table-header-border-radius: 10px;
   width: 100%;
   margin: 0;
   border-collapse: separate;
   border-spacing: 0;
   color: var(--bs-body-color)
 }
-.table--borderless tbody tr {
+.table thead {
+  vertical-align: middle;
+  background-color: var(--table-head-bg)
+}
+.table tbody tr {
   height: 56px
+}
+.table td {
+  color: var(--table-body-color);
+  background: 0 0;
+  padding-block: 5px;
+  padding-inline: 10px;
+  vertical-align: middle;
+  border: none;
+  overflow-wrap: anywhere;
+  overflow: hidden
+}
+.table td:has(input[type=checkbox]) {
+  text-align: center
+}
+.table th {
+  --table-fit-content-col-width: 0px;
+  background-color: transparent;
+  position: relative;
+  padding: 5px 10px;
+  border: none;
+  user-select: none;
+  color: var(--table-head-text-color);
+  font-weight: var(--table-head-font-weight)
+}
+.table th.fit-content {
+  width: var(--table-fit-content-col-width)
+}
+.table tfoot td:empty {
+  padding: 0;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--table-head-bg);
+  border-radius: 10px;
+  width: 100%;
+  height: 7px
+}
+.table:not(.no-truncate) .text-truncate-table,
+.table:not(.no-truncate) td > span:not(.table-badge) {
+  display: -webkit-box;
+  -webkit-line-clamp: var(--text-truncate-lines,2);
+  -webkit-box-orient: vertical;
+  overflow: hidden
+}
+.table.table-hover tbody tr.picked:not(.empty):not(.disabled),
+.table.table-hover tbody tr:hover:not(.empty):not(.disabled) {
+  background: var(--table-hovered-bg);
+  cursor: pointer
+}
+.table.table-hover tbody tr.picked:not(.empty):not(.disabled) > *,
+.table.table-hover tbody tr:hover:not(.empty):not(.disabled) > * {
+  color: var(--bs-body-color)
+}
+.table.table-hover tbody tr.picked.empty > *,
+.table.table-hover tbody tr:hover.empty > * {
+  --bs-table-accent-bg: initial;
+  color: initial
+}
+.table.table-hover tbody tr.picked.disabled,
+.table.table-hover tbody tr:hover.disabled {
+  --bs-table-hover-bg: var(--base-disabled-bg)
 }
 @media only screen and (max-width:1000px) {
   .table--borderless {
@@ -27519,24 +27602,6 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
     display: initial
   }
 }
-.table--borderless thead {
-  position: sticky;
-  top: 0;
-  z-index: 1
-}
-.table--borderless td {
-  color: var(--table-body-color);
-  background: 0 0;
-  padding-block: 5px;
-  padding-inline: 10px;
-  vertical-align: middle;
-  border: none;
-  overflow-wrap: anywhere;
-  overflow: hidden
-}
-.table--borderless td:has(input[type=checkbox]) {
-  text-align: center
-}
 @media only screen and (max-width:1000px) {
   .table--borderless td a {
     pointer-events: none;
@@ -27544,15 +27609,8 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   }
 }
 .table--borderless th {
-  --table-fit-content-col-width: 0px;
   --table-separator-width: 1px;
-  background-color: transparent;
-  position: relative;
-  padding: 5px calc(10px + var(--table-separator-width)) 10px 10px;
-  border: none;
-  user-select: none;
-  color: var(--table-head-text-color);
-  font-weight: var(--table-head-font-weight)
+  border-block: 1px solid var(--bs-border-color)
 }
 .table--borderless th::after {
   content: "";
@@ -27562,6 +27620,19 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   background: var(--table-border-color);
   width: var(--table-separator-width);
   right: 0
+}
+.table--borderless th:last-child::after {
+  right: -1px
+}
+.table--borderless th:first-child {
+  border-top-left-radius: var(--table-header-border-radius);
+  border-bottom-left-radius: var(--table-header-border-radius);
+  border-left: 1px solid var(--bs-border-color)
+}
+.table--borderless th:last-child {
+  border-top-right-radius: var(--table-header-border-radius);
+  border-bottom-right-radius: var(--table-header-border-radius);
+  border-right: 1px solid var(--bs-border-color)
 }
 .table--borderless th.resizable {
   --table-separator-width: 8px
@@ -27574,9 +27645,6 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
 .table--borderless th:empty,
 .table--borderless th:has(>input[type=checkbox]) {
   --table-not-resizable-cell: true;
-  width: var(--table-fit-content-col-width)
-}
-.table--borderless th.fit-content {
   width: var(--table-fit-content-col-width)
 }
 .table--borderless th.sortable:not(.sorted) > a::before,
@@ -27622,31 +27690,6 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   gap: 10px;
   justify-content: end
 }
-.table--borderless.table-hover tbody tr.picked:not(.empty):not(.disabled),
-.table--borderless.table-hover tbody tr:hover:not(.empty):not(.disabled) {
-  background: var(--table-hovered-bg);
-  cursor: pointer
-}
-.table--borderless.table-hover tbody tr.picked:not(.empty):not(.disabled) > *,
-.table--borderless.table-hover tbody tr:hover:not(.empty):not(.disabled) > * {
-  color: var(--bs-body-color)
-}
-.table--borderless.table-hover tbody tr.picked.empty > *,
-.table--borderless.table-hover tbody tr:hover.empty > * {
-  --bs-table-accent-bg: initial;
-  color: initial
-}
-.table--borderless.table-hover tbody tr.picked.disabled,
-.table--borderless.table-hover tbody tr:hover.disabled {
-  --bs-table-hover-bg: var(--base-disabled-bg)
-}
-.table--borderless:not(.no-truncate) .text-truncate-table,
-.table--borderless:not(.no-truncate) td > span:not(.table-badge) {
-  display: -webkit-box;
-  -webkit-line-clamp: var(--text-truncate-lines);
-  -webkit-box-orient: vertical;
-  overflow: hidden
-}
 @media only screen and (min-width:1000px) {
   .table--borderless:not(.table--preview) tr:not(:last-child) td {
     border-bottom: 1px solid var(--bs-border-color)
@@ -27684,6 +27727,33 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
 }
 .table--borderless .icon-checkbox {
   color: var(--bs-blue)
+}
+.table--sm {
+  font-size: .857rem
+}
+.table--sm.table--borderless thead tr {
+  height: 30px
+}
+.table--sm.table--borderless tbody tr {
+  height: 36px
+}
+.table--xs {
+  --table-header-border-radius: 5px;
+  font-size: .714rem
+}
+.table--xs.table--borderless tbody tr,
+.table--xs.table--borderless thead tr {
+  height: 21px
+}
+.table--xs.table--borderless th {
+  padding-block: 0
+}
+.table--xs.table--borderless th::after {
+  top: 4px;
+  bottom: 4px
+}
+.table--xs.table--borderless tbody td {
+  padding-block: 3px
 }
 .table-wrapper__header:empty + .table-wrapper__body .table--borderless th {
   padding-top: 0
@@ -27863,31 +27933,6 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 .table-layout-fixed {
   table-layout: fixed!important
 }
-.table-wrapper--sm {
-  font-size: .857rem
-}
-.table-wrapper--sm .table--borderless thead tr {
-  height: 30px
-}
-.table-wrapper--sm .table--borderless thead th {
-  padding-bottom: 0
-}
-.table-wrapper--sm .table--borderless tr {
-  height: 36px
-}
-.table-wrapper--sm .table-wrapper__header:empty {
-  padding: 0
-}
-.table-wrapper--sm .table-wrapper__header {
-  border: none
-}
-.table-wrapper--sm .table-wrapper__header::after {
-  left: 0;
-  right: 0;
-  border-top: 1px solid var(--bs-border-color);
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px
-}
 .table--stretch-rows {
   table-layout: fixed;
   height: 100%
@@ -27926,6 +27971,22 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
   .table-wrapper:has(.ag-root-wrapper) {
     height: calc(var(--ag-rows-count) * 56px + 99px)
   }
+}
+.table-wrapper--sm {
+  font-size: .857rem
+}
+.table-wrapper--sm .table-wrapper__header:empty {
+  padding: 0
+}
+.table-wrapper--sm .table-wrapper__header {
+  border: none
+}
+.table-wrapper--sm .table-wrapper__header::after {
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--bs-border-color);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px
 }
 [data-bs-theme=dark] .table-wrapper {
   --table-wrapper-title-color: #009BFF
@@ -27975,6 +28036,23 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .table-wrapper__body > .ps__rail-y {
   margin-top: 34px
+}
+.table-wrapper__body .table {
+  --table-header-border-radius: 0
+}
+.table-wrapper__body .table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: transparent
+}
+.table-wrapper__body .table th {
+  border-block: none;
+  padding: 5px calc(10px + var(--table-separator-width)) 10px 10px
+}
+.table-wrapper__body .table th:first-child,
+.table-wrapper__body .table th:last-child {
+  border: none
 }
 .table-wrapper__header {
   position: relative;
@@ -28410,6 +28488,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .ag-theme-bootstrap .ag-grid-cell-link {
   height: 100%;
+  max-width: 100%;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -28488,7 +28567,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .table-wrapper:not(.no-truncate) .ag-theme-bootstrap .ag-body:not(.no-truncate) .text-truncate-table {
   display: -webkit-box;
-  -webkit-line-clamp: var(--text-truncate-lines);
+  -webkit-line-clamp: var(--text-truncate-lines,2);
   -webkit-box-orient: vertical;
   overflow: hidden
 }
@@ -29193,7 +29272,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 .modal-header .inbox-preview-result-client-card .tile-body label.modal-title,
 .modal-header .notification-simple span.modal-title,
 .modal-header .switch:has(>span) > span.modal-title,
-.modal-header .table--borderless th.modal-title,
+.modal-header .table th.modal-title,
 .modal-header .table-wrapper__controls .btn span.modal-title,
 .modal-header .table-wrapper__controls .form-builder-dialog.positioned .button-wrap button span.modal-title,
 .modal-header .table-wrapper__controls .form-switch label.modal-title,
@@ -29204,8 +29283,8 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 .notification-simple .modal-header span.modal-title,
 .notification-simple span.tile-title,
 .switch:has(>span) > span.tile-title,
-.table--borderless .modal-header th.modal-title,
-.table--borderless th.tile-title,
+.table .modal-header th.modal-title,
+.table th.tile-title,
 .table-wrapper__controls .btn .modal-header span.modal-title,
 .table-wrapper__controls .btn span.tile-title,
 .table-wrapper__controls .form-builder-dialog.positioned .button-wrap button .modal-header span.modal-title,
@@ -30166,7 +30245,7 @@ fieldset[disabled] .query-builder .rule-container .rule-value-container .form-co
 .inbox-preview-result-client-card .tile-body label.form-label,
 .notification-simple span.form-label,
 .switch:has(>span) > span.form-label,
-.table--borderless th.form-label,
+.table th.form-label,
 .table-wrapper__controls .btn span.form-label,
 .table-wrapper__controls .form-builder-dialog.positioned .button-wrap button span.form-label,
 .table-wrapper__controls .form-label.input-group-text,
@@ -30292,7 +30371,7 @@ input[type=number] {
 .input-group-text.text-truncate,
 .notification-simple span.input-group-text,
 .switch:has(>span) > span.input-group-text,
-.table--borderless th.input-group-text,
+.table th.input-group-text,
 .table-wrapper__controls .btn span.input-group-text,
 .table-wrapper__controls .form-builder-dialog.positioned .button-wrap button span.input-group-text,
 .table-wrapper__controls .form-switch label.input-group-text,
@@ -30958,12 +31037,16 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
   border-radius: 10px;
   height: min-content
 }
+.date-picker-container .icon-checkbox,
 .date-picker-container > .icon,
 .date-picker-container::after,
+.input-icon-container .icon-checkbox,
 .input-icon-container > .icon,
 .input-icon-container::after,
+.search-container .icon-checkbox,
 .search-container > .icon,
 .search-container::after,
+.time-picker-container .icon-checkbox,
 .time-picker-container > .icon,
 .time-picker-container::after {
   color: var(--input-container-icon-color);
@@ -30973,9 +31056,13 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
   transform: translateY(-50%)
 }
 .date-picker-container:has(>.icon)::after,
+.date-picker-container:has(>.icon-checkbox)::after,
 .input-icon-container:has(>.icon)::after,
+.input-icon-container:has(>.icon-checkbox)::after,
 .search-container:has(>.icon)::after,
-.time-picker-container:has(>.icon)::after {
+.search-container:has(>.icon-checkbox)::after,
+.time-picker-container:has(>.icon)::after,
+.time-picker-container:has(>.icon-checkbox)::after {
   display: none
 }
 .date-picker-container > .form-control,
@@ -31527,7 +31614,8 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
 }
 .modal {
   --modal-title-color: #1A3258;
-  --modal-variant-header-color: #fff
+  --modal-variant-header-color: #fff;
+  --modal-content-max-height: calc(100dvh - (var(--bs-modal-margin) * 2) - 2px - 40px - 30px)
 }
 [data-bs-theme=dark] .modal {
   --modal-title-color: #009BFF
@@ -34528,7 +34616,7 @@ body.edit-mode #new-resource {
 }
 .dyn-tag .dyn-tag__preview {
   display: -webkit-box;
-  -webkit-line-clamp: var(--text-truncate-lines);
+  -webkit-line-clamp: var(--text-truncate-lines,2);
   -webkit-box-orient: vertical;
   overflow: hidden
 }
@@ -36629,6 +36717,9 @@ body:has(#system-status-overview) #system-notifications:not(:has(>*)) {
 .login-page__extra-content {
   padding: 30px
 }
+#password-visibility-checkbox {
+  color: #1a3258
+}
 #layout-builder-view > .form-builder-dialog.positioned .modal-header,
 #layout-builder-view > .form-builder-dialog.positioned .tile-header,
 #layout-builder-view > .tile .modal-header,
@@ -37536,5 +37627,161 @@ body:has(#layout-builder-view) #server-undo-option {
 }
 #mailings-comparison-view .comparison-bar-chart-container > div {
   overflow: hidden
+}
+#statistics-report-page .stat-section-charts {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 15px;
+  margin-bottom: 10px
+}
+#statistics-report-page .link-clicks-chart-targets {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  justify-items: center;
+  align-items: center;
+  gap: 10px
+}
+#statistics-report-page .stat-donut-tile .tile-body {
+  height: 140px;
+  position: relative
+}
+#statistics-report-page .mailing-info-column {
+  flex: 305
+}
+#statistics-report-page .mailing-preview-column {
+  flex: 250
+}
+#statistics-report-page .mailing-thumbnail {
+  height: 250px
+}
+#statistics-report-page .mailing-thumbnail-img {
+  width: 100%;
+  max-height: 100%;
+  object-fit: cover
+}
+#statistics-report-page .tile-header--compact {
+  flex-basis: 21px
+}
+#statistics-report-page .summary-chart-tile {
+  height: 290px
+}
+#statistics-report-page .bounce-chart-column {
+  flex: 0 0 170px;
+  max-width: 170px
+}
+#statistics-report-page .bounce-chart-column .stat-donut-tile .tile-body {
+  height: auto;
+  min-height: 140px
+}
+#statistics-report-page .bounce-legend-column {
+  flex: 1 1 auto;
+  min-width: 0
+}
+#statistics-report-page .bounce-row + .bounce-row {
+  margin-top: 10px
+}
+#statistics-report-page .table--borderless:not(.table--preview) th {
+  white-space: initial
+}
+#statistics-report-page .table--borderless:not(.table--preview) th::after {
+  content: none
+}
+#statistics-report-page .table--borderless:not(.table--preview) th:first-child,
+#statistics-report-page .table--borderless:not(.table--preview) th:last-child {
+  border-radius: 0!important
+}
+#statistics-report-page .table--borderless:not(.table--preview) tr:not(:last-child) td {
+  border-bottom: 1px solid var(--bs-border-color)
+}
+#statistics-report-page .table--borderless:not(.table--preview) .table-row-wrapper:not(:last-child) td {
+  border-bottom: 1px solid var(--bs-border-color)
+}
+#statistics-report-page .table--link-groups tbody.link-group tr td {
+  border-bottom: none!important
+}
+#statistics-report-page .table--link-groups tbody.link-group tr.table-row-divider td {
+  border-bottom: 1px solid var(--bs-border-color)!important
+}
+#statistics-report-page .table--link-groups tbody.link-group:last-of-type tr.table-row-divider td {
+  border-bottom: none!important
+}
+#statistics-report-page .table--link-summary-groups tbody.link-group tr td {
+  border-bottom: none!important
+}
+#statistics-report-page .table--link-summary-groups tbody.link-group td.table-row-divider,
+#statistics-report-page .table--link-summary-groups tbody.link-group tr.table-row-divider td {
+  border-bottom: 1px solid var(--bs-border-color)!important
+}
+@media print {
+  #statistics-report-page tr {
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page tbody.link-group {
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page .force-new-page {
+    break-before: page;
+    page-break-before: always
+  }
+  #statistics-report-page .force-new-page.h3,
+  #statistics-report-page h3.force-new-page {
+    break-after: avoid;
+    page-break-after: avoid
+  }
+  #statistics-report-page .tile--highlighted {
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page .bounce-row {
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page .stat-donut-tile {
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page .summary-chart-tile {
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page .table thead,
+  #statistics-report-page .table thead th {
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone
+  }
+  #statistics-report-page .summary-table-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column
+  }
+  #statistics-report-page .summary-table-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column
+  }
+  #statistics-report-page .summary-table-container table {
+    flex: 1 1 0;
+    height: auto;
+    break-inside: avoid;
+    page-break-inside: avoid
+  }
+  #statistics-report-page .link-clicks-chart-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column
+  }
+  #statistics-report-page .link-clicks-chart-tile {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column
+  }
+  #statistics-report-page .link-clicks-chart-tile .tile-body {
+    flex: 1;
+    min-height: 0
+  }
 }
 /*# sourceMappingURL=application.css.map */

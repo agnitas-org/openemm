@@ -1,15 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.birtreport.bean.impl;
 
+
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.REPORT_SIMPLE_DATE_FORMAT;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,13 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.emm.core.birtreport.bean.ReportFormat;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 
 public class BirtReportMailingSettings extends BirtReportSettings {
 
@@ -65,12 +66,11 @@ public class BirtReportMailingSettings extends BirtReportSettings {
     }
 
     @Override
-    public String getReportName(String reportFormat) {
-        if (Strings.CI.equals(BirtReport.FORMAT_CSV, reportFormat)) {
-            return "mailing_statistic_csv.rptdesign";
-        }
-
-        return "mailing_statistic.rptdesign";
+    public String getReportName(ReportFormat format) {
+        return switch (format) {
+            case CSV -> "mailing_statistic_csv.rptdesign";
+            case PDF -> "mailing_statistic.rptdesign";
+        };
     }
 
     @Override
@@ -81,7 +81,7 @@ public class BirtReportMailingSettings extends BirtReportSettings {
             parameters.put(TARGET_GROUPS_KEY, targetGroupsExpression);
         }
         parameters.put(MAILINGS_KEY, generateExpression(getMailings()));
-        parameters.put(FIGURES_KEY, BirtReporUtils.packFigures(getSettingsMap()));
+        parameters.put(FIGURES_KEY, BirtReportUtils.packFigures(getSettingsMap()));
     
         if(!BirtReportSettingsUtils.equalParameter(getReportSettingAsString(MAILING_GENERAL_TYPES_KEY), MAILING_NORMAL)) {
             parameters.putAll(getDateRange());
@@ -145,7 +145,6 @@ public class BirtReportMailingSettings extends BirtReportSettings {
         Map<String, String> dateRange =  new HashMap<>();
         String startDate = "";
         String stopDate = "";
-        final SimpleDateFormat reportDateFormat = new SimpleDateFormat(BirtReportSettingsUtils.REPORT_DATE_FORMAT);
         final Calendar calendar = new GregorianCalendar();
         calendar.setTime(new Date());
 
@@ -161,34 +160,40 @@ public class BirtReportMailingSettings extends BirtReportSettings {
                     stopDate = dayDateFormat.format(calendar.getTime());
                     break;
                 case DATE_RANGE_WEEK:
-                    stopDate = reportDateFormat.format(calendar.getTime());
+                    stopDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                     calendar.add(Calendar.DAY_OF_YEAR, -7);
                     calendar.add(Calendar.SECOND, -1);
-                    startDate = reportDateFormat.format(calendar.getTime());
+                    startDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                     break;
                 case DATE_RANGE_MONTH:
-                    stopDate = reportDateFormat.format(calendar.getTime());
+                    stopDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                     calendar.add(Calendar.DAY_OF_YEAR, -30);
                     calendar.add(Calendar.SECOND, -1);
-                    startDate = reportDateFormat.format(calendar.getTime());
+                    startDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                     break;
                 case DATE_RANGE_LAST_MONTH:
                     calendar.add(Calendar.MONTH, -1);
                     calendar.set(Calendar.DAY_OF_MONTH, 1);
-                    startDate = reportDateFormat.format(calendar.getTime());
+                    startDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                     calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
-                    stopDate = reportDateFormat.format(calendar.getTime());
+                    stopDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                     break;
                 case DATE_RANGE_CUSTOM:
                     startDate = getReportSettingAsString(BirtReportSettingsUtils.START_DATE);
                     stopDate = getReportSettingAsString(BirtReportSettingsUtils.END_DATE);
                     break;
 				default:
-					throw new IllegalArgumentException("Invalid period type");
+					throw new IllegalArgumentException("Invalid period type: " + getPeriodType());
             }
         }
-        dateRange.put(BirtReportSettingsUtils.START_DATE, startDate);
-        dateRange.put(BirtReportSettingsUtils.END_DATE, stopDate);
+
+        if (StringUtils.isNotBlank(startDate)) {
+            dateRange.put(BirtReportSettingsUtils.START_DATE, startDate);
+        }
+
+        if (StringUtils.isNotBlank(stopDate)) {
+            dateRange.put(BirtReportSettingsUtils.END_DATE, stopDate);
+        }
 
         return dateRange;
     }

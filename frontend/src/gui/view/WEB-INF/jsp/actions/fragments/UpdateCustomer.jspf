@@ -50,11 +50,11 @@
                         {{ } else { }}
                             <option value="">--</option>
                             <c:forEach items="${AVAILABLE_PROFILE_FIELDS}" var="PROFILE_FIELD">
-                                <c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD.column)}," />
+                                <c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD.columnName)}," />
 
                                 <c:if test="${not emm:contains(NEVER_SHOWN_PROFILE_FIELDS, SEARCH)}">
-                                    {{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.column)}' == columnNameToSelect) ? 'selected' : ''; }}
-                                    <option value="${fn:toLowerCase(PROFILE_FIELD.column)}" {{- selectedSign}}>${PROFILE_FIELD.shortname}</option>
+                                    {{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.columnName)}' == columnNameToSelect) ? 'selected' : ''; }}
+                                    <option value="${fn:toLowerCase(PROFILE_FIELD.columnName)}" {{- selectedSign}}>${PROFILE_FIELD.shortName}</option>
                                 </c:if>
                             </c:forEach>
                         {{ } }}

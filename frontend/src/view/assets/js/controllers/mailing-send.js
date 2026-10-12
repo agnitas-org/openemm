@@ -621,8 +621,6 @@ AGN.Lib.Controller.new('mailing-send', function () {
     }).done(resp => {
       if (resp.success === true) {
         changeSaveTestRunTargetBtnState(true);
-      } else {
-        AGN.Lib.JsonMessages(resp.popups);
       }
     });
   }

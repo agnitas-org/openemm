@@ -14,7 +14,17 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 @SessionAttributes(types = TargetListFormSearchParams.class)
 public class TargetControllerOpenemm extends TargetController {
 
-    public TargetControllerOpenemm(TargetService targetService, WebStorage webStorage, UserActivityLogService userActivityLogService, BirtReportDao birtReportDao) {
-        super(targetService, webStorage, userActivityLogService, birtReportDao);
+    public TargetControllerOpenemm(
+            TargetService targetService,
+            WebStorage webStorage,
+            UserActivityLogService userActivityLogService,
+            BirtReportDao birtReportDao
+    ) {
+        super(
+                targetService,
+                webStorage,
+                userActivityLogService,
+                birtReportDao
+        );
     }
 }

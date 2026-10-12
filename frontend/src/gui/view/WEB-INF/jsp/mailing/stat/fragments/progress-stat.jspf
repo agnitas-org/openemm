@@ -1,11 +1,4 @@
-<div id="stat-loader" class="tile tile--notification tile--processing">
-    <div class="tile-body">
-        <h1>
-            <i class="icon icon-sync icon-pulse"></i>
-            <mvc:message code="statistic.viewer.progressbar.prompt" />
-        </h1>
-    </div>
-</div>
+<%@include file="mailing-stat-ajax-loader.jspf"%>
 
 <div class="d-flex flex-column gap-3 invisible" data-controller="progress-stat" data-initializer="mailing-progress-stat">
 

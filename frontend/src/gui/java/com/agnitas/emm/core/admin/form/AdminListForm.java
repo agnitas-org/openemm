@@ -1,21 +1,23 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.admin.form;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import com.agnitas.beans.Company;
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.Company;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.emm.core.admin.UserOverviewAdditionalColumn;
+import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.web.forms.PaginationForm;
 
 public class AdminListForm extends PaginationForm {
@@ -34,6 +36,8 @@ public class AdminListForm extends PaginationForm {
     private String filterUsername;
     private DateRange filterCreationDate = new DateRange();
     private DateRange filterLastLoginDate = new DateRange();
+    private boolean inEditColumnsMode;
+    List<String> additionalColumns = new ArrayList<>();
 
     public List<Company> getCompanies() {
         return companies;
@@ -145,5 +149,31 @@ public class AdminListForm extends PaginationForm {
 
     public void setFilterLastLoginDate(DateRange filterLastLoginDate) {
         this.filterLastLoginDate = filterLastLoginDate;
+    }
+
+    public boolean isInEditColumnsMode() {
+        return inEditColumnsMode;
+    }
+
+    public void setInEditColumnsMode(boolean inEditColumnsMode) {
+        this.inEditColumnsMode = inEditColumnsMode;
+    }
+
+    public boolean isSelectedColumn(String column) {
+        return additionalColumns.contains(column);
+    }
+
+    public List<String> getAdditionalColumns() {
+        return additionalColumns;
+    }
+
+    public void setAdditionalColumns(List<String> additionalColumns) {
+        this.additionalColumns = additionalColumns;
+    }
+
+    public List<UserOverviewAdditionalColumn> getAdditionalOverviewColumns() {
+        return additionalColumns.stream()
+                .map(UserOverviewAdditionalColumn::valueOf)
+                .toList();
     }
 }

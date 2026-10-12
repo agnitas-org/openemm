@@ -10,42 +10,42 @@
       super();
     }
 
-    extractStatisticsData(fetchedData) {
-      return {percent: this.extractPercent(fetchedData)};
-    }
+    getDeviceTypesMap() {
+      const DEVICE_TYPES = {
+        PC: t('statistics.device.desktop'),
+        TABLET: t('statistics.device.tablet'),
+        MOBILE: t('statistics.device.mobile'),
+        SMART_TV: t('statistics.device.smarttv'),
+        MULTIPLE: t('statistics.device.mixed')
+      };
 
-    extractPercent(fetchedData) {
-      // No implementation
-    }
-
-    initChartData(fetchedData) {
-      super.initChartData(fetchedData);
-      this._chartData.percent = fetchedData.percent;
+      return Object.fromEntries(
+        Object.entries(this._data.byDevice)
+          .map(([deviceClass, value]) => [DEVICE_TYPES[deviceClass], value])
+      );
     }
 
     getChartOptions() {
-      if (!this._chartData.colors) {
-        this._chartData.colors = [
-          this.$el.css('--chart-darkest-blue-color'),
-          this.$el.css('--chart-dark-blue-color'),
-          this.$el.css('--chart-blue-color'),
-          this.$el.css('--chart-light-blue-color'),
-          this.$el.css('--chart-light-cyan-color')
-        ];
-      }
+      const deviceTypesMap = this.getDeviceTypesMap();
 
       return {
         type: 'agnDoughnut',
         data: {
-          labels: this._chartData.names,
+          labels: Object.keys(deviceTypesMap),
           datasets: [{
-            data: this._chartData.values,
-            backgroundColor: this._chartData.colors,
+            data: Object.values(deviceTypesMap),
+            backgroundColor: this._colors,
             borderWidth: 0
           }]
         }
       };
     }
+
+    getTotalValue() {
+      const values = Object.values(this._data.byDevice);
+      return AGN.Lib.ChartUtils.getTotal(values);
+    }
+
   }
 
   AGN.Lib.Dashboard.BaseMailingDeviceStatisticsTile = BaseMailingDeviceStatisticsTile;

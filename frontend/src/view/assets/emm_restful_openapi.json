@@ -4095,7 +4095,8 @@
     },
     "/binding/{customer_id}/{mailinglist_id}" : {
       "get" : {
-        "summary" : "Read a single existing binding entry for a single recipient",
+        "summary" : "Read the existing binding entries for a single recipient on a single mailinglist",
+        "description" : "A recipient can be bound to the same mailinglist through more than one mediatype (for example EMAIL and SMS). This returns one entry per mediatype the recipient is bound with. An empty array means the recipient exists but has no binding for this mailinglist.",
         "tags" : [ "Binding" ],
         "parameters" : [ {
           "in" : "path",
@@ -4104,7 +4105,7 @@
           "schema" : {
             "type" : "integer"
           },
-          "description" : "Numeric ID of the recipient to get binding entry for"
+          "description" : "Numeric ID of the recipient to get binding entries for"
         }, {
           "in" : "path",
           "name" : "mailinglist_id",
@@ -4112,15 +4113,18 @@
           "schema" : {
             "type" : "integer"
           },
-          "description" : "Numeric ID of the mailinglist to get the binding entry for"
+          "description" : "Numeric ID of the mailinglist to get the binding entries for"
         } ],
         "responses" : {
           "200" : {
-            "description" : "Binding entry",
+            "description" : "Binding entries, one per mediatype the recipient is bound with (may be empty)",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BindingItem"
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BindingItem"
+                  }
                 }
               }
             }
@@ -4187,7 +4191,8 @@
     },
     "/binding/{email}/{mailinglist_id}" : {
       "get" : {
-        "summary" : "Read a single existing binding entry for a single recipient",
+        "summary" : "Read the existing binding entries for a single recipient on a single mailinglist",
+        "description" : "A recipient can be bound to the same mailinglist through more than one mediatype (for example EMAIL and SMS). This returns one entry per mediatype the recipient is bound with. An empty array means the recipient exists but has no binding for this mailinglist.",
         "tags" : [ "Binding" ],
         "parameters" : [ {
           "in" : "path",
@@ -4196,7 +4201,7 @@
           "schema" : {
             "type" : "string"
           },
-          "description" : "Email address of the recipient to get binding entry for"
+          "description" : "Email address of the recipient to get binding entries for"
         }, {
           "in" : "path",
           "name" : "mailinglist_id",
@@ -4204,15 +4209,18 @@
           "schema" : {
             "type" : "integer"
           },
-          "description" : "Numeric ID of the mailinglist to get the binding entry for"
+          "description" : "Numeric ID of the mailinglist to get the binding entries for"
         } ],
         "responses" : {
           "200" : {
-            "description" : "Binding entry",
+            "description" : "Binding entries, one per mediatype the recipient is bound with (may be empty)",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BindingItem"
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BindingItem"
+                  }
                 }
               }
             }
@@ -5362,7 +5370,41 @@
             "description" : "Server side error"
           }
         }
+      },
+      "delete": {
+      "summary": "Deactivate an active mailing",
+      "tags": [
+        "Deactivate"
+      ],
+      "parameters": [
+        {
+          "in": "path",
+          "name": "mailing_id",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          },
+          "description": "Numeric ID of the mailing to send"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Simple information text"
+        },
+        "400": {
+          "description": "Any client side error like invalid id or not existing item"
+        },
+        "401": {
+          "description": "Authorization information is missing or invalid"
+        },
+        "404": {
+          "description": "Data requested was not found"
+        },
+        "500": {
+          "description": "Server side error"
+        }
       }
+    }
     },
     "/send/{dynamicContentMailingSchemaName}" : {
       "put" : {
@@ -5897,7 +5939,7 @@
             "type" : "string"
           },
           "required" : false,
-          "description" : "Optionally selected additional user details to include in list (\"groups\", \"permissions\", \"accesslimitingtargetgroups\", \"fieldpermissions\", \"disabledmailinglists\", \"others\", \"*\" = all, example \"GET https://<SystemUrl/restful/user?fields=permissions,groups\")"
+          "description" : "Optionally selected additional user details to include in list (\"groups\", \"permissions\", \"accesslimitingtargetgroups\", \"fieldpermissions\", \"disabledmailinglists\", \"others\", \"*\" = all, example \"GET https://<SystemUrl>/restful/user?fields=permissions,groups\")"
         } ],
         "responses" : {
           "200" : {
@@ -8064,6 +8106,11 @@
             "type" : "string",
             "description" : "Letter to identify the recipient type. Default is \"W\". (ALL_RECIPIENTS(\"E\"), ADMIN_RECIPIENT(\"A\"), TEST_RECIPIENT(\"T\"), TEST_VIP_RECIPIENT(\"t\"), NORMAL_RECIPIENT(\"W\"), NORMAL_VIP_RECIPIENT(\"w\"))",
             "example" : "W"
+          },
+          "mediatype" : {
+            "type" : "string",
+            "description" : "Channel this binding entry applies to. Only present when the binding uses a non-default channel, i.e. anything other than EMAIL.",
+            "example" : "SMS"
           },
           "user_status" : {
             "type" : "integer",

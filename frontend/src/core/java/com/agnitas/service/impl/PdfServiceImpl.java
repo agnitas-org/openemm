@@ -1,15 +1,16 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.service.impl;
 
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +36,7 @@ import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
 import com.agnitas.emm.core.preview.service.PreviewSettings;
 import com.agnitas.emm.puppeteer.service.PuppeteerService;
+import com.agnitas.service.PdfGenerationOptions;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.exceptions.PdfCreationException;
 import com.agnitas.util.AgnUtils;
@@ -144,13 +146,42 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 	@Override
     public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) {
 		File pdf = generatePDFWithPuppeteer(url, landscape, customCss, windowStatusForWaiting);
-		return tryAddAdditionalElements(admin, pdf, landscape, title, footerMsgKey);
+		return tryAddAdditionalElements(admin.getLocale(), TimeZone.getTimeZone(admin.getAdminTimezone()), pdf, landscape, title, footerMsgKey);
     }
+
+	@Override
+	public File generatePDF(PdfGenerationOptions options) {
+		File pdf = generatePDFWithPuppeteer(
+				options.url(),
+				options.landscape(),
+				options.customCss(),
+				options.windowStatusForWaiting(),
+				options.viewportWidth(),
+				options.scale(),
+				options.timeoutMillis(),
+				options.acceptLanguage()
+		);
+
+		BaseFont headerFont = loadHeaderFont(options.headerFontPath());
+		return tryAddAdditionalElements(
+				pdf, options.landscape(), options.headerText(), options.footerText(),
+				headerFont, options.headerFontSize(), options.headerColor(), options.footerColor()
+		);
+	}
+
+	private BaseFont loadHeaderFont(String headerFontPath) {
+		try {
+			String fontPath = servletContext.getRealPath(headerFontPath);
+			return BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+		} catch (DocumentException | IOException e) {
+			throw new PdfCreationException("Error while loading header font", e);
+		}
+	}
 
 	@Override
 	public File generatePDF(Admin admin, PreviewSettings previewSettings, boolean landscape, String title, String footerMsgKey) {
 		File pdf = generatePDFWithPuppeteer(previewSettings, landscape, admin);
-		return tryAddAdditionalElements(admin, pdf, landscape, title, footerMsgKey);
+		return tryAddAdditionalElements(admin.getLocale(), TimeZone.getTimeZone(admin.getAdminTimezone()), pdf, landscape, title, footerMsgKey);
     }
 
 	@Override
@@ -173,10 +204,14 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 	 * @return .pdf file of the web page
 	 */
     private File generatePDFWithPuppeteer(String url, boolean landscape, String customCss, String windowWaitStatus) {
+		return generatePDFWithPuppeteer(url, landscape, customCss, windowWaitStatus, null, null, PDF_TIMEOUT, null);
+    }
+
+	private File generatePDFWithPuppeteer(String url, boolean landscape, String customCss, String windowWaitStatus, Integer viewportWidth, Double scale, long timeout, String acceptLanguage) {
         File customCssFile = tryCreateFileWithCustomCss(customCss);
 
         try {
-			return createPdf(url, customCssFile.getAbsolutePath(), landscape, windowWaitStatus);
+			return createPdf(url, customCssFile.getAbsolutePath(), landscape, windowWaitStatus, viewportWidth, scale, timeout, acceptLanguage);
         } finally {
             tryDeleteFile(customCssFile);
         }
@@ -187,7 +222,7 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 		File customCssFile = tryCreateFileWithCustomCss(USER_STYLESHEET_CONTENT);
 
 		try {
-			return createPdf(temporaryPreviewFile.toURI().toString(), customCssFile.getAbsolutePath(), landscape, "");
+			return createPdf(temporaryPreviewFile.toURI().toString(), customCssFile.getAbsolutePath(), landscape, "", null, null, PDF_TIMEOUT, null);
 		} finally {
 			tryDeleteFile(customCssFile);
 			tryDeleteFile(temporaryPreviewFile);
@@ -212,11 +247,11 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 		return tmpFile;
 	}
 
-	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus) {
-		return createPdf(url, customCssPath, landscape, windowWaitStatus, 0);
+	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus, Integer viewportWidth, Double scale, long timeout, String acceptLanguage) {
+		return createPdf(url, customCssPath, landscape, windowWaitStatus, viewportWidth, scale, timeout, acceptLanguage, 0);
 	}
 
-	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus, int retryCount) {
+	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus, Integer viewportWidth, Double scale, long timeout, String acceptLanguage, int retryCount) {
 		File pdf = null;
 		try {
 			pdf = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
@@ -230,7 +265,16 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 			requestBody.put("landscape", landscape);
 			requestBody.put("customCssPath", customCssPath);
 			requestBody.put("windowWaitStatus", windowWaitStatus);
-			requestBody.put("timeout", PDF_TIMEOUT);
+			requestBody.put("timeout", timeout);
+			if (viewportWidth != null) {
+				requestBody.put("viewportWidth", viewportWidth);
+			}
+			if (scale != null) {
+				requestBody.put("scale", scale);
+			}
+			if (StringUtils.isNotBlank(acceptLanguage)) {
+				requestBody.put("acceptLanguage", acceptLanguage);
+			}
 
 			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
 			ResponseEntity<String> response = restTemplate.postForEntity(puppeteerService.getPdfUrl(), request, String.class);
@@ -244,7 +288,7 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 			if (rae.getCause() instanceof ConnectException && !puppeteerService.isServiceRunning() && retryCount < MAX_RETRIES_COUNT) {
 				puppeteerService.startService();
 				tryDeleteFile(pdf);
-				return createPdf(url, customCssPath, landscape, windowWaitStatus, retryCount + 1);
+				return createPdf(url, customCssPath, landscape, windowWaitStatus, viewportWidth, scale, timeout, acceptLanguage, retryCount + 1);
 			}
 
 			throw new PdfCreationException("Error while creating pdf via puppeteer - '%s'".formatted(url), rae);
@@ -282,16 +326,9 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 		return customCssFile;
 	}
 
-	private File tryAddAdditionalElements(Admin admin, File pdfFile, boolean landscape, String title, String footerMsgKey) {
+	private File tryAddAdditionalElements(Locale locale, TimeZone timeZone, File pdfFile, boolean landscape, String title, String footerMsgKey) {
 		try {
-			return addAdditionalElements(
-					admin.getLocale(),
-					TimeZone.getTimeZone(admin.getAdminTimezone()),
-					pdfFile,
-					landscape,
-					title,
-					footerMsgKey
-			);
+			return addAdditionalElements(locale, timeZone, pdfFile, landscape, title, footerMsgKey);
 		} catch (IOException e) {
 			throw new PdfCreationException("An error occurred while adding additional elements", e);
 		}
@@ -308,6 +345,36 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 	 * @throws IOException error while extending .pdf
 	 */
     private File addAdditionalElements(Locale locale, TimeZone timeZone, File pdfInitialFile, boolean landscape, String title, String footerMsgKey) throws IOException {
+		String headerText = String.format("%s \"%s\"", SafeString.getLocaleString(footerMsgKey, locale), title);
+		DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, locale);
+		Date currentDate = Calendar.getInstance(timeZone).getTime();
+		String footerText = headerText + ", " + dateFormat.format(currentDate);
+
+		return addAdditionalElements(pdfInitialFile, landscape, headerText, footerText);
+	}
+
+	private File tryAddAdditionalElements(File pdfFile, boolean landscape, String headerText, String footerText, BaseFont headerFont, float headerFontSize, Color headerColor, Color footerColor) {
+		try {
+			return addAdditionalElements(pdfFile, landscape, headerText, footerText, headerFont, headerFontSize, headerColor, footerColor);
+		} catch (IOException e) {
+			throw new PdfCreationException("An error occurred while adding additional elements", e);
+		}
+	}
+
+	private File addAdditionalElements(File pdfInitialFile, boolean landscape, String headerText, String footerText) throws IOException {
+		BaseFont defaultFont;
+		try {
+			defaultFont = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+		} catch (DocumentException e) {
+			throw new IOException("Error while loading default font", e);
+		}
+		return addAdditionalElements(pdfInitialFile, landscape, headerText, footerText, defaultFont, 10f, Color.BLACK, Color.BLACK);
+	}
+
+	private File addAdditionalElements(
+			File pdfInitialFile, boolean landscape, String headerText, String footerText,
+			BaseFont headerFont, float headerFontSize, Color headerColor, Color footerColor
+	) throws IOException {
         File finalFile = File.createTempFile("preview_final_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
         PdfReader pdfReader = new PdfReader(pdfInitialFile.getAbsolutePath());
 
@@ -319,7 +386,7 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 			        float borderGap = 20;
 
 			        String logoPath = servletContext.getRealPath("/assets/core/images/facelift/report_logo.png"); // draw agnitas logo in the top right corner
-			        
+
 					try (InputStream logoStream = new FileInputStream(logoPath)) {
 				        byte[] logoData = IOUtils.toByteArray(logoStream);
 				        Image image = Image.getInstance(logoData);
@@ -354,12 +421,6 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 				            bottomLineEndY = borderGap + 10;
 				        }
 
-				        // draw bottom page text: workflow name + date
-						String workflowTitle = String.format("%s \"%s\"", SafeString.getLocaleString(footerMsgKey, locale), title);
-				        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, locale);
-				        Date currentDate = Calendar.getInstance(timeZone).getTime();
-				        String dateStr = dateFormat.format(currentDate);
-						String bottomText = workflowTitle + ", " + dateStr;
 				        BaseFont font = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
 
 				        for (int i = 1; i <= pdfReader.getNumberOfPages(); i++) {
@@ -368,16 +429,18 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 				            overContent.addImage(image);
 
 				            overContent.beginText();
-				            overContent.setFontAndSize(font, 10); // set font and size
+				            overContent.setColorFill(headerColor);
+				            overContent.setFontAndSize(headerFont, headerFontSize); // set font and size
 							overContent.setTextMatrix(borderGap + 5, topLineStartY + 10); // set x,y position (0,0 is at the bottom left)
-							overContent.showText(workflowTitle); // set text
+							overContent.showText(headerText); // set text
 				            overContent.endText();
 
 				            //add footer text
 				            overContent.beginText();
+				            overContent.setColorFill(footerColor);
 				            overContent.setFontAndSize(font, 10); // set font and size
 				            overContent.setTextMatrix(borderGap + 5, borderGap - 5); // set x,y position (0,0 is at the bottom left)
-				            overContent.showText(bottomText); // set text
+				            overContent.showText(footerText); // set text
 				            overContent.setTextMatrix(bottomLineEndX - 20, bottomLineEndY - 15);
 				            overContent.showText(i + "/" + pdfReader.getNumberOfPages()); // set page number
 				            overContent.endText();

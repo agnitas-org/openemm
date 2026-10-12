@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -86,7 +86,7 @@ public class LogonServiceImpl implements LogonService {
 	
 	@Override
 	public Admin getAdminByUsername(String username) {
-		return adminService.getAdminByName(username).orElseGet(null);
+		return adminService.findByUsername(username).orElse(null);
 	}
 
 	/**
@@ -256,7 +256,7 @@ public class LogonServiceImpl implements LogonService {
 	
 	@Override
 	public ServiceResult<Admin> resetPassword(String username, String token, String password, String clientIp) {
-		final Optional<Admin> adminOptional = adminService.getAdminByName(username);
+		final Optional<Admin> adminOptional = adminService.findByUsername(username);
 		
 		if(adminOptional.isEmpty()) {
 			logger.info("Unknown username '{}'", username);
@@ -301,7 +301,7 @@ public class LogonServiceImpl implements LogonService {
 	}
 
 	private Admin getAdmin(String username, String email) {
-		final Optional<Admin> adminOptional = adminService.getAdminByName(username);
+		final Optional<Admin> adminOptional = adminService.findByUsername(username);
 		
 		if (adminOptional.isEmpty()) {
 			logger.info("Unknown username '{}'", username);
@@ -437,7 +437,7 @@ public class LogonServiceImpl implements LogonService {
 
 	@Override
 	public void riseErrorCount(String username) {
-        adminService.getAdminByName(username)
+        adminService.findByUsername(username)
 				.ifPresent(admin -> passwordResetDao.riseErrorCount(admin.getAdminID()));
 	}
 

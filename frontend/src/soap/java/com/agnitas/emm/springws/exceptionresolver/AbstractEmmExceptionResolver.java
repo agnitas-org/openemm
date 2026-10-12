@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -14,6 +14,7 @@ import java.util.Locale;
 
 import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.core.binding.exception.BindingNotExistException;
+import com.agnitas.emm.core.commons.exception.EntityNotFoundException;
 import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import com.agnitas.emm.core.components.exception.ComponentAlreadyExistException;
 import com.agnitas.emm.core.dyncontent.exception.DynamicTagContentInvalid;
@@ -32,7 +33,7 @@ import com.agnitas.emm.core.recipient.exception.InvalidDataException;
 import com.agnitas.emm.core.recipient.exception.ProfileFieldNotExistException;
 import com.agnitas.emm.core.recipient.exception.RecipientNotExistException;
 import com.agnitas.emm.core.recipient.exception.SubscriberLimitExceededException;
-import com.agnitas.emm.core.target.exception.TargetNotExistException;
+import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.springws.endpoint.dyncontent.InvalidMailingContentException;
 import com.agnitas.emm.springws.exception.BulkDataSizeLimitExceededException;
@@ -43,7 +44,6 @@ import com.agnitas.emm.springws.exception.MailingNotEditableException;
 import com.agnitas.emm.springws.exception.MissingKeyColumnOrValueException;
 import com.agnitas.emm.springws.exception.WebServiceFileDataEmptyException;
 import com.agnitas.emm.springws.exception.WebserviceNotAllowedException;
-import com.agnitas.emm.springws.subscriptionrejection.exceptions.SubscriptionRejectedException;
 import com.agnitas.exception.FormNotFoundException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -107,8 +107,8 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
 			definition.setFaultStringOrReason("Unknown content ID");
 		} else if (ex instanceof DynamicTagNameNotExistException) {
 			definition.setFaultStringOrReason("Unknown block name");
-		} else if (ex instanceof TargetNotExistException targetNotExistException) {
-			definition.setFaultStringOrReason("Unknown target id (" + targetNotExistException.getTargetID() + ")");
+		} else if (ex instanceof TargetGroupNotFoundException targetGroupNotFoundException) {
+			definition.setFaultStringOrReason("Unknown target id (" + targetGroupNotFoundException.getTargetGroupId() + ")");
 		} else if (ex instanceof MailinglistNotExistException) {
 			definition.setFaultStringOrReason("Unknown mailinglist ID");
 		} else if (ex instanceof TemplateNotExistException) {
@@ -145,8 +145,6 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
             definition.setFaultStringOrReason("Unknown link ID " + unknownLinkIdException.getLinkId());
         } else if (ex instanceof FormNotFoundException) {
         	definition.setFaultStringOrReason("Unknown form name");
-        } else if(ex instanceof SubscriptionRejectedException) {
-        	definition.setFaultStringOrReason("Subscription rejection by anti-spam rules.");
         } else if(ex instanceof WebServiceFileDataEmptyException) {
         	definition.setFaultStringOrReason("File is missing or empty.");
         } else if(ex instanceof DateFormatException) {
@@ -165,6 +163,8 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
         	definition.setFaultStringOrReason("Mailing component of same name already exists");
         } else if(ex instanceof ShortnameTooShortException) {
         	definition.setFaultStringOrReason("shortname is required");
+        } else if (ex instanceof EntityNotFoundException) {
+            definition.setFaultStringOrReason(ex.getMessage());
         } else if(ex instanceof MailinglistException) {
         	definition.setFaultStringOrReason(ex.getMessage());
         } else {

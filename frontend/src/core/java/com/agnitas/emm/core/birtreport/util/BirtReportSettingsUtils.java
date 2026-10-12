@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -117,7 +117,7 @@ public class BirtReportSettingsUtils {
     public static final String GENERAL_INFO_GROUP = "settings.general.information";
     public static final String SUMMARY_GROUP = "report.summary";
     public static final String DETAIL_ANALYSIS_GROUP = "statistic.analysis.detail";
-    public static final String OPENER_GROUP = "statistic.opener";
+    public static final String OPENERS_AND_CLICKERS_GROUP = "report.opener.clicker";
     public static final String DEVICES_GROUP = "statistic.devices";
     public static final String FORMATS_GROUP = "statistic.formats";
 
@@ -138,9 +138,11 @@ public class BirtReportSettingsUtils {
 
     public static final String REPORT_DATE_FORMAT = DateUtilities.YYYY_MM_DD;
     public static final String REPORT_DATE_FORMAT_FOR_DAY = DateUtilities.YYYY_MM_DD_HH_MM;
-    
-    public static final List<BirtReportSettingsUtils.Properties> COMPARISON_GENERAL_GROUP = Arrays.asList(CLICKING_RECIPIENT, CLICKING_ANONYM, HARD_BOUNCES, SIGNED_OFF);
-    public static final List<BirtReportSettingsUtils.Properties> COMPARISON_OPENER_GROUP = Arrays.asList(OPENERES_TOTAL, OPENERS_MEASURED, OPENERS_INVISIBLE, OPENING_ANONYM);
+
+    public static final SimpleDateFormat REPORT_SIMPLE_DATE_FORMAT = new SimpleDateFormat(REPORT_DATE_FORMAT);
+
+    public static final List<BirtReportSettingsUtils.Properties> COMPARISON_GENERAL_GROUP = Arrays.asList(HARD_BOUNCES, SIGNED_OFF);
+    public static final List<BirtReportSettingsUtils.Properties> COMPARISON_OPENERS_AND_CLICKERS_GROUP = Arrays.asList(OPENERES_TOTAL, OPENERS_MEASURED, OPENERS_INVISIBLE, OPENING_ANONYM, CLICKING_RECIPIENT, CLICKING_ANONYM);
     public static final List<BirtReportSettingsUtils.Properties> COMPARISON_DEVICES_GROUP = Arrays.asList(OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE);
     public static final List<BirtReportSettingsUtils.Properties> COMPARISON_FORMATS_GROUP = Arrays.asList(HTML, TEXT, OFFLINE_HTML);
 
@@ -148,17 +150,35 @@ public class BirtReportSettingsUtils {
     public static final List<BirtReportSettingsUtils.Properties> MAILING_GENERAL_GROUP = Arrays.asList(CLICKING_RECIPIENT, CLICKING_ANONYM, SIGNED_OFF, SOFT_BOUNCES, HARD_BOUNCES, CONVERSION_RATE);
     public static final List<BirtReportSettingsUtils.Properties> MAILING_OPENER_GROUP = Arrays.asList(OPENERS_MEASURED, OPENERS_INVISIBLE, OPENERES_TOTAL, OPENING_ANONYM);
     public static final List<BirtReportSettingsUtils.Properties> MAILING_DEVICES_GROUP = Arrays.asList(OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE, OPENER_DEVICES, CLICKER_DEVICES, ACTIVATE_LINK_STATISTICS);
-    
-    public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_WITHOUT_GROUP = Arrays.asList(RECIPIENT_STATUS, DEVELOPMENT_DETAILED, DEVELOPMENT_NET, FORMAT_TYPE, ACTIVITY_ANALYSIS, DOI);
-    public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_ANALYSIS_GROUP = Arrays.asList(OPENERS_MEASURED, CLICKING_RECIPIENT, CLICKERS_AFTER_DEVICE);
-    
-    public static final List<BirtReportSettingsUtils.Properties> TOP_DOMAIN_WITHOUT_GROUP = Arrays.asList(SENT_MAILS, HARD_BOUNCES, SOFT_BOUNCES, OPENERS, CLICKING_RECIPIENT);
+
+    public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_WITHOUT_GROUP =
+            Arrays.asList(RECIPIENT_STATUS, DEVELOPMENT_DETAILED, DEVELOPMENT_NET, FORMAT_TYPE, ACTIVITY_ANALYSIS, DOI);
+
+    public static final List<BirtReportSettingsUtils.Properties> RECIPIENT_ANALYSIS_GROUP =
+            Arrays.asList(OPENERS_MEASURED, CLICKING_RECIPIENT, CLICKERS_AFTER_DEVICE);
+
+    public static final List<BirtReportSettingsUtils.Properties> TOP_DOMAIN_WITHOUT_GROUP =
+            Arrays.asList(SENT_MAILS, OPENERS, CLICKING_RECIPIENT, HARD_BOUNCES, SOFT_BOUNCES);
 
     public static final Map<String, List<Properties>> mailingStatisticProps = new LinkedHashMap<>();
     static {
-        mailingStatisticProps.put(GENERAL_INFO_GROUP, List.of(MAILING_NAME, MAILING_ID, DESCRIPTION, ARCHIVE, MAIL_FORMAT, AVERAGE_SIZE, SUBJECT, MAILING_LIST, TARGET_GROUPS, NR_OF_RECIPIENTS_WITH_TRACK_VETO, SENDING_STARTED, SENDING_FINISHED, SENDER_INFO, REPLY_TO_INFO));
-        mailingStatisticProps.put(SUMMARY_GROUP, List.of(SENT_MAILS, EMAILS_ACCEPTED, OPENERS_MEASURED, OPENERS_INVISIBLE, OPENERES_TOTAL, OPENING_ANONYM, CLICKING_RECIPIENT, CLICKING_ANONYM, SIGNED_OFF, SOFT_BOUNCES, HARD_BOUNCES, CONVERSION_RATE));
-        mailingStatisticProps.put(DETAIL_ANALYSIS_GROUP, List.of(OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE, OPENER_DEVICES, CLICKER_DEVICES, ACTIVATE_LINK_STATISTICS, BOUNCE_REASON, TOP_DOMAINS));
+        mailingStatisticProps.put(GENERAL_INFO_GROUP, List.of(
+                MAILING_NAME, MAILING_ID, DESCRIPTION, ARCHIVE, MAIL_FORMAT,
+                AVERAGE_SIZE, SUBJECT, MAILING_LIST, TARGET_GROUPS,
+                NR_OF_RECIPIENTS_WITH_TRACK_VETO, SENDING_STARTED,
+                SENDING_FINISHED, SENDER_INFO, REPLY_TO_INFO
+        ));
+        mailingStatisticProps.put(SUMMARY_GROUP, List.of(
+                SENT_MAILS, EMAILS_ACCEPTED, OPENERS_MEASURED,
+                OPENERS_INVISIBLE, OPENERES_TOTAL, OPENING_ANONYM,
+                CLICKING_RECIPIENT, CLICKING_ANONYM, SIGNED_OFF,
+                SOFT_BOUNCES, HARD_BOUNCES, CONVERSION_RATE
+        ));
+        mailingStatisticProps.put(DETAIL_ANALYSIS_GROUP, List.of(
+                OPENERS_AFTER_DEVICE, CLICKERS_AFTER_DEVICE, OPENER_DEVICES,
+                CLICKER_DEVICES, ACTIVATE_LINK_STATISTICS, BOUNCE_REASON,
+                TOP_DOMAINS
+        ));
         mailingStatisticProps.put(FORMATS_GROUP, MAILING_FORMATS_GROUP);
     }
     private static final Map<String, Object> defaultComparisonSettings = Map.of(
@@ -168,12 +188,20 @@ public class BirtReportSettingsUtils {
     );
     private static final Map<String, Object> defaultRecipientSettings = Map.of(
         ENABLED_KEY, false,
-        DATE_RANGE_KEY, DATE_RANGE_PREDEFINED
+        DATE_RANGE_KEY, DATE_RANGE_PREDEFINED,
+        RECIPIENT_STATUS.getPropName(), true
     );
     private static final Map<String, Object> defaultTopDomainsSettings = Map.of(
         ENABLED_KEY, false,
-        DATE_RANGE_KEY, DATE_RANGE_PREDEFINED
+        DATE_RANGE_KEY, DATE_RANGE_PREDEFINED,
+        SENT_MAILS.getPropName(), true,
+        OPENERS.getPropName(), true,
+        CLICKING_RECIPIENT.getPropName(), true
     );
+
+    private BirtReportSettingsUtils() {
+        // util class
+    }
 
     public static List<String> getSettingsPropertyList(Map<String, Object> properties, String propertyName) {
         List<String> result = new ArrayList<>();
@@ -183,15 +211,14 @@ public class BirtReportSettingsUtils {
     
         Object value = properties.get(propertyName);
         if(value != null) {
-            if (value instanceof String) {
-                result.add((String) value);
-            } else if(value instanceof String[]){
-                result.addAll(Arrays.asList((String[]) value));
-            } else if(value instanceof Collection) {
-                Collection<?> objects = (Collection<?>) value;
+            if (value instanceof String str) {
+                result.add(str);
+            } else if (value instanceof String[] strArr){
+                result.addAll(Arrays.asList(strArr));
+            } else if (value instanceof Collection<?> objects) {
                 for (Object obj : objects) {
-                    if (obj instanceof String) {
-                        result.add((String) obj);
+                    if (obj instanceof String str) {
+                        result.add(str);
                     }
                     if (obj instanceof Integer) {
                         result.add(String.valueOf(obj));
@@ -246,7 +273,7 @@ public class BirtReportSettingsUtils {
         switch (type) {
             case COMPARISON:
                 properties.addAll(COMPARISON_GENERAL_GROUP);
-                properties.addAll(COMPARISON_OPENER_GROUP);
+                properties.addAll(COMPARISON_OPENERS_AND_CLICKERS_GROUP);
                 properties.addAll(COMPARISON_DEVICES_GROUP);
                 properties.addAll(COMPARISON_FORMATS_GROUP);
                 break;
@@ -355,6 +382,7 @@ public class BirtReportSettingsUtils {
         settings.put(MAILING_GENERAL_TYPES_KEY, MAILINGS_GENERAL_NORMAL);
         if (forNewReport) {
             mailingStatisticProps.get(GENERAL_INFO_GROUP).forEach(metric -> settings.put(metric.getPropName(), true));
+            mailingStatisticProps.get(SUMMARY_GROUP).forEach(metric -> settings.put(metric.getPropName(), true));
         }
         settingsMap.put(ReportSettingsType.MAILING, settings);
 
@@ -419,7 +447,7 @@ public class BirtReportSettingsUtils {
     }
     
     public static boolean isWeekDayActive(String intervalPattern, int weekDay) {
-        //important for birt report interval pattern to use only english locale
+        //important for birt report interval pattern to use only English locale
 		return DateUtilities.isWeekDayActive(intervalPattern, weekDay, Locale.ENGLISH);
 	}
     

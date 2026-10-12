@@ -9,7 +9,24 @@
 	<target name="checkForPropertiesFile" description="Check the existence of the propertyfile and import it. This overrides the base target">
 		<property file="build-birt.properties" />
 		<property file="build-birt.properties.default" />
-		
+		<property name="use.ivy" value="false"/>
+
+		<available file="ivy.properties" property="isIvyPropertiesAvailable"/>
+		<fail message="Missing ivy.properties: copy ivy.properties.default to ivy.properties and adjust the settings">
+			<condition>
+				<and>
+					<istrue value="${use.ivy}"/>
+					<not><isset property="isIvyPropertiesAvailable"/></not>
+				</and>
+			</condition>
+		</fail>
+
+		<if>
+			<istrue value="${use.ivy}"/>
+			<then><property name="libs.dir" value="libs_ivy"/></then>
+			<else><property name="libs.dir" value="libs"/></else>
+		</if>
+
 		<if>
 			<not>
 				<isset property="basecss" />
@@ -73,7 +90,7 @@
 	<target name="setDeploytarget" depends="checkForPropertiesFile, checkDeployTargetRunstage">
 		<property name="emmSourcePath" value="src" />
 		<property name="emmEtcPath" value="etc" />
-		<property name="emmLibsPath" value="libs" />
+		<property name="emmLibsPath" value="${libs.dir}" />
 
 		<!-- This is a Fallback/Default. If birt.exmple is not set explicitly, we use the one included in the project -->
 		<property name="birt.example" value="lib_birt" />

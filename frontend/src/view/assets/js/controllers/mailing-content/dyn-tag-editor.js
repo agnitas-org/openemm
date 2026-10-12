@@ -4,6 +4,7 @@
   const Template = AGN.Lib.Template;
   const Select = AGN.Lib.Select;
   const Messaging = AGN.Lib.Messaging;
+  const Form = AGN.Lib.Form;
   const Def = AGN.Lib.MailingContent.Def;
 
   class DynTagEditor {
@@ -20,14 +21,12 @@
       this.currentDynTag = dynTag;
       this.currentContentBlock = undefined;
       this.currentDynTag.currentContentBlock = this.currentContentBlock;
+      this.aiEditor = new AiEditor(this);
 
       this.selectContentBlock(this.currentDynTag.contentBlocks[0] || this.currentDynTag.createNewContentBlock());
       AGN.runAll(this.$el);
       this.#initInterestGroup();
-
       this.targetsManager = new TargetsManager(this);
-      this.aiEditor = new AiEditor(this);
-      AGN.Lib.Controller.init(Def.$dynTagSettings); // "ai-text-generation" controller init
     }
 
     get $interestGroup() {
@@ -58,6 +57,10 @@
       return $(Def.$dynTagSettings.find('[data-toggle-tab].active').data('toggle-tab'));
     }
 
+    updateMailingPreview() {
+      Form.get($('#preview-form')).submit();
+    }
+
     resizeAceIfShown() {
       if (this.isAceTabActive) {
         this.aceEditor?.resize();
@@ -84,6 +87,7 @@
       this.setEditorsContent(contentBlock === undefined ? '' : contentBlock.content);
       this.currentContentBlock = contentBlock;
       this.updateTargetsOptions();
+      this.aiEditor.loadAiSettings()
     }
 
     updateTargetsOptions() {

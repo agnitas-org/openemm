@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -34,6 +34,7 @@ public class MaildropStatusDAO {
 	private long		mailingID;
 	private String		statusField;
 	private Date		sendDate;
+	private String		origin;
 	private int		step;
 	private int		blockSize;
 	private int		genStatus;
@@ -74,6 +75,7 @@ public class MaildropStatusDAO {
 				if ("C".equals (statusField)) {
 					statusField = "E";
 				}
+				origin = dbase.asString (row.get ("origin"));
 				sendDate = dbase.asDate (row.get ("senddate"));
 				step = dbase.asInt (row.get ("step"));
 				blockSize = dbase.asInt (row.get ("blocksize"));
@@ -134,6 +136,9 @@ public class MaildropStatusDAO {
 	}
 	public Date sendDate () {
 		return sendDate;
+	}
+	public String origin () {
+		return origin;
 	}
 	public int step () {
 		return step;
@@ -396,18 +401,6 @@ public class MaildropStatusDAO {
 				return count == 1;
 			}
 			throw r.error;
-		}
-	}
-
-	/**
-	 * remove an entry in the table
-	 */
-	public boolean remove (DBase dbase) throws SQLException {
-		try (DBase.With with = dbase.with ()) {
-			return dbase.update (with.cursor (),
-					     "DELETE FROM maildrop_status_tbl " +
-					     "WHERE status_id = :statusID",
-					     "statusID", statusID) == 1;
 		}
 	}
 }

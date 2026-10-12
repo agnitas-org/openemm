@@ -1,24 +1,20 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.common;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.agnitas.exception.InvalidUserStatusException;
-import org.apache.commons.lang3.StringUtils;
 
 public enum UserStatus {
 
@@ -83,18 +79,6 @@ public enum UserStatus {
 		}
 		return null;
 	}
-	
-	/**
-	 * @see #getAvailableStatusCodes()
-	 */
-	@Deprecated
-	public static List<Integer> getAvailableStatusCodeList() {
-		return Arrays.stream(UserStatus.values()).map(UserStatus::getStatusCode).collect(Collectors.toList());
-	}
-	
-	public static List<UserStatus> getAvailableStatusCodes() {
-		return Arrays.asList(UserStatus.values());
-	}
 
 	/**
 	 * Returns the identifier used in webhook messages.
@@ -105,12 +89,21 @@ public enum UserStatus {
 		return this.webhookIdentifier;
 	}
 
-	public static UserStatus fromAny(String raw) {
-		if (StringUtils.defaultString(raw).matches("\\d+")) {
-			return findByCode(Integer.parseInt(raw))
-				.orElseThrow(() -> new IllegalArgumentException("Invalid value"));
+	public static UserStatus parse(String raw) {
+		return tryParse(raw).orElseThrow(() -> new IllegalArgumentException("Invalid value: " +	raw));
+	}
+
+	public static UserStatus parseOrNull(String raw) {
+		return tryParse(raw).orElse(null);
+	}
+
+	public static Optional<UserStatus> tryParse(String raw) {
+		if (raw == null) {
+			return Optional.empty();
 		}
-		return Optional.ofNullable(getUserStatusByName(raw))
-			.orElseThrow(() -> new IllegalArgumentException("Invalid value"));
+		if (raw.matches("\\d+")) {
+			return findByCode(Integer.parseInt(raw));
+		}
+		return Optional.ofNullable(getUserStatusByName(raw));
 	}
 }

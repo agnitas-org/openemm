@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,11 +12,8 @@ package com.agnitas.emm.core.logon.web;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.emm.common.LicenseType;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import com.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
@@ -31,6 +28,7 @@ import com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm;
 import com.agnitas.emm.core.logon.forms.LogonResetPasswordForm;
 import com.agnitas.emm.core.logon.forms.LogonTotpForm;
 import com.agnitas.emm.core.logon.forms.validation.LogonFormValidator;
+import com.agnitas.emm.core.logon.service.AdminSessionService;
 import com.agnitas.emm.core.logon.service.ClientHostIdService;
 import com.agnitas.emm.core.logon.service.HostAuthenticationService;
 import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
@@ -64,8 +62,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public class LogonController implements XssCheckAware {
@@ -88,18 +84,30 @@ public class LogonController implements XssCheckAware {
     private final UserActivityLogService userActivityLogService;
     private final ClientHostIdService clientHostIdService;
     private final SessionBindingService sessionBindingService;
+    private final AdminSessionService adminSessionService;
 
     private final LogonFormValidator logonFormValidator = new LogonFormValidator();
 
-    public LogonController(LogonService logonService, LoginTrackService loginTrackService, HostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, ClientHostIdService clientHostIdService, SessionBindingService sessionBindingService) {
+    public LogonController(
+            LogonService logonService,
+            LoginTrackService loginTrackService,
+            HostAuthenticationService hostAuthenticationService,
+            WebStorage webStorage,
+            ConfigService configService,
+            UserActivityLogService userActivityLogService,
+            ClientHostIdService clientHostIdService,
+            SessionBindingService sessionBindingService,
+            AdminSessionService adminSessionService
+    ) {
         this.logonService = logonService;
         this.loginTrackService = loginTrackService;
         this.hostAuthenticationService = hostAuthenticationService;
         this.webStorage = webStorage;
         this.configService = configService;
         this.userActivityLogService = userActivityLogService;
-        this.clientHostIdService = Objects.requireNonNull(clientHostIdService, "ClientHostIdService is null");
-        this.sessionBindingService = Objects.requireNonNull(sessionBindingService, "session binding service");
+        this.clientHostIdService = clientHostIdService;
+        this.sessionBindingService = sessionBindingService;
+        this.adminSessionService = adminSessionService;
     }
 
     // This exception should normally never occur unless user manually navigates to some endpoints.
@@ -583,35 +591,7 @@ public class LogonController implements XssCheckAware {
     }
 
     private String complete(Admin admin, String webStorageJson, Popups popups, HttpServletRequest request, HttpServletResponse response) {
-        final AdminPreferences preferences = logonService.getPreferences(admin);
-        final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-
-        attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN, admin, RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, preferences, RequestAttributes.SCOPE_SESSION);
-        this.sessionBindingService.bindSession(request, response);
-
-        logonService.updateSessionsLanguagesAttributes(admin);
-        attributes.setAttribute("emmLayoutBase", logonService.getEmmLayoutBase(admin), RequestAttributes.SCOPE_SESSION);
-
-        attributes.setAttribute("userName", StringUtils.defaultString(admin.getUsername()), RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute("firstName", StringUtils.defaultString(admin.getFirstName()), RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute("fullName", admin.getFullname(), RequestAttributes.SCOPE_SESSION);
-        if (admin.getSupervisor() != null) {
-        	attributes.setAttribute("supervisorName", admin.getSupervisor().getFullName(), RequestAttributes.SCOPE_SESSION);
-            attributes.setAttribute("supervisorUsername", admin.getSupervisor().getSupervisorName(), RequestAttributes.SCOPE_SESSION);
-        }
-        attributes.setAttribute("companyShortName", admin.getCompany().getShortname(), RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute("companyID", admin.getCompany().getId(), RequestAttributes.SCOPE_SESSION);
-        attributes.setAttribute("adminTimezone", admin.getAdminTimezone(), RequestAttributes.SCOPE_SESSION);
-
-        LicenseType licenseType = configService.getLicenseType();
-		if (!configService.getBooleanValue(ConfigValue.IsLiveInstance)
-        		|| licenseType == LicenseType.Inhouse
-                || licenseType == LicenseType.OpenEMM
-                || licenseType == LicenseType.OpenEMM_Plus
-        		|| configService.getIntegerValue(ConfigValue.System_Licence) == 0) {
-            attributes.setAttribute("versionNumber", configService.getValue(ConfigValue.ApplicationVersion), RequestAttributes.SCOPE_SESSION);
-        }
+        adminSessionService.fillSession(admin, request, response);
 
         // Setup web-storage using client's data represented as JSON.
         webStorage.setup(webStorageJson);

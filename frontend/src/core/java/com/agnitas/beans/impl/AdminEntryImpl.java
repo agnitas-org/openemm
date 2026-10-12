@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,9 +12,11 @@ package com.agnitas.beans.impl;
 
 import java.sql.Timestamp;
 import java.util.Locale;
+import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminEntry;
+import com.agnitas.emm.core.company.enums.Language;
 import org.apache.commons.lang3.StringUtils;
 
 public class AdminEntryImpl implements AdminEntry {
@@ -33,6 +35,7 @@ public class AdminEntryImpl implements AdminEntry {
 	private Timestamp loginDate;
 	private boolean passwordExpired;
 	private String companyName;
+	private Map<Integer, String> groups;
 
     public AdminEntryImpl(Admin admin) {
         this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(),
@@ -162,6 +165,11 @@ public class AdminEntryImpl implements AdminEntry {
 	}
 
 	@Override
+	public Language getLanguage() {
+		return Language.fromKey(getLocale().toString());
+	}
+
+	@Override
 	public Locale getLocale() {
 		if (StringUtils.isBlank(language)) {
 			return null;
@@ -170,4 +178,13 @@ public class AdminEntryImpl implements AdminEntry {
 		return Locale.of(language, country);
 	}
 
+	@Override
+	public Map<Integer, String> getGroups() {
+		return groups;
+	}
+
+	@Override
+	public void setGroups(Map<Integer, String> groups) {
+		this.groups = groups;
+	}
 }

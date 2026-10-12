@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -34,9 +34,10 @@ import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
+import com.agnitas.emm.core.mailinglist.MailinglistSortCriteria;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.util.AgnUtils;
-import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	private static final String SHORTNAME_COL = "shortname";
 	private static final String COMPANY_ID_COL = "company_id";
 	private static final String CREATION_DATE_COL = "creation_date";
+	private static final String DESCRIPTION = "description";
 
 	public static final RowMapper<Mailinglist> NAMES_ROWMAPPER = (rs, i) -> {
 		Mailinglist mailing = new MailinglistImpl();
@@ -111,7 +113,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 				return performInsertForOracle(list.getCompanyID(), list);
 			}
 
-			return performInsertForMySql(list.getCompanyID(), list);
+			return performAutoincrementInsert(list.getCompanyID(), list);
 		}
 
 		return performUpdate(list.getCompanyID(), list);
@@ -132,7 +134,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 			return performInsertForOracle(companyId, list);
 		}
 
-		return performInsertForMySql(companyId, list);
+		return performAutoincrementInsert(companyId, list);
 	}
 
 	@Override
@@ -201,13 +203,29 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public PaginatedList<Mailinglist> findAll(PaginationForm form, int companyId) {
+	public PaginatedList<Mailinglist> findAll(PaginatedFilter<MailinglistSortCriteria> pagination, int companyId) {
 		return selectPaginatedList("""
 			SELECT %s
 			FROM mailinglist_tbl
 			WHERE deleted = 0
 			  AND company_id = ?""".formatted(getMailinglistSqlFieldsForSelect()),
-			"mailinglist_tbl", form, MAILINGLIST_ROW_MAPPER, companyId);
+				"mailinglist_tbl",
+				getDbColumn(pagination.sort()),
+				pagination.ascending(),
+				pagination.page(),
+				pagination.size(),
+				MAILINGLIST_ROW_MAPPER,
+				companyId
+		);
+	}
+
+	private static String getDbColumn(MailinglistSortCriteria criteria) {
+		return switch (criteria) {
+			case null -> ID_COL;
+			case ID -> ID_COL;
+			case NAME -> SHORTNAME_COL;
+			case DESCRIPTION -> DESCRIPTION;
+        };
 	}
 
 	@Override
@@ -378,11 +396,13 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 				ID_COL,
 				COMPANY_ID_COL,
 				SHORTNAME_COL,
-				"description",
+				DESCRIPTION,
 				CREATION_DATE_COL,
 				"change_date",
 				"sender_email",
-				"reply_email"
+				"reply_email",
+				"sender_name",
+				"reply_to_name",
 		}, ", ");
     }
 
@@ -407,7 +427,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
         return mailinglist.getId();
     }
 
-    private int performInsertForMySql(int companyId, Mailinglist mailinglist) {
+    private int performAutoincrementInsert(int companyId, Mailinglist mailinglist) {
 		List<Object> params = new ArrayList<>(Arrays.asList(
 				companyId,
 				mailinglist.getCreationDate())
@@ -461,14 +481,18 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 				mailinglist.getDescription(),
 				mailinglist.getChangeDate(),
 				mailinglist.getSenderEmail(),
-				mailinglist.getReplyEmail()
+				mailinglist.getReplyEmail(),
+				mailinglist.getSenderName(),
+				mailinglist.getReplyToName()
 		));
 		return List.of(
 				SHORTNAME_COL,
-				"description",
+				DESCRIPTION,
 				"change_date",
 				"sender_email",
-				"reply_email"
+				"reply_email",
+				"sender_name",
+				"reply_to_name"
 		);
 	}
 

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -18,6 +18,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
@@ -31,12 +32,14 @@ import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.MailingContentService;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.NotAllowedActionException;
@@ -51,6 +54,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 public class MailingContentController implements XssCheckAware {
 
@@ -68,12 +72,23 @@ public class MailingContentController implements XssCheckAware {
     private final MailingBaseService mailingBaseService;
     private final GridServiceWrapper gridServiceWrapper;
     private final PreviewImageService previewImageService;
+    private final RecipientFieldService recipientFieldService;
 
-    public MailingContentController(MailinglistApprovalService mailinglistApprovalService, MailingService mailingService, MaildropService maildropService,
-                                    MailingContentService mailingContentService, TargetService targetService,
-                                    UserActivityLogService userActivityLogService, ProfileFieldDao profileFieldDao, MailingPropertiesRules mailingPropertiesRules,
-                                    MailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper,
-                                    PreviewImageService previewImageService, MediaTypesService mediaTypesService) {
+    public MailingContentController(
+            MailinglistApprovalService mailinglistApprovalService,
+            MailingService mailingService,
+            MaildropService maildropService,
+            MailingContentService mailingContentService,
+            TargetService targetService,
+            UserActivityLogService userActivityLogService,
+            ProfileFieldDao profileFieldDao,
+            MailingPropertiesRules mailingPropertiesRules,
+            MailingBaseService mailingBaseService,
+            GridServiceWrapper gridServiceWrapper,
+            PreviewImageService previewImageService,
+            MediaTypesService mediaTypesService,
+            RecipientFieldService recipientFieldService
+    ) {
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.mailingService = mailingService;
         this.maildropService = maildropService;
@@ -86,6 +101,7 @@ public class MailingContentController implements XssCheckAware {
         this.gridServiceWrapper = gridServiceWrapper;
         this.previewImageService = previewImageService;
         this.mediaTypesService = mediaTypesService;
+        this.recipientFieldService = recipientFieldService;
     }
 
     @GetMapping("/{mailingId:\\d+}/view.action")
@@ -117,8 +133,12 @@ public class MailingContentController implements XssCheckAware {
 
     @PostMapping("/{mailingId:\\d+}/save.action")
     @RequiredPermission("mailing.content.show")
-    public ResponseEntity<Popups> save(@PathVariable int mailingId, Admin admin, HttpSession session,
-                       @RequestBody List<DynTagDto> dynTags, Popups popups) {
+    @ResponseBody
+    public DataResponseDto<List<DynTagDto>> save(
+            @PathVariable int mailingId,
+            @RequestBody List<DynTagDto> dynTags,
+            Admin admin, HttpSession session,
+            Popups popups) {
         if (mailingService.isSettingsReadonly(admin, mailingId)) {
             throw new NotAllowedActionException();
         }
@@ -127,7 +147,7 @@ public class MailingContentController implements XssCheckAware {
             previewImageService.generateMailingPreview(admin, session.getId(), mailingId, true);
             popups.changesSaved();
         }
-        return ResponseEntity.ok(popups);
+        return new DataResponseDto<>(dynTags, popups);
     }
 
     private String redirectToView(int mailingId) {
@@ -201,6 +221,10 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("showDynamicTemplateToggle", mailingService.isDynamicTemplateCheckboxVisible(mailing));
         model.addAttribute("isEmailMediaTypeActive", mediaTypesService.getActiveMediaTypes(mailing).contains(MediaTypes.EMAIL));
         model.addAttribute("frameContentForm", getFrameContentForm(mailing));
+        if (mailing.getMailingType() == MailingType.ACTION_BASED) {
+            model.addAttribute("isActionBasedMailing", true);
+            model.addAttribute("profileFields", recipientFieldService.getVisibleFields(admin).values());
+        }
     }
 
     private boolean isMailingEditable(int mailingId, Admin admin) {

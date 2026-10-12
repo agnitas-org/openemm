@@ -9,7 +9,7 @@ import com.agnitas.emm.core.components.service.MailingDependencyService;
 import com.agnitas.emm.core.components.service.MailingRecipientsService;
 import com.agnitas.emm.core.components.service.MailingSendService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
+import com.agnitas.emm.core.mailing.bean.impl.MailingValidatorLegacy;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
@@ -54,7 +54,7 @@ public class MailingSendControllerOpenemm extends MailingSendController {
             MailingStopService mailingStopService,
             MailinglistService mailinglistService,
             @Autowired(required = false) AutoImportService autoImportService,
-            MailingValidator mailingValidator,
+            MailingValidatorLegacy mailingValidator,
             MailingDeliveryBlockingService mailingDeliveryBlockingService,
             MailingStatisticsDao mailingStatisticsDao,
             BounceFilterService bounceFilterService,

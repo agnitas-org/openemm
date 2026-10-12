@@ -21,11 +21,34 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 @SessionAttributes(types = AdminListFormSearchParams.class)
 public class RestfulUserControllerOpenemm extends RestfulUserController {
 
-    public RestfulUserControllerOpenemm(ConfigService configService, AdminService adminService, CompanyService companyService, AdminGroupService adminGroupService,
-                                        WebStorage webStorage, UserActivityLogService userActivityLogService, AdminChangesLogService adminChangesLogService,
-                                        CSVService csvService, PdfService pdfService, ConversionService conversionService, LogonService logonService) {
+    public RestfulUserControllerOpenemm(
+            ConfigService configService,
+            AdminService adminService,
+            CompanyService companyService,
+            AdminGroupService adminGroupService,
+            WebStorage webStorage,
+            UserActivityLogService userActivityLogService,
+            AdminChangesLogService adminChangesLogService,
+            CSVService csvService,
+            PdfService pdfService,
+            ConversionService conversionService,
+            LogonService logonService,
+            UserUiMapper userUiMapper
+    ) {
 
-        super(configService, adminService, companyService, adminGroupService, webStorage, userActivityLogService,
-                adminChangesLogService, csvService, pdfService, conversionService, logonService);
+        super(
+                configService,
+                adminService,
+                companyService,
+                adminGroupService,
+                webStorage,
+                userActivityLogService,
+                adminChangesLogService,
+                csvService,
+                pdfService,
+                conversionService,
+                logonService,
+                userUiMapper
+        );
     }
 }

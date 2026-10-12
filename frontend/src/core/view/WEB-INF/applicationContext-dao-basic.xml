@@ -462,6 +462,11 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+
+	<bean id="McpUserActivityLogDao" class="com.agnitas.emm.core.useractivitylog.dao.impl.McpUserActivityLogDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
 	
 <!-- ============================================================================================================================== User form -->
 	<bean id="UserFormDao" class="com.agnitas.dao.impl.UserFormDaoImpl">

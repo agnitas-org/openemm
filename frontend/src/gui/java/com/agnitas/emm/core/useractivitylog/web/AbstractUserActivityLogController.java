@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -109,11 +109,16 @@ public abstract class AbstractUserActivityLogController {
 
     protected abstract String getListViewName();
 
-    public ResponseEntity<FileSystemResource> downloadLogs(Admin admin, UserActivityLogFilterBase filter, UserType type) {
+    public ResponseEntity<FileSystemResource> downloadLogs(Admin admin, UserActivityLogFilterBase filter) throws Exception {
         File exportTempFile = createTempExportFile();
+        UserType type = getUserType();
 
         ActivityLogExportWorker exportWorker = createExportWorker(admin, filter, exportTempFile, type);
         exportWorker.call();
+
+        if (exportWorker.getError() != null) {
+            throw exportWorker.getError();
+        }
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment;filename=\"%s\"", getExportFileName(type)))
@@ -143,10 +148,8 @@ public abstract class AbstractUserActivityLogController {
     private String getExportFileName(UserType userType) {
         String filePrefix = "user-activity-log";
 
-        if (UserType.REST.equals(userType)) {
-            filePrefix = "rest-" + filePrefix;
-        } else if (UserType.SOAP.equals(userType)) {
-            filePrefix = "soap-" + filePrefix;
+        if (!UserType.GUI.equals(userType)) {
+            filePrefix = userType.name().toLowerCase() + "-" + filePrefix;
         }
 
         return String.format(

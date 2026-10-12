@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -57,6 +57,8 @@ public class ConfigValue {
 	/** Number of seconds between this send attempt and next retry. */
 	public static final ConfigValue SystemMessageRetryDelaySeconds = new ConfigValue("system_message.retries.delaySeconds", "600");
 
+	public static final ConfigValue MailAddressSystemMessage = new ConfigValue("mailaddress.system_message");
+
 	/** Sorted **/
 // 1. System (system.url, ApplicationVersion, Saltfile, Cache, ...)
 	public static final ConfigValue SystemUrl = new ConfigValue("system.url");
@@ -98,7 +100,7 @@ public class ConfigValue {
 	/** Maximum attachment size (in Bytes). (Default 10 MB) */
 	public static final ConfigValue MaximumUploadAttachmentSize = new ConfigValue("system.MaximumUploadAttachmentSize", Integer.toString(10 * 1024 * 1024));
 
-	/** Default number of allowed gui user */
+	/** Default number of allowed gui user. Used in SAAS instead of `maximumNumberOfGuiAdmins` */
 	public static final ConfigValue UserAllowed = new ConfigValue("UserAllowed", "1000");
 
 	public static final ConfigValue CustomerInsightsCalculate = new ConfigValue("cust.insights_calculate", "true");
@@ -136,6 +138,8 @@ public class ConfigValue {
 
 
 	public static final ConfigValue Company_MaxReferenceTables = new ConfigValue("maxReferenceTables", "5");
+
+	public static final ConfigValue Company_MaxVoucherTables = new ConfigValue("maxVoucherTables", "10");
 
 	/** SMTP host for java system mails **/
 	public static final ConfigValue SmtpMailRelayHostname = new ConfigValue("system.mail.host", "localhost");
@@ -238,9 +242,9 @@ public class ConfigValue {
 	public static final ConfigValue ManualInstallPath = new ConfigValue("manual_install_path", "${HOME}/webapps/manual");
 
 	public static final ConfigValue DBCleaner_Send_Statistics_Mail = new ConfigValue("dbcleaner.send_statistics_mail", "true");
-	public static final ConfigValue CompanyDSGVOCleaner = new ConfigValue("company.dsgvocleaner", "-1");
 
 	/** Fill the fields "lastopen_date" and "lastclick_date" in customer table in realtime (opposed to nightly batch job). Watchout: These fields may not exist **/
+	//only per default true for OpenEMM (EMM-8182) - Performance!
 	public static final ConfigValue WriteCustomerOpenOrClickField = new ConfigValue("measure.writecustomeropenorclickfield");
 
 	public static final ConfigValue DynamicTagsCleanupRetentionDays = new ConfigValue("dynamictags.cleanup.retention.days", "60");
@@ -255,8 +259,11 @@ public class ConfigValue {
 	public static final ConfigValue RespectHideDataSign = new ConfigValue("RespectHideDataSign", "false");
 	public static final ConfigValue ExportFilename = new ConfigValue("export_filename");
 
-	/** Maximum number of parallel JobQueue Jobs **/
-	public static final ConfigValue MaximumParallelJobQueueJobs = new ConfigValue("import.MaximumParallelJobQueueJobs", "3");
+	/** Maximum number of parallel JobQueue jobs; no default so the previous key can be used when absent. **/
+	public static final ConfigValue MaximumParallelJobQueueJobs = new ConfigValue("maximumParallelJobQueueJobs");
+
+	/** Previous key; used when the new key is absent. **/
+	public static final ConfigValue ImportMaximumParallelJobQueueJobs = new ConfigValue("import.MaximumParallelJobQueueJobs", "3");
 
 	public static final ConfigValue ImageLinkTemplate = new ConfigValue("imagelink-template");
 	public static final ConfigValue ImageLinkTemplate_NoCache = new ConfigValue("imagelink-template-no-cache");
@@ -419,6 +426,8 @@ public class ConfigValue {
 
 		}
 
+		public static final ConfigValue BirtReportsMigration = new ConfigValue("development.reports.stat", "false");
+
 	}
 
 	// Backend configuration values
@@ -513,7 +522,7 @@ public class ConfigValue {
 	/**
 	 * This Key enables backend MIA data generation
 	 */
-	public static final ConfigValue MiaEnabled = new ConfigValue("mia:is-enabled", "false");
+	public static final ConfigValue MiaEnabled = new ConfigValue("mia:is-enabled", "true");
 
 	public static final ConfigValue MaximumMailingsPerReport = new ConfigValue("report.MaximumMailingsPerReport", "60");
 
@@ -534,6 +543,7 @@ public class ConfigValue {
 	public static final ConfigValue SsoLoginSamlCertificate = new ConfigValue("system.SsoLoginSamlCertificate");
 	public static final ConfigValue SsoLoginSamlSpEntityID = new ConfigValue("system.SsoLoginSamlSpEntityID");
 	public static final ConfigValue SsoLoginSamlUsernameAttribute = new ConfigValue("system.SsoLoginSamlUsernameAttribute", "username");
+	public static final ConfigValue SsoSamlLoginFailureRecipients = new ConfigValue("system.SsoSamlLoginFailureRecipients");
 	/** Stores the name of attribute to look for in the SAML response to determine the email address of the user to be authenticated */
 	public static final ConfigValue SsoLoginSamlEmailAttribute = new ConfigValue("system.SsoLoginSamlEmailAttribute");
 	public static final ConfigValue SsoSamlIdpUrl = new ConfigValue("system.sso.saml.idp.url");
@@ -581,7 +591,7 @@ public class ConfigValue {
 
 	public static final ConfigValue ImageGeneratorUrl = new ConfigValue("ImageGeneratorUrl");
 	public static final ConfigValue ImageGeneratorApiKey = new ConfigValue("ImageGeneratorApiKey");
-	public static final ConfigValue ImageGeneratorModel = new ConfigValue("ImageGeneratorModel", "gpt-image-1");
+	public static final ConfigValue ImageGeneratorModel = new ConfigValue("ImageGeneratorModel", "gpt-image-2");
 	public static final ConfigValue ImageGeneratorQuotaLimitPerDay = new ConfigValue("ImageGeneratorQuotaLimitPerDay", "10");
 
 	/** property should be removed (see EMM-10763) */
@@ -622,15 +632,7 @@ public class ConfigValue {
 	public static final ConfigValue System_License_LicenseUrl = new ConfigValue("licenseUrl");
 	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies", "1");
 	public static final ConfigValue System_License_MaximumNumberOfCompanies_Graceful = new ConfigValue("maximumNumberOfCompaniesGraceful", "0");
-
-	/**
-	 * @deprecated
-	 * Use System_License_MaximumNumberOfGuiAdmins instead (LTS-877) when all Inhouse instances have the new license files (estimated in EMM LTS 23.04)
-	 */
-	@Deprecated
-	public static final ConfigValue System_License_MaximumNumberOfAdmins = new ConfigValue("maximumNumberOfAdmins");
 	public static final ConfigValue System_License_MaximumNumberOfGuiAdmins = new ConfigValue("maximumNumberOfGuiAdmins");
-
 	public static final ConfigValue System_License_MaximumNumberOfWebserviceUsers = new ConfigValue("maximumNumberOfWebserviceUsers");
 	public static final ConfigValue System_License_MaximumNumberOfRestfulUsers = new ConfigValue("maximumNumberOfRestfulUsers");
 	public static final ConfigValue System_License_MaximumNumberOfSupervisors = new ConfigValue("maximumNumberOfSupervisors");
@@ -645,6 +647,8 @@ public class ConfigValue {
 	public static final ConfigValue System_License_AllowedPremiumConfigValues = new ConfigValue("allowedPremiumConfigValues");
 	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables", "50");
 	public static final ConfigValue System_License_MaximumNumberOfReferenceTables_Graceful = new ConfigValue("maximumNumberOfReferenceTablesGraceful", "5");
+	public static final ConfigValue System_License_MaximumNumberOfVoucherTables = new ConfigValue("maximumNumberOfVoucherTables", "50");
+	public static final ConfigValue System_License_MaximumNumberOfVoucherTables_Graceful = new ConfigValue("maximumNumberOfVoucherTablesGraceful", "5");
 	public static final ConfigValue System_License_AllowMailingSendForMasterCompany = new ConfigValue("allowMailingSendForMasterCompany");
 
 	/**
@@ -695,9 +699,9 @@ public class ConfigValue {
 	public static final ConfigValue ExportAlwaysInformEmail = new ConfigValue("exportalwaysinformemail");
 
 	/**
-	 * Maximum overall size of mediapool per company in bytes (1610612736 = 1,5 GB)
+	 * Maximum overall size of mediapool per company in bytes (2147483648 = 2 GB)
 	 */
-	public static final ConfigValue MediapoolMaximumSizeBytes = new ConfigValue("MediapoolMaximumSizeBytes", "1610612736");
+	public static final ConfigValue MediapoolMaximumSizeBytes = new ConfigValue("MediapoolMaximumSizeBytes", "2147483648");
 
 	/**
 	 * Maximum overall size of Uploads per company in bytes (1610612736 = 1,5 GB)
@@ -850,6 +854,10 @@ public class ConfigValue {
 		public static final ConfigValue CsrfProtectionEnabled = new ConfigValue("security.csrfProtection.enabled", "true");
 	}
 
+	public static final ConfigValue OAuth2Issuer = new ConfigValue("oauth2.issuer");
+	public static final ConfigValue OAuth2ServerClientId = new ConfigValue("oauth2.server.client.id", "emm");
+	public static final ConfigValue OAuth2InternalAuthServer = new ConfigValue("oauth2.server.internal", "true");
+
 	/**
 	 * Enable TOTP for login.
 	 */
@@ -894,7 +902,7 @@ public class ConfigValue {
 		}
 
 		/** Number of days after which webservice usage data expires. */
-		public static final ConfigValue WebserviceUsageLog_Expire = new ConfigValue("system.WebserviceUsageLog.Expire", "180");
+		public static final ConfigValue WebserviceUsageLog_Expire = new ConfigValue("system.WebserviceUsageLog.Expire", "60");
 
 		// TODO This is a temporary config value and will be removed after successful rollout of webservice user permissions
 		public static final ConfigValue WebserviceEnablePermissions = new ConfigValue("webservice.enablePermissions", "false");
@@ -931,9 +939,12 @@ public class ConfigValue {
 			/** Default settings for Restful quotas. */
 			public static final ConfigValue DefaultRestfulApiCallLimits = new ConfigValue("restful.quota.default_api_call_limits", "432000/P1D;1200/PT1M");
 
+			/** Retention time in seconds for caches Restful API invocation costs. */
+			public static final ConfigValue RestfulApiCostsCacheRetentionSeconds = new ConfigValue("restful.quota.costs_cache_retention_seconds", "300");
+
 			public static final ConfigValue ExtendedRestfulLogging = new ConfigValue("restful.ExtendedLogging", "false");
 
-			public static final ConfigValue RestfulJwtSecret = new ConfigValue("RestfulJwtSecret");
+			public static final ConfigValue RestfulJwtSecret = new ConfigValue("RestfulJwtSecret"); // TODO Every new configValue should get its own value
 			public static final ConfigValue RestfulJwtValidityMinutes = new ConfigValue("RestfulJwtValidityMinutes", "60");
 
 // 7. Features
@@ -1051,9 +1062,9 @@ public class ConfigValue {
 
 		public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 		public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-		public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0");
+		public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:155.0) Gecko/20100101 Firefox/155.0");
 
-		/**
+    /**
 		 * Flag to enable creation of substitute links.
 		 *
 		 * Enabling this feature is requires, when one want to define link URLs using reference tables and wants to track these links.
@@ -1072,6 +1083,7 @@ public class ConfigValue {
 		 * When old pattern is completely removed, also check "statLabelAdjuster.js" and remove "uid=" detection
 		 */
 		public static final ConfigValue UseRdirContextLinks = new ConfigValue("rdir.UseRdirContextLinks", "false");
+		public static final ConfigValue RdirUndecodableLinkUrl = new ConfigValue("rdir.undecodableLink.url", "/assets/rdir/404/404.html");
 
 //  2. Inbox
 		public static final ConfigValue InboxPreview_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
@@ -1116,9 +1128,6 @@ public class ConfigValue {
 		/** Enables anonymization of all recipients independently of their tracking veto setting. */
 		public static final ConfigValue AnonymizeAllRecipients = new ConfigValue("recipient.trackingVeto.anonymizeAllRecipients", "false");
 
-		/** Retention time in seconds for caches Restful API invocation costs. */
-		public static final ConfigValue RestfulApiCostsCacheRetentionSeconds = new ConfigValue("restful.quota.costs_cache_retention_seconds", "300");
-
 		public static final ConfigValue CleanRecipientsWithoutBinding = new ConfigValue("cleanup.deleteRecipientsWithoutBinding", "false");
 
 		/** TODO: Was bedeutet hier der Wert "-1"? */
@@ -1151,9 +1160,6 @@ public class ConfigValue {
 		/** Expiration in days for executed AutoImports without intervalpattern (used by DBCleaner to remove those auto imports) **/
 		public static final ConfigValue AutoImport_Expire = new ConfigValue("import.AutoImport.Expire", "30");
 
-		/** Delete import files after successful (auto-)import **/
-		public static final ConfigValue DeleteSuccessfullyImportedFiles = new ConfigValue("import.importfiles.delete");
-
 		/** Always inform this email when an import was executed **/
 		public static final ConfigValue ImportAlwaysInformEmail = new ConfigValue("importalwaysinformemail");
 
@@ -1180,6 +1186,9 @@ public class ConfigValue {
 		 * Throttling while importing data to temptable (seconds)
 		 */
 		public static final ConfigValue ImportThrottlingSecondsPerBlock = new ConfigValue("import.throttling.secondsPerBlock", "0");
+
+		/** Delete import files after successful (auto-)import **/
+		public static final ConfigValue DeleteSuccessfullyImportedFiles = new ConfigValue("import.importfiles.delete");
 
 
 		/** Maximum number of rows included in an import file for reference table import **/
@@ -1228,9 +1237,7 @@ public class ConfigValue {
 		/** Unsorted **/
 		//message keys, marked as deleted are shown, instead of "missing message key...."
 		public static final ConfigValue IgnoreDeletedI18NMessagesHosts = new ConfigValue("system.ignoreDeletedMessagesHosts");
-
-		// ? Mailing > Links oder System
-		public static final ConfigValue RdirUndecodableLinkUrl = new ConfigValue("rdir.undecodableLink.url", "/assets/rdir/404/404.html");
+		public static final ConfigValue CaptureKeySecret = new ConfigValue("cap.key.secret");
 
 		/** Unclear **/
 		public static final ConfigValue ConfigurationExpirationMinutes = new ConfigValue("configuration.expiration.minutes", "5");

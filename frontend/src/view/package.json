@@ -16,7 +16,7 @@
     "gulp-sourcemaps": "^3.0.0",
     "gulp-svg-sprite": "^2.0.3",
     "gulp-terser": "^2.1.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "sass": "^1.90.0",
     "underscore.string": "^3.3.6"
   }

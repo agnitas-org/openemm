@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.birtreport.bean.impl;
 
-import java.text.SimpleDateFormat;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.REPORT_SIMPLE_DATE_FORMAT;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import com.agnitas.util.DateUtilities;
 
 public abstract class BirtReportDateRangedSettings extends BirtReportSettings {
@@ -51,7 +52,7 @@ public abstract class BirtReportDateRangedSettings extends BirtReportSettings {
         }
         parameters.put(MAILING_LISTS_KEY, generateExpression(getMailinglists()));
         parameters.putAll(getDateRange());
-        parameters.put(FIGURES_KEY, BirtReporUtils.packFigures(getSettingsMap()));
+        parameters.put(FIGURES_KEY, BirtReportUtils.packFigures(getSettingsMap()));
 
         return parameters;
     }
@@ -83,10 +84,9 @@ public abstract class BirtReportDateRangedSettings extends BirtReportSettings {
                 stopDate = getReportSettingAsString(BirtReportSettingsUtils.END_DATE);
                 break;
             case DATE_RANGE_PREDEFINED:
-                final SimpleDateFormat reportDateFormat = new SimpleDateFormat(BirtReportSettingsUtils.REPORT_DATE_FORMAT);
                 Calendar calendar = new GregorianCalendar();
                 calendar.setTime(new Date());
-                stopDate = reportDateFormat.format(calendar.getTime());
+                stopDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                 switch (getPredefinedDateRange()) {
                     case DATE_RANGE_PREDEFINED_WEEK:
                         calendar.add(Calendar.DAY_OF_YEAR, -7);
@@ -103,7 +103,7 @@ public abstract class BirtReportDateRangedSettings extends BirtReportSettings {
                         GregorianCalendar stopCalendar = new GregorianCalendar();
                         stopCalendar.setTime(calendar.getTime());
                         stopCalendar.add(Calendar.MONTH, 1);
-                        stopDate = reportDateFormat.format(stopCalendar.getTime());
+                        stopDate = REPORT_SIMPLE_DATE_FORMAT.format(stopCalendar.getTime());
                         break;
                     case DATE_RANGE_PREDEFINED_THREE_MONTHS:
                         calendar.add(Calendar.MONTH, -3);
@@ -112,7 +112,7 @@ public abstract class BirtReportDateRangedSettings extends BirtReportSettings {
     				default:
     					throw new IllegalArgumentException("Invalid date range type");
                 }
-                startDate = reportDateFormat.format(calendar.getTime());
+                startDate = REPORT_SIMPLE_DATE_FORMAT.format(calendar.getTime());
                 break;
 			default:
 				throw new IllegalArgumentException("Invalid date range type");

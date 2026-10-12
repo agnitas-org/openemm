@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.dyncontent.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.DynamicTagContent;
@@ -60,9 +61,9 @@ public interface DynamicTagContentDao {
 	/**
 	 * Checks if at least one non-empty content exists.
 	 *
-	 * @param companyId - the company id for of content.
-	 * @param mailingId - the mailing id for of content.
-	 * @param dynNameId- the dynamic tag name id of the content.
+	 * @param companyId the company id for of content.
+	 * @param mailingId the mailing id for of content.
+	 * @param dynNameId the dynamic tag name id of the content.
 	 * @return {@code true} if at least one non-empty content exists otherwise returns {@code false}
 	 */
 	boolean isContentValueNotEmpty(int companyId, int mailingId, int dynNameId);
@@ -71,7 +72,7 @@ public interface DynamicTagContentDao {
 
 	void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, boolean removeUnusedContent);
 
-	boolean deleteContentFromMailing(int companyId, int mailingId, int contentId);
+	int deleteContentOfDynNameExcept(int companyId, int mailingId, int dynNameId, Set<Integer> contentIdsToKeep);
 
 	List<Integer> findTargetDependentMailingsContents(int targetGroupId, int companyId);
 

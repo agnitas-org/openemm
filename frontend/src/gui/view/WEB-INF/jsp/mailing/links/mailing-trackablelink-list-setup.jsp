@@ -12,6 +12,7 @@
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="mailingShortname" type="java.lang.String"--%>
 <%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
@@ -43,6 +44,7 @@
         <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavConditionsParams}" property="isActiveMailing"     value="${isActiveMailing}" />
             <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
+            <c:set target="${agnNavConditionsParams}" property="isStandaloneSmsMailing" value="${isStandaloneSmsMailing}" />
         </emm:instantiate>
     </c:otherwise>
 </c:choose>

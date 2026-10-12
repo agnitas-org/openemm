@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -14,14 +14,13 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.stereotype.Component;
-
 import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 
 @Component
 public class BirtReportDtoToBirtReportFormConverter implements Converter<BirtReportDto, BirtReportForm> {
@@ -66,20 +65,14 @@ public class BirtReportDtoToBirtReportFormConverter implements Converter<BirtRep
 
         if(reportType != null) {
             switch (reportType) {
-                case TYPE_DAILY:
-                case TYPE_WEEKLY:
-                case TYPE_BIWEEKLY:
+                case TYPE_DAILY, TYPE_WEEKLY, TYPE_BIWEEKLY:
                     reportForm.setType(reportTypeCode);
                     break;
-                case TYPE_MONTHLY_FIRST:
-                case TYPE_MONTHLY_15TH:
-                case TYPE_MONTHLY_LAST:
+                case TYPE_MONTHLY_FIRST, TYPE_MONTHLY_15TH, TYPE_MONTHLY_LAST:
                     reportForm.setType(BirtReportType.TYPE_MONTHLY_FIRST.getKey());
                     reportForm.setReportMonthly(reportTypeCode);
                     break;
-                case TYPE_AFTER_MAILING_24HOURS:
-                case TYPE_AFTER_MAILING_48HOURS:
-                case TYPE_AFTER_MAILING_WEEK:
+                case TYPE_AFTER_MAILING_24HOURS, TYPE_AFTER_MAILING_48HOURS, TYPE_AFTER_MAILING_WEEK:
                     reportForm.setType(BirtReportType.TYPE_AFTER_MAILING_24HOURS.getKey());
                     reportForm.setAfterMailing(reportTypeCode);
                     reportForm.setReportMonthly(reportTypeCode);

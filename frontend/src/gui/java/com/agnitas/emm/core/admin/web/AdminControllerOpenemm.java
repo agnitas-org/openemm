@@ -24,7 +24,37 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 @SessionAttributes(types = AdminListFormSearchParams.class)
 public class AdminControllerOpenemm extends AdminController {
     
-    public AdminControllerOpenemm(ConfigService configService, AdminService adminService, CompanyService companyService, AdminGroupService adminGroupService, WebStorage webStorage, UserActivityLogService userActivityLogService, AdminChangesLogService adminChangesLogService, PasswordCheck passwordCheck, CSVService csvService, PdfService pdfService, ConversionService conversionService, TargetService targetService, LogonService logonService) {
-        super(configService, adminService, companyService, adminGroupService, webStorage, userActivityLogService, adminChangesLogService, passwordCheck, csvService, pdfService, conversionService, targetService, logonService);
+    public AdminControllerOpenemm(
+            ConfigService configService,
+            AdminService adminService,
+            CompanyService companyService,
+            AdminGroupService adminGroupService,
+            WebStorage webStorage,
+            UserActivityLogService userActivityLogService,
+            AdminChangesLogService adminChangesLogService,
+            PasswordCheck passwordCheck,
+            CSVService csvService,
+            PdfService pdfService,
+            ConversionService conversionService,
+            TargetService targetService,
+            LogonService logonService,
+            UserUiMapper userUiMapper
+    ) {
+        super(
+                configService,
+                adminService,
+                companyService,
+                adminGroupService,
+                webStorage,
+                userActivityLogService,
+                adminChangesLogService,
+                passwordCheck,
+                csvService,
+                pdfService,
+                conversionService,
+                targetService,
+                logonService,
+                userUiMapper
+        );
     }
 }

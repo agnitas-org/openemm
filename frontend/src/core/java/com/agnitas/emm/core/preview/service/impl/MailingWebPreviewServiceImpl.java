@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Vector;
 
 import com.agnitas.beans.Admin;
@@ -27,6 +28,7 @@ import com.agnitas.beans.Mediatype;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.form.PreviewForm;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
@@ -42,14 +44,40 @@ import com.agnitas.preview.TAGCheckFactory;
 import com.agnitas.util.SafeString;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
+@Service
 public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
 
-    protected MailingPreviewService previewService;
-    private MailingDao mailingDao;
-    private MediatypeFactory mediatypeFactory;
-    private PreviewFactory previewFactory;
-    private TAGCheckFactory tagCheckFactory;
+    protected final MailingPreviewService previewService;
+    private final MediaTypesService mediaTypesService;
+    private final MailingDao mailingDao;
+    private final MediatypeFactory mediatypeFactory;
+    private final PreviewFactory previewFactory;
+    private final TAGCheckFactory tagCheckFactory;
+
+    public MailingWebPreviewServiceImpl(
+            MailingPreviewService previewService,
+            MediaTypesService mediaTypesService,
+            MailingDao mailingDao,
+            MediatypeFactory mediatypeFactory,
+            PreviewFactory previewFactory,
+            TAGCheckFactory tagCheckFactory
+    ) {
+        this.previewService = previewService;
+        this.mediaTypesService = mediaTypesService;
+        this.mailingDao = mailingDao;
+        this.mediatypeFactory = mediatypeFactory;
+        this.previewFactory = previewFactory;
+        this.tagCheckFactory = tagCheckFactory;
+    }
+
+    @Override
+    public int getDefaultFormat(Mailing mailing) {
+        return Optional.ofNullable(mediaTypesService.getActiveMediaType(mailing))
+                .map(m -> m.getMediaType().getMediaCode() + 1)
+                .orElse(INPUT_TYPE_HTML);
+    }
 
     @Override
     public PreviewResult getPreview(PreviewSettings settings, Admin admin) throws Exception {
@@ -307,23 +335,4 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         return UNDEFINED_PREVIEW_FORMAT;
     }
 
-    public void setMailingDao(MailingDao mailingDao) {
-        this.mailingDao = mailingDao;
-    }
-
-    public void setMediatypeFactory(MediatypeFactory mediatypeFactory) {
-        this.mediatypeFactory = mediatypeFactory;
-    }
-
-    public void setPreviewFactory(PreviewFactory previewFactory) {
-        this.previewFactory = previewFactory;
-    }
-
-    public void setTagCheckFactory(TAGCheckFactory tagCheckFactory) {
-        this.tagCheckFactory = tagCheckFactory;
-    }
-
-    public void setPreviewService(MailingPreviewService previewService) {
-        this.previewService = previewService;
-    }
 }

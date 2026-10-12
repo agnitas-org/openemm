@@ -124,6 +124,7 @@ $ag-theme: 'bootstrap';
   // custom element
   .ag-grid-cell-link {
     height: 100%;
+    max-width: 100%;
     display: flex;
     align-items: center;
     flex-grow: 1;

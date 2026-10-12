@@ -15,7 +15,7 @@ AGN.Lib.Controller.new('mailing-end-device-stat', function () {
 
   const metrics = {
     openings: t('statistics.default.openings'),
-    clicks: t('statistics.default.openings')
+    clicks: t('statistics.default.clicks')
   }
 
   const tableOptions = {
@@ -125,6 +125,7 @@ AGN.Lib.Controller.new('mailing-end-device-stat', function () {
         labels: data.map(d => d.deviceName),
         datasets: [{
           data: data.map(d => d.value),
+          rates: data.map(d => d.rate),
           backgroundColor: data.map(d => colorsMap.get(d.deviceName)),
           borderWidth: 0
         }]
@@ -133,14 +134,11 @@ AGN.Lib.Controller.new('mailing-end-device-stat', function () {
   }
 
   function prepareChartData(entries) {
-    const totals = new Map();
-
-    entries.forEach(({ deviceName, allRecipients }) => {
-      const current = totals.get(deviceName) || 0;
-      totals.set(deviceName, current + allRecipients.value);
-    });
-
-    return Array.from(totals, ([deviceName, value]) => ({ deviceName, value }));
+    return entries.map(({ deviceName, allRecipients }) => ({
+      deviceName,
+      value: allRecipients.value,
+      rate: allRecipients.rate
+    }));
   }
 
   function renderTables(resp, metricName) {

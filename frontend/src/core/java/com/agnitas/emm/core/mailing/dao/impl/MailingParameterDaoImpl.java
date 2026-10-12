@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -28,7 +28,7 @@ import org.springframework.jdbc.core.RowMapper;
 public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements MailingParameterDao {
 	
 	private static final String INSERT_ORACLE = "INSERT INTO mailing_info_tbl (mailing_info_id, mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-	private static final String INSERT_MYSQL = "INSERT INTO mailing_info_tbl (mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
+	private static final String INSERT_MARIADB = "INSERT INTO mailing_info_tbl (mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
 	private static final String UPDATE = "UPDATE mailing_info_tbl SET mailing_id = ?, company_id = ?, name = ?, value = ?, description = ?, change_date = CURRENT_TIMESTAMP, change_admin_id = ? WHERE mailing_info_id = ?";
 	private static final String DELETE_BY_MAILINGINFOID = "DELETE FROM mailing_info_tbl WHERE mailing_info_id = ?";
 	private static final String DELETE_BY_COMPANYID = "DELETE FROM mailing_info_tbl WHERE company_id = ?";
@@ -132,7 +132,7 @@ public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				parameter.getCreationAdminID(),
 				parameter.getChangeAdminID()};
 
-	        newId = insert("mailing_info_id", INSERT_MYSQL, values);
+	        newId = insert("mailing_info_id", INSERT_MARIADB, values);
 		}
 		
 		// set the new id to refresh

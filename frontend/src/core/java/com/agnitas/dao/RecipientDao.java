@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -52,7 +52,7 @@ public interface RecipientDao {
 
     boolean updateDataSource(Recipient cust);
 
-    void deleteAllNoBindings(int companyID, String toBeDeletedTable);
+    int deleteAllNoBindings(int companyID, String toBeDeletedTable);
 
     String createTmpTableByMailinglistID(int companyID, int mailinglistID);
 	
@@ -239,9 +239,9 @@ public interface RecipientDao {
      *
      * @param companyID the id of the company
      * @param target the condition for delete to database
-     * @return true if success or false if error
+     * @return count of deleted recipients
      */
-    boolean deleteRecipients(int companyID, String target);
+    int deleteRecipients(int companyID, String target);
 
     /**
      * Delete recipients from database for given list of customer id
@@ -288,7 +288,7 @@ public interface RecipientDao {
      */
     boolean exist(int customerId, int companyId);
 
-    void deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean noAdminsAndTests);
+    int deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean noAdminsAndTests);
 
     int getCustomerIdWithEmailInMailingList(int companyId, int mailingId, String email);
 
@@ -415,6 +415,6 @@ public interface RecipientDao {
 
     List<Integer> findIdsByEmail(String email, int companyId);
 
-    void batchUpdateData(List<Integer> customerIds, List<Map<String, ? extends Object>> rowsData, List<String> columns, int companyId);
+    void batchUpdateData(List<Integer> customerIds, List<Map<String, ?>> rowsData, List<String> columns, int companyId);
 
 }

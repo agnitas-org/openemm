@@ -33,7 +33,7 @@ AGN.Lib.Controller.new('mailing-top-domain-stats', function () {
 
   function loadStatistic() {
     const $container = Template.dom('top-domain-stats-template', {});
-    $('#overview-tile > .tile-body').empty().append($container);
+    $('#top-domains-container').empty().append($container);
     const form = Form.get($('#stat-form'));
     const loader = new ProcessingLoader($container, '#stat-form');
     loader.show();
@@ -49,20 +49,20 @@ AGN.Lib.Controller.new('mailing-top-domain-stats', function () {
 
   function renderChartsAndTables() {
     renderChartAndTable('sentEmails');
-    renderChartAndTable('hardBounces');
-    renderChartAndTable('softBounces');
     renderChartAndTable('openers');
     renderChartAndTable('clickers');
+    renderChartAndTable('softBounces');
+    renderChartAndTable('hardBounces');
   }
 
-  function renderChartAndTable(sentEmails) {
-    renderChart(sentEmails)
-    renderTable(sentEmails);
+  function renderChartAndTable(statName) {
+    renderChart(statName)
+    renderTable(statName);
   }
 
   function renderTable(statName) {
     new Table(
-      $(`#${statName}-table`),
+      $(`#${statName}-table`).toggle(hasData(data[statName])),
       getTableColumnDefinitions(statName),
       toAgGridRows(data[statName]),
       getDefaultTableOptions()
@@ -70,7 +70,10 @@ AGN.Lib.Controller.new('mailing-top-domain-stats', function () {
   }
 
   function renderChart(statName) {
-    new Chart($(`#${statName}-chart`)[0].getContext('2d'), {
+    const $chart = $(`#${statName}-chart`);
+    $chart.closest('.tile').toggle(hasData(data[statName]));
+
+    new Chart($chart[0].getContext('2d'), {
       type: 'bar',
       data: {
         labels: _.keys(data[statName][1]),
@@ -133,5 +136,9 @@ AGN.Lib.Controller.new('mailing-top-domain-stats', function () {
 
   function getSelectedTargets() {
     return { 1: t('statistics.default.allRecipients'), ...Select.get($('#targetGroupSelect')).selectedValues() };
+  }
+
+  function hasData(stat) {
+    return _.some(stat, value => !_.isEmpty(value));
   }
 });

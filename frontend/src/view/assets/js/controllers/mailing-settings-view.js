@@ -4,6 +4,7 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
   const Select = AGN.Lib.Select;
   const Modal = AGN.Lib.Modal;
   const Messages = AGN.Lib.Messages;
+  const Template = AGN.Lib.Template;
   const Messaging = AGN.Lib.Messaging;
 
   const recipientsCountRelatedFields = [
@@ -25,10 +26,12 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
   let lastMailingListId = 0;
   let lastDataForCountingRecipients;
   let mediaTypePriorityChanged = false;
+  let isStandaloneSmsMailing = false;
+  let mailingType;
   let $form;
 
   Messaging.subscribe('mailing-settings:mailinglistChanged', mailinglistId => {
-    if (!isFollowUpMailing($('#settingsGeneralMailType').val())) {
+    if (!isFollowUpMailing()) {
       lastMailingListId = mailinglistId;
     }
   });
@@ -37,6 +40,8 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
     config = this.config;
     addRecipientsCountListener();
     $form = $('#mailingSettingsForm');
+    isStandaloneSmsMailing = config.isStandaloneSmsMailing;
+    mailingType = config.mailingType;
     lastSelectedTargetsIds = $('#targetGroupIds').val() || [];
     displayTargetModeToggle(lastSelectedTargetsIds.length > 1);
     mailingListSelect = Select.get($('#settingsGeneralMailingList'));
@@ -47,7 +52,8 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
       mailingListSelect.$el.trigger('change');
     }
 
-    updateGeneralMailingTypeView(config.mailingType);
+    drawMailingTypeSettings();
+    updateGeneralMailingTypeView();
     configureFormChangesTracking();
     refreshTargetModeLabel();
     onMediatypesUpdate();
@@ -203,33 +209,42 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
   }
 
   this.addAction({change: 'change-general-mailing-type'}, function () {
-    const mailingType = this.el.val();
+    mailingType = this.el.val();
     mailingListSelect.setReadonly(false);
 
     if (lastMailingListId > 0) {
       mailingListSelect.selectOption(lastMailingListId);
     }
-    updateGeneralMailingTypeView(mailingType);
+    updateGeneralMailingTypeView();
   });
 
   this.addAction({change: 'change-target-mode'}, refreshTargetModeLabel);
 
-  function isFollowUpMailing(mailingType) {
+  function isFollowUpMailing() {
     return config.FOLLOWUP_MAILING_TYPE == mailingType;
   }
 
-  function isActionBasedMailing(mailingType) {
+  function isActionBasedMailing() {
     return config.ACTIONBASED_MAILING_TYPE == mailingType;
   }
 
-  function isDateBasedMailing(mailingType) {
+  function isDateBasedMailing() {
     return config.DATEBASED_MAILING_TYPE == mailingType;
   }
 
-  function updateGeneralMailingTypeView(mailingType) {
+  function drawMailingTypeSettings() {
+    const $settings = $('#mailing-type-settings-block');
+    $settings.html(Template.text(
+      'mailing-type-settings',
+      { mailingType, isStandaloneSmsMailing }
+    ));
+    AGN.runAll($settings);
+  }
+
+  function updateGeneralMailingTypeView() {
     let showFollowUpControls = false;
     if (config.followUpAllowed) {
-      if (isFollowUpMailing(mailingType)) {
+      if (isFollowUpMailing()) {
         Messaging.send('mailing-settings:updateMailinglistForFollowUp');
         showFollowUpControls = true;
       }
@@ -237,11 +252,11 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
       $("#followUpControls").all(":input").each((i, el) => $(el).prop("disabled", !showFollowUpControls));
     }
 
-    const showBccRecipients = isDateBasedMailing(mailingType);
+    const showBccRecipients = isDateBasedMailing();
     toggle(showBccRecipients, '#mailing-bcc-recipients');
     $("#mailing-bcc-recipients").prop("disabled", !showBccRecipients);
 
-    const showTargetGroups = isActionBasedMailing(mailingType) ? config.campaignEnableTargetGroups : true;
+    const showTargetGroups = isActionBasedMailing() ? config.campaignEnableTargetGroups : true;
     toggle(showTargetGroups, '#regular-targets-box, #calculate-recipients-box');
   }
 
@@ -258,128 +273,26 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
     }
   }
 
-  this.addAction({change: 'chooseRcsSenderIconFile'}, function () {
-    const files = this.el.prop('files');
-    const $categoryBlock = $('#rcs-sender-icon-category').parent();
-    const $senderIconName = $('#rcsSenderIconName');
-
-    if (files?.length) {
-      const file = files[0];
-      if (file.type === 'image' || file.type.match('image/.*')) {
-        const reader = new FileReader();
-
-        reader.onload = e => {
-          $categoryBlock.removeClass('hidden');
-          updateRcsSenderIconPreview(e.target.result, file.name, file.name);
-        };
-
-        reader.readAsDataURL(file);
-
-        $senderIconName.val('');
-        return;
-      }
-    }
-
-    clearSenderIconFile(this.el);
-    updateRcsSenderIconPreview();
-
-    $senderIconName.val('');
-  });
-
-  this.addAction({click: 'deleteRcsSenderIcon'}, function () {
-    clearSenderIconFile();
-    $('#rcsSenderIconLabel').text('');
-    $('#rcsSenderIconName').val('');
-    $('#rcsSenderIconPreview').attr('src', config.noPreviewImageLink);
-  });
-
-  this.addAction({click: 'chooseRcsSenderIcon'}, function () {
-    const $file = $('#rcs-sender-icon-file');
-    if (!!$file.val()) {
-      $file.trigger('click');
-    } else {
-      AGN.Lib.Confirm.request(AGN.url('/mediapool/image/pick.action'))
-        .done(image => {
-          $('#rcsSenderIconName').val(image.fileName);
-          clearSenderIconFile($file);
-          updateRcsSenderIconPreview(image.src, image.fileName, image.title);
-        });
-    }
-  });
-
-  function clearSenderIconFile($file = $('#rcs-sender-icon-file')) {
-    AGN.Lib.Helpers.clearFormField($file);
-
-    const $category = $('#rcs-sender-icon-category');
-    $category.parent().addClass('hidden');
-    $category.val('');
-
-    Form.cleanFieldFeedback$($category);
-  }
-
-  function updateRcsSenderIconPreview(src, name, title) {
-    const $img = $('#rcsSenderIconPreview');
-    const $label = $('#rcsSenderIconLabel');
-
-    if ($img.attr('src') !== src) {
-      $img.attr('src', src ?? config.noPreviewImageLink);
-    }
-    $img.attr('title', title ?? '');
-    $label.text(name ?? '');
-  }
-
-  function uploadUnsavedImages() {
-    const $senderIconFile = $('#rcs-sender-icon-file');
-    const files = $senderIconFile.exists() ? $senderIconFile.prop('files') : [];
-    if (!files?.length) {
-      return Promise.resolve();
-    }
-
-    const $category = $('#rcs-sender-icon-category');
-    const categoryId = Number.parseInt($category.val());
-
-    if (Number.isNaN(categoryId) || categoryId <= 0) {
-      Form.showFieldError$($category, t('error.grid.noCategorySelected'));
-      return Promise.reject();
-    }
-
-    Form.cleanFieldFeedback$($category);
-
-    const image = files[0];
-
-    const data = new FormData();
-    data.append('uploads[0].file', image);
-    data.append('uploads[0].fileName', image.name);
-    data.append('uploads[0].title', image.name);
-    data.append('uploads[0].categoryId', categoryId);
-
-    return $.ajax(AGN.url('/mediapool/upload.action?asJson=true'), {
-      type: 'POST',
-      dataType: 'json',
-      enctype: 'multipart/form-data',
-      processData: false,
-      contentType: false,
-      data: data
-    }).then(resp => {
-      if (!resp.success) {
-        AGN.Lib.JsonMessages(resp.popups);
-        return Promise.reject();
-      }
-
-      $('#rcsSenderIconName').val(image.name);
-      clearSenderIconFile($senderIconFile);
-    });
-  }
-
   this.addAction({change: 'change-mediatype'}, function () {
     const $el = $(this.el);
+    const $switches = $('#email-mediatype-switch, #sms-mediatype-switch, #rcs-mediatype-switch');
+    const activeMediatypes = $switches
+      .filter(':checked')
+      .map((_, el) => $(el).closest('.mediatype-item').data('mediatype'))
+      .get();
+
     const active = isMediatypeListElemActive($el);
     redrawMediatypeCheckboxes($el, active);
-    const showEditFrameContentBtn = $('#email-mediatype-switch, #sms-mediatype-switch, #rcs-mediatype-switch').is(':checked');
-    $('#edit-frame-content-btn').toggle(showEditFrameContentBtn);
+    $('#edit-frame-content-btn').toggle($switches.is(':checked'));
 
     if ($el.data('mediatype') === 'rcs') {
       syncSmsSwitchWithRcs(active);
+    }
+
+    const isStandaloneSmsMailingBefore = isStandaloneSmsMailing;
+    isStandaloneSmsMailing = activeMediatypes.length === 1 && activeMediatypes.includes('sms');
+    if (isStandaloneSmsMailingBefore !== isStandaloneSmsMailing) {
+      drawMailingTypeSettings();
     }
   });
 
@@ -495,12 +408,10 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
   this.addAction({submission: 'save'}, saveMailing);
 
   function saveMailing() {
-    uploadUnsavedImages().then(() => {
-      const form = Form.get($form);
-      setMediatypesPrioritiesToForm(form);
-      setParamsToForm(form);
-      form.submit();
-    })
+    const form = Form.get($form);
+    setMediatypesPrioritiesToForm(form);
+    setParamsToForm(form);
+    form.submit();
   }
 
   function setMediatypesPrioritiesToForm(form) {

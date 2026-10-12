@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -34,6 +34,7 @@ public class RefreshUserLastLoginJobWorker extends JobWorkerBase {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
 		refreshGuiAndRestfulUserLastLogin(jdbcTemplate);
+		/*** refreshSupervisorLastLogin(jdbcTemplate); ***/
 		refreshWsUserLastLogin(jdbcTemplate);
 		
 		return "OK";
@@ -48,6 +49,35 @@ public class RefreshUserLastLoginJobWorker extends JobWorkerBase {
 				+ " WHERE username IN (SELECT DISTINCT username FROM login_track_tbl WHERE creation_date >= ?)", previousJobStart);
 		}
 	}
+
+	/***
+	private void refreshSupervisorLastLogin(JdbcTemplate jdbcTemplate) {
+		if (previousJobStart == null) {
+			jdbcTemplate.update(
+					"UPDATE supervisor_tbl SET last_login_date = " +
+							"(SELECT MAX(creation_date) FROM login_track_tbl " +
+							"WHERE login_status = 10 " +
+							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))" +
+							" WHERE EXISTS " +
+							"(SELECT 1 FROM login_track_tbl " +
+							"WHERE login_status = 10 " +
+							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))"
+			);
+		} else {
+			jdbcTemplate.update(
+					"UPDATE supervisor_tbl SET last_login_date = " +
+							"(SELECT MAX(creation_date) FROM login_track_tbl " +
+							"WHERE login_status = 10 " +
+							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))" +
+							" WHERE EXISTS " +
+							"(SELECT 1 FROM login_track_tbl " +
+							"WHERE login_status = 10 AND creation_date >= ? " +
+							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))",
+					previousJobStart
+			);
+		}
+	}
+	***/
 
 	private void refreshWsUserLastLogin(JdbcTemplate jdbcTemplate) {
 		if (previousJobStart == null) {

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -42,7 +42,6 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.util.CsvWriter;
 import com.agnitas.util.ZipUtilities;
-import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -87,9 +86,9 @@ public class ProgressStatisticsServiceImpl implements ProgressStatisticsService 
 
     private byte[] getDeliveryProgressCsv(int mailingId, DateRange dateRange, Admin admin) throws Exception {
         List<MailingDeliveryProgressStats> rows = getDeliveriesProgress(mailingId, dateRange, admin);
-        return CsvWriter.csv(ListUtils.union(
-                List.of(getHeaderForDeliveryProgressCsv(admin.getLocale())),
-                getDeliveryRowsForCsv(rows, admin))
+        return CsvWriter.csv(
+                getHeaderForDeliveryProgressCsv(admin.getLocale()),
+                getDeliveryRowsForCsv(rows, admin)
         );
     }
 
@@ -118,9 +117,9 @@ public class ProgressStatisticsServiceImpl implements ProgressStatisticsService 
     ) throws Exception {
         List<TargetGroupEventProgress> records = getOpeningsProgress(mailingId, dateRange, hourScale, targetGroups, admin);
 
-        return CsvWriter.csv(ListUtils.union(
-                List.of(getHeaderForOpeningsProgressCsv(admin.getLocale())),
-                getRowsForCsv(records, hourScale, targetGroups, admin))
+        return CsvWriter.csv(
+                getHeaderForOpeningsProgressCsv(admin.getLocale()),
+                getRowsForCsv(records, hourScale, targetGroups, admin)
         );
     }
 
@@ -144,9 +143,9 @@ public class ProgressStatisticsServiceImpl implements ProgressStatisticsService 
     ) throws Exception {
         List<TargetGroupEventProgress> records = getClicksProgress(mailingId, dateRange, hourScale, targetGroups, admin);
 
-        return CsvWriter.csv(ListUtils.union(
-                List.of(getHeaderForClicksProgressCsv(admin.getLocale())),
-                getRowsForCsv(records, hourScale, targetGroups, admin))
+        return CsvWriter.csv(
+                getHeaderForClicksProgressCsv(admin.getLocale()),
+                getRowsForCsv(records, hourScale, targetGroups, admin)
         );
     }
 

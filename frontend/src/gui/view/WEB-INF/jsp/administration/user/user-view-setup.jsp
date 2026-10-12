@@ -81,7 +81,7 @@
                     <%@ include file="fragments/manage-approval-btn.jspf" %>
                 </c:if>
 
-                <emm:ShowByPermission token="admin.delete">
+                <c:if test="${(isRestfulUser and emm:permissionAllowed('restfulUser.delete', pageContext.request)) or (not isRestfulUser and emm:permissionAllowed('admin.delete', pageContext.request))}">
                     <emm:instantiate var="option" type="java.util.LinkedHashMap">
                         <c:set target="${optionList}" property="1" value="${option}"/>
                         <c:set target="${option}" property="url">
@@ -97,18 +97,45 @@
                             <mvc:message code="settings.admin.delete" />
                         </c:set>
                     </emm:instantiate>
-                </emm:ShowByPermission>
+                </c:if>
             </emm:instantiate>
 
             <emm:ShowByPermission token="admin.change">
                 <c:url var="saveUrl" value="/${path}/${adminForm.adminID}/save.action"/>
+
+                <c:if test="${not isRestfulUser}">
+                    <c:url var="saveAndBackUrl" value="/admin/${adminForm.adminID}/saveAndBackToList.action">
+                        <c:param name="saveAndBack" value="true"/>
+                    </c:url>
+                </c:if>
+
                 <emm:instantiate var="element" type="java.util.LinkedHashMap">
                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
-                    <c:set target="${element}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#user-form' data-form-submit"/>
+
+                    <c:set target="${element}" property="btnCls"
+                           value="${not isRestfulUser ? 'js-btn-dropdown' : ''}"/>
+                    <c:set target="${element}" property="extraAttributes"
+                           value="data-form-url='${saveUrl}' data-form-target='#user-form' data-form-submit"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">
                         <mvc:message code="button.Save"/>
                     </c:set>
+
+                    <c:if test="${not isRestfulUser}">
+                        <emm:instantiate var="optionList" type="java.util.LinkedHashMap">
+                            <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
+                        </emm:instantiate>
+
+                        <emm:instantiate var="option" type="java.util.LinkedHashMap">
+                            <c:set target="${optionList}" property="0" value="${option}"/>
+
+                            <c:set target="${option}" property="extraAttributes"
+                                   value="data-form-url='${saveAndBackUrl}' data-form-target='#user-form' data-form-submit"/>
+                            <c:set target="${option}" property="name">
+                                <mvc:message code="button.SaveAndBack"/>
+                            </c:set>
+                        </emm:instantiate>
+                    </c:if>
                 </emm:instantiate>
             </emm:ShowByPermission>
         </c:otherwise>

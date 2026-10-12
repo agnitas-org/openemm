@@ -1,0 +1,16 @@
+
+# Path to the Ivy settings file
+ivy.settings.file=ivysettings.xml
+
+# Resolver chain to use during dependency resolution.
+#   build-chain   — online build: resolves from libs-repo-scm, libs-repo-local, then libs-repo-remote-maven/spring
+#   offline-chain — air-gapped build: resolves only from libs-repo-scm and libs-repo-local; no network access
+ivy.default.resolver=offline-chain
+
+# Path to the local offline repository populated by populate-local-ivy-repo.xml.
+# Override this on machines where the repo has been distributed to a shared location.
+ivy.local.repo=${user.home}/.ivy2/emm-local
+
+# Path to the Ivy resolution cache.
+# Separate from ivy.local.repo so cache can be cleared without affecting the offline repo.
+ivy.cache.dir=${user.home}/.ivy2/emm-cache

@@ -117,7 +117,7 @@
                         </div>
 
                         <div class="table-wrapper__body">
-                            <table class="table--borderless js-table">
+                            <table class="table table--borderless js-table">
                                 <thead>
                                 <tr>
                                     <th><input type="checkbox" class="form-check-input" data-bulk-checkboxes autocomplete="off" /></th>

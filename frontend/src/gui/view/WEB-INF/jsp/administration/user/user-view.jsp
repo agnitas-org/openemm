@@ -28,6 +28,14 @@
         </div>
         <div class="tile-body js-scrollable">
             <div class="row g-3">
+
+                <div class="col-12">
+                    <div class="notification-simple notification-simple--lg">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="info.settings.admin" /></span>
+                    </div>
+                </div>
+
                 <div class="col-6">
                     <label class="form-label" for="empfaenger_detail_anrede"><mvc:message code="recipient.Salutation"/></label>
                     <mvc:select id="empfaenger_detail_anrede" cssClass="form-control" path="gender" size="1">

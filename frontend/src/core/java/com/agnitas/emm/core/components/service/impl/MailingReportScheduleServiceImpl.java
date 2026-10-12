@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -34,6 +34,7 @@ import com.agnitas.emm.core.birtreport.dto.PredefinedType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.birtreport.bean.ReportFormat;
 import com.agnitas.emm.core.components.service.MailingReportScheduleService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.util.DateUtilities;
@@ -116,7 +117,7 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
         report.setCompanyID(admin.getCompanyID());
         report.setShortname(buildReportName(reportType, mailing, admin.getLocale()));
         report.setReportActive(1);
-        report.setFormat(BirtReport.FORMAT_PDF_INDEX);
+        report.setFormat(ReportFormat.PDF);
         report.setEmailRecipientList(emails);
         report.setEmailSubject(buildReportEmailSubject(admin.getLocale()));
         report.setEmailDescription(buildReportEmailBody(mailing, admin.getLocale()));

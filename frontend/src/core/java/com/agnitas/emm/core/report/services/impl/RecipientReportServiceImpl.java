@@ -1,16 +1,14 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.report.services.impl;
-
-import static com.agnitas.messages.I18nString.getLocaleString;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,20 +18,19 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.RecipientHistory;
 import com.agnitas.beans.RecipientMailing;
 import com.agnitas.beans.RecipientReaction;
 import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
-import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientStatus;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
@@ -60,13 +57,8 @@ import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.mapper.Mapper;
 import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.util.CsvWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -418,43 +410,5 @@ public class RecipientReportServiceImpl implements RecipientReportService {
         }
 
         return recipientBindingHistories;
-    }
-
-    @Override
-    public Map<String, Integer> getRecipientStatusStat(int mailinglistId, int targetId, int companyId) {
-        return bindingEntryDao.getRecipientStatusStat(mailinglistId, targetId, companyId);
-    }
-
-    @Override
-    public JSONArray getFilteredRecipientStatusesJson(Map<String, Integer> statuses, boolean summed) {
-        JSONArray jsonArray = new JSONArray();
-        statuses.entrySet().stream()
-                .filter(statusEntry -> summed == SummedRecipientStatus.getNames().contains(statusEntry.getKey()))
-                .map(statusEntry -> getRecipientStatusJson(statusEntry.getKey(), statusEntry.getValue()))
-                .forEach(jsonArray::put);
-        return jsonArray;
-    }
-
-    private JSONObject getRecipientStatusJson(String status, int value) {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("name", status);
-        jsonObject.put("value", value);
-        return jsonObject;
-    }
-
-    @Override
-    public byte[] getRecipientStatusesCSV(Admin admin, int mailingListId, int targetId) throws Exception {
-        return CsvWriter.csv(ListUtils.union(
-            List.of(getRecipientStatusesHeaderForCsv(admin.getLocale())),
-            getRecipientStatusesRowsForCsv(mailingListId, targetId, admin.getCompanyID())));
-    }
-
-    private List<String> getRecipientStatusesHeaderForCsv(Locale locale) {
-        return List.of(getLocaleString("recipient.Remark", locale), getLocaleString("Value", locale));
-    }
-
-    private List<List<String>> getRecipientStatusesRowsForCsv(int mailingListId, int targetId, int companyId) {
-        return getRecipientStatusStat(mailingListId, targetId, companyId).entrySet().stream()
-            .map(status -> List.of(status.getKey(), String.valueOf(status.getValue()))).toList();
     }
 }

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -30,15 +30,12 @@ import com.agnitas.util.AgnUtils;
 import com.agnitas.util.CsvWriter;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.DbVendor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
-/**
- * DAO handler for status infos
- * This class is compatible with oracle and mysql datasources and databases
- */
 @Component("serverStatusDao")
 public class ServerStatusDaoImpl extends BaseDaoImpl implements ServerStatusDao {
 
@@ -49,12 +46,11 @@ public class ServerStatusDaoImpl extends BaseDaoImpl implements ServerStatusDao 
 	private static final String DB_VERSION_FIELD_TIMESTAMP = "update_timestamp";
 	
 	private static final String[] DB_VERSION_FIELD_NAMES = new String[]{DB_VERSION_FIELD_VERSION, DB_VERSION_FIELD_USER, DB_VERSION_FIELD_TIMESTAMP};
-	
-	private static final String CHECK_DB_CONNECTION = "SELECT 1 FROM DUAL";
+
 	private static final String SELECT_DB_VERSION_ORACLE = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '$')";
 	private static final String SELECT_DB_VERSION_ORACLE_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE REGEXP_LIKE(" + DB_VERSION_FIELD_VERSION + ", '^0*' || ? || '.0*' || ? || '.0*' || ? || '.0*' || ? || '$')";
-	private static final String SELECT_DB_VERSION_MYSQL = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '$')";
-	private static final String SELECT_DB_VERSION_MYSQL_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '.0*', ?, '$')";
+	private static final String SELECT_DB_VERSION_MARIADB = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '$')";
+	private static final String SELECT_DB_VERSION_MARIADB_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '.0*', ?, '$')";
 
 	public ServerStatusDaoImpl(@Qualifier("dataSource") DataSource dataSource, JavaMailService javaMailService) {
 		super(dataSource, javaMailService);
@@ -63,8 +59,7 @@ public class ServerStatusDaoImpl extends BaseDaoImpl implements ServerStatusDao 
 	@Override
 	public boolean checkDatabaseConnection() {
 		try {
-			int result = isPostgreSQL() ? selectInt("SELECT 1") : selectInt(CHECK_DB_CONNECTION);
-			return result == 1;
+            return selectInt(isPostgreSQL() ? "SELECT 1" : "SELECT 1 FROM DUAL") == 1;
 		} catch (DataAccessException e) {
 			return false;
 		}
@@ -78,9 +73,9 @@ public class ServerStatusDaoImpl extends BaseDaoImpl implements ServerStatusDao 
 		try {
 			List<Map<String, Object>> results;
 			if (hotfixVersion > 0) {
-				results = select((isOracleDB() || isPostgreSQL() ? SELECT_DB_VERSION_ORACLE_HOTFIX : SELECT_DB_VERSION_MYSQL_HOTFIX), majorVersion, minorVersion, microVersion, hotfixVersion);
+				results = select((isOracleDB() || isPostgreSQL() ? SELECT_DB_VERSION_ORACLE_HOTFIX : SELECT_DB_VERSION_MARIADB_HOTFIX), majorVersion, minorVersion, microVersion, hotfixVersion);
 			} else {
-				results = select((isOracleDB() || isPostgreSQL() ? SELECT_DB_VERSION_ORACLE : SELECT_DB_VERSION_MYSQL), majorVersion, minorVersion, microVersion);
+				results = select((isOracleDB() || isPostgreSQL() ? SELECT_DB_VERSION_ORACLE : SELECT_DB_VERSION_MARIADB), majorVersion, minorVersion, microVersion);
 			}
 			return !results.isEmpty();
 		} catch (DataAccessException e) {
@@ -97,7 +92,7 @@ public class ServerStatusDaoImpl extends BaseDaoImpl implements ServerStatusDao 
 		if (result.size() > 1) {
 			return "Invalid";
 		}
-		Map<String, Object> row = result.get(0);
+		Map<String, Object> row = result.getFirst();
 		if (((Number) row.get("deleted")).intValue() > 0) {
 			return "Deactivated";
 		}
@@ -123,21 +118,10 @@ public class ServerStatusDaoImpl extends BaseDaoImpl implements ServerStatusDao 
 		return DbUtilities.getDbVersion(getDataSource());
 	}
 
-    @Override
-    public String getDbVendor() {
-		DataSource dataSource = getDataSource();
-		if (DbUtilities.checkDbVendorIsOracle(dataSource)) {
-			return "Oracle";
-		} else if (DbUtilities.checkDbVendorIsMariaDB(dataSource)) {
-			return "MariaDB";
-		} else if (DbUtilities.checkDbVendorIsMySQL(dataSource)) {
-			return "MySQL";
-		} else if (DbUtilities.checkDbVendorIsPostgreSQL(dataSource)) {
-			return "PostgreSQL";
-		} else {
-			return "N/A";
-		}
-    }
+	@Override
+	public DbVendor getDbVendor() {
+		return getDBVendor();
+	}
 
     @Override
     public Map<String, String> getDbInformation() {

@@ -9,6 +9,7 @@
 <%--@elvariable id="mailinglistDisabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="isMailingEditable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 
 <c:set var="isMailingEditable" value="${isMailingEditable}" scope="request"/>
 <c:set var="mailingId" value="${form.mailingID}"/>
@@ -41,9 +42,10 @@
         <c:set var="agnHelpKey"       value="${form.gridTemplateId gt 0 ? 'mailingGridTextContent' : 'contentView'}" scope="request" />
 
         <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
-            <c:set target="${agnNavConditionsParams}" property="isActiveMailing"     value="${isWorldMailingSend}" />
-            <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
-            <c:set target="${agnNavConditionsParams}" property="isPostMailing"       value="${not empty isPostMailing and isPostMailing}" />
+            <c:set target="${agnNavConditionsParams}" property="isActiveMailing"        value="${isWorldMailingSend}" />
+            <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled"    value="${mailinglistDisabled}" />
+            <c:set target="${agnNavConditionsParams}" property="isPostMailing"          value="${not empty isPostMailing and isPostMailing}" />
+            <c:set target="${agnNavConditionsParams}" property="isStandaloneSmsMailing" value="${not empty isStandaloneSmsMailing and isStandaloneSmsMailing}" />
         </emm:instantiate>
     </c:otherwise>
 </c:choose>

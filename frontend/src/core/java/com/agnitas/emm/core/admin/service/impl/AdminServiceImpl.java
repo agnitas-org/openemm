@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -37,34 +37,42 @@ import com.agnitas.beans.impl.AdminImpl;
 import com.agnitas.beans.impl.AdminPreferencesImpl;
 import com.agnitas.beans.impl.CompanyStatus;
 import com.agnitas.dao.AdminDao;
-import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
-import com.agnitas.emm.core.admin.AdminException;
+import com.agnitas.emm.core.admin.AdminNotFoundException;
 import com.agnitas.emm.core.admin.form.AdminForm;
+import com.agnitas.emm.core.admin.service.AdminGroupService;
+import com.agnitas.emm.core.admin.service.AdminMapper;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.admin.service.CreateUiUserCommand;
+import com.agnitas.emm.core.admin.service.PatchUiUserCommand;
 import com.agnitas.emm.core.admin.service.PermissionFilter;
+import com.agnitas.emm.core.admin.service.UserListOpts;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
-import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.password.PasswordCheck;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.commons.password.PasswordState;
+import com.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.emm.core.systemmessages.service.SystemMailMessageService;
+import com.agnitas.emm.core.validator.UserValidationField;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.Tuple;
 import com.agnitas.util.preferences.PreferenceItem;
+import com.agnitas.web.mvc.impl.PopupsImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -72,30 +80,38 @@ import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.transaction.annotation.Transactional;
 
 public class AdminServiceImpl implements AdminService {
-	
+
 	private static final Logger logger = LogManager.getLogger(AdminServiceImpl.class);
 
 	protected AdminDao adminDao;
 	protected CompanyDao companyDao;
 	protected AdminPreferencesDao adminPreferencesDao;
-	protected AdminGroupDao adminGroupDao;
+	protected AdminGroupService adminGroupService;
 	protected ConfigService configService;
 	private PermissionFilter permissionFilter;
 	protected EmmLayoutBaseDao emmLayoutBaseDao;
 	protected PermissionService permissionService;
 	private SystemMailMessageService systemMailMessageService;
 	private BulkActionValidationService<Integer, Admin> bulkActionValidationService;
+	private AdminMapper adminMapper;
+	private PasswordCheck passwordCheck;
 
 	@Override
-	public Optional<Admin> getAdminByName(String username) {
-		try {
-            return Optional.of(adminDao.getAdmin(username));
-		} catch (Exception e) {
-			logger.error("Error reading admin by name (name = '{}')", username, e);
-			return Optional.empty();
-		}
+	public Optional<Admin> findByEmail(String email) {
+		return Optional.ofNullable(adminDao.getByEmail(email));
+	}
+
+	@Override
+	public Optional<Admin> findByUsername(String username) {
+		return Optional.ofNullable(adminDao.getAdmin(username));
+	}
+
+	@Override
+	public Admin getUiUser(String username, int companyId) {
+		return adminDao.findUiUser(username, companyId).orElseThrow(() -> new AdminNotFoundException(username));
 	}
 	
 	@Override
@@ -104,7 +120,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 	
 	@Override
-	public Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException {
+	public Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws SupervisorException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -134,6 +150,26 @@ public class AdminServiceImpl implements AdminService {
 		}
 
 		return ServiceResult.success(admin);
+	}
+
+	@Override
+	public void deleteUiAdmin(int userId, int companyId) {
+		Admin user = getUiUserById(userId, companyId);
+		deleteUiAdmin(user, companyId);
+	}
+
+	@Override
+	public void deleteUiAdmin(String username, int companyId) {
+		Admin user = getAdmin(username);
+		deleteUiAdmin(user, companyId);
+	}
+
+	private void deleteUiAdmin(Admin user, int companyId) {
+		ServiceResult<Admin> result = isPossibleToDeleteAdmin(user.getAdminID(), companyId);
+		if (!result.isSuccess()) {
+			throw new ValidationException(result.getErrorMessages());
+		}
+		deleteAdmin(user.getAdminID(), companyId);
 	}
 
 	@Override
@@ -215,7 +251,7 @@ public class AdminServiceImpl implements AdminService {
 
 		List<AdminGroup> adminGroups = new ArrayList<>();
 		for (int groupId : form.getGroupIDs()) {
-			AdminGroup group = adminGroupDao.getAdminGroup(groupId, savingCompanyID);
+			AdminGroup group = adminGroupService.getAdminGroup(groupId, savingCompanyID);
 			adminGroups.add(group);
 		}
 		savingAdmin.setGroups(adminGroups);
@@ -261,15 +297,19 @@ public class AdminServiceImpl implements AdminService {
 		return AdminSavingResult.success(savingAdmin, isPasswordChanged);
 	}
 
-	protected void passAlml(Admin editorAdmin, Admin savingAdmin) {
+    protected void passAlml(Admin editorAdmin, Admin savingAdmin) {
 		// overridden in extended class
-	}
+    }
 
-    @Override
+	@Override
 	public Tuple<List<String>, List<String>> saveAdminPermissions(int companyID, int savingAdminID, Collection<String> tokens, int editorAdminID) {
-		tokens = CollectionUtils.emptyIfNull(tokens);
 		Admin editorAdmin = adminDao.getAdmin(editorAdminID, companyID);
 		Admin savingAdmin = adminDao.getAdmin(savingAdminID, companyID);
+		return saveAdminPermissions(tokens, editorAdmin, savingAdmin);
+	}
+
+    private Tuple<List<String>, List<String>> saveAdminPermissions(Collection<String> tokens, Admin editorAdmin, Admin savingAdmin) {
+		tokens = CollectionUtils.emptyIfNull(tokens);
 
 		Map<String, Boolean> permissionChangeable = new HashMap<>();
 		
@@ -317,7 +357,7 @@ public class AdminServiceImpl implements AdminService {
 					// Just leave it unchanged
 					removedPermissions.remove(permissionToken);
 				} else {
-					logger.error("Invalid right removal attempt for adminID {} by adminID {}: {}", savingAdminID, editorAdmin.getAdminID(), permissionToken);
+					logger.error("Invalid right removal attempt for adminID {} by adminID {}: {}", savingAdmin.getAdminID(), editorAdmin.getAdminID(), permissionToken);
 					return null;
 				}
 			}
@@ -334,7 +374,7 @@ public class AdminServiceImpl implements AdminService {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					addedPermissions.remove(permissionToken);
 				} else {
-					logger.error("Invalid right granting attempt for adminID {} by adminID {}: {}", savingAdminID, editorAdmin.getAdminID(), permissionToken);
+					logger.error("Invalid right granting attempt for adminID {} by adminID {}: {}", savingAdmin.getAdminID(), editorAdmin.getAdminID(), permissionToken);
 					return null;
 				}
 			}
@@ -345,9 +385,23 @@ public class AdminServiceImpl implements AdminService {
 		adminPermissions.addAll(addedPermissions);
 
 		// Save new rights
-		adminDao.saveAdminRights(savingAdminID, adminPermissions);
+		adminDao.saveAdminRights(savingAdmin.getAdminID(), adminPermissions);
 
 		return new Tuple<>(addedPermissions, removedPermissions);
+	}
+
+	@Override
+	public Optional<Admin> findUiUserById(int id, int companyId) {
+		Admin admin = adminDao.getAdmin(id, companyId);
+		if (admin == null || admin.isRestful()) {
+			return Optional.empty();
+		}
+		return Optional.of(admin);
+	}
+
+	@Override
+	public Admin getUiUserById(int id, int companyId) {
+		return findUiUserById(id, companyId).orElseThrow(() -> new AdminNotFoundException(id));
 	}
 
 	@Override
@@ -357,6 +411,12 @@ public class AdminServiceImpl implements AdminService {
 		}
 
 		return adminDao.getAdmin(adminID, companyID);
+	}
+
+	@Override
+	public Admin getAdmin(String username) {
+		return findByUsername(username)
+				.orElseThrow(() -> new AdminNotFoundException(username));
 	}
 
 	@Override
@@ -370,24 +430,8 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public PaginatedList<AdminEntry> getAdminList(
-			int companyID,
-			String searchFirstName,
-			String searchLastName,
-			String searchEmail,
-			String searchCompanyName,
-			Integer filterCompanyId,
-			Integer filterAdminGroupId,
-			Integer filterMailinglistId,
-			String filterLanguage,
-			DateRange creationDate,
-			DateRange lastLoginDate,
-			String username,
-			String sort,
-			String direction,
-			int pageNumber,
-			int pageSize){
-		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, creationDate, lastLoginDate, username, sort, direction, pageNumber, pageSize, false);
+	public PaginatedList<AdminEntry> getAdminList(UserListOpts opts){
+		return adminDao.getAdminList(opts, false);
 	}
 
 	@Override
@@ -625,7 +669,7 @@ public class AdminServiceImpl implements AdminService {
 		return adminDao.getAdminByLogin(name, password);
 	}
 
-	protected void mapExtendedFields(final Admin target, final AdminForm sourceForm, final Admin editorAdmin) {
+	protected void mapExtendedFields(Admin target, int altgId, Set<Integer> altgIds, Admin editorAdmin) {
 		logger.debug("Not supported for OpenEMM");
 	}
 
@@ -647,7 +691,7 @@ public class AdminServiceImpl implements AdminService {
 		target.setAdminPhone(sourceForm.getAdminPhone());
         target.setPasswordReminderState(getPasswordReminderStateToSave(target, sourceForm));
 
-		mapExtendedFields(target, sourceForm, editorAdmin);
+		mapExtendedFields(target, sourceForm.getAltgId(), sourceForm.getAltgIds(), editorAdmin);
 	}
 
     private static PasswordReminderState getPasswordReminderStateToSave(Admin target, AdminForm form) {
@@ -660,6 +704,151 @@ public class AdminServiceImpl implements AdminService {
         }
         return passwordReminderState;
     }
+
+	@Transactional
+	@Override
+	public Admin createUiUser(CreateUiUserCommand command, Admin editorAdmin) {
+		int newUserCompanyId = command.clientId() > 0 ? command.clientId() : editorAdmin.getCompanyID();
+		validateForCreate(command, editorAdmin, newUserCompanyId);
+
+		Admin uiUser = mapToUiUser(command, editorAdmin, newUserCompanyId);
+		adminDao.save(uiUser);
+		saveAdminPermissions(command.permissions(), editorAdmin, uiUser);
+
+		logger.info("Created admin. Username {}", uiUser.getAdminID());
+		return uiUser;
+	}
+
+	protected Admin mapToUiUser(CreateUiUserCommand command, Admin editorAdmin, int newUserCompanyId) {
+        return adminMapper.toUiUser(
+                command,
+                companyDao.getCompany(newUserCompanyId),
+                mapIdsToGroups(command.groupIds(), newUserCompanyId)
+        );
+	}
+
+	private List<AdminGroup> mapIdsToGroups(Set<Integer> ids, int companyId) {
+		return ids.stream()
+				.map(groupId -> adminGroupService.getById(groupId, companyId))
+				.toList();
+	}
+
+	protected void validateForCreate(CreateUiUserCommand command, Admin editorAdmin, int newUserCompanyId) {
+        validateMaximumNumberOfUsers(newUserCompanyId);
+        validateAllowedEditor(newUserCompanyId, editorAdmin);
+		validateUsername("", command.username());
+		validatePassword(command.password(), editorAdmin, newUserCompanyId);
+        validatePermissions(command.permissions());
+    }
+
+	private void validateUsername(String oldUsername, String newUsername) {
+		if (!Strings.CS.equals(oldUsername, newUsername)
+			&& (adminExists(newUsername) || checkBlacklistedAdminNames(newUsername))) {
+			throw ValidationException.invalidValue(UserValidationField.USERNAME, "error.username.duplicate");
+		}
+	}
+
+    private static void validatePermissions(Set<String> permissions) {
+        List<String> allSystemPermissions = Permission.getAllSystemPermissions().stream()
+                .map(Permission::getTokenString)
+                .toList();
+        List<String> unknownPermissions = permissions.stream()
+                .filter(o -> !allSystemPermissions.contains(o))
+                .toList();
+        if (CollectionUtils.isNotEmpty(unknownPermissions)) {
+            throw ValidationException.exact("Invalid permission tokens: %s".formatted(unknownPermissions));
+        }
+    }
+
+    private void validateAllowedEditor(int newUserCompanyId, Admin editorAdmin) {
+        if (newUserCompanyId == editorAdmin.getCompanyID()) {
+            return;
+        }
+        List<Company> allowedCompanies = companyDao.getCreatedCompanies(editorAdmin.getCompanyID());
+        if (allowedCompanies.stream().noneMatch(company -> company.getId() == newUserCompanyId)) {
+            throw new ValidationException(new Message("error.permissionDenied"));
+        }
+    }
+
+    private void validateMaximumNumberOfUsers(int newUserCompanyId) {
+        int maximumNumberOfAdmins = configService.getIntegerValue(
+                ConfigValue.System_License_MaximumNumberOfGuiAdmins,
+                newUserCompanyId
+        );
+        if (maximumNumberOfAdmins >= 0 && maximumNumberOfAdmins <= getNumberOfGuiAdmins(newUserCompanyId)) {
+            throw new ValidationException("error.numberOfAdminsExceeded", maximumNumberOfAdmins);
+        }
+    }
+
+    private void validatePassword(String password, Admin editorAdmin, int userCompanyId) {
+		PopupsImpl popups = new PopupsImpl();
+		if (!passwordCheck.checkNewAdminPassword(
+				password,
+				userCompanyId,
+				new SpringPasswordCheckHandler(popups))
+		) {
+			throw ValidationException.exact(popups.getFullErrorsText(editorAdmin.getLocale()));
+		}
+	}
+
+	@Override
+	public void patchUiUser(int userId, PatchUiUserCommand command, Admin admin) {
+		Admin user = getUiUserById(userId, admin.getCompanyID());
+		patchUiUser(user, command, admin);
+	}
+
+	@Transactional
+	@Override
+	public void patchUiUser(String username, PatchUiUserCommand command, Admin admin) {
+		Admin user = getUiUser(username, admin.getCompanyID());
+		patchUiUser(user, command, admin);
+	}
+
+    protected void patchUiUser(Admin user, PatchUiUserCommand command, Admin editor) {
+		String oldEmail = user.getEmail();
+
+		patchUserFields(user, command, editor);
+		adminDao.save(user);
+
+		if (command.password().present() && passwordChanged(user.getUsername(), command.password().value())) {
+			systemMailMessageService.sendPasswordChangedMail(user);
+		}
+		if (command.email().present() && !Strings.CI.equals(oldEmail, command.email().value())) {
+			systemMailMessageService.sendEmailChangedMail(user, oldEmail);
+		}
+	}
+
+	protected void patchUserFields(Admin user, PatchUiUserCommand command, Admin editor) {
+		command.username().ifPresent(username -> {
+			validateUsername(user.getUsername(), command.username().value());
+			user.setUsername(username);
+		});
+		command.password().ifPresent(password -> {
+			validatePassword(command.password().value(), editor, user.getCompanyID());
+			user.setPasswordForStorage(password);
+			user.setLastPasswordChange(new Timestamp(new Date().getTime()));
+		});
+		command.companyName().ifPresent(user::setCompanyName);
+		command.gender().ifPresent(g -> user.setGender(g.getStorageValue()));
+		command.title().ifPresent(user::setTitle);
+		command.firstName().ifPresent(user::setFirstName);
+		command.lastName().ifPresent(user::setFullname);
+		command.email().ifPresent(user::setEmail);
+		command.statisticsEmail().ifPresent(user::setStatEmail);
+		command.timezone().ifPresent(user::setAdminTimezone);
+		command.employeeId().ifPresent(user::setEmployeeID);
+		command.groupIds().ifPresent(ids -> user.setGroups(mapIdsToGroups(ids, user.getCompanyID())));
+		command.phone().ifPresent(user::setAdminPhone);
+		command.language().ifPresent(l -> {
+			user.setAdminLang(l.substring(0, l.indexOf('_')));
+			user.setAdminCountry(l.substring(l.indexOf('_') + 1));
+			user.setAdminLangVariant(l.substring(l.indexOf('_') + 1));
+		});
+		command.permissions().ifPresent(permissions -> {
+			validatePermissions(command.permissions().value());
+			saveAdminPermissions(user.getCompanyID(), user.getAdminID(), permissions, editor.getAdminID());
+		});
+	}
 
 	@Override
 	public int getAccessLimitTargetId(Admin admin) {
@@ -677,24 +866,8 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public PaginatedList<AdminEntry> getRestfulUserList(
-			int companyID,
-			String searchFirstName,
-			String searchLastName,
-			String searchEmail,
-			String searchCompanyName,
-			Integer filterCompanyId,
-			Integer filterAdminGroupId,
-			Integer filterMailinglistId,
-			String filterLanguage,
-			DateRange creationDate,
-			DateRange lastLoginDate,
-			String username,
-			String sort,
-			String direction,
-			int pageNumber,
-			int pageSize){
-		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, creationDate, lastLoginDate, username, sort, direction, pageNumber, pageSize, true);
+	public PaginatedList<AdminEntry> getRestfulUserList(UserListOpts opts){
+		return adminDao.getAdminList(opts, true);
 	}
 
 	@Override
@@ -786,8 +959,8 @@ public class AdminServiceImpl implements AdminService {
 		this.bulkActionValidationService = bulkActionValidationService;
 	}
 
-	public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
-		this.adminGroupDao = adminGroupDao;
+	public void setAdminGroupService(AdminGroupService adminGroupService) {
+		this.adminGroupService = adminGroupService;
 	}
 
 	public void setSystemMailMessageService(SystemMailMessageService systemMailMessageService) {
@@ -806,4 +979,11 @@ public class AdminServiceImpl implements AdminService {
 		this.permissionService = permissionService;
 	}
 
+	public void setAdminMapper(AdminMapper adminMapper) {
+		this.adminMapper = adminMapper;
+	}
+
+	public void setPasswordCheck(PasswordCheck passwordCheck) {
+		this.passwordCheck = passwordCheck;
+	}
 }

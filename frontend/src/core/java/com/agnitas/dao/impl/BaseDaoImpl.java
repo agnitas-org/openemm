@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -47,6 +47,7 @@ import com.agnitas.exception.NonUniqueResultException;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.DbVendor;
 import com.agnitas.util.Tuple;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -91,10 +92,9 @@ public abstract class BaseDaoImpl {
 	protected DataSource dataSource;
 	
 	/**
-	 * Cache variable for the dataSource vendor, so it must not be recalculated everytime.
-	 * This variable may be uninitialized before the first execution of the isOracleDB method
+	 * Cache variable for the dataSource vendor, so it must not be recalculated everytime
 	 */
-	private static String dbVendor = null;
+	private static DbVendor dbVendor = null;
 	
 	protected JavaMailService javaMailService;
 
@@ -143,50 +143,23 @@ public abstract class BaseDaoImpl {
 		return new JdbcTemplate(getDataSource());
 	}
 	
-	/**
-	 * Checks the db vendor of the dataSource and caches the result for further usage
-	 * @return true if db vendor of dataSource is Oracle, false if any other vendor (e.g. mysql)
-	 */
 	public final boolean isOracleDB() {
-		/*
-		 * Keep this method final to avoid problems with
-		 * overriding in subclasses!
-		 */
-		
-		return "oracle".equalsIgnoreCase(getDbVendorName());
+		return DbVendor.ORACLE.equals(getDBVendor());
 	}
 
 	public final boolean isPostgreSQL() {
-		/*
-		 * Keep this method final to avoid problems with
-		 * overriding in subclasses!
-		 */
+		return DbVendor.POSTGRES.equals(getDBVendor());
+	}
 
-		return "postgresql".equalsIgnoreCase(getDbVendorName());
-	}
-	
 	protected final boolean isMariaDB() {
-		/*
-		 * Keep this method final to avoid problems with
-		 * overriding in subclasses!
-		 */
-		
-		return "mariadb".equalsIgnoreCase(getDbVendorName());
+		return DbVendor.MARIADB.equals(getDBVendor());
 	}
-	
-	private String getDbVendorName() {
+
+	protected final DbVendor getDBVendor() {
 		if (dbVendor == null) {
-			if (DbUtilities.checkDbVendorIsOracle(getDataSource())) {
-				dbVendor = "oracle";
-			} else if (DbUtilities.checkDbVendorIsPostgreSQL(getDataSource())) {
-				dbVendor = "postgresql";
-			} else if (DbUtilities.checkDbVendorIsMariaDB(getDataSource())) {
-				dbVendor = "mariadb";
-			} else {
-				dbVendor = "mysql";
-			}
+			dbVendor = DbVendor.getDbVendor(getDataSource());
 		}
-		
+
 		return dbVendor;
 	}
 
@@ -393,6 +366,11 @@ public abstract class BaseDaoImpl {
 		} else {
 			throw new NonUniqueResultException(list.size());
 		}
+	}
+
+	protected <T> Optional<T> findObject(String statement, RowMapper<T> rowMapper, Object ... params) {
+		T object = selectObjectDefaultNull(statement, rowMapper, params);
+		return Optional.ofNullable(object);
 	}
 
 	protected String selectStringDefaultNull(String statement, Object ... parameters) {
@@ -1236,6 +1214,6 @@ public abstract class BaseDaoImpl {
 	}
 
 	protected String andClause(String sql) {
-		return isNotBlank(sql) ? "AND (%s)".formatted(sql) : "";
+		return isNotBlank(sql) ? " AND (%s)".formatted(sql) : "";
 	}
 }

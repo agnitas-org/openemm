@@ -2,6 +2,8 @@
 .modal {
   --modal-title-color: #{$dark-blue};
   --modal-variant-header-color: #{$white};
+  // viewport minus: dialog margin x2 + modal-content border x2 + header height + body padding x2
+  --modal-content-max-height: calc(100dvh - (var(--bs-modal-margin) * 2) - 2px - #{$tile-header-height} - #{$modal-body-padding * 2});
 }
 
 @include color-mode(dark) {
@@ -68,7 +70,7 @@
 
 .modal-body {
   @include hide-scroll;
-  padding: $gap-md;
+  padding: $modal-body-padding;
 }
 
 .modal-footer {

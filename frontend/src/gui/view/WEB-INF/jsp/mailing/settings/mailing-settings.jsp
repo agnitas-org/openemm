@@ -10,7 +10,7 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 <%--@elvariable id="selectedRemovedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
 <%--@elvariable id="isCampaignEnableTargetGroups" type="java.lang.Boolean"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
@@ -42,6 +42,7 @@
     {
             "mailingId": ${mailingId},
             "isMailingGrid": ${isMailingGrid},
+            "isStandaloneSmsMailing": ${not empty isStandaloneSmsMailing and isStandaloneSmsMailing},
             "FOLLOWUP_MAILING_TYPE": "${FOLLOWUP_MAILING_TYPE}",
             "ACTIONBASED_MAILING_TYPE": "${ACTIONBASED_MAILING_TYPE}",
             "DATEBASED_MAILING_TYPE": "${DATEBASED_MAILING_TYPE}",
@@ -100,7 +101,7 @@
 
                             <li class="nav-item">
                                 <a class="btn btn-outline-primary" href="#" data-toggle-tab="#sending-tab" data-bs-dismiss="offcanvas">
-                                    <span class="text-truncate"><mvc:message code="GWUA.sending"/></span>
+                                    <span class="text-truncate"><mvc:message code="mailing.settings.sender"/></span>
                                 </a>
                             </li>
 

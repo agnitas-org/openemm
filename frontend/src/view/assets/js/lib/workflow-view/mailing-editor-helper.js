@@ -200,7 +200,7 @@
             });
 
             if (mailingEditorBase.isSentMailing(d.WORK_STATUS)) {
-              $option.css('color', '#808080');
+              $option.data('badge-class', d.WORK_STATUS);
             }
 
             // For back compatibility

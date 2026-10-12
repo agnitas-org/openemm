@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -65,6 +65,7 @@ import com.agnitas.util.PubID;
 import com.agnitas.util.StringUtil;
 import com.agnitas.util.UnclosedTagException;
 import com.agnitas.util.backend.Decrypt;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -446,11 +447,21 @@ public class LinkServiceImpl implements LinkService {
 			doNonImageLinkCheck(context);
 		}
 	}
-	
-	private void doNonImageLinkCheck(final LinkScanContext context) {
-		if (linkCheckContainsAgnFormTag(context)) { // In some cases, the agnFORM tags cannot be resolved, so we must exclude them here
-			
-		} else if (linkCheckContainsAgnTagOrGridPhTag(context)) {
+
+	private void doNonImageLinkCheck(LinkScanContext context) {
+		if (context.getLinkUrl().contains("[agnFORM")) {
+			// In some cases, the agnFORM tags cannot be resolved, so we must exclude them here
+			return;
+		}
+
+		boolean isFullViewTag = Stream.of(AgnTag.FULLVIEW, AgnTag.WEBVIEW)
+				.anyMatch(tag -> context.getLinkUrl().contains("[%s]".formatted(tag.getName())));
+
+		if (isFullViewTag) {
+			return;
+		}
+
+		if (linkCheckContainsAgnTagOrGridPhTag(context)) {
 			context.getFoundNotTrackableLinks().add(context.getLinkUrl());
 		} else if (linkCheckIsHttpOrHttpsSchema(context)) {
 			final TrackableLink link = new TrackableLinkImpl();
@@ -557,11 +568,7 @@ public class LinkServiceImpl implements LinkService {
 	private boolean linkCheckContainsHashTag(final LinkScanContext context) {
 		return HASHTAG_PATTERN.matcher(context.getLinkUrl()).find();
 	}
-	
-	private boolean linkCheckContainsAgnFormTag(final LinkScanContext context) {
-		return context.getLinkUrl().contains("[agnFORM");
-	}
-	
+
 	private boolean linkCheckContainsAgnTagOrGridPhTag(final LinkScanContext context) {
 		return context.getLinkUrl().contains("[agn")
 				|| context.getLinkUrl().contains("[gridPH");
@@ -663,22 +670,24 @@ public class LinkServiceImpl implements LinkService {
 	 * 
 	 * AgnTag [agnPROFILE] will be resolved.
 	 * AgnTag [agnUNSUBSCRIBE] will be resolved.
+	 * AgnTag [agnFULLVIEW] will be resolved.
+	 * AgnTag [agnWEBVIEW] will be resolved.
 	 * AgnTag [agnFORM] will be resolved.
 	 * 
 	 */
 	private String resolveAgnTags(String text, int mailingID, int mailinglistID, int companyID) {
-		if (text.contains("[agnPROFILE]")) {
-			TagDetails tag = new TagDetailsImpl();
-			tag.setTagName("agnPROFILE");
-			text = text.replaceAll("\\[agnPROFILE\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
+		text = StringEscapeUtils.unescapeHtml4(text);
+
+		for (AgnTag agnTag : List.of(AgnTag.PROFILE, AgnTag.UNSUBSCRIBE, AgnTag.FULLVIEW, AgnTag.WEBVIEW)) {
+			String tagName = agnTag.getName();
+
+			if (text.contains("[%s]".formatted(tagName))) {
+				TagDetails tag = new TagDetailsImpl();
+				tag.setTagName(tagName);
+				text = text.replaceAll("\\[%s\\]".formatted(tagName), agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
+			}
 		}
 
-		if (text.contains("[agnUNSUBSCRIBE]")) {
-			TagDetails tag = new TagDetailsImpl();
-			tag.setTagName("agnUNSUBSCRIBE");
-			text = text.replaceAll("\\[agnUNSUBSCRIBE\\]", agnTagService.resolve(tag, companyID, mailingID, mailinglistID, 0));
-		}
-		
 		int latestAgnFormTagPosition = -1;
 		while (text.contains("[agnFORM")) {
 			try {

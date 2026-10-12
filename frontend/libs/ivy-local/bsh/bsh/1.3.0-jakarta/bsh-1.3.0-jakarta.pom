@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>bsh</groupId>
+  <artifactId>bsh</artifactId>
+  <name>Beanshell</name>
+  <version>1.3.0-jakarta</version>
+</project>

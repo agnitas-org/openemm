@@ -1,23 +1,19 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.birtreport.service;
 
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.BirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings;
@@ -61,18 +57,11 @@ public class BirtReportJobWorker extends JobWorkerBase {
 			for (BirtReport report : reportsForSend) {
 				logger.debug("Processing report '{}' (ID {})", report.getShortname(), report.getId());
 
-				final BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
-				final CompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
-
 				final int companyID = report.getCompanyID();
-				final Integer accountId = companyDao.getCompany(companyID).getId();
-				final Map<String, String> urlsMap = new HashMap<>();
-				final List<BirtReportSettings> reportSettings = report.getSettings();
 
-				if (!report.isTriggeredByMailing()) {
+                if (!report.isTriggeredByMailing()) {
 					// time-triggered report (daily, weekly etc.)
-					urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(reportSettings, new Date(), report, companyID, accountId));
-					startReportExecution(report, urlsMap);
+					startReportExecution(report, report.getSettings());
 				} else {
 					// mailing-triggered report (After mailing dispatch option)
 					// even if we have several mailing ids - we need to send each report separately as the report is triggered
@@ -85,8 +74,7 @@ public class BirtReportJobWorker extends JobWorkerBase {
 					if (!mailingsIdsToSend.isEmpty()) {
 						for (Integer mailingId : mailingsIdsToSend) {
 							mailingSettings.setMailingsToSend(Collections.singletonList(mailingId));
-							urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(Collections.singletonList(mailingSettings), new Date(), report, companyID, accountId));
-							startReportExecution(report, urlsMap);
+							startReportExecution(report, List.of(mailingSettings));
 						}
 					} else {
 						if (StringUtils.isBlank(report.getIntervalpattern())) {
@@ -105,8 +93,18 @@ public class BirtReportJobWorker extends JobWorkerBase {
 		}
 	}
 
-	private void startReportExecution(BirtReport birtReport, Map<String, String> urlsMap) {
-		BirtReportExecutor birtReportExecutor = new BirtReportExecutor(serviceLookupFactory, birtReport, urlsMap);
+	private void startReportExecution(BirtReport birtReport, List<BirtReportSettings> reportSettings) {
+		BirtStatisticsService birtStatisticsService = serviceLookupFactory.getBeanBirtStatisticsService();
+
+        BirtReportExecutor birtReportExecutor;
+		if (configService.getBooleanValue(ConfigValue.Development.BirtReportsMigration, birtReport.getCompanyID())) {
+			birtReportExecutor = new BirtReportExecutor(serviceLookupFactory, birtReport,
+					null, birtStatisticsService.getReportRequestsMap(birtReport, reportSettings));
+		} else {
+			birtReportExecutor = new BirtReportExecutor(serviceLookupFactory, birtReport,
+					birtStatisticsService.getReportStatisticsUrlMap(birtReport, reportSettings), null);
+		}
+
 		Thread executorThread = new Thread(birtReportExecutor);
 		executorThread.start();
 	}

@@ -281,6 +281,10 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
       return html;
     },
 
+    isAgnTag(content) {
+      return this.findAgnTags(content).length === 1;
+    },
+
     findAgnTags: function(content, predicate = () => true) {
       const tags = [];
       this.replaceAgnTags(content, (tag, tagContent) => {
@@ -564,6 +568,19 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
       'json': ['json'],
       'ods':  ['ods', 'fods'],
       'xls': ['xlsx', 'xls', 'xlsm']
+    },
+
+    downloadCsv: (csvStr, fileName = 'export.csv') => {
+      const blob = new Blob([csvStr], {type: 'text/csv;charset=utf-8;'});
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     },
 
     getFileExtension: filename => filename.lastIndexOf('.') !== -1

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,9 +12,8 @@ package com.agnitas.emm.core.useractivitylog.web;
 
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
 
-public class RestfulUserActivityLogSearchParams extends UserActivityLogSearchParamsBase {
+public class RestfulUserActivityLogSearchParams extends UserActivityLogSearchParamsBase<RestfulUserActivityLogFilter> {
 
     private String requestUrl;
     private String requestMethod;
@@ -25,23 +24,19 @@ public class RestfulUserActivityLogSearchParams extends UserActivityLogSearchPar
     }
 
     @Override
-    public void storeParams(UserActivityLogFilterBase filter) {
-        RestfulUserActivityLogFilter restfulFilter = (RestfulUserActivityLogFilter) filter;
-
+    public void storeParams(RestfulUserActivityLogFilter filter) {
         super.storeParams(filter);
-        this.requestUrl = restfulFilter.getRequestUrl();
-        this.requestMethod = restfulFilter.getRequestMethod();
-        this.description = restfulFilter.getDescription();
+        this.requestUrl = filter.getRequestUrl();
+        this.requestMethod = filter.getRequestMethod();
+        this.description = filter.getDescription();
     }
 
     @Override
-    public void restoreParams(UserActivityLogFilterBase filter) {
-        RestfulUserActivityLogFilter restfulFilter = (RestfulUserActivityLogFilter) filter;
-
+    public void restoreParams(RestfulUserActivityLogFilter filter) {
         super.restoreParams(filter);
-        restfulFilter.setRequestUrl(this.requestUrl);
-        restfulFilter.setRequestMethod(this.requestMethod);
-        restfulFilter.setDescription(this.description);
+        filter.setRequestUrl(this.requestUrl);
+        filter.setRequestMethod(this.requestMethod);
+        filter.setDescription(this.description);
     }
 
 }

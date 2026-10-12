@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,15 +12,26 @@ package com.agnitas.emm.core.mailinglist.mapper;
 
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.impl.MailinglistImpl;
+import com.agnitas.emm.core.mailinglist.dto.CreateMailinglistDTO;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface MailinglistMapper {
 
-    MailinglistForm toForm(Mailinglist target);
-    MailinglistDto toDto(MailinglistForm target);
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    @Mapping(source = "name", target = "shortname")
+    MailinglistDto toDto(CreateMailinglistDTO target);
+
+    @Mapping(target = "targetId", ignore = true)
+    @Mapping(target = "mediatypes", ignore = true)
+    MailinglistDto toDto(Mailinglist mailinglist);
+
+    @Mapping(target = "restrictedForSomeAdmins", ignore = true)
+    @Mapping(target = "removed", ignore = true)
+    @Mapping(target = "companyID", ignore = true)
     MailinglistImpl toEntity(MailinglistDto dtp);
 }

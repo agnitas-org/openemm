@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -32,7 +32,7 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -159,23 +159,23 @@ public class TopDomainReportDataSet extends TopDomainsDataSet {
 		boolean targetsAvailable = CollectionUtils.isNotEmpty(targets);
 		List<Tuple<Integer, String>> categories = new ArrayList<>();
 
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENT_MAILS, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENT_MAILS, figuresOptions)) {
 			categories.add(new Tuple<>(CATEGORY_SENT_EMAILS, CATEGORY_NAME_SENT_EMAILS));
 		}
 
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.HARDBOUNCES, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.HARDBOUNCES, figuresOptions)) {
 			categories.add(new Tuple<>(CATEGORY_HARDBOUNCES, CATEGORY_NAME_HARDBOUNCES));
 		}
 
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SOFTBOUNCES, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SOFTBOUNCES, figuresOptions)) {
 			categories.add(new Tuple<>(CATEGORY_SOFTBOUNCES, CATEGORY_NAME_SOFTBOUNCES));
 		}
 
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS, figuresOptions)) {
 			categories.add(new Tuple<>(CATEGORY_OPENERS, CATEGORY_NAME_OPENERS));
 		}
 
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL, figuresOptions)) {
 			categories.add(new Tuple<>(CATEGORY_CLICKERS, CATEGORY_NAME_CLICKERS));
 		}
 
@@ -240,23 +240,23 @@ public class TopDomainReportDataSet extends TopDomainsDataSet {
 								 int mlId, String mlName, List<Integer> mailingIds, List<LightTarget> targets,
 								 String language, int domainsMax, boolean topLevelDomains, String figuresOptions) {
     	
-    	if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENT_MAILS, figuresOptions)) {
+    	if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENT_MAILS, figuresOptions)) {
 			insertSentStatIntoTempTable(tempTableID, companyID, mlId, mlName, mailingIds, targets, language, domainsMax, topLevelDomains);
 		}
 		
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.HARDBOUNCES, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.HARDBOUNCES, figuresOptions)) {
 			insertHardBouncesIntoTempTable(tempTableID, companyID, mlId, mlName, mailingIds, targets, language, domainsMax, topLevelDomains);
 		}
 		
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SOFTBOUNCES, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SOFTBOUNCES, figuresOptions)) {
 			insertSoftBouncesIntoTempTable(tempTableID, companyID, mlId, mlName, mailingIds, targets, language, domainsMax, topLevelDomains);
 		}
 		
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS, figuresOptions)) {
 			insertOpenersIntoTempTable(tempTableID, companyID, mlId, mlName, mailingIds, targets, language, domainsMax, topLevelDomains);
 		}
 
-		if (BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL, figuresOptions)) {
+		if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL, figuresOptions)) {
             insertClickersIntoTempTable(tempTableID, companyID, mlId, mlName, mailingIds, targets, language, domainsMax, topLevelDomains);
 		}
 

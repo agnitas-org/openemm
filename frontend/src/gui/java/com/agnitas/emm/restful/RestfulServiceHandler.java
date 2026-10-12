@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -17,20 +17,19 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.function.Function;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
+import com.agnitas.messages.Message;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;
 import com.agnitas.util.Tuple;
-import org.apache.commons.lang3.StringUtils;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
-
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 public interface RestfulServiceHandler {
 	ResponseType getResponseType();
@@ -128,6 +127,10 @@ public interface RestfulServiceHandler {
 		}
 
 		return Tuple.of(page, size);
+	}
+
+	default String resolveMessage(Message message, Admin admin) {
+		return message.resolve(admin.getLocale());
 	}
 
 	default boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String parameter, HttpServletRequest request) {

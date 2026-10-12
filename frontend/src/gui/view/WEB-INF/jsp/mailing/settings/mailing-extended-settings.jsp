@@ -4,7 +4,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isTabsView" type="java.lang.Boolean"--%>
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 <%--@elvariable id="showDynamicTemplateToggle" type="java.lang.Boolean"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
 <%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>

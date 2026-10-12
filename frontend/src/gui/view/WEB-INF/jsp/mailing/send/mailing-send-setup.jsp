@@ -7,6 +7,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="templateId" type="java.lang.Integer"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
 <%--@elvariable id="approvePossible" type="java.lang.Boolean"--%>
@@ -69,16 +70,17 @@
         </c:choose>
 
         <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
-            <c:set target="${agnNavConditionsParams}" property="isActiveMailing" value="${form.worldMailingSend}" />
-            <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled" value="${mailinglistDisabled}" />
-            <c:set target="${agnNavConditionsParams}" property="isPostMailing" value="${not empty isPostMailing and isPostMailing}" />
+            <c:set target="${agnNavConditionsParams}" property="isActiveMailing"        value="${form.worldMailingSend}" />
+            <c:set target="${agnNavConditionsParams}" property="mailinglistDisabled"    value="${mailinglistDisabled}" />
+            <c:set target="${agnNavConditionsParams}" property="isPostMailing"          value="${not empty isPostMailing and isPostMailing}" />
+            <c:set target="${agnNavConditionsParams}" property="isStandaloneSmsMailing" value="${not empty isStandaloneSmsMailing and isStandaloneSmsMailing}" />
         </emm:instantiate>
 
-        <c:set var="agnTitleKey" 		     value="Mailing" 	            scope="request" />
-        <c:set var="agnHighlightKey" 	     value="Send_Mailing"           scope="request" />
-        <c:set var="sidemenu_sub_active"     value="default.Overview" 		scope="request" />
-        <c:set var="agnHelpKey" 		     value="mailingsCheck"          scope="request" />
-        <c:url var="agnBreadcrumbsRootUrl"   value="/mailing/list.action"   scope="request" />
+        <c:set var="agnTitleKey" 		   value="Mailing"              scope="request" />
+        <c:set var="agnHighlightKey" 	   value="mailing.Delivery"     scope="request" />
+        <c:set var="sidemenu_sub_active"   value="default.Overview"     scope="request" />
+        <c:set var="agnHelpKey" 		   value="mailingsCheck"        scope="request" />
+        <c:url var="agnBreadcrumbsRootUrl" value="/mailing/list.action" scope="request" />
     </c:otherwise>
 </c:choose>
 

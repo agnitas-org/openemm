@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,6 +12,7 @@ package com.agnitas.emm.core.autoexport.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
@@ -53,6 +54,10 @@ public interface AutoExportService {
 
     AutoExport getAutoExport(int autoExportId, int companyId);
 
+    Optional<AutoExport> findById(int autoExportId, int companyId);
+
+    AutoExport getById(int autoExportId, int companyId);
+
     List<ExportPredef> getExportProfiles(Admin admin);
 
     List<CsvImportExportDescription> getCsvImportExportDescriptions(int companyId, String tableName);
@@ -86,6 +91,12 @@ public interface AutoExportService {
     boolean isManageAllowed(AutoExport autoExport, Admin admin);
 
     boolean hasPermissionForType(AutoExport.AutoExportType type, Admin admin);
+
+    void activate(int autoExportId, Admin admin);
+
+    void deactivate(int autoExportId, Admin admin);
+
+    void execute(int autoExportId, Admin admin);
 
     ServiceResult<List<AutoExport>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
 

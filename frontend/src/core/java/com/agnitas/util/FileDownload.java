@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -22,6 +22,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.Timeout;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,6 +92,26 @@ public final class FileDownload {
 	}
 	
 	/**
+	 * Downloads content from given URL and returns it as a byte array.
+	 *
+	 * @param url URL to download from
+	 * @return downloaded content as byte array
+	 * @throws IOException if the download fails or the server returns a non-200 status
+	 */
+	public static byte[] downloadAsBytes(String url) throws IOException {
+		try (CloseableHttpClient client = createHttpClientForDownload(url)) {
+			return client.execute(new HttpGet(url), response -> {
+				int statusCode = response.getCode();
+				if (statusCode != HttpStatus.SC_OK) {
+					LOGGER.warn("Downloading from url '{}' returned HTTP status {} ({})", url, statusCode, response.getReasonPhrase());
+					throw new IOException("URL returned HTTP " + statusCode);
+				}
+				return EntityUtils.toByteArray(response.getEntity());
+			});
+		}
+	}
+
+	/**
 	 * Creates the HTTP client to download from given URL.
 	 * 
 	 * @param url URL to download from
@@ -116,7 +137,7 @@ public final class FileDownload {
 	private static RequestConfig createRequestConfig(String url) {
 		final RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 		NetworkUtil.setHttpClientProxyFromSystem(requestConfigBuilder, url);
-		requestConfigBuilder.setResponseTimeout(Timeout.ofMinutes(120));
+		requestConfigBuilder.setResponseTimeout(Timeout.ofMinutes(10));
 		return requestConfigBuilder.build();
 	}
 }

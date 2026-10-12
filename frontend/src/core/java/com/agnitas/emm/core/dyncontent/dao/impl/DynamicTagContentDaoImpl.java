@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.DynamicTag;
@@ -32,6 +33,7 @@ import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.SpecialCharactersWorker;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -294,11 +296,13 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
     }
 
 	@Override
-    @DaoUpdateReturnValueCheck
-    public boolean deleteContentFromMailing(final int companyId, final int mailingId, final int contentId) {
-        final int affectedRows = update("DELETE FROM dyn_content_tbl WHERE dyn_content_id = ? AND mailing_id = ? AND company_id = ?", contentId, mailingId, companyId);
-        return affectedRows > 0;
-    }
+	public int deleteContentOfDynNameExcept(int companyId, int mailingId, int dynNameId, Set<Integer> contentIdsToKeep) {
+		String query = "DELETE FROM dyn_content_tbl WHERE dyn_name_id = ? AND mailing_id = ? AND company_id = ?";
+		if (CollectionUtils.isNotEmpty(contentIdsToKeep)) {
+			query += " AND NOT (" + makeBulkInClauseForInteger("dyn_content_id", contentIdsToKeep) + ")";
+		}
+		return update(query, dynNameId, mailingId, companyId);
+	}
 
 	@Override
 	public List<Integer> findTargetDependentMailingsContents(int targetGroupId, int companyId) {

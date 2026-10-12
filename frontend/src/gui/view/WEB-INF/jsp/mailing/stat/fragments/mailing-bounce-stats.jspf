@@ -3,7 +3,7 @@
 <script id="config:mailing-bounce-stats" type="application/json">
     {
         "mailingId": ${mailingId},
-        "isMailtrackingActive": "${isMailtrackingActive}"
+        "isMailtrackingActive": ${isMailtrackingActive}
     }
 </script>
 

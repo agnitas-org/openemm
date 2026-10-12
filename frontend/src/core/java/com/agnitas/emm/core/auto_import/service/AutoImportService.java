@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,6 +13,7 @@ package com.agnitas.emm.core.auto_import.service;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
@@ -41,6 +42,10 @@ public interface AutoImportService {
 
     AutoImport getAutoImport(int autoImportId, int companyId);
 
+    Optional<AutoImport> findById(int autoImportId, int companyId);
+
+    AutoImport getById(int autoImportId, int companyId);
+
     List<Workflow> getDependentWorkflows(int autoImportId, int companyId, boolean exceptInactive);
 
     int getWorkflowId(int autoImportId, int companyId);
@@ -50,6 +55,10 @@ public interface AutoImportService {
     List<AutoImportLight> getListOfAutoImportsForWorkflow(int workflowId, int companyId);
 
     List<AutoImport> getAutoImportsToRun(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
+
+    void activate(int autoImportId, int companyId);
+
+    void deactivate(int autoImportId, int companyId);
 
     AutoImportResult doImportRecipientData(AutoImport autoImport, Locale locale) throws Exception;
 
@@ -100,4 +109,6 @@ public interface AutoImportService {
     ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
 
     ServiceResult<List<AutoImport>> changeActiveness(Set<Integer> ids, int companyID, boolean activeness);
+
+    void execute(int id, int companyI);
 }

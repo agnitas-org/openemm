@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -43,8 +43,9 @@ public interface WebStorage {
     WebStorageBundle<SortingWebStorageEntry> MAILING_ATTACHMENTS_OVERVIEW = WebStorageBundle.define("mailing-attachments-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> USERLOG_OVERVIEW = WebStorageBundle.define("useractivitylog-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> RESTFUL_USERLOG_OVERVIEW = WebStorageBundle.define("restful-useractivitylog-overview", SortingWebStorageEntry.class);
+    WebStorageBundle<SortingWebStorageEntry> MCP_USERLOG_OVERVIEW = WebStorageBundle.define("mcp-useractivitylog-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> SOAP_USERLOG_OVERVIEW = WebStorageBundle.define("soap-useractivitylog-overview", SortingWebStorageEntry.class);
-    WebStorageBundle<SortingWebStorageEntry> ADMIN_OVERVIEW = WebStorageBundle.define("admin-overview", SortingWebStorageEntry.class);
+    WebStorageBundle<RowsCountAndSelectedFieldsWebStorageEntry> ADMIN_OVERVIEW = WebStorageBundle.define("admin-overview", RowsCountAndSelectedFieldsWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> USER_GROUP_OVERVIEW = WebStorageBundle.define("user-group-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> IMPORT_WIZARD_ERRORS_OVERVIEW = WebStorageBundle.define("import-wizard-errors-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> TARGET_DEPENDENTS_OVERVIEW = WebStorageBundle.define("target-dependents-overview", SortingWebStorageEntry.class);

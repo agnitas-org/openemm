@@ -10,7 +10,7 @@
 <%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
 <%--@elvariable id="showDynamicTemplateToggle" type="java.lang.Boolean"--%>
 <%--@elvariable id="mediatypes" type="com.agnitas.emm.core.mediatypes.common.MediaTypes"--%>
-<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
+<%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.settings.MailingSettingsForm"--%>
 
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>

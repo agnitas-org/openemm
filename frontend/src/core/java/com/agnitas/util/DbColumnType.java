@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -16,6 +16,7 @@ public class DbColumnType {
 
 	public static final String GENERIC_TYPE_INTEGER = "INTEGER";
 	public static final String GENERIC_TYPE_FLOAT = "FLOAT";
+	public static final String GENERIC_TYPE_NUMBER = "NUMBER";
 	public static final String GENERIC_TYPE_DOUBLE = "DOUBLE";
 	public static final String GENERIC_TYPE_VARCHAR = "VARCHAR";
 	public static final String GENERIC_TYPE_VARCHAR2 = "VARCHAR2";
@@ -23,6 +24,7 @@ public class DbColumnType {
 	public static final String GENERIC_TYPE_DATETIME = "DATETIME";
 	public static final String GENERIC_TYPE_BLOB = "BLOB";
 	public static final String GENERIC_TYPE_TIMESTAMP = "TIMESTAMP";
+	public static final String GENERIC_TYPE_TIMESTAMPTZ = "TIMESTAMPTZ";
 
 	private final String typeName;
 	private final long characterLength; // only for VARCHAR and VARCHAR2 types
@@ -101,15 +103,15 @@ public class DbColumnType {
 	}
 	
 	public static SimpleDataType getSimpleDataType(String typeName, int scale) {
-		if (typeName.toUpperCase().startsWith("VARCHAR") || typeName.toUpperCase().startsWith("CHAR") || typeName.equalsIgnoreCase("CLOB") || typeName.toUpperCase().contains("TEXT")) {
+		if (typeName.toUpperCase().startsWith(GENERIC_TYPE_VARCHAR) || typeName.toUpperCase().startsWith("CHAR") || typeName.equalsIgnoreCase("CLOB") || typeName.toUpperCase().contains("TEXT")) {
 			return SimpleDataType.Characters;
 		} else if (typeName.toUpperCase().contains("TIME")) {
 			return SimpleDataType.DateTime;
-		} else if (typeName.toUpperCase().contains("DATE")) {
+		} else if (typeName.toUpperCase().contains(GENERIC_TYPE_DATE)) {
 			return SimpleDataType.Date;
 		} else if (typeName.equalsIgnoreCase("blob") || typeName.equalsIgnoreCase("tinyblob") || typeName.equalsIgnoreCase("mediumblob") || typeName.equalsIgnoreCase("longblob") || typeName.equalsIgnoreCase("bytea")) {
 			return SimpleDataType.Blob;
-		} else if (typeName.equalsIgnoreCase("FLOAT8") || typeName.equalsIgnoreCase("FLOAT") || typeName.equalsIgnoreCase("DOUBLE") || (typeName.equalsIgnoreCase("NUMBER") && scale != 0)) {
+		} else if (typeName.equalsIgnoreCase("FLOAT8") || typeName.equalsIgnoreCase(GENERIC_TYPE_FLOAT) || typeName.equalsIgnoreCase(GENERIC_TYPE_DOUBLE) || (typeName.equalsIgnoreCase(GENERIC_TYPE_NUMBER) && scale != 0)) {
 			return SimpleDataType.Float;
 		} else {
 			return SimpleDataType.Numeric;
@@ -124,20 +126,20 @@ public class DbColumnType {
 			return null;
 		} else if (typeName.equalsIgnoreCase("BIGINT")
 				|| typeName.equalsIgnoreCase("INT")
-				|| typeName.equalsIgnoreCase("INTEGER")
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_INTEGER)
 				|| typeName.equalsIgnoreCase("SMALLINT")
-				|| (typeName.equalsIgnoreCase("NUMBER") && scale == 0)) {
+				|| (typeName.equalsIgnoreCase(GENERIC_TYPE_NUMBER) && scale == 0)) {
 			return GENERIC_TYPE_INTEGER;
 		} else if (typeName.equalsIgnoreCase("DECIMAL")
-				|| (typeName.equalsIgnoreCase("NUMBER") && scale != 0)
-				|| typeName.equalsIgnoreCase("DOUBLE")
-				|| typeName.equalsIgnoreCase("FLOAT")
+				|| (typeName.equalsIgnoreCase(GENERIC_TYPE_NUMBER) && scale != 0)
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_DOUBLE)
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_FLOAT)
 				|| typeName.equalsIgnoreCase("NUMERIC")
 				|| typeName.equalsIgnoreCase("REAL")) {
 			return GENERIC_TYPE_FLOAT;
 		} else if (typeName.equalsIgnoreCase("CHAR")
-				|| typeName.equalsIgnoreCase("VARCHAR")
-				|| typeName.equalsIgnoreCase("VARCHAR2")
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_VARCHAR)
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_VARCHAR2)
 				|| typeName.equalsIgnoreCase("LONGVARCHAR")
 				|| typeName.equalsIgnoreCase("CLOB")
 				|| typeName.equalsIgnoreCase("TINYTEXT")
@@ -145,10 +147,11 @@ public class DbColumnType {
 				|| typeName.equalsIgnoreCase("MEDIUMTEXT")
 				|| typeName.equalsIgnoreCase("LONGTEXT")) {
 			return GENERIC_TYPE_VARCHAR;
-		} else if (typeName.equalsIgnoreCase("DATE")) {
+		} else if (typeName.equalsIgnoreCase(GENERIC_TYPE_DATE)) {
 			return GENERIC_TYPE_DATE;
-		} else if (typeName.equalsIgnoreCase("DATETIME")
-				|| typeName.equalsIgnoreCase("TIMESTAMP")
+		} else if (typeName.equalsIgnoreCase(GENERIC_TYPE_DATETIME)
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_TIMESTAMP)
+				|| typeName.equalsIgnoreCase(GENERIC_TYPE_TIMESTAMPTZ)
 				|| typeName.equalsIgnoreCase("TIME")) {
 			return GENERIC_TYPE_DATETIME;
 		} else if (typeName.equalsIgnoreCase("BLOB")
@@ -170,20 +173,14 @@ public class DbColumnType {
 		}
 		
 		beanTypeString = beanTypeString.toUpperCase();
-			
-		switch (beanTypeString) {
-			case GENERIC_TYPE_INTEGER:
-				return "NUMBER";
-			case GENERIC_TYPE_FLOAT:
-				return "DOUBLE";
-			case GENERIC_TYPE_VARCHAR:
-				return "VARCHAR";
-			case GENERIC_TYPE_DATE:
-				return "DATE";
-			case GENERIC_TYPE_DATETIME:
-				return "TIMESTAMP";
-			default:
-				throw new IllegalArgumentException("Invalid dbtype:" + beanTypeString);
-		}
+
+        return switch (beanTypeString) {
+            case GENERIC_TYPE_INTEGER -> GENERIC_TYPE_NUMBER;
+            case GENERIC_TYPE_FLOAT -> GENERIC_TYPE_DOUBLE;
+            case GENERIC_TYPE_VARCHAR -> GENERIC_TYPE_VARCHAR;
+            case GENERIC_TYPE_DATE -> GENERIC_TYPE_DATE;
+            case GENERIC_TYPE_DATETIME -> GENERIC_TYPE_TIMESTAMP;
+            default -> throw new IllegalArgumentException("Invalid dbtype:" + beanTypeString);
+        };
 	}
 }

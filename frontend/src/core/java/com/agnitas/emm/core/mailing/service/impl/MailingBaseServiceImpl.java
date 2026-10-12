@@ -1,19 +1,20 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.mailing.service.impl;
 
+import static java.util.Collections.emptyList;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Deque;
@@ -82,7 +83,6 @@ import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DynTagException;
 import com.agnitas.util.SafeString;
 import com.agnitas.util.Span;
-import com.agnitas.web.mvc.Popups;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -97,15 +97,15 @@ public class MailingBaseServiceImpl implements MailingBaseService {
 
     private static final Logger logger = LogManager.getLogger(MailingBaseServiceImpl.class);
 
+    protected RecipientDao recipientDao;
+    protected TargetService targetService;
     private MailingBaseService selfReference;
     private MailingDao mailingDao;
     private GridServiceWrapper gridServiceWrapper;
-    protected RecipientDao recipientDao;
     private UndoMailingDao undoMailingDao;
     private UndoMailingComponentDao undoMailingComponentDao;
     private UndoDynContentDao undoDynContentDao;
     private DynamicTagDao dynamicTagDao;
-    protected TargetService targetService;
     private MaildropService maildropService;
     private AgnTagService agnTagService;
     private MailingComponentsService mailingComponentsService;
@@ -334,7 +334,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     @Override
     public List<String> getDynamicTagNames(Mailing mailing) {
         if (mailing == null || mailing.getHtmlTemplate() == null) {
-            return Collections.emptyList();
+            return emptyList();
         }
 
         try {
@@ -345,7 +345,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
             logger.error("Error occurred: {}", e.getMessage(), e);
         }
 
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override
@@ -490,11 +490,11 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     }
 
     @Override
-    public void doTextTemplateFilling(Mailing mailing, Admin admin, Popups popups) {
+    public List<Message> doTextTemplateFilling(Mailing mailing, Admin admin) {
         MailingComponent componentTextTemplate = mailing.getTextTemplate();
         if (Objects.isNull(componentTextTemplate)) {
             logger.error("Text template is absent. mailingId: {}", mailing.getId());
-            return;
+            return emptyList();
         }
 
         // text template substitution in case of template completely empty
@@ -503,14 +503,12 @@ public class MailingBaseServiceImpl implements MailingBaseService {
 
         if (StringUtils.isBlank(textTemplate)) {
             componentTextTemplate.setEmmBlock(defaultTextContent, "text/plain");
-            popups.warning("mailing.textversion.empty");
-
-            return;
+            return List.of(Message.of("mailing.textversion.empty"));
         }
 
         // checks if template contains some text except agn tags
         if (agnTagService.isContainsThirdPartyText(textTemplate)) {
-            return;
+            return emptyList();
         }
 
         // retrieves agn tags from template text
@@ -518,11 +516,11 @@ public class MailingBaseServiceImpl implements MailingBaseService {
         try {
             textTemplateDynTags = agnTagService.getDynTags(textTemplate);
             if (textTemplateDynTags.isEmpty()) {
-                return;
+                return emptyList();
             }
         } catch (DynTagException e) {
             logger.error("Error during retrieving dyn tags form text template. name: {}", textTemplate);
-            return;
+            return emptyList();
         }
 
         // checks if text template contains at least one filled agn tag content
@@ -538,20 +536,20 @@ public class MailingBaseServiceImpl implements MailingBaseService {
                         mailing.getId(),
                         tagId);
                 if (isContentValueNotEmpty) {
-                    return;
+                    return emptyList();
                 }
             } else {
                 if (isTextTagContainsFilledTextBlockForAllRecipients(textTag)) {
-                    return;
+                    return emptyList();
                 }
             }
 
             if (!dynamicTags.hasNext()) {
                 addDefaultTextVersionToTextDynTag(textTag, defaultTextContent, admin.getCompanyID());
-                popups.warning("mailing.textversion.empty");
-                return;
+                return List.of(Message.of("mailing.textversion.empty"));
             }
         }
+        return emptyList();
     }
 
     private void addDefaultTextVersionToTextDynTag(DynamicTag textTag, String defaultTextContent, int companyId) {
@@ -704,7 +702,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
             return agnTagService.getDynTags(content);
         } catch (DynTagException e) {
             logger.error("Error occurred: {}", e.getMessage(), e);
-            return Collections.emptyList();
+            return emptyList();
         }
     }
 
@@ -794,7 +792,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
         }
 
         if (mailingLists == null) {
-            mailingLists = Collections.emptyList();
+            mailingLists = emptyList();
         }
 
         return mailingLists;
@@ -847,7 +845,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
                     errors.add(Message.of("error.mailing.no_html_version"));
                 }
 
-                return new SimpleServiceResult(errors.isEmpty(), Collections.emptyList(), warnings, errors);
+                return new SimpleServiceResult(errors.isEmpty(), emptyList(), warnings, errors);
             }
         } else {
             // Check if no media type is selected at all.
@@ -934,18 +932,21 @@ public class MailingBaseServiceImpl implements MailingBaseService {
 	}
 
     @Override
-    public String getThumbnailUrl(Mailing mailing) {
-        if (mailing.isOnlyPostType()) {
-            return "/assets/core/images/facelift/post_thumbnail.jpg";
-        }
-        int componentId = mailingComponentsService.getImageComponent(mailing.getId(), mailing.getCompanyID(), MailingComponentType.ThumbnailImage);
-        if (componentId > 0) {
-            return "/sc?compID=%d&cacheKiller=%d".formatted(componentId, System.currentTimeMillis());
-        }
-        return "/assets/core/images/facelift/no_preview.svg";
+    public boolean isStandaloneSmsMailing(int mailingId, int companyId) {
+        return mailingService.isStandaloneSmsMailing(mailingId, companyId);
     }
 
-	public final void setMailingService(final MailingService mailingService) {
+    @Override
+    public boolean isStandaloneSmsMailing(Mailing mailing) {
+        return mailingService.isStandaloneSmsMailing(mailing);
+    }
+
+    @Override
+    public String getThumbnailDataUri(Mailing mailing) {
+        return mailingService.getThumbnailDataUri(mailing);
+    }
+
+	public void setMailingService(MailingService mailingService) {
 		this.mailingService = Objects.requireNonNull(mailingService, "mailing service");
 	}
 

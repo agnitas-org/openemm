@@ -340,9 +340,9 @@ AGN.Lib.Controller.new('workflow-view', function() {
     };
 
     baseMailingEditorBase.getMailingsByWorkStatus = function (status, sort, order, selectedMailValue) {
-      var mailingEditorBase = this;
-      var $mailingsList = $(this.formNameJId + ' ' + this.selectNameJId);
-      var previousMailingIds = _.uniq(this.findPreviousMailingIds()).toString();
+      const mailingEditorBase = this;
+      const $mailingsList = $(this.formNameJId + ' ' + this.selectNameJId);
+      const previousMailingIds = _.uniq(this.findPreviousMailingIds()).toString();
       $mailingsList.attr('readonly', 'readonly');
 
       $.ajax({
@@ -359,23 +359,21 @@ AGN.Lib.Controller.new('workflow-view', function() {
           mailingsInCampaign: previousMailingIds
         },
         success: function (data) {
-          //populate the drop-down list with mailings
+          // populate the drop-down list with mailings
           $mailingsList.html('');
-          $mailingsList.append('<option value="0">' + t('workflow.defaults.no_mailing') + '</option>');
-          for (var i = 0; i < data.length; i++) {
-            var obj = data[i];
-            var mailingFontColor = '';
-            var selected = '';
+          $mailingsList.append(`<option value="0">${t('workflow.defaults.no_mailing')}</option>`);
+          for (let i = 0; i < data.length; i++) {
+            const obj = data[i];
+            const selected = selectedMailValue == obj.MAILING_ID ? 'selected' : '';
+            const badgeClass = ['mailing.status.sent', 'mailing.status.norecipients'].includes(obj.WORK_STATUS)
+              ? obj.WORK_STATUS
+              : '';
 
-            if (obj.WORK_STATUS == 'mailing.status.sent' || obj.WORK_STATUS == 'mailing.status.norecipients') {
-              mailingFontColor = 'style=\'color: #808080;\'';
-            }
-
-            if (selectedMailValue == obj.MAILING_ID) {
-              selected = 'selected';
-            }
-
-            $mailingsList.append('<option ' + mailingFontColor + ' value=\'' + obj.MAILING_ID + '\' status=\'' + obj.WORK_STATUS + '\' senddate=\'' + obj.SENDDATE + '\' ' + selected + '>' + obj.SHORTNAME + '</option>');
+            $mailingsList.append(`
+                <option data-badge-class="${badgeClass}" value="${obj.MAILING_ID}" status="${obj.WORK_STATUS}" senddate="${obj.SENDDATE}" ${selected}>
+                  ${obj.SHORTNAME}
+                </option>
+            `);
           }
           $mailingsList.removeAttr('readonly');
           mailingEditorBase.mailingsStatus = status;

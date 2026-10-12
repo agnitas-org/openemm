@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -31,6 +31,8 @@ import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.dto.CreateTargetCommand;
+import com.agnitas.emm.core.target.dto.PatchTargetCommand;
 import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
@@ -58,6 +60,10 @@ public interface TargetService {
 
 	int saveTarget(Admin admin, Target newTarget, Target target, List<Message> errors, UserActivityLog userActivityLog) throws TargetGroupPersistenceException;
 
+    Target create(CreateTargetCommand command);
+
+	void patch(PatchTargetCommand command);
+
 	int saveTarget(Target target) throws TargetGroupPersistenceException;
 
     SimpleServiceResult canBeDeleted(int targetId, Admin admin);
@@ -84,6 +90,8 @@ public interface TargetService {
 	
 	@Deprecated // Use getTargetGroup(int, int) and Target.getTargetSQL() instead
 	String getTargetSQL(int targetId, int companyId, boolean isPositive);
+
+	String getTargetSqlOrEmpty(int targetId, int companyId);
 
 	String getMailingSqlTargetExpression(int mailingId, int companyId, boolean appendListSplit);
 
@@ -121,7 +129,7 @@ public interface TargetService {
 
 	boolean unlockTargetGroup(int companyId, int targetId);
 
-	boolean deleteRecipients(int targetId, int companyId);
+	int deleteRecipients(int targetId, int companyId);
 
 	String getTargetName(int targetId, int companyId, Locale locale);
 
@@ -235,6 +243,8 @@ public interface TargetService {
 
 	void addSplitTargetModelAttrs(Model model, int companyId, int splitId, String splitBase, String splitPart);
 
+    String getTargetSqlCombinedWithOr(Collection<Integer> targetIds, int companyId);
+
 	List<TargetLight> getTargetLights(int fromCompanyID);
 
 	int getAccessLimitingTargetgroupsAmount(int companyId);
@@ -254,6 +264,8 @@ public interface TargetService {
 	void removeMarkedAsDeletedBefore(Date date, int companyID);
 
 	SimpleServiceResult checkMaxCountOfALTG(int count, int currentCount, int companyId);
+
+    Set<Integer> getAltgIds(Admin admin);
 
     Target getTargetByName(String targetName, int companyId);
 

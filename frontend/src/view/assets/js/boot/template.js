@@ -2,8 +2,9 @@ AGN.Opt.Templates['select2-result'] = '<span>{{- title ? title : text }}</span>'
 
 AGN.Opt.Templates['select2-badge-option'] = `
 <div class="d-flex align-items-center gap-1">
-    {{ if (value) { }}
-        <span class="status-badge {{- element.getAttribute('data-badge-class')}}"></span>
+    {{ let badgeClass = element.getAttribute('data-badge-class') ?? $(element).data('badge-class'); }}
+    {{ if (value && badgeClass) { }}
+        <span class="status-badge {{- badgeClass }}"></span>
     {{ } }}
     <span>{{- text }}</span>
 </div>

@@ -1,14 +1,16 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.service.impl;
+
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,21 +44,26 @@ import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.factory.DynamicTagContentFactory;
 import com.agnitas.beans.factory.DynamicTagFactory;
 import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.dao.EmmActionDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.dto.PatchMailingContentCommand;
+import com.agnitas.emm.core.mailingcontent.exception.MailingContentNotFoundException;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.validator.DynTagValidationField;
+import com.agnitas.emm.core.validator.ValidationException;
+import com.agnitas.emm.core.validator.ValidationField;
 import com.agnitas.exception.BadRequestException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
@@ -71,6 +78,7 @@ import com.agnitas.util.DynTagException;
 import com.agnitas.util.Tag;
 import com.agnitas.util.Tag.TagType;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.perm.NotAllowedActionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -100,7 +108,6 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
     private final MailingBaseService mailingBaseService;
     private final AgnTagService agnTagService;
     private final DynamicTagDao dynamicTagDao;
-    private final EmmActionDao actionDao;
     private final LinkService linkService;
     private final DynTagChainValidator dynTagChainValidator;
     private final ExtendedConversionService extendedConversionService;
@@ -108,21 +115,20 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
     private final AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory;
 
     public MailingContentServiceImpl(
-        ExtendedDefaultConversionService conversionService,
-        DynamicTagContentFactory dynamicTagContentFactory,
-        DynamicTagFactory dynamicTagFactory,
-        MailingBaseService mailingBaseService,
-        AgnTagService agnTagService,
-        DynamicTagDao dynamicTagDao,
-        MailingDao mailingDao,
-        EmmActionDao actionDao,
-        LinkService linkService,
-        MailingService mailingService,
-        UserActivityLogService userActivityLogService,
-        DynTagChainValidator dynTagChainValidator,
-        ExtendedConversionService extendedConversionService,
-        TargetService targetService,
-        AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory
+            ExtendedDefaultConversionService conversionService,
+            DynamicTagContentFactory dynamicTagContentFactory,
+            DynamicTagFactory dynamicTagFactory,
+            MailingBaseService mailingBaseService,
+            AgnTagService agnTagService,
+            DynamicTagDao dynamicTagDao,
+            MailingDao mailingDao,
+            LinkService linkService,
+            MailingService mailingService,
+            UserActivityLogService userActivityLogService,
+            DynTagChainValidator dynTagChainValidator,
+            ExtendedConversionService extendedConversionService,
+            TargetService targetService,
+            AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory
     ) {
         this.conversionService = conversionService;
 		this.dynamicTagContentFactory = dynamicTagContentFactory;
@@ -131,7 +137,6 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
 		this.agnTagService = agnTagService;
 		this.dynamicTagDao = dynamicTagDao;
         this.mailingDao = mailingDao;
-        this.actionDao = actionDao;
         this.linkService = linkService;
         this.mailingService = mailingService;
         this.userActivityLogService = userActivityLogService;
@@ -269,6 +274,25 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         trySaveDynTags(mailing, dynTags, admin, popups);
     }
 
+    private static void fillDynContentWithNewIds(List<DynTagDto> dynTags, Mailing mailing) {
+        Map<Integer, DynamicTag> savedTagsMap = mailing.getDynTags().values().stream()
+                .collect(Collectors.toMap(DynamicTag::getId, tag -> tag));
+        for (DynTagDto dynTag : dynTags) {
+            DynamicTag savedTag = savedTagsMap.get(dynTag.getId());
+            if (savedTag == null || dynTag.getContentBlocks() == null || savedTag.getDynContent() == null) {
+                continue;
+            }
+            Map<Integer, DynamicTagContent> savedContentsByTargetId = savedTag.getDynContent().values().stream()
+                    .collect(Collectors.toMap(DynamicTagContent::getTargetID, content -> content));
+            for (DynContentDto targetContent : dynTag.getContentBlocks()) {
+                DynamicTagContent savedContent = savedContentsByTargetId.get(targetContent.getTargetId());
+                if (savedContent != null && targetContent.getId() <= 0) {
+                    targetContent.setId(savedContent.getId());
+                }
+            }
+        }
+    }
+
     private void validateDynTags(List<DynTagDto> dynTags, int companyId) {
         for (DynTagDto dynTag : dynTags) {
             if (containsNotAvailableTargets(dynTag, companyId)) {
@@ -323,11 +347,13 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.EDIT, null);
         mailingService.removeApproval(mailing.getId(), admin);
         userActions.forEach(ua -> userActivityLogService.writeUserActivityLog(admin, ua));
+        fillDynContentWithNewIds(dynTags, mailing);
         logger.info("Content of mailing (id = {}, name = {}) was changed", mailing.getId(), mailing.getShortname());
     }
 
     private List<UserAction> updateMailingDynTags(Mailing mailing, List<DynTagDto> dynTags,
                                                   Admin admin, Popups popups) throws DynTagException {
+        dynTags.forEach(dynTag -> dynTag.setMailingId(mailing.getId()));
         if (!dynTags.stream().allMatch(dynTag -> dynTagChainValidator.validate(dynTag, popups, admin))) {
             return Collections.emptyList();
         }
@@ -344,7 +370,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         mailing.buildDependencies(true, dynNamesForDeletion, applicationContext, null, errors, admin.getLocale());
         isValidChangedLinks(oldLinks, mailing.getTrackableLinks().values(), errors);
         if (Mediatype.isActive(mailing.getEmailParam())) {
-            mailingBaseService.doTextTemplateFilling(mailing, admin, popups);
+            mailingBaseService.doTextTemplateFilling(mailing, admin).forEach(popups::warning);
         }
 
         if (!popups.hasAlertPopups()) {
@@ -399,7 +425,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
 	}
 
 	@Override
-	public final List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(final Target target) {
+	public List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(Target target) {
 		return this.dynamicTagDao.listContentBlocksUsingTargetGroup(target.getId(), target.getCompanyID());
 	}
 
@@ -809,4 +835,120 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
     private List<String> getAgnTags(String content, int companyId) {
         return agnTagService.getDynTagsNames(content, agnDynTagGroupResolverFactory.create(companyId, 0));
     }
- }
+
+    @Override
+    public DynamicTag getDynamicTag(int dynTagId, int mailingId, int companyId) {
+        validateMailing(mailingId, companyId);
+        DynamicTag dynTag = dynamicTagDao.getDynamicTag(dynTagId, companyId);
+        if (dynTag == null) {
+            throw new MailingContentNotFoundException(mailingId, dynTagId);
+        }
+        return dynTag;
+    }
+
+    @Override
+    public List<DynamicTag> getDynamicTags(int mailingId, int companyId) {
+        validateMailing(mailingId, companyId);
+        return dynamicTagDao.getDynamicTags(mailingId, companyId);
+    }
+
+    @Override
+    public int getIdByName(String dynTagName, int mailingId, int companyId) {
+        validateMailing(mailingId, companyId);
+        int contentId = dynamicTagDao.getId(companyId, mailingId, dynTagName);
+        if (contentId <= 0) {
+            throw new MailingContentNotFoundException(mailingId, contentId);
+        }
+        return contentId;
+    }
+
+    @Override
+    public void markDeleted(String dynName, int mailingId, int companyId) {
+        validateMailing(mailingId, companyId);
+        dynamicTagDao.markNameAsDeleted(mailingId, dynName);
+    }
+
+    @Override
+    public void markDeleted(int contentId, int mailingId, int companyId) {
+        validateMailing(mailingId, companyId);
+        String dynName = dynamicTagDao.getDynamicTagName(companyId, mailingId, contentId);
+        dynamicTagDao.markNameAsDeleted(mailingId, dynName);
+    }
+
+    @Override
+    public void updateContent(int contentId, int mailingId, PatchMailingContentCommand command, Admin admin) {
+        validateForSave(emptyIfNull(command.content().value()), mailingId, admin);
+        DynamicTag dynTag = getDynamicTag(contentId, mailingId, admin.getCompanyID());
+
+        command.disableLinkExtension().ifPresent(disable -> dynTag.setDisableLinkExtension(disable != null && disable));
+        command.content().ifPresent(contents -> dynTag.setDynContent(contents == null ? Map.of() : contents.stream()
+                .collect(Collectors.toMap(
+                        DynamicTagContent::getDynOrder,
+                        content -> content
+                ))));
+        updateDynTag(dynTag, mailingId, admin.getCompanyID());
+    }
+
+    private void updateDynTag(DynamicTag dynTag, int mailingId, int companyId) {
+        List<String> dynNamesForDeletion = new ArrayList<>();
+        Mailing mailing = mailingService.getMailing(companyId, mailingId);
+        mailing.getDynTags().put(dynTag.getDynName(), dynTag);
+        try {
+            mailing.buildDependencies(true, dynNamesForDeletion, applicationContext);
+        } catch (DynTagException e) {
+            throw ValidationException.exact("Invalid dynamic tags in mailing content");
+        }
+        if (dynNamesForDeletion.contains(dynTag.getDynName())) {
+            throw ValidationException.exact("Mailing templates has no tags named '%s' in use".formatted(dynTag.getDynName()));
+        }
+        mailingService.saveMailingWithNewContent(mailing, false, true);
+    }
+
+    private void validateForSave(List<DynamicTagContent> contents, int mailingId, Admin admin) {
+        if (mailingService.isSettingsReadonly(admin, mailingId)) {
+            throw new NotAllowedActionException();
+        }
+        List<Integer> targetIds = contents.stream()
+                .map(DynamicTagContent::getTargetID)
+                .toList();
+
+        if (targetIds.size() != new HashSet<>(targetIds).size()) {
+            throw ValidationException.invalidValue(
+                    DynTagValidationField.TARGET,
+                    "error.mailing.content.target.duplicated"
+            );
+        }
+
+        contents.stream()
+                .filter(content -> content.getTargetID() == 0)
+                .findFirst()
+                .ifPresent(defaultContent -> {
+                    int highestOrder = contents.stream()
+                            .mapToInt(DynamicTagContent::getDynOrder)
+                            .max()
+                            .orElseThrow();
+                    if (defaultContent.getDynOrder() != highestOrder) {
+                        throw ValidationException.exact(
+                                DynTagValidationField.TARGET,
+                                "'All recipients' target (id = 0) should have the highest order value"
+                        );
+                    }
+                });
+
+        Map<ValidationField, String> notExistingTargets = targetIds.stream()
+                .filter(targetId -> targetId != 0 && !targetService.exist(targetId, admin.getCompanyID()))
+                .collect(Collectors.toMap(
+                        e -> DynTagValidationField.TARGET,
+                        "Invalid not existing 'targetId': %d"::formatted)
+                );
+        if (!notExistingTargets.isEmpty()) {
+            throw ValidationException.exact(notExistingTargets);
+        }
+    }
+
+    private void validateMailing(int mailingId, int companyId) {
+        if (!mailingService.exists(mailingId, companyId)) {
+            throw new MailingNotExistException(companyId, mailingId);
+        }
+    }
+}

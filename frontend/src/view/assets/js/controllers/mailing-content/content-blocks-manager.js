@@ -132,9 +132,11 @@
       const data = JSON.stringify(this.#collectDynTagsToSave());
       $
         .post({url: AGN.url(this.saveUrl), contentType: 'application/json', data})
-        .done(popups => {
-          AGN.Lib.JsonMessages(popups, true);
-          Form.get($('#preview-form')).submit(); // update mailing preview
+        .done(res => {
+          AGN.Lib.JsonMessages(res.popups, true);
+          this.editor.updateMailingPreview();
+          this.setCreatedContentIds(res.data);
+          this.editor.aiEditor.toggleSaveAiSettingsBtn();
           this.markAsClean();
         });
     }
@@ -147,6 +149,27 @@
         }
       }));
       return dynTagsToSave;
+    }
+
+    setCreatedContentIds(savedDynTags) {
+      const savedTagsMap = new Map(savedDynTags.map(tag => [tag.id, tag]));
+      this.dynTags
+        .filter(dynTag => dynTag.modified)
+        .forEach(dynTag => {
+          const savedTag = savedTagsMap.get(dynTag.id);
+          if (!savedTag?.contentBlocks || !dynTag.contentBlocks) {
+            return;
+          }
+          const savedContentsMap = new Map(
+            savedTag.contentBlocks.map(content => [content.targetId, content])
+          );
+          dynTag.contentBlocks.forEach(content => {
+            const savedContent = savedContentsMap.get(content.targetId);
+            if (!content.id && savedContent?.id) {
+              content.id = savedContent.id;
+            }
+          });
+        });
     }
   }
 

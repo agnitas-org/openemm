@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mailinglist.web;
 
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
-import java.util.Calendar;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -21,12 +21,14 @@ import java.util.Set;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.birtstatistics.recipient.PeriodProgressUiRow;
+import com.agnitas.emm.core.mailinglist.MailinglistUiService;
 import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
 import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
-import com.agnitas.emm.core.mailinglist.mapper.MailinglistMapper;
+import com.agnitas.emm.core.mailinglist.mapper.MailinglistUiMapper;
+import com.agnitas.emm.core.mailinglist.model.MailinglistRecipientsDeletionResult;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.mailinglist.validation.MailinglistConstraints;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.AgnUtils;
@@ -48,8 +50,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 public class MailinglistController implements XssCheckAware {
 
@@ -57,24 +59,25 @@ public class MailinglistController implements XssCheckAware {
 
 	private static final String YEAR_LIST = "yearlist";
 	private static final String MONTH_LIST = "monthList";
-	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 
 	protected final MailinglistService mailinglistService;
 	protected final UserActivityLogService userActivityLogService;
-	private final MailinglistMapper mailinglistMapper;
-	private final BirtStatisticsService birtStatisticsService;
+	private final MailinglistUiMapper mailinglistMapper;
 	protected final AdminService adminService;
+	private final MailinglistUiService mailinglistUiService;
 
-	public MailinglistController(MailinglistService mailinglistService,
-                                 UserActivityLogService userActivityLogService,
-								 MailinglistMapper mailinglistMapper,
-                                 BirtStatisticsService birtStatisticsService,
-                                 AdminService adminService) {
+	public MailinglistController(
+			MailinglistService mailinglistService,
+			UserActivityLogService userActivityLogService,
+			MailinglistUiMapper mailinglistMapper,
+			AdminService adminService,
+			MailinglistUiService mailinglistUiService
+	) {
 		this.mailinglistService = mailinglistService;
 		this.userActivityLogService = userActivityLogService;
-        this.mailinglistMapper = mailinglistMapper;
-        this.birtStatisticsService = birtStatisticsService;
+		this.mailinglistMapper = mailinglistMapper;
 		this.adminService = adminService;
+		this.mailinglistUiService = mailinglistUiService;
 	}
 
 	@RequestMapping("/list.action")
@@ -107,14 +110,10 @@ public class MailinglistController implements XssCheckAware {
 		if (form == null) {
 			form = new MailinglistForm();
 		} else {
-			RecipientProgressStatisticDto statistic;
-			if (model.containsAttribute("statisticParams")) {
-				statistic = (RecipientProgressStatisticDto) model.get("statisticParams");
-			} else {
-				statistic = form.getStatistic();
-			}
-
-			loadStatistics(admin, statistic, form, model);
+			model.addAttribute(YEAR_LIST, AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
+			model.addAttribute(MONTH_LIST, AgnUtils.getMonthList());
+			model.addAttribute("currentMonth", LocalDate.now(admin.getZoneId()).getMonthValue());
+			model.addAttribute("currentYear", LocalDate.now(admin.getZoneId()).getYear());
 			userActivityLogService.writeUserActivityLog(admin, "mailing list view", getDescription(form));
 		}
 
@@ -122,6 +121,18 @@ public class MailinglistController implements XssCheckAware {
 		prepareAttributesForViewPage(model, admin);
 
 		return "mailinglist_view";
+	}
+
+	@GetMapping("/{mailinglistId:\\d+}/stats.action")
+	@RequiredPermission("mailinglist.show")
+	@ResponseBody
+	public List<PeriodProgressUiRow> getStats(
+			@PathVariable int mailinglistId,
+			@RequestParam int month,
+			@RequestParam int year,
+			Admin admin
+	) {
+		return mailinglistUiService.getStats(mailinglistId, month, year, admin);
 	}
 
 	@RequestMapping(value = "/create.action", method = {RequestMethod.GET, RequestMethod.POST})
@@ -137,7 +148,7 @@ public class MailinglistController implements XssCheckAware {
 
 	@PostMapping("/save.action")
 	@RequiredPermission("mailinglist.change")
-	public String save(Admin admin, MailinglistForm form, RedirectAttributes redirectAttributes, Popups popups) {
+	public String save(Admin admin, MailinglistForm form, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		if (!isValid(companyId, form, popups)) {
@@ -150,9 +161,6 @@ public class MailinglistController implements XssCheckAware {
 		userActivityLogService.writeUserActivityLog(admin,
 				(form.getId() == id ? "edit " : "create ") + "mailing list",
 				String.format("%s (%d)", form.getShortname(), id), logger);
-		if (form.getStatistic() != null) {
-			redirectAttributes.addFlashAttribute("statisticParams", form.getStatistic());
-		}
 		return redirectToView(id);
 	}
 	
@@ -229,14 +237,27 @@ public class MailinglistController implements XssCheckAware {
 
 	@PostMapping("/recipientsDelete.action")
 	@RequiredPermission("mailinglist.recipients.delete")
-	public String recipientsDelete(Admin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
-		int mailinglistId = form.getId();
-		mailinglistService.deleteMailinglistBindingRecipients(admin.getCompanyID(), mailinglistId, form.isOnlyActiveUsers(), form.isNoAdminAndTestUsers());
+	public String recipientsDelete(Admin admin, MailinglistRecipientDeleteForm form, Popups popups) {
+		MailinglistRecipientsDeletionResult result = mailinglistService.deleteMailinglistBindingRecipients(
+				admin.getCompanyID(),
+                form.getId(),
+				form.isOnlyActiveUsers(),
+				form.isNoAdminAndTestUsers()
+		);
 
 		popups.success("mailinglist.recipients.deleted");
 
-		userActivityLogService.writeUserActivityLog(admin, "delete recipients from mailing list", getDescription(form.getShortname(), form.getId()));
-		return redirectToView(mailinglistId);
+		if (result.hasDeletions()) {
+			String ualDescription = "Deleted %d recipients and %d bindings from mailing list '%s'".formatted(
+					result.recipientsCount(),
+					result.bindingsCount(),
+					getDescription(form.getShortname(), form.getId())
+			);
+
+			userActivityLogService.writeUserActivityLog(admin, "delete recipients from mailing list", ualDescription);
+		}
+
+		return redirectToView(form.getId());
 	}
 
 	protected String redirectToView(int mailinglistId) {
@@ -267,7 +288,7 @@ public class MailinglistController implements XssCheckAware {
 			return false;
 		}
 
-		if (shortname.length() < 3) {
+		if (shortname.length() < MailinglistConstraints.NAME_MIN_LENGTH) {
 			popups.fieldError("shortname",  "error.name.too.short");
 			return false;
 		}
@@ -277,31 +298,6 @@ public class MailinglistController implements XssCheckAware {
 		}
 
 		return true;
-	}
-
-	private void loadStatistics(Admin admin, RecipientProgressStatisticDto statistic, MailinglistForm form, ModelMap model) {
-		if (statistic == null) {
-			statistic = new RecipientProgressStatisticDto();
-		}
-
-		statistic.setMailinglistId(form.getId());
-
-		if (statistic.getStartYear() == 0 && statistic.getStartMonth() == 0) {
-			Calendar currentDate = Calendar.getInstance(AgnUtils.getTimeZone(admin));
-			currentDate.set(Calendar.DAY_OF_MONTH, 1);
-
-			statistic.setStartYear(currentDate.get(Calendar.YEAR));
-			statistic.setStartMonth(currentDate.get(Calendar.MONTH));
-		}
-
-		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-		String urlWithoutFormat = birtStatisticsService.getRecipientMonthlyStatisticsUrlWithoutFormat(admin, sessionId, statistic);
-
-		model.addAttribute(YEAR_LIST, AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
-		model.addAttribute(MONTH_LIST, AgnUtils.getMonthList());
-		model.addAttribute(BIRT_STATISTIC_URL_WITHOUT_FORMAT, urlWithoutFormat);
-
-		form.setStatistic(statistic);
 	}
 
 	protected String getDescription(String shortname, int id) {

@@ -21,7 +21,7 @@
   border-radius: $border-radius;
   height: min-content;
 
-  &::after, > .icon {
+  &::after, > .icon, .icon-checkbox {
     color: var(--input-container-icon-color);
 
     position: absolute;
@@ -30,7 +30,7 @@
     transform: translateY(-50%);
   }
 
-  &:has(> .icon) {
+  &:has(> .icon), &:has(> .icon-checkbox) {
     &::after {
       display: none;
     }

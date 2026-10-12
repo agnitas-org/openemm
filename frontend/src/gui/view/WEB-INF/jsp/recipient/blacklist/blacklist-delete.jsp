@@ -5,7 +5,7 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="blacklistDeleteForm" type="com.agnitas.emm.core.globalblacklist.forms.BlacklistDeleteForm"--%>
+<%--@elvariable id="blacklistDeleteForm" type="com.agnitas.emm.core.globalblacklist.BlacklistDeleteForm"--%>
 <%--@elvariable id="mailinglists" type="java.util.List"--%>
 
 <c:set var="isBulkDeletion" value="${fn:length(blacklistDeleteForm.emails) gt 1}"/>

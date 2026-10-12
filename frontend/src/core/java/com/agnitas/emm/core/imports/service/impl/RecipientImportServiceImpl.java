@@ -1,16 +1,21 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.imports.service.impl;
 
+import static java.util.Objects.requireNonNullElse;
+
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,42 +23,82 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.DatasourceDescription;
 import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.impl.DatasourceDescriptionImpl;
+import com.agnitas.beans.impl.ImportProfileImpl;
+import com.agnitas.beans.impl.ImportStatusImpl;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.core.import_profile.bean.ImportDataType;
+import com.agnitas.emm.core.imports.exception.ImportValidationException;
 import com.agnitas.emm.core.imports.service.RecipientImportService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.data.CsvDataProvider;
 import com.agnitas.emm.data.DataProvider;
 import com.agnitas.emm.data.ExcelDataProvider;
 import com.agnitas.emm.data.JsonDataProvider;
 import com.agnitas.emm.data.OdsDataProvider;
 import com.agnitas.messages.Message;
+import com.agnitas.service.DataSourceService;
+import com.agnitas.service.ProfileImportWorker;
+import com.agnitas.service.ProfileImportWorkerFactory;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.impl.CSVColumnState;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.CsvColInfo;
 import com.agnitas.util.CsvDataBreakInsideCellException;
 import com.agnitas.util.CsvDataException;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.CheckForDuplicates;
 import com.agnitas.util.importvalues.DateFormat;
+import com.agnitas.util.importvalues.ImportMode;
+import com.agnitas.util.importvalues.MailType;
 import com.agnitas.util.importvalues.Separator;
 import com.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class RecipientImportServiceImpl implements RecipientImportService {
 
+    private static final Logger logger = LogManager.getLogger(RecipientImportServiceImpl.class);
+
+    private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
+    private static final JsonMapper MAPPER = new JsonMapper();
+    private static final String EMAIL_COL = RecipientStandardField.Email.getColumnName();
+
     private final ImportRecipientsDao importRecipientsDao;
     private final RecipientDao recipientDao;
+    private final ProfileImportWorkerFactory profileImportWorkerFactory;
+    private final DataSourceService dataSourceService;
 
-    public RecipientImportServiceImpl(ImportRecipientsDao importRecipientsDao, RecipientDao recipientDao) {
+    public RecipientImportServiceImpl(
+            ImportRecipientsDao importRecipientsDao,
+            RecipientDao recipientDao,
+            ProfileImportWorkerFactory profileImportWorkerFactory,
+            DataSourceService dataSourceService
+    ) {
         this.importRecipientsDao = importRecipientsDao;
         this.recipientDao = recipientDao;
+        this.profileImportWorkerFactory = profileImportWorkerFactory;
+        this.dataSourceService = dataSourceService;
     }
 
     @Override
@@ -255,5 +300,119 @@ public class RecipientImportServiceImpl implements RecipientImportService {
                 columnState.setNullable(columnInfo.isNullable());
             }
         }
+    }
+
+    @Override
+    public ImportStatus addAndUpdate(
+            List<Map<String, Object>> recipients,
+            List<Integer> mailinglistIds,
+            MediaTypes mediatype,
+            Admin admin
+    ) {
+       return importRecipients(recipients, mailinglistIds, mediatype, admin, ImportMode.ADD_AND_UPDATE, EMAIL_COL);
+    }
+
+    @Override
+    public ImportStatus add(
+            List<Map<String, Object>> recipients,
+            List<Integer> mailinglistIds,
+            MediaTypes mediatype,
+            Admin admin
+    ) {
+       return importRecipients(recipients, mailinglistIds, mediatype, admin, ImportMode.ADD, null);
+    }
+
+    private ImportStatus importRecipients(
+            List<Map<String, Object>> recipients,
+            List<Integer> mailinglistIds,
+            MediaTypes mediatype,
+            Admin admin,
+            ImportMode importMode,
+            String keyColumn
+    ) {
+        String uuid = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
+        File importTempFile = createImportTempFile(admin, uuid);
+
+        MAPPER.writeValue(importTempFile, recipients);
+
+        ProfileImportWorker profileImportWorker = profileImportWorkerFactory.getProfileImportWorker(
+                false, // Not interactive mode, because there is no error edit GUI
+                mailinglistIds,
+                uuid,
+                admin.getCompanyID(),
+                admin,
+                saveImportDatasource(admin, importTempFile).getId(),
+                prepareImportProfile(admin, importMode, keyColumn, mediatype),
+                new RemoteFile(importTempFile.getName(), importTempFile, -1),
+                new ImportStatusImpl());
+        profileImportWorker.setMaxGenderValue(admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)
+                ? ConfigService.MAX_GENDER_VALUE_EXTENDED
+                : ConfigService.MAX_GENDER_VALUE_BASIC);
+
+        profileImportWorker.call();
+
+        return getWorkerResultStatus(profileImportWorker);
+    }
+
+    private static ImportStatus getWorkerResultStatus(ProfileImportWorker profileImportWorker) {
+        if (profileImportWorker.getError() != null) {
+            logger.error(profileImportWorker.getError().getMessage());
+            if (profileImportWorker.getError() instanceof ImportValidationException validationException) {
+                throw new ValidationException(
+                        validationException.getErrorMessageKey(),
+                        validationException.getAdditionalErrorData()
+                );
+            }
+            throw new IllegalStateException("Error occurred during recipients import. Please contact support team.");
+        }
+        ImportStatus status = profileImportWorker.getStatus();
+        if (status.getFatalError() != null) {
+            throw new IllegalStateException(status.getFatalError());
+        }
+        return status;
+    }
+
+    private static File createImportTempFile(Admin admin, String requestUUID) {
+        Path importDir = Path.of(IMPORT_FILE_DIRECTORY, String.valueOf(admin.getCompanyID()));
+        try {
+            Files.createDirectories(importDir);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to create directory: " + importDir, e);
+        }
+
+        return importDir.resolve("Recipientimportjson_" + requestUUID + ".json").toFile();
+    }
+
+    private static ImportProfile prepareImportProfile(
+            Admin admin, ImportMode importMode, String keyColumn, MediaTypes mediaType
+    ) {
+        ImportProfile importProfile = new ImportProfileImpl();
+        importProfile.setCompanyId(admin.getCompanyID());
+        importProfile.setAdminId(admin.getAdminID());
+        importProfile.setUpdateAllDuplicates(true);
+        importProfile.setDateFormat(com.agnitas.util.importvalues.DateFormat.ISO8601.getIntValue());
+        importProfile.setImportMode(importMode.getIntValue());
+        importProfile.setCheckForDuplicates(CheckForDuplicates.COMPLETE.getIntValue());
+        importProfile.setNullValuesAction(0);
+        importProfile.setKeyColumn(keyColumn);
+        importProfile.setAutoMapping(true);
+        importProfile.setDefaultMailType(MailType.HTML.getIntValue());
+        importProfile.setDatatype("JSON"); // use JSON Import
+        importProfile.setCharset(Charset.UTF_8.getIntValue());
+        importProfile.setMediatypes(Set.of(requireNonNullElse(mediaType, MediaTypes.EMAIL)));
+        importProfile.setReportLocale(admin.getLocale());
+        importProfile.setReportTimezone(admin.getAdminTimezone());
+        return importProfile;
+    }
+
+    private DatasourceDescription saveImportDatasource(Admin admin, File importTempFile) {
+        DatasourceDescription datasource = new DatasourceDescriptionImpl();
+        datasource.setCompanyID(admin.getCompanyID());
+        datasource.setSourceGroupType(SourceGroupType.File);
+        datasource.setCreationDate(new Date());
+        datasource.setDescription(importTempFile.getName());
+        datasource.setDescription2("Restful-Import");
+        dataSourceService.save(datasource);
+        return datasource;
     }
 }

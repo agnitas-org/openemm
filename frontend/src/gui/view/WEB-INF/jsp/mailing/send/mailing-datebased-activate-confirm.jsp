@@ -8,6 +8,7 @@
 <%--@elvariable id="mailingSubject" type="java.lang.String"--%>
 <%--@elvariable id="targetGroups" type="java.lang.String"--%>
 <%--@elvariable id="isAlreadySentToday" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="thumbnailComponentId" type="java.lang.Integer"--%>
 
 <c:set var="DEFAULT_STEPPING" value="<%= MailingBlockSizeService.DEFAULT_STEPPING %>"/>
@@ -63,15 +64,16 @@
                             </div>
 
                             <div class="d-flex flex-column gap-3 min-w-0" style="flex: 360">
-                                <%@ include file="fragments/mailing-size-message-initialize.jspf" %>
-                                <div>
-                                    <label class="form-label">
-                                        <i class="icon icon-pen"></i>
-                                        <mvc:message code="mailing.Subject"/>
-                                    </label>
+                                <c:if test="${not isStandaloneSmsMailing}">
+                                    <div>
+                                        <label class="form-label">
+                                            <i class="icon icon-pen"></i>
+                                            <mvc:message code="mailing.Subject"/>
+                                        </label>
 
-                                    <p class="text-truncate">${mailingSubject}</p>
-                                </div>
+                                        <p class="text-truncate">${mailingSubject}</p>
+                                    </div>
+                                </c:if>
 
                                 <div>
                                     <label class="form-label">
@@ -91,15 +93,18 @@
                                     <p class="text-truncate">${targetGroups}</p>
                                 </div>
 
-                                <div>
-                                    <label class="form-label">
-                                        <i class="icon icon-weight-hanging"></i>
-                                        <mvc:message code="default.Size"/>
-                                    </label>
+                                <c:if test="${not isStandaloneSmsMailing}">
+                                    <div>
+                                        <label class="form-label">
+                                            <i class="icon icon-weight-hanging"></i>
+                                            <mvc:message code="default.Size"/>
+                                        </label>
 
-                                    <%-- Show the size value at least in KB since the byte number is inaccurate anyway --%>
-                                    <p class="text-truncate">${sizeMessage}</p>
-                                </div>
+                                        <%@ include file="fragments/mailing-size-message-initialize.jspf" %>
+                                        <%-- Show the size value at least in KB since the byte number is inaccurate anyway --%>
+                                        <p class="text-truncate">${sizeMessage}</p>
+                                    </div>
+                                </c:if>
                             </div>
                         </c:otherwise>
                     </c:choose>

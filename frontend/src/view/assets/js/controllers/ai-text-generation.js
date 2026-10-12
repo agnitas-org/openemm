@@ -29,6 +29,20 @@ AGN.Lib.Controller.new('ai-text-generation', function () {
     }
   });
 
+  this.addAction({click: 'save-ai-settings'}, function () {
+    const $scope = getParentScope$(this.el);
+
+    if (isSettingsValidForSave($scope)) {
+      const settings = getSettingsFromUi($scope);
+      Messaging.send('mailing-content:save-ai-settings', settings);
+    }
+  });
+
+  function isSettingsValidForSave($scope) {
+    const $profileField = $scope.find('[data-ai-profileField]');
+    return validateSettings($scope) && validateMissingValue($profileField);
+  }
+
   function validateSettings($scope) {
     let isValid = true;
     const $numberOfWords = $scope.find('[data-ai-numberOfWords]');
@@ -42,14 +56,18 @@ AGN.Lib.Controller.new('ai-text-generation', function () {
       Form.cleanFieldFeedback$($numberOfWords);
     }
 
-    if (!$.trim($contentDescription.val())) {
-      isValid = false;
-      Form.showFieldError$($contentDescription, t('fields.required.errors.missing'));
-    } else {
-      Form.cleanFieldFeedback$($contentDescription);
-    }
+    isValid &= validateMissingValue($contentDescription)
 
     return isValid;
+  }
+
+  function validateMissingValue($el) {
+    if (!$.trim($el.val())) {
+      Form.showFieldError$($el, t('fields.required.errors.missing'));
+      return false;
+    }
+    Form.cleanFieldFeedback$($el);
+    return true;
   }
 
   function applyGeneratedText($el) {
@@ -103,6 +121,7 @@ AGN.Lib.Controller.new('ai-text-generation', function () {
       language: $scope.find('[data-ai-language]').val(),
       numberOfWords: $scope.find('[data-ai-numberOfWords]').val(),
       tonality: $scope.find('[data-ai-tonality]').val(),
+      profileField: $scope.find('[data-ai-profileField]').val(),
       contentDescription: $scope.find('[data-ai-contentDescription]').val()
     }
   }

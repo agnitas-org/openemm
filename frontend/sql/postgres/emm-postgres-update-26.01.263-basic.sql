@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -19,7 +19,7 @@ CREATE TABLE hp_clickranking_tbl
     topic           VARCHAR(50)   NOT NULL,
     count           INTEGER       NOT NULL,
     rank            INTEGER       NOT NULL,
-    first_clickdate TIMESTAMP     NOT NULL
+    first_clickdate TIMESTAMPTZ     NOT NULL
 );
 COMMENT ON TABLE hp_clickranking_tbl IS 'Stores the number of clicks per topic item to support ranking.';
 COMMENT ON COLUMN hp_clickranking_tbl.url_id IS 'References rdir_url_tbl.url_id';

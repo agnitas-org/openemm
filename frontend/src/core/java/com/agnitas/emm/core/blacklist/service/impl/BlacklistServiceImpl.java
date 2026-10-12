@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.blacklist.service.impl;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,18 +20,22 @@ import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.binding.service.BindingService;
+import com.agnitas.emm.core.blacklist.BlocklistMapper;
 import com.agnitas.emm.core.blacklist.dao.BlacklistDao;
 import com.agnitas.emm.core.blacklist.exception.BlacklistAlreadyExistException;
+import com.agnitas.emm.core.blacklist.exception.BlocklistEntryNotFoundException;
 import com.agnitas.emm.core.blacklist.service.BlacklistModel;
 import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator;
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.transaction.annotation.Transactional;
 
 public class BlacklistServiceImpl implements BlacklistService {
 
@@ -43,8 +48,10 @@ public class BlacklistServiceImpl implements BlacklistService {
 	private BindingService bindingService;
 
 	private ExtendedConversionService conversionService;
-	
-	@Override
+
+	private BlocklistMapper blocklistMapper;
+
+    @Override
 	public boolean insertBlacklist(BlacklistModel model) {
 		if (checkBlacklist(model)) {
 			throw new BlacklistAlreadyExistException();
@@ -102,19 +109,27 @@ public class BlacklistServiceImpl implements BlacklistService {
 		return blacklistDao.exist(companyId, email);
 	}
 
+	@Transactional
 	@Override
-	public boolean add(int companyId, int adminId, String email, String reason) {
-		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email, reason);
-		if (isSuccessfullyInserted) {
-			String remark = "Added to blocklist by " + adminId;
-			bindingService.updateBindingStatusByEmailPattern(companyId, email, UserStatus.Blacklisted, remark);
+	public BlacklistDto add(AddBlacklistEntryCommand command) {
+		if (isAlreadyExist(command.companyId(), command.email())) {
+			throw new ValidationException("error.blacklist.recipient.isalreadyblacklisted", command.email());
 		}
-
-		return isSuccessfullyInserted;
+		if (!blacklistDao.insert(command.companyId(), command.email(), command.reason())) {
+			throw new IllegalStateException("Cannot insert blacklist entry");
+		}
+		bindingService.updateBindingStatusByEmailPattern(
+				command.companyId(),
+				command.email(),
+				UserStatus.Blacklisted,
+				"Added to blocklist by %d".formatted(command.adminId())
+		);
+		return getByEmail(command.email(), command.companyId());
 	}
 
 	@Override
-	public boolean update(int companyId, String email, String reason) {
+	public boolean update(String email, int companyId, String reason) {
+		getByEmail(email, companyId); // check exists
 		return blacklistDao.update(companyId, email, reason);
 	}
 
@@ -128,6 +143,18 @@ public class BlacklistServiceImpl implements BlacklistService {
 	public List<BlacklistDto> getAll(int companyId) {
 		List<BlackListEntry> recipientList = getRecipientList(companyId);
 		return conversionService.convert(recipientList, BlackListEntry.class, BlacklistDto.class);
+	}
+
+	@Override
+	public BlacklistDto getByEmail(String email, int companyId) {
+		return findByEmail(email, companyId).orElseThrow(() -> new BlocklistEntryNotFoundException(email, companyId));
+	}
+
+	@Override
+	public Optional<BlacklistDto> findByEmail(String email, int companyId) {
+		return blacklistDao.getBlacklistCheckEntries(companyId, email).stream()
+				.findFirst()
+				.map(blocklistMapper::toDto);
 	}
 
 	@Override
@@ -188,5 +215,9 @@ public class BlacklistServiceImpl implements BlacklistService {
 
 	public void setBlacklistModelValidator(final BlacklistModelValidator blacklistModelValidator) {
 		this.blacklistModelValidator = blacklistModelValidator;
+	}
+
+	public void setBlocklistMapper(BlocklistMapper blocklistMapper) {
+		this.blocklistMapper = blocklistMapper;
 	}
 }

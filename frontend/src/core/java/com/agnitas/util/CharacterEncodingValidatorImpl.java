@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,20 +13,20 @@ package com.agnitas.util;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
+import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
-import com.agnitas.exception.CharacterEncodingValidationExceptionMod;
-import com.agnitas.exception.EncodingError;
-
-import com.agnitas.beans.DynamicTag;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.exception.CharacterEncodingValidationExceptionMod;
+import com.agnitas.exception.EncodingError;
 
 /**
  * This class validates the content of a mailing against the character set
@@ -142,65 +142,18 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 		return charset.newEncoder();
 	}
 
-    @Override
-    public void validateMod(MailingSettingsForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod {
-        Set<EncodingError> subjectErrors = new HashSet<>();
-        Set<EncodingError> unencodeableMailingComponents = new HashSet<>();
-        Set<EncodingError> unencodeableDynamicTags = new HashSet<>();
-
-        validateMod(form, mailing, subjectErrors, unencodeableMailingComponents, unencodeableDynamicTags);
-
-        if (!unencodeableMailingComponents.isEmpty() || !unencodeableDynamicTags.isEmpty() || !subjectErrors.isEmpty()) {
-            throw new CharacterEncodingValidationExceptionMod(subjectErrors, unencodeableMailingComponents, unencodeableDynamicTags);
-        }
-    }
-
-    private void validateMod(MailingSettingsForm form, Mailing mailing, Set<EncodingError> subjectErrors, Set<EncodingError> unencodeableMailingComponents, Set<EncodingError> unencodeableDynamicTags) {
-		CharsetEncoder charsetEncoder = getCharsetEncoder(form.getEmailMediatype().getCharset());
-		if (form.getEmailMediatype().isActive()) {
-            validateSubject(form, subjectErrors, charsetEncoder);
-            validateMod(form, unencodeableMailingComponents, charsetEncoder);
-        }
-		validateDynamicTagsMod(mailing, unencodeableDynamicTags, charsetEncoder);
-	}
-
-    private void validateSubject(MailingSettingsForm form, Set<EncodingError> subjectErrors, CharsetEncoder encoder) {
-        subjectErrors.addAll(validateMod(form.getEmailMediatype().getSubject(), encoder));
-    }
-
-    private void validateMod(MailingSettingsForm form, Set<EncodingError> unencodeableMailingComponents, CharsetEncoder encoder) {
-		String textTemplate = form.getEmailMediatype().getTextTemplate();
-    	if (textTemplate != null) {
-	        Set<EncodingError> textTemplateErrors =  validateMod(textTemplate, encoder);
-			if (!textTemplateErrors.isEmpty()) {
-	            for (EncodingError error : textTemplateErrors) {
-	            	unencodeableMailingComponents.add(new EncodingError("agnText", error.getLine()));
-	            }
-	        }
-    	}
-    	
-    	String htmlTemplate = form.getEmailMediatype().getHtmlTemplate();
-		if (htmlTemplate != null) {
-			Set<EncodingError> htmlTemplateErrors = validateMod(htmlTemplate, encoder);
-			if (!htmlTemplateErrors.isEmpty()) {
-	            for (EncodingError error : htmlTemplateErrors) {
-	            	unencodeableMailingComponents.add(new EncodingError("agnHtml", error.getLine()));
-	            }
-	        }
-		}
-	}
-
-    private void validateDynamicTagsMod(Mailing mailing, Set<EncodingError> unencodeableDynamicTags, CharsetEncoder charsetEncoder) {
+	@Override
+	public Set<EncodingError> validateDynamicTags(Mailing mailing, CharsetEncoder charsetEncoder) {
 		// No mailing? Nothing to validate!
 		if (mailing == null) {
-			return;
+			return Collections.emptySet();
 		}
 
 		Collection<DynamicTag> dynTags = mailing.getDynTags().values();
 
-		for (DynamicTag dynTag : dynTags) {
-			unencodeableDynamicTags.addAll(validateContent(dynTag, charsetEncoder));
-        }
+		return dynTags.stream()
+				.flatMap(dynTag -> validateContent(dynTag, charsetEncoder).stream())
+				.collect(Collectors.toSet());
 	}
 
 	private Set<EncodingError> validateContent(DynamicTag dynTag, CharsetEncoder charsetEncoder) {
@@ -220,6 +173,9 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 
     @Override
 	public Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder) {
+		if (string == null) {
+			return Collections.emptySet();
+		}
     	/*
     	 * We lost information about column of un-encodable character.
     	 * The old implementation did not respect codepoints (and therefore unicode characters with more then 2 bytes length).

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -246,7 +246,7 @@ public class BirtReportController implements XssCheckAware {
             return "evaluation_finished";
         }
 
-        File tmpFile = birtStatisticsService.getBirtReportTmpFile(download, admin.getCompanyID());
+        File tmpFile = birtStatisticsService.getReportTmpFile(download, admin.getCompanyID());
         if (tmpFile == null || !tmpFile.exists() || tmpFile.length() <= 0) {
             return "evaluation_finished";
         }
@@ -431,7 +431,7 @@ public class BirtReportController implements XssCheckAware {
 
         Map<String, List<BirtReportSettingsUtils.Properties>> comparisonMap = new LinkedHashMap<>();
         comparisonMap.put(BirtReportSettingsUtils.GENERAL_GROUP, BirtReportSettingsUtils.COMPARISON_GENERAL_GROUP);
-        comparisonMap.put(BirtReportSettingsUtils.OPENER_GROUP, BirtReportSettingsUtils.COMPARISON_OPENER_GROUP);
+        comparisonMap.put(BirtReportSettingsUtils.OPENERS_AND_CLICKERS_GROUP, BirtReportSettingsUtils.COMPARISON_OPENERS_AND_CLICKERS_GROUP);
         comparisonMap.put(BirtReportSettingsUtils.DEVICES_GROUP, BirtReportSettingsUtils.COMPARISON_DEVICES_GROUP);
         comparisonMap.put(BirtReportSettingsUtils.FORMATS_GROUP, BirtReportSettingsUtils.COMPARISON_FORMATS_GROUP);
         settingType.put(ReportSettingsType.COMPARISON, comparisonMap);
@@ -554,7 +554,7 @@ public class BirtReportController implements XssCheckAware {
         }
 
         if (existedBirtReport.getFormat() != newBirtReport.getFormat()) {
-            changes.add(String.format("Data type changed from %d to %d.", existedBirtReport.getFormat(), newBirtReport.getFormat()));
+            changes.add(String.format("Data type changed from %s to %s.", existedBirtReport.getFormat(), newBirtReport.getFormat()));
         }
 
         if (DateUtilities.compare(existedBirtReport.getEndDate(), newBirtReport.getEndDate()) != 0) {

@@ -9,6 +9,7 @@
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="isMailingUndoAvailable" type="java.lang.Boolean"--%>
+<%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
@@ -45,8 +46,9 @@
 </c:choose>
 
 <emm:instantiate var="agnNavConditionsParams" type="java.util.LinkedHashMap" scope="request">
-    <c:set target="${agnNavConditionsParams}" property="isActiveMailing" value="true" />
-    <c:set target="${agnNavConditionsParams}" property="isPostMailing" value="${not empty isPostMailing and isPostMailing}" />
+    <c:set target="${agnNavConditionsParams}" property="isActiveMailing"        value="true" />
+    <c:set target="${agnNavConditionsParams}" property="isPostMailing"          value="${not empty isPostMailing and isPostMailing}" />
+    <c:set target="${agnNavConditionsParams}" property="isStandaloneSmsMailing" value="${not empty isStandaloneSmsMailing and isStandaloneSmsMailing}" />
 </emm:instantiate>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

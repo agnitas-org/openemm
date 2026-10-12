@@ -1,0 +1,202 @@
+#statistics-report-page {
+  .stat-section-charts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $gap-md;
+    margin-bottom: $gap-sm;
+  }
+
+  .link-clicks-chart-targets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    justify-items: center;
+    align-items: center;
+    gap: $gap-sm;
+  }
+
+  .stat-donut-tile {
+    .tile-body {
+      height: 140px;
+      position: relative;
+    }
+  }
+
+  .mailing-info-column {
+    flex: 305;
+  }
+
+  .mailing-preview-column {
+    flex: 250;
+  }
+
+  .mailing-thumbnail {
+    height: 250px;
+  }
+
+  .mailing-thumbnail-img {
+    width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+  }
+
+  .tile-header--compact {
+    flex-basis: 21px;
+  }
+
+  .summary-chart-tile {
+    height: 290px;
+  }
+
+  .bounce-chart-column {
+    flex: 0 0 170px;
+    max-width: 170px;
+
+    .stat-donut-tile .tile-body {
+      height: auto;
+      min-height: 140px;
+    }
+  }
+
+  .bounce-legend-column {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .bounce-row + .bounce-row {
+    margin-top: $gap-sm;
+  }
+
+  .table--borderless:not(.table--preview) {
+    th {
+      white-space: initial;
+
+      &::after {
+        content: none;
+      }
+
+      // A rounded corner's border segment rasterizes visibly thinner than a straight edge under
+      // Chromium's PDF export, so the first/last header cell's bottom border reads as a different
+      // weight than the cells in between. Square corners keep every header cell's border uniform.
+      &:first-child, &:last-child {
+        border-radius: 0 !important;
+      }
+    }
+
+    tr:not(:last-child) td {
+      border-bottom: $table-border;
+    }
+
+    .table-row-wrapper:not(:last-child) td {
+      border-bottom: $table-border;
+    }
+  }
+
+  .table--link-groups {
+    tbody.link-group tr td {
+      border-bottom: none !important;
+    }
+
+    tbody.link-group tr.table-row-divider td {
+      border-bottom: $table-border !important;
+    }
+
+    tbody.link-group:last-of-type tr.table-row-divider td {
+      border-bottom: none !important;
+    }
+  }
+
+  .table--link-summary-groups {
+    tbody.link-group tr td {
+      border-bottom: none !important;
+    }
+
+    tbody.link-group tr.table-row-divider td,
+    tbody.link-group td.table-row-divider {
+      border-bottom: $table-border !important;
+    }
+  }
+
+  @media print {
+    tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    tbody.link-group {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .force-new-page {
+      break-before: page;
+      page-break-before: always;
+    }
+
+    h3.force-new-page {
+      break-after: avoid;
+      page-break-after: avoid;
+    }
+
+    .tile--highlighted {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .bounce-row {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .stat-donut-tile {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .summary-chart-tile {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .table thead {
+      &, th {
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+      }
+    }
+
+    .summary-table-page {
+      height: 100vh;
+      @include flex-column;
+    }
+
+    .summary-table-container {
+      flex: 1;
+      min-height: 0;
+      @include flex-column;
+
+      table {
+        flex: 1 1 0;
+        height: auto;
+
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+
+    .link-clicks-chart-page {
+      height: 100vh;
+      @include flex-column;
+    }
+
+    .link-clicks-chart-tile {
+      flex: 1;
+      min-height: 0;
+      @include flex-column;
+
+      .tile-body {
+        flex: 1;
+        min-height: 0;
+      }
+    }
+  }
+}

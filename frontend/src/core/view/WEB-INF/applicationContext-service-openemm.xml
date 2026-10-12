@@ -41,17 +41,17 @@
     <bean id="MailingImporterMediatypeFactory" class="com.agnitas.service.impl.MailingImporterMediatypeFactory" />
 
 	<bean id="actionOperationSubscribeCustomer" class="com.agnitas.emm.core.action.service.impl.ActionOperationSubscribeCustomerImpl">
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="uidService" ref="ExtensibleUIDService" />
-		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
-		<property name="beanLookupFactory" ref="beanLookupFactory" />
-		<property name="pushSubscriptionService"><null /></property>
-		<property name="configService" ref="ConfigService" />
-		<property name="mobilephoneNumberWhitelist" ref="MobilephoneNumberWhitelist" />
-		<property name="recipientService" ref="recipientService"/>
-		<property name="recipientFieldService" ref="RecipientFieldService" />
-		<property name="blacklistService" ref="BlacklistService"/>
-		<property name="subscriberLimitCheck" ref="SubscriberLimitCheck" />
+		<constructor-arg ref="ExtensibleUIDService" />
+		<constructor-arg ref="CompanyDao" />
+		<constructor-arg ref="DatasourceDescriptionDao" />
+		<constructor-arg ref="recipientService" />
+		<constructor-arg ref="RecipientFieldService" />
+		<constructor-arg><null /></constructor-arg>
+		<constructor-arg ref="MobilephoneNumberWhitelist" />
+		<constructor-arg ref="BlacklistService" />
+		<constructor-arg ref="beanLookupFactory" />
+		<constructor-arg ref="ConfigService" />
+		<constructor-arg ref="SubscriberLimitCheck" />
 	</bean>
 
 	<bean id="serviceLookupFactory" class="com.agnitas.service.impl.ServiceLookupFactory">
@@ -202,7 +202,5 @@
         <property name="linkService" ref="LinkService"/>
 		<property name="bulkActionValidationService" ref="bulkActionValidationService" />
 	</bean>
-	
-	<bean id="HoneypotLinkService" class="com.agnitas.honeypot.service.OpenemmHoneypotLinkServiceImpl" />
 	
 </beans>

@@ -57,10 +57,12 @@ AGN.Lib.Controller.new('mailing-bounce-stats', function () {
   }
 
   function renderTable(statName) {
+    const rows = toAgGridRows(data[statName]);
+    rows.at(-1).preventColor = true;
     new Table(
       $(`#${statName}-table`),
       getTableColumnDefinitions(statName),
-      toAgGridRows(data[statName]),
+      rows,
       getDefaultTableOptions()
     );
   }
@@ -98,29 +100,16 @@ AGN.Lib.Controller.new('mailing-bounce-stats', function () {
   }
 
   function renderChart(statName) {
-    new Chart($(`#${statName}-chart`)[0].getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: _.keys(data[statName][1]),
-        datasets: [
-          {
-            data: _.values(data[statName][1]).map(({ value }) => value),
-            backgroundColor: AGN.Lib.Helpers.getStatColorsHexValues(),
-            barThickness: parseFloat(getComputedStyle(document.documentElement).fontSize),
-          },
-        ]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        scales: {
-          x: { display: false },
+    const targetObj = data[statName][1];
+    const chartData = _.omit(targetObj, _.last(_.keys(targetObj))); // exclude total row
+
+    AGN.Lib.StatsChart.create('doughnut', $(`#${statName}-chart`), {
+      labels: _.keys(chartData),
+      datasets: [
+        {
+          data: _.values(chartData).map(({ value }) => value),
         },
-        plugins: {
-          datalabels: { display: false },
-          legend: { display: false },
-        }
-      }
+      ]
     });
   }
 

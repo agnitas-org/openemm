@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -431,7 +432,7 @@ public class CsvWriter implements Closeable {
 	 *            the values
 	 * @return the csv line
 	 */
-	public static String getCsvLine(char separator, Character stringQuote, List<? extends Object> values) {
+	public static String getCsvLine(char separator, Character stringQuote, List<?> values) {
 		return getCsvLine(separator, stringQuote, values.toArray());
 	}
 
@@ -452,10 +453,12 @@ public class CsvWriter implements Closeable {
 		String stringQuoteString = stringQuote == null ? "" : Character.toString(stringQuote);
 		String doubleStringQuoteString = stringQuoteString + stringQuoteString;
 		if (values != null) {
+			boolean firstValue = true;
 			for (Object value : values) {
-				if (!returnValue.isEmpty()) {
+				if (!firstValue) {
 					returnValue.append(separator);
 				}
+				firstValue = false;
 				if (value != null) {
 					String valueString = value.toString();
 					if (valueString.contains(separatorString) || valueString.contains("\r") || valueString.contains("\n") || valueString.contains(stringQuoteString)) {
@@ -539,6 +542,11 @@ public class CsvWriter implements Closeable {
 		} catch (Exception e) {
 			return value;
 		}
+	}
+
+	public static byte[] csv(List<String> header, List<List<String>> rows) throws Exception {
+		rows = ListUtils.union(List.of(header), rows);
+		return csv(rows);
 	}
 
 	public static byte[] csv(List<? extends List<?>> rows) throws Exception {

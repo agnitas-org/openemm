@@ -21,9 +21,15 @@
 		<listener-class>com.agnitas.emm.core.ConfigurationValidityCheckListener</listener-class>
 	</listener>
 
+	<!-- Listener to initialize the backend datasource Note: This listener requires
+    that Springs ContextLoaderListener is loaded before this listener! -->
+	<listener>
+		<listener-class>com.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
+	</listener>
+
 	<filter>
 		<filter-name>cachedBodyFilter</filter-name>
-		<filter-class>com.agnitas.emm.restful.v2.infrastructure.security.filter.CachedBodyFilter</filter-class>
+		<filter-class>com.agnitas.emm.rest.v2.infrastructure.security.filter.CachedBodyFilter</filter-class>
 	</filter>
 	<filter-mapping>
 		<filter-name>cachedBodyFilter</filter-name>

@@ -1,16 +1,17 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
 package com.agnitas.emm.core.mailinglist.service.impl;
 
 import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGLISTS_KEY;
+import static org.apache.commons.lang3.StringUtils.length;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,22 +37,30 @@ import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
+import com.agnitas.emm.core.mailinglist.MailinglistSortCriteria;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.mailinglist.dto.CreateMailinglistDTO;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.dto.PatchMailinglistCommand;
 import com.agnitas.emm.core.mailinglist.exception.MailinglistNotExistException;
 import com.agnitas.emm.core.mailinglist.mapper.MailinglistMapper;
+import com.agnitas.emm.core.mailinglist.model.MailinglistRecipientsDeletionResult;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.mailinglist.validation.MailinglistConstraints;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.exception.BadRequestException;
+import com.agnitas.emm.core.validator.MailinglistValidationField;
+import com.agnitas.emm.core.validator.ValidationException;
+import com.agnitas.emm.core.validator.ValidationField;
 import com.agnitas.exception.ForbiddenException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
-import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -114,8 +123,8 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
-    public PaginatedList<Mailinglist> findAll(PaginationForm form, int companyId) {
-        return mailinglistDao.findAll(form, companyId);
+    public PaginatedList<Mailinglist> findAll(PaginatedFilter<MailinglistSortCriteria> pagination, int companyId) {
+        return mailinglistDao.findAll(pagination, companyId);
     }
 
     @Override
@@ -162,6 +171,12 @@ public class MailinglistServiceImpl implements MailinglistService {
     @Override
     public String getMailinglistName(int mailinglistId, int companyId) {
         return mailinglistDao.getMailinglistName(mailinglistId, companyId);
+    }
+
+    @Override
+    public SimpleServiceResult checkCanBeDeleted(int id, Admin admin) {
+        ServiceResult<List<Mailinglist>> allowed = getAllowedForDeletion(Set.of(id), admin);
+        return SimpleServiceResult.of(allowed);
     }
 
     @Override
@@ -235,8 +250,17 @@ public class MailinglistServiceImpl implements MailinglistService {
             }
         }
     }
-	
-	@Override
+
+    @Override
+    public MailinglistDto create(CreateMailinglistDTO createDTO, int companyId) {
+        MailinglistDto dto = mailinglistMapper.toDto(createDTO);
+        int id = saveMailinglist(companyId, dto);
+        dto.setId(id);
+
+        return dto;
+    }
+
+    @Override
 	public int saveMailinglist(int companyId, MailinglistDto dto) {
         validateBeforeSave(dto, companyId);
 
@@ -256,27 +280,46 @@ public class MailinglistServiceImpl implements MailinglistService {
 		return mailinglistId;
 	}
 
+    @Override
+    public Mailinglist update(PatchMailinglistCommand command) {
+        Mailinglist mailinglist = getMailinglist(command.mailinglistId(), command.companyId());
+
+        command.name().ifPresent(mailinglist::setShortname);
+        command.description().ifPresent(mailinglist::setDescription);
+
+        validateBeforeSave(mailinglistMapper.toDto(mailinglist), command.companyId());
+        saveMailinglist(mailinglist);
+        return getMailinglist(command.mailinglistId(), command.companyId());
+    }
+
     private void validateBeforeSave(MailinglistDto mailinglist, int companyId) {
-        if (mailinglist.getShortname() == null || mailinglist.getShortname().length() < 3) {
+        if (length(mailinglist.getShortname()) < MailinglistConstraints.NAME_MIN_LENGTH) {
             throw new ShortnameTooShortException(mailinglist.getShortname());
         }
 
-        Map<String, Message> validationErrors = new HashMap<>();
+        Map<ValidationField, Message> validationErrors = new HashMap<>();
+
+        if (length(mailinglist.getDescription()) > MailinglistConstraints.DESCRIPTION_MAX_LENGTH) {
+            validationErrors.put(MailinglistValidationField.DESCRIPTION, Message.of(
+                    "querybuilder.error.string_exceed_max_length",
+                    MailinglistConstraints.DESCRIPTION_MAX_LENGTH
+            ));
+        }
 
         if (!isShortnameUnique(mailinglist.getShortname(), mailinglist.getId(), companyId)) {
-            validationErrors.put("shortname", Message.of("error.mailinglist.duplicate", mailinglist.getShortname()  ));
+            validationErrors.put(MailinglistValidationField.NAME, Message.of("error.mailinglist.duplicate", mailinglist.getShortname()));
         }
 
         if (StringUtils.isNotBlank(mailinglist.getSenderEmail()) && !AgnUtils.isEmailValid(mailinglist.getSenderEmail())) {
-            validationErrors.put("senderEmail", Message.of("error.invalid.email"));
+            validationErrors.put(MailinglistValidationField.SENDER_EMAIL, Message.of("error.invalid.email"));
         }
 
         if (StringUtils.isNotBlank(mailinglist.getReplyEmail()) && !AgnUtils.isEmailValid(mailinglist.getReplyEmail())) {
-            validationErrors.put("replyEmail", Message.of("error.invalid.email"));
+            validationErrors.put(MailinglistValidationField.REPLY_EMAIL, Message.of("error.invalid.email"));
         }
 
         if (!validationErrors.isEmpty()) {
-            throw new BadRequestException(validationErrors);
+            throw new ValidationException(validationErrors);
         }
     }
 	
@@ -304,12 +347,24 @@ public class MailinglistServiceImpl implements MailinglistService {
         deleteMailinglistFromReports(mailinglistId, companyId);
         return mailinglistDao.deleteMailinglist(mailinglistId, companyId);
     }
-    
+
     @Override
-    public void deleteMailinglistBindingRecipients(int companyId, int mailinglistId, boolean onlyActiveUsers, boolean noAdminAndTestUsers) {
+    public MailinglistRecipientsDeletionResult deleteMailinglistBindingRecipients(
+            int companyId,
+            int mailinglistId,
+            boolean onlyActiveUsers,
+            boolean noAdminAndTestUsers
+    ) {
         String tmpTable = recipientDao.createTmpTableByMailinglistID(companyId, mailinglistId);
-        recipientDao.deleteRecipientsBindings(mailinglistId, companyId, onlyActiveUsers, noAdminAndTestUsers);
-        recipientDao.deleteAllNoBindings(companyId, tmpTable);
+        int deletedBindingsCount = recipientDao.deleteRecipientsBindings(
+                mailinglistId,
+                companyId,
+                onlyActiveUsers,
+                noAdminAndTestUsers
+        );
+        int deletedRecipientsCount = recipientDao.deleteAllNoBindings(companyId, tmpTable);
+
+        return new MailinglistRecipientsDeletionResult(deletedBindingsCount, deletedRecipientsCount);
     }
 
     @Override

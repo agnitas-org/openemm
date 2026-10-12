@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -67,6 +67,7 @@ import com.agnitas.emm.core.commons.validation.EmailValidator;
 import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
 import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
+import com.agnitas.emm.core.imports.exception.ImportValidationException;
 import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
@@ -525,7 +526,7 @@ public class ProfileImportWorker {
 		} catch (CsvDataInvalidTextAfterQuoteException e) {
 			logger.error("Error during profile importData: {}", e.getMessage(), e);
 			status.setFatalError(e.getMessage() + " in line " + e.getErrorLineNumber());
-        	error = new ImportException(false, "error.import.data.invalidTextAfterQuote", e.getErrorLineNumber());
+        	error = new ImportValidationException("error.import.data.invalidTextAfterQuote", e.getErrorLineNumber());
 
 			if (endTime == null) {
 				endTime = new Date();
@@ -678,7 +679,7 @@ public class ProfileImportWorker {
 			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), columnsToCheck)) {
 				int unindexedLimit = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, importProfile.getCompanyId());
 				if (unindexedLimit >= 0 && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM customer_" + importProfile.getCompanyId() + "_tbl") > unindexedLimit) {
-					throw new ImportException(false, "error.import.keyColumn.index");
+					throw new ImportValidationException("error.import.keyColumn.index");
 				}
 			}
 		}
@@ -697,23 +698,23 @@ public class ProfileImportWorker {
 			if (!ColumnMapping.DO_NOT_IMPORT.equals(mapping.getDatabaseColumn())) {
 				if (admin != null) {
 					if (!recipientFieldsMap.containsKey(mapping.getDatabaseColumn())) {
-						throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumnUnknown", mapping.getDatabaseColumn());
 					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getAdminPermission(admin.getAdminID()) == ProfileFieldMode.NotVisible) {
-						throw new ImportException(false, "error.import.dbColumn.invisible", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumn.invisible", mapping.getDatabaseColumn());
 					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getAdminPermission(admin.getAdminID()) == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
-						throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
 					} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
-						throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
 					}
 				} else {
 					if (!recipientFieldsMap.containsKey(mapping.getDatabaseColumn())) {
-						throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumnUnknown", mapping.getDatabaseColumn());
 					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getDefaultPermission() == ProfileFieldMode.NotVisible) {
-						throw new ImportException(false, "error.import.dbColumn.invisible", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumn.invisible", mapping.getDatabaseColumn());
 					} else if (recipientFieldsMap.get(mapping.getDatabaseColumn()).getDefaultPermission() == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
-						throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
 					} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
-						throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+						throw new ImportValidationException("error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
 					}
 				}
 			}
@@ -810,9 +811,9 @@ public class ProfileImportWorker {
 		int maximumNumberOfRowsInImportFile = configService.getIntegerValue(ConfigValue.ProfileRecipientImportMaxRows, importProfile.getCompanyId());
 		long maximumImportFileSize = configService.getLongValue(ConfigValue.ProfileRecipientImportMaxFileSize, importProfile.getCompanyId());
 		if (fileSize > maximumImportFileSize) {
-			throw new ImportException(false, "error.import.maximum_filesize_exceeded_withsizehint", AgnUtils.getHumanReadableNumber(maximumImportFileSize, "Byte", false), maximumNumberOfRowsInImportFile);
+			throw new ImportValidationException("error.import.maximum_filesize_exceeded_withsizehint", AgnUtils.getHumanReadableNumber(maximumImportFileSize, "Byte", false), maximumNumberOfRowsInImportFile);
         } else if (maximumNumberOfRowsInImportFile > 0 && linesInFile > maximumNumberOfRowsInImportFile) {
-			throw new ImportException(false, "error.import.maxlinesexceeded", linesInFile, maximumNumberOfRowsInImportFile);
+			throw new ImportValidationException("error.import.maxlinesexceeded", linesInFile, maximumNumberOfRowsInImportFile);
 		}
 		
 		// EMM-9770: Check quota only for auto import
@@ -943,7 +944,7 @@ public class ProfileImportWorker {
 					// Check if keycolumns are part of the imported data
 					for (String keyColumnName : importProfile.getKeyColumns()) {
 						if (!importedDBColumns.contains(keyColumnName.toLowerCase())) {
-							throw new ImportException(false, "error.import.missing.keyColumn", keyColumnName);
+							throw new ImportValidationException("error.import.missing.keyColumn", keyColumnName);
 						}
 					}
 					
@@ -1023,7 +1024,7 @@ public class ProfileImportWorker {
             additionalDbColumns.add(databaseColumn);
             additionalDbValues.add(getDefValForDB(columnMapping));
         } catch (Exception e) {
-            throw new ImportException(false, "error.import.invalidDataForField", databaseColumn, e);
+            throw new ImportValidationException("error.import.invalidDataForField", databaseColumn, e);
         }
     }
     

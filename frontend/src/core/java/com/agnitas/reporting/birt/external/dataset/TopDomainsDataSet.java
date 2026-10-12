@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -25,7 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
-// TODO check usage and remove after GWUA-6951
+// TODO: Check usage and remove after mailing_statistic_csv.rptdesign is removed.
 public class TopDomainsDataSet extends BIRTDataSet {
 
 	public static final int CATEGORY_TOTAL_SENT_EMAILS = 1;
@@ -139,7 +139,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		for (Integer mailingId : mailingIds) {
 			int tempTableId = prepareReport(mailingId, companyId, targetsCsv, maxDomains, lang, topLevelDomain);
 			List<SendPerDomainStatRow> mailingDomainsStat = getResultsFromTempTable(tempTableId);
-            mailingDomainsStat.forEach(row -> row.setMailingId(mailingId));
+			mailingDomainsStat.forEach(row -> row.setMailingId(mailingId));
 			stat.addAll(mailingDomainsStat);
 		}
 		return stat;
@@ -167,19 +167,19 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 	public List<SendPerDomainStatRow> getResultsFromTempTable(int tempTableID) {
 		return selectEmbedded("SELECT * FROM " + getTemporaryTableName(tempTableID) + " " +
-				"WHERE domainname IS NOT NULL ORDER BY category_index, domainname_index, targetgroup_index",
+							  "WHERE domainname IS NOT NULL ORDER BY category_index, domainname_index, targetgroup_index",
 				(resultSet, index) -> {
-			SendPerDomainStatRow row = new SendPerDomainStatRow();
-			row.setCategory(resultSet.getString("category_name"));
-			row.setCategoryindex(resultSet.getInt("category_index"));
-			row.setDomainName(resultSet.getString("domainname"));
-			row.setDomainNameIndex(resultSet.getInt("domainname_index"));
-			row.setTargetgroup(resultSet.getString("targetgroup"));
-			row.setTargetgroupindex(resultSet.getInt("targetgroup_index"));
-			row.setCount(resultSet.getInt("value"));
-			row.setRate(resultSet.getDouble("rate"));
-			return row;
-		});
+					SendPerDomainStatRow row = new SendPerDomainStatRow();
+					row.setCategory(resultSet.getString("category_name"));
+					row.setCategoryindex(resultSet.getInt("category_index"));
+					row.setDomainName(resultSet.getString("domainname"));
+					row.setDomainNameIndex(resultSet.getInt("domainname_index"));
+					row.setTargetgroup(resultSet.getString("targetgroup"));
+					row.setTargetgroupindex(resultSet.getInt("targetgroup_index"));
+					row.setCount(resultSet.getInt("value"));
+					row.setRate(resultSet.getDouble("rate"));
+					return row;
+				});
 	}
 
 	@DaoUpdateReturnValueCheck
@@ -209,9 +209,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				int targetSentMailings = 0;
 				if (mailingTrackingDataAvailable) {
 					targetSentMailings = selectInt(
-						"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
+							"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
 							+ " AND (" + target.getTargetSQL() + ")",
-						mailingID);
+							mailingID);
 				}
 
 				TempRow targetRow = new TempRow();
@@ -230,9 +230,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		// CATEGORY_SENT_EMAILS available only if there is mailtracking data
 		if (mailingTrackingDataAvailable) {
 			String overallDomainsSql = "SELECT COUNT(*) AS mails_per_domain, domain_name"
-				+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track"
-					+ " WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
-				+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY mails_per_domain DESC";
+									   + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track"
+									   + " WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
+									   + " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY mails_per_domain DESC";
 			if (domainsMax > 1) {
 				if (isOracleDB()) {
 					overallDomainsSql = "SELECT * FROM (" + overallDomainsSql + ") WHERE ROWNUM <= " + domainsMax;
@@ -242,18 +242,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			}
 
 			List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
-					TempRow row = new TempRow();
-					row.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
-					row.setCategoryIndex(CATEGORY_SENT_EMAILS);
-					row.setDomainName(resultSet.getString("domain_name"));
-					row.setDomainNameIndex(index + 1);
-					row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-					row.setTargetGroup(ALL_SUBSCRIBERS);
-					row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
-					row.setValue(resultSet.getInt("mails_per_domain"));
-					return row;
-				},
-				mailingID
+						TempRow row = new TempRow();
+						row.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
+						row.setCategoryIndex(CATEGORY_SENT_EMAILS);
+						row.setDomainName(resultSet.getString("domain_name"));
+						row.setDomainNameIndex(index + 1);
+						row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
+						row.setTargetGroup(ALL_SUBSCRIBERS);
+						row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
+						row.setValue(resultSet.getInt("mails_per_domain"));
+						return row;
+					},
+					mailingID
 			);
 			for (TempRow row : overallDomainsRows) {
 				otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).value -= row.getValue();
@@ -269,10 +269,10 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				for (LightTarget target : targets) {
 					if (mailingTrackingDataAvailable) {
 						String targetDomainsSql = "SELECT COUNT(*) AS mails_per_domain, domain_name"
-							+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track"
-								+ " WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
-									+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
-							+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY mails_per_domain DESC";
+												  + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track"
+												  + " WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
+												  + " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
+												  + " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY mails_per_domain DESC";
 						if (domainsMax > 1) {
 							if (isOracleDB()) {
 								targetDomainsSql = "SELECT * FROM (" + targetDomainsSql + ") WHERE mails_per_domain > 0 AND ROWNUM <= " + domainsMax;
@@ -283,18 +283,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 						final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
 						List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
-								TempRow row = new TempRow();
-								row.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
-								row.setCategoryIndex(CATEGORY_SENT_EMAILS);
-								row.setDomainName(resultSet.getString("domain_name"));
-								row.setDomainNameIndex(index + 1);
-								row.setTargetGroupId(target.getId());
-								row.setTargetGroup(target.getName());
-								row.setTargetGroupIndex(domainTargetGroupIndexFinal);
-								row.setValue(resultSet.getInt("mails_per_domain"));
-								return row;
-							},
-							mailingID
+									TempRow row = new TempRow();
+									row.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
+									row.setCategoryIndex(CATEGORY_SENT_EMAILS);
+									row.setDomainName(resultSet.getString("domain_name"));
+									row.setDomainNameIndex(index + 1);
+									row.setTargetGroupId(target.getId());
+									row.setTargetGroup(target.getName());
+									row.setTargetGroupIndex(domainTargetGroupIndexFinal);
+									row.setValue(resultSet.getInt("mails_per_domain"));
+									return row;
+								},
+								mailingID
 						);
 						for (TempRow row : targetDomainsRows) {
 							otherDomainsMap.get(target.getId()).value -= row.getValue();
@@ -315,13 +315,13 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		insertHardBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains);
 		insertSoftBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains);
 	}
-	
+
 	private void insertHardBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) {
 		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
 				new Rule("bounce.detail >= 510", CATEGORY_NAME_HARDBOUNCES, CATEGORY_HARDBOUNCES));
 
 	}
-	
+
 	private void insertSoftBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) {
 		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
 				new Rule("bounce.detail < 510", CATEGORY_NAME_SOFTBOUNCES, CATEGORY_SOFTBOUNCES));
@@ -337,15 +337,15 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			this.categoryName = categoryName;
 			this.categoryIndex = categoryIndex;
 		}
-		
+
 		public String getCondition() {
 			return condition;
 		}
-		
+
 		public String getCategoryName() {
 			return categoryName;
 		}
-		
+
 		public int getCategoryIndex() {
 			return categoryIndex;
 		}
@@ -370,10 +370,10 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
 				int targetSentMailings = selectInt(
-					"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
+						"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
 						+ " AND (" + target.getTargetSQL() + ")",
-					companyID,
-					mailingID);
+						companyID,
+						mailingID);
 
 				TempRow targetRow = new TempRow();
 				targetRow.setCategoryName(rule.categoryName);
@@ -389,9 +389,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 
 		String overallDomainsSql = "SELECT COUNT(*) AS bounces_per_domain, domain_name"
-			+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
-				+ " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition + ")" + (isOracleDB() ? "" : " sub")
-			+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
+								   + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
+								   + " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition + ")" + (isOracleDB() ? "" : " sub")
+								   + " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
 		if (domainsMax > 1) {
 			if (isOracleDB()) {
 				overallDomainsSql = "SELECT * FROM (" + overallDomainsSql + ") WHERE ROWNUM <= " + domainsMax;
@@ -401,19 +401,19 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 
 		List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
-				TempRow row = new TempRow();
-				row.setCategoryName(rule.categoryName);
-				row.setCategoryIndex(rule.categoryIndex);
-				row.setDomainName(resultSet.getString("domain_name"));
-				row.setDomainNameIndex(index + 1);
-				row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-				row.setTargetGroup(ALL_SUBSCRIBERS);
-				row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
-				row.setValue(resultSet.getInt("bounces_per_domain"));
-				return row;
-			},
-			companyID,
-			mailingID
+					TempRow row = new TempRow();
+					row.setCategoryName(rule.categoryName);
+					row.setCategoryIndex(rule.categoryIndex);
+					row.setDomainName(resultSet.getString("domain_name"));
+					row.setDomainNameIndex(index + 1);
+					row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
+					row.setTargetGroup(ALL_SUBSCRIBERS);
+					row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
+					row.setValue(resultSet.getInt("bounces_per_domain"));
+					return row;
+				},
+				companyID,
+				mailingID
 		);
 		for (TempRow row : overallDomainsRows) {
 			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).value -= row.getValue();
@@ -428,10 +428,10 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			int domainTargetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
 				String targetDomainsSql = "SELECT COUNT(*) AS bounces_per_domain, domain_name"
-					+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
-						+ " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
-							+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
-					+ " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
+										  + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce"
+										  + " WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
+										  + " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
+										  + " GROUP BY domain_name HAVING COUNT(*) > 0 ORDER BY bounces_per_domain DESC";
 				if (domainsMax > 1) {
 					if (isOracleDB()) {
 						targetDomainsSql = "SELECT * FROM (" + targetDomainsSql + ") WHERE bounces_per_domain > 0 AND ROWNUM <= " + domainsMax;
@@ -442,19 +442,19 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
 				List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
-						TempRow row = new TempRow();
-						row.setCategoryName(rule.categoryName);
-						row.setCategoryIndex(rule.categoryIndex);
-						row.setDomainName(resultSet.getString("domain_name"));
-						row.setDomainNameIndex(index + 1);
-						row.setTargetGroupId(target.getId());
-						row.setTargetGroup(target.getName());
-						row.setTargetGroupIndex(domainTargetGroupIndexFinal);
-						row.setValue(resultSet.getInt("bounces_per_domain"));
-						return row;
-					},
-					companyID,
-					mailingID
+							TempRow row = new TempRow();
+							row.setCategoryName(rule.categoryName);
+							row.setCategoryIndex(rule.categoryIndex);
+							row.setDomainName(resultSet.getString("domain_name"));
+							row.setDomainNameIndex(index + 1);
+							row.setTargetGroupId(target.getId());
+							row.setTargetGroup(target.getName());
+							row.setTargetGroupIndex(domainTargetGroupIndexFinal);
+							row.setValue(resultSet.getInt("bounces_per_domain"));
+							return row;
+						},
+						companyID,
+						mailingID
 				);
 				for (TempRow row : targetDomainsRows) {
 					otherDomainsMap.get(target.getId()).value -= row.getValue();
@@ -488,9 +488,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
 				int targetSentMailings = selectInt(
-					"SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?"
+						"SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?"
 						+ " AND (" + target.getTargetSQL() + ")",
-					mailingID);
+						mailingID);
 
 				TempRow targetRow = new TempRow();
 				targetRow.setCategoryName(CATEGORY_NAME_OPENERS);
@@ -506,9 +506,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 
 		String overallDomainsSql = "SELECT COUNT(DISTINCT customer_id) AS openers_per_domain, domain_name"
-			+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl"
-				+ " WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
-			+ " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY openers_per_domain DESC";
+								   + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl"
+								   + " WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
+								   + " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY openers_per_domain DESC";
 		if (domainsMax > 1) {
 			if (isOracleDB()) {
 				overallDomainsSql = "SELECT * FROM (" + overallDomainsSql + ") WHERE ROWNUM <= " + domainsMax;
@@ -518,18 +518,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 
 		List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
-				TempRow row = new TempRow();
-				row.setCategoryName(CATEGORY_NAME_OPENERS);
-				row.setCategoryIndex(CATEGORY_OPENERS);
-				row.setDomainName(resultSet.getString("domain_name"));
-				row.setDomainNameIndex(index + 1);
-				row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-				row.setTargetGroup(ALL_SUBSCRIBERS);
-				row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
-				row.setValue(resultSet.getInt("openers_per_domain"));
-				return row;
-			},
-			mailingID
+					TempRow row = new TempRow();
+					row.setCategoryName(CATEGORY_NAME_OPENERS);
+					row.setCategoryIndex(CATEGORY_OPENERS);
+					row.setDomainName(resultSet.getString("domain_name"));
+					row.setDomainNameIndex(index + 1);
+					row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
+					row.setTargetGroup(ALL_SUBSCRIBERS);
+					row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
+					row.setValue(resultSet.getInt("openers_per_domain"));
+					return row;
+				},
+				mailingID
 		);
 		for (TempRow row : overallDomainsRows) {
 			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).value -= row.getValue();
@@ -544,10 +544,10 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			int domainTargetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
 				String targetDomainsSql = "SELECT COUNT(DISTINCT customer_id) AS openers_per_domain, domain_name"
-					+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl"
-						+ " WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?"
-							+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
-					+ " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY openers_per_domain DESC";
+										  + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl"
+										  + " WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?"
+										  + " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
+										  + " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY openers_per_domain DESC";
 				if (domainsMax > 1) {
 					if (isOracleDB()) {
 						targetDomainsSql = "SELECT * FROM (" + targetDomainsSql + ") WHERE openers_per_domain > 0 AND ROWNUM <= " + domainsMax;
@@ -558,18 +558,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
 				List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
-						TempRow row = new TempRow();
-						row.setCategoryName(CATEGORY_NAME_OPENERS);
-						row.setCategoryIndex(CATEGORY_OPENERS);
-						row.setDomainName(resultSet.getString("domain_name"));
-						row.setDomainNameIndex(index + 1);
-						row.setTargetGroupId(target.getId());
-						row.setTargetGroup(target.getName());
-						row.setTargetGroupIndex(domainTargetGroupIndexFinal);
-						row.setValue(resultSet.getInt("openers_per_domain"));
-						return row;
-					},
-					mailingID
+							TempRow row = new TempRow();
+							row.setCategoryName(CATEGORY_NAME_OPENERS);
+							row.setCategoryIndex(CATEGORY_OPENERS);
+							row.setDomainName(resultSet.getString("domain_name"));
+							row.setDomainNameIndex(index + 1);
+							row.setTargetGroupId(target.getId());
+							row.setTargetGroup(target.getName());
+							row.setTargetGroupIndex(domainTargetGroupIndexFinal);
+							row.setValue(resultSet.getInt("openers_per_domain"));
+							return row;
+						},
+						mailingID
 				);
 				for (TempRow row : targetDomainsRows) {
 					otherDomainsMap.get(target.getId()).value -= row.getValue();
@@ -604,9 +604,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
 				int targetSentMailings = selectInt(
-					"SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?"
+						"SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?"
 						+ " AND (" + target.getTargetSQL() + ")",
-					mailingID);
+						mailingID);
 
 				TempRow targetRow = new TempRow();
 				targetRow.setCategoryName(CATEGORY_NAME_CLICKERS);
@@ -622,9 +622,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 
 		String overallDomainsSql = "SELECT COUNT(DISTINCT customer_id) AS clickers_per_domain, domain_name"
-			+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog"
-				+ " WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
-			+ " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY clickers_per_domain DESC";
+								   + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog"
+								   + " WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?)" + (isOracleDB() ? "" : " sub")
+								   + " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY clickers_per_domain DESC";
 		if (domainsMax > 1) {
 			if (isOracleDB()) {
 				overallDomainsSql = "SELECT * FROM (" + overallDomainsSql + ") WHERE ROWNUM <= " + domainsMax;
@@ -634,18 +634,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 
 		List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
-				TempRow row = new TempRow();
-				row.setCategoryName(CATEGORY_NAME_CLICKERS);
-				row.setCategoryIndex(CATEGORY_CLICKERS);
-				row.setDomainName(resultSet.getString("domain_name"));
-				row.setDomainNameIndex(index + 1);
-				row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
-				row.setTargetGroup(ALL_SUBSCRIBERS);
-				row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
-				row.setValue(resultSet.getInt("clickers_per_domain"));
-				return row;
-			},
-			mailingID
+					TempRow row = new TempRow();
+					row.setCategoryName(CATEGORY_NAME_CLICKERS);
+					row.setCategoryIndex(CATEGORY_CLICKERS);
+					row.setDomainName(resultSet.getString("domain_name"));
+					row.setDomainNameIndex(index + 1);
+					row.setTargetGroupId(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID);
+					row.setTargetGroup(ALL_SUBSCRIBERS);
+					row.setTargetGroupIndex(CommonKeys.ALL_SUBSCRIBERS_INDEX);
+					row.setValue(resultSet.getInt("clickers_per_domain"));
+					return row;
+				},
+				mailingID
 		);
 		for (TempRow row : overallDomainsRows) {
 			otherDomainsMap.get(CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID).value -= row.getValue();
@@ -660,10 +660,10 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			int domainTargetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
 				String targetDomainsSql = "SELECT COUNT(DISTINCT customer_id) AS clickers_per_domain, domain_name"
-					+ " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog"
-						+ " WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?"
-							+ " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
-					+ " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY clickers_per_domain DESC";
+										  + " FROM (SELECT " + getDomainFromEmailExpression(topLevelDomains) + " AS domain_name, cust.customer_id FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog"
+										  + " WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?"
+										  + " AND (" + target.getTargetSQL() + "))" + (isOracleDB() ? "" : " sub")
+										  + " GROUP BY domain_name HAVING COUNT(DISTINCT customer_id) > 0 ORDER BY clickers_per_domain DESC";
 				if (domainsMax > 1) {
 					if (isOracleDB()) {
 						targetDomainsSql = "SELECT * FROM (" + targetDomainsSql + ") WHERE clickers_per_domain > 0 AND ROWNUM <= " + domainsMax;
@@ -674,18 +674,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
 				List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
-						TempRow row = new TempRow();
-						row.setCategoryName(CATEGORY_NAME_CLICKERS);
-						row.setCategoryIndex(CATEGORY_CLICKERS);
-						row.setDomainName(resultSet.getString("domain_name"));
-						row.setDomainNameIndex(index + 1);
-						row.setTargetGroupId(target.getId());
-						row.setTargetGroup(target.getName());
-						row.setTargetGroupIndex(domainTargetGroupIndexFinal);
-						row.setValue(resultSet.getInt("clickers_per_domain"));
-						return row;
-					},
-					mailingID
+							TempRow row = new TempRow();
+							row.setCategoryName(CATEGORY_NAME_CLICKERS);
+							row.setCategoryIndex(CATEGORY_CLICKERS);
+							row.setDomainName(resultSet.getString("domain_name"));
+							row.setDomainNameIndex(index + 1);
+							row.setTargetGroupId(target.getId());
+							row.setTargetGroup(target.getName());
+							row.setTargetGroupIndex(domainTargetGroupIndexFinal);
+							row.setValue(resultSet.getInt("clickers_per_domain"));
+							return row;
+						},
+						mailingID
 				);
 				for (TempRow row : targetDomainsRows) {
 					otherDomainsMap.get(target.getId()).value -= row.getValue();
@@ -709,7 +709,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targetsAvailable) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 
-            for (int i = 0; i < targets.size(); i++) {
+			for (int i = 0; i < targets.size(); i++) {
 				totalSentEmails = mailtrackingDataAvailable ? getTotalSentEmails(tempTableID, targetGroupIndex) : -1;
 				updateRates(tempTableID, targetGroupIndex, totalSentEmails, CATEGORY_SENT_EMAILS, CATEGORY_SOFTBOUNCES, CATEGORY_HARDBOUNCES);
 				targetGroupIndex++;
@@ -722,7 +722,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targetsAvailable) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 
-            for (int i = 0; i < targets.size(); i++) {
+			for (int i = 0; i < targets.size(); i++) {
 				totalClickers = getTotalClickers(tempTableID, targetGroupIndex);
 				updateRates(tempTableID, targetGroupIndex, totalClickers, CATEGORY_CLICKERS);
 				targetGroupIndex++;
@@ -735,7 +735,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targetsAvailable) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 
-            for (int i = 0; i < targets.size(); i++) {
+			for (int i = 0; i < targets.size(); i++) {
 				totalOpeners = getTotalOpeners(tempTableID, targetGroupIndex);
 				updateRates(tempTableID, targetGroupIndex, totalOpeners, CATEGORY_OPENERS);
 				targetGroupIndex++;
@@ -789,19 +789,19 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 	private void insertIntoTempTable(int tempTableID, TempRow row) {
 		String insertSql = "INSERT INTO " + getTemporaryTableName(tempTableID)
-			+ " (category_name, category_index, domainname, domainname_index, targetgroup, targetgroup_id, targetgroup_index, value, rate)"
-			+ " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+						   + " (category_name, category_index, domainname, domainname_index, targetgroup, targetgroup_id, targetgroup_index, value, rate)"
+						   + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 		updateEmbedded(insertSql,
-			row.getCategoryName(),
-			row.getCategoryIndex(),
-			row.getDomainName(),
-			row.getDomainNameIndex(),
-			row.getTargetGroup(),
-			row.getTargetGroupId(),
-			row.getTargetGroupIndex(),
-			row.getValue(),
-			row.getRate()
+				row.getCategoryName(),
+				row.getCategoryIndex(),
+				row.getDomainName(),
+				row.getDomainNameIndex(),
+				row.getTargetGroup(),
+				row.getTargetGroupId(),
+				row.getTargetGroupIndex(),
+				row.getValue(),
+				row.getRate()
 		);
 	}
 
@@ -825,7 +825,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	protected int createTempTable() {
 		int tempTableID = getNextTmpID();
 		executeEmbedded(
-			"CREATE TABLE " + getTemporaryTableName(tempTableID) + " ("
+				"CREATE TABLE " + getTemporaryTableName(tempTableID) + " ("
 				+ "category_name VARCHAR(200),"
 				+ " category_index INTEGER,"
 				+ " domainname VARCHAR(200),"
@@ -835,7 +835,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				+ " targetgroup_index INTEGER,"
 				+ " value INTEGER,"
 				+ " rate DOUBLE"
-			+ ")");
+				+ ")");
 		return tempTableID;
 	}
 }

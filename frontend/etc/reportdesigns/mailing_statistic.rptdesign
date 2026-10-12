@@ -98,8 +98,8 @@ reportContext.getAppContext().put("CHART_RESOLUTION", 300);
 // (with "redundant" bracers or equal checks)
 //You might have some bugs.
 
-showSoftbounces = new Boolean(BirtReporUtils.isOptionAllowed("softbounces", params["figures"]));
-showHardbounces = new Boolean(BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]));
+showSoftbounces = new Boolean(BirtReportUtils.isOptionAllowed("softbounces", params["figures"]));
+showHardbounces = new Boolean(BirtReportUtils.isOptionAllowed("hardbounces", params["figures"]));
 
 if(!(showSoftbounces == true)){
 	reportContext.getReportRunnable().designHandle.getDesignHandle().findElement("Softbounces Graphical Report").drop();
@@ -138,8 +138,16 @@ if (params["startDate"] != null) {
 	dateFormats = mailingStatisticDataSet.getDateFormatsInstance(params["startDate"], params["stopDate"], false);
 }
 mailingSummaryData = mailingStatisticDataSet.getSummaryData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, params["figures"], dateFormats);
-mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, dateFormats);
-mailingTopDomains = topDomainsDataSet.getStat(params["selectedMailings"], params["companyID"], params["targetGroups"], 15, params["language"], false);
+if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value)) {
+	mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, dateFormats);
+} else {
+	mailingClicksData = new Packages.java.util.ArrayList();
+}
+if (BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value)) {
+	mailingTopDomains = topDomainsDataSet.getStat(params["selectedMailings"], params["companyID"], params["targetGroups"], 15, params["language"], false);
+} else {
+	mailingTopDomains = new Packages.java.util.ArrayList();
+}
 deviceStatistic = devicesStatDataSet.getMailingReportDevicesStat(params["companyID"], targetGroups, hiddenTargetGroup, params["selectedMailings"], params["figures"], 10, params["language"]);
 
 function getColorDefinition(styleName) {
@@ -2346,7 +2354,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_NAME, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAILING_NAME, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2675">
@@ -2366,7 +2374,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_ID, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAILING_ID, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="4251">
@@ -2387,7 +2395,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.DESCRIPTION, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.DESCRIPTION, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2678">
@@ -2407,7 +2415,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ARCHIVE, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ARCHIVE, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3048">
@@ -2427,7 +2435,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAIL_FORMAT, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAIL_FORMAT, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3051">
@@ -2447,7 +2455,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.AVERAGE_SIZE, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.AVERAGE_SIZE, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3054">
@@ -2472,7 +2480,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SUBJECT, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SUBJECT, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2681">
@@ -2492,7 +2500,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_LIST, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.MAILING_LIST, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2684">
@@ -2513,7 +2521,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TARGET_GROUPS, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TARGET_GROUPS, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2687">
@@ -2533,7 +2541,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2690">
@@ -2554,7 +2562,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_STARTED, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENDING_STARTED, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2693">
@@ -2575,7 +2583,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_FINISHED, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENDING_FINISHED, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2723">
@@ -2636,7 +2644,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDER_INFO, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENDER_INFO, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3305">
@@ -2657,7 +2665,7 @@ return true;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.REPLY_TO_INFO, params["figures"]);</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.REPLY_TO_INFO, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="3308">
@@ -4143,7 +4151,7 @@ function beforeGeneration(chart, icsc) {
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.HTML.value, BirtReportUtils.BirtReportFigure.TEXT.value, BirtReportUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="3207">
@@ -4162,7 +4170,7 @@ function beforeGeneration(chart, icsc) {
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.HTML.value, BirtReportUtils.BirtReportFigure.TEXT.value, BirtReportUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="3125">
@@ -4391,7 +4399,7 @@ function beforeGeneration(chart, icsc) {
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.HTML.value, BirtReportUtils.BirtReportFigure.TEXT.value, BirtReportUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="2814"/>
@@ -4400,20 +4408,20 @@ function beforeGeneration(chart, icsc) {
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([
 	
-BirtReporUtils.BirtReportFigure.SENT_MAILS.value,
-BirtReporUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
-BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value,
-BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
-BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value,
-BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
-BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value,
-BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
-BirtReporUtils.BirtReportFigure.SIGNED_OFF.value,
-BirtReporUtils.BirtReportFigure.SOFTBOUNCES.value,
-BirtReporUtils.BirtReportFigure.HARDBOUNCES.value,
-BirtReporUtils.BirtReportFigure.REVENUE.value
+BirtReportUtils.BirtReportFigure.SENT_MAILS.value,
+BirtReportUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
+BirtReportUtils.BirtReportFigure.OPENERS_MEASURED.value,
+BirtReportUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
+BirtReportUtils.BirtReportFigure.OPENERS_TOTAL.value,
+BirtReportUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
+BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL.value,
+BirtReportUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
+BirtReportUtils.BirtReportFigure.SIGNED_OFF.value,
+BirtReportUtils.BirtReportFigure.SOFTBOUNCES.value,
+BirtReportUtils.BirtReportFigure.HARDBOUNCES.value,
+BirtReportUtils.BirtReportFigure.REVENUE.value
 
 ], params["figures"].value);</expression>
                                     </structure>
@@ -4800,7 +4808,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="3091">
@@ -5217,7 +5225,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="3202"/>
@@ -5227,7 +5235,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isAnyOptionAllowed([BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="3216">
@@ -5387,7 +5395,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                                                             <list-property name="visibility">
                                                                                 <structure>
                                                                                     <property name="format">all</property>
-                                                                                    <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value, params["figures"].value);</expression>
+                                                                                    <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value, params["figures"].value);</expression>
                                                                                 </structure>
                                                                             </list-property>
                                                                         </column>
@@ -5395,7 +5403,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                                                             <list-property name="visibility">
                                                                                 <structure>
                                                                                     <property name="format">all</property>
-                                                                                    <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, params["figures"].value);</expression>
+                                                                                    <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, params["figures"].value);</expression>
                                                                                 </structure>
                                                                             </list-property>
                                                                         </column>
@@ -5403,7 +5411,7 @@ BirtReporUtils.BirtReportFigure.REVENUE.value
                                                                             <list-property name="visibility">
                                                                                 <structure>
                                                                                     <property name="format">all</property>
-                                                                                    <expression name="valueExpr" type="javascript">BirtReporUtils.isAllOptionsAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
+                                                                                    <expression name="valueExpr" type="javascript">BirtReportUtils.isAllOptionsAllowed([BirtReportUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReportUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                                                                                 </structure>
                                                                             </list-property>
                                                                         </column>
@@ -13121,7 +13129,7 @@ function beforeDrawDataPointLabel( dph, label, icsc ) {
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="2743">
@@ -13533,7 +13541,7 @@ itemLinkNumber = this.getRowData().getColumnValue('linkItemNumber');]]></method>
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value);</expression>
+                                        <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.ACTIVATE_LINK_STATISTICS.value, params["figures"].value);</expression>
                                     </structure>
                                 </list-property>
                                 <cell id="2746">
@@ -14850,7 +14858,7 @@ function beforeDrawAxisTitle( axis, label, icsc )
                                         <list-property name="visibility">
                                             <structure>
                                                 <property name="format">all</property>
-                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
+                                                <expression name="valueExpr" type="javascript">!BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
                                             </structure>
                                         </list-property>
                                         <list-property name="boundDataColumns">

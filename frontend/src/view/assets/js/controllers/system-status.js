@@ -37,4 +37,10 @@ AGN.Lib.Controller.new('system-status', function () {
     $panel.remove();
   });
 
+  this.addAction({change: 'toggle-csrf'}, function () {
+    const enable = this.el.is(':checked');
+    $.post(AGN.url('/serverstatus/csrf/toggle.action'), { enable })
+      .done(resp => AGN.Lib.JsonMessages(resp.popups))
+  });
+
 });

@@ -44,6 +44,10 @@
 		<property name="licenseSignatureVerifier" ref="licenseSignatureVerifier"/>
    	</bean>
 
+	<bean id="DataEncryptor" class="com.agnitas.util.DataEncryptor">
+		<property name="configService" ref="ConfigService" />
+	</bean>
+
 	<bean id="LicenseParser" class="com.agnitas.emm.core.commons.util.LicenseParser">
 		<property name="licenseDao" ref="licenseDao" />
 	</bean>

@@ -2,6 +2,10 @@
 
   class StatsChart {
     constructor($el, data) {
+      const existingChart = Chart.getChart($el[0]); // [0] gets the raw DOM element
+      if (existingChart) {
+        existingChart.destroy();
+      }
       this.$el = $el;
       this.data = data;
       this.$el.data('stat-chart', this);
@@ -28,6 +32,9 @@
       switch (type) {
         case 'line':
           new AGN.Lib.LineStatsChart($el, data);
+          break;
+        case 'doughnut':
+          new AGN.Lib.DoughnutChart($el, data);
           break;
         default:
           throw new Error(`${type} is not a valid StatsChart type`);

@@ -67,11 +67,12 @@ window.I18n = {
     },
     defaults: {
       apply: '<mvc:message javaScriptEscape="true" code="button.Apply"/>',
+      date: '<mvc:message javaScriptEscape="true" code="Date"/>',
       download: '<mvc:message javaScriptEscape="true" code="button.Download"/>',
       reset: '<mvc:message javaScriptEscape="true" code="button.Reset" />',
       today: '<mvc:message javaScriptEscape="true" code="calendar.today.button" />',
       clear: '<mvc:message javaScriptEscape="true" code="button.Delete" />',
-      clickToCopy: '<mvc:message javaScriptEscape="true" code="GWUA.clickToCopy" />',
+      clickToCopy: '<mvc:message javaScriptEscape="true" code="default.copy.click" />',
       add: '<mvc:message javaScriptEscape="true" code="button.Add" />',
       Days: '<mvc:message javaScriptEscape="true" code="Days" />',
       entries: '<mvc:message javaScriptEscape="true" code="default.entries" />',
@@ -101,7 +102,8 @@ window.I18n = {
         editColumns: '<mvc:message  javaScriptEscape="true" code="list.columns.edit" />',
         saveColumns: '<mvc:message  javaScriptEscape="true" code="list.columns.save" />',
         maxColumnsSelected: '<mvc:message javaScriptEscape="true" code="error.maximum.recipient.columns"/>'
-      }
+      },
+      status: '<mvc:message javaScriptEscape="true" code="Status"/>'
     },
     selects: {
       noMatches: '<mvc:message javaScriptEscape="true" code="default.noMatchesFor" />'
@@ -336,9 +338,6 @@ window.I18n = {
       target: {
         short: '<mvc:message javaScriptEscape="true" code="workflow.target.short"/>'
       },
-      statistic: {
-        revenue: '<mvc:message javaScriptEscape="true" code="statistic.revenue"/>'
-      },
 
       activating: {
         auto: '<mvc:message javaScriptEscape="true" code="workflow.pause.reactivation"/>'
@@ -351,7 +350,7 @@ window.I18n = {
 
       connect: '<mvc:message javaScriptEscape="true" code="workflow.connect"/>',
       disconnect: '<mvc:message javaScriptEscape="true" code="workflow.disconnect"/>',
-      opening_rate: '<mvc:message javaScriptEscape="true" code="workflow.decision.OpeningRate"/>',
+      opening_rate: '<mvc:message javaScriptEscape="true" code="statistic.openrate"/>',
       decision: '<mvc:message javaScriptEscape="true" code="workflow.decision"/>',
       recipient: '<mvc:message javaScriptEscape="true" code="Recipient"/>',
       parameter: '<mvc:message javaScriptEscape="true" code="workflow.parameter"/>',
@@ -435,6 +434,7 @@ window.I18n = {
       }
     },
     recipient: {
+      mailingType: '<mvc:message javaScriptEscape="true" code="recipient.RecipientMailtype"/>',
       duplicate: {
         question: '<mvc:message javaScriptEscape="true" code="recipient.duplicate.question"/>'
       },
@@ -499,6 +499,27 @@ window.I18n = {
     },
 
     statistics: {
+      amount: '<mvc:message javaScriptEscape="true" code="statistic.Amount"/>',
+      blocklisted: '<mvc:message javaScriptEscape="true" code="recipient.MailingState6"/>',
+      bounced: '<mvc:message javaScriptEscape="true" code="recipient.MailingState2"/>',
+      byAhv: '<mvc:message javaScriptEscape="true" code="statistic.optin.ahv"/>',
+      byCsaLink: '<mvc:message javaScriptEscape="true" code="recipient.csa.optout.remark"/>',
+      byUser: '<mvc:message javaScriptEscape="true" code="recipient.state.user"/>',
+      doi: '<mvc:message javaScriptEscape="true" code="recipient.DOI"/>',
+      doubleOptIn: '<mvc:message javaScriptEscape="true" code="action.op.ActivateDoubleOptIn"/>',
+      feedbackLoop: '<mvc:message javaScriptEscape="true" code="statistic.recipient.feedbackloop"/>',
+      imports: '<mvc:message javaScriptEscape="true" code="recipient.imports"/>',
+      mailFormat: '<mvc:message javaScriptEscape="true" code="Mailtype"/>',
+      mailings: '<mvc:message javaScriptEscape="true" code="Mailings"/>',
+      optIns: '<mvc:message javaScriptEscape="true" code="recipient.Opt_Ins"/>',
+      optInWithoutConfirm: '<mvc:message javaScriptEscape="true" code="Opt_In_NotConfirmed"/>',
+      optOuts: '<mvc:message javaScriptEscape="true" code="statistic.Opt_Outs"/>',
+      other: '<mvc:message javaScriptEscape="true" code="statistic.Other"/>',
+      overallStatus: '<mvc:message javaScriptEscape="true" code="recipient.RecipientStatus" />',
+      percent: '<mvc:message javaScriptEscape="true" code="rate" />',
+      wsOrIndividual: '<mvc:message javaScriptEscape="true" code="statistic.recipient.individual"/>',
+      sum: '<mvc:message javaScriptEscape="true" code="Sum"/>',
+      statusInfo: '<mvc:message javaScriptEscape="true" code="recipient.Remark"/>',
       monthly: {
         mailing_type: {
           NORMAL: '<mvc:message javaScriptEscape="true" code="mailing.normal" />',
@@ -509,6 +530,7 @@ window.I18n = {
       },
       default: {
         allRecipients: '<mvc:message javaScriptEscape="true" code="statistic.all_subscribers"/>',
+        keyFigures: '<mvc:message javaScriptEscape="true" code="report.figures"/>',
         clickers: '<mvc:message javaScriptEscape="true" code="statistic.clicker"/>',
         clicks: '<mvc:message javaScriptEscape="true" code="statistic.Clicks"/>',
         openings: '<mvc:message javaScriptEscape="true" code="statistic.openings"/>',
@@ -520,8 +542,22 @@ window.I18n = {
         openersByDevices: '<mvc:message javaScriptEscape="true" code="report.mailing.openersByDevices"/>',
         clickersByDevices: '<mvc:message javaScriptEscape="true" code="report.mailing.clickersByDevices"/>',
         keyFigures: '<mvc:message javaScriptEscape="true" code="KeydataGeneral"/>',
+        sent: '<mvc:message javaScriptEscape="true" code="mailing.status.sent"/>',
         sentEmails: '<mvc:message javaScriptEscape="true" code="report.sentMails"/>',
-        softBounces: '<mvc:message javaScriptEscape="true" code="statistic.bounces.softbounce"/>'
+        acceptedEmails: '<mvc:message javaScriptEscape="true" code="statistic.mails.delivered"/>',
+        measuredOpeners: '<mvc:message javaScriptEscape="true" code="report.opens.measured"/>',
+        invisibleOpeners: '<mvc:message javaScriptEscape="true" code="report.opens.invisible"/>',
+        totalOpeners: '<mvc:message javaScriptEscape="true" code="statistic.opener.total"/>',
+        softBounces: '<mvc:message javaScriptEscape="true" code="statistic.bounces.softbounce"/>',
+        periodExceeded: '<mvc:message javaScriptEscape="true" code="statistics.maximumRecipientDetailPeriodDays.exceeded" arguments="%s"/>',
+        revenue: '<mvc:message javaScriptEscape="true" code="statistic.revenue"/>',
+        avgMailSize: '<mvc:message javaScriptEscape="true" code="report.mailsize"/>',
+        openingsGross: '<mvc:message javaScriptEscape="true" code="statistic.MeasuredOpeningsGross"/>',
+        clicksGross: '<mvc:message javaScriptEscape="true" code="statistic.Clicks"/>',
+        activityRate: '<mvc:message javaScriptEscape="true" code="statistic.ActivityRate"/>',
+        reactions: '<mvc:message javaScriptEscape="true" code="statistic.reactions"/>',
+        mobileShare: '<mvc:message javaScriptEscape="true" code="report.mobile"/>',
+        anonymousShare: '<mvc:message javaScriptEscape="true" code="statistics.share.anonymous"/>'
       },
       device: {
         desktop: '<mvc:message javaScriptEscape="true" code="report.device.desktop"/>',
@@ -537,11 +573,38 @@ window.I18n = {
         anonymousClicks: '<mvc:message javaScriptEscape="true" code="statistic.clicks.anonym"/>'
       },
       bounce: {
-        undelivered: '<mvc:message javaScriptEscape="true" code="birt.qualified.softbounces"/>'
+        undelivered: '<mvc:message javaScriptEscape="true" code="report.softbounces.undeliverable"/>'
       },
       trackingPoint: {
-        grossRequests: '<mvc:message javaScriptEscape="true" code="GWUA.trackingPoint.stat.grossRequests"/>',
-        netRequests: '<mvc:message javaScriptEscape="true" code="GWUA.trackingPoint.stat.netRequests"/>'
+        grossRequests: '<mvc:message javaScriptEscape="true" code="statistic.mailing.request.gross"/>',
+        netRequests: '<mvc:message javaScriptEscape="true" code="statistic.mailing.request.net"/>'
+      },
+      report: {
+        general: '<mvc:message javaScriptEscape="true" code="General2"/>',
+        mailingName: '<mvc:message javaScriptEscape="true" code="mailing.searchName"/>',
+        mailingId: '<mvc:message javaScriptEscape="true" code="MailingId"/>',
+        description: '<mvc:message javaScriptEscape="true" code="Description"/>',
+        archive: '<mvc:message javaScriptEscape="true" code="mailing.archive"/>',
+        mailFormat: '<mvc:message javaScriptEscape="true" code="mailing.Mailtype"/>',
+        averageSize: '<mvc:message javaScriptEscape="true" code="AverageMailSize"/>',
+        subject: '<mvc:message javaScriptEscape="true" code="mailing.Subject"/>',
+        mailingList: '<mvc:message javaScriptEscape="true" code="birt.mailinglist"/>',
+        targets: '<mvc:message javaScriptEscape="true" code="Targets"/>',
+        recipientsNoTracking: '<mvc:message javaScriptEscape="true" code="report.numberRecipients.notracking"/>',
+        sendingStarted: '<mvc:message javaScriptEscape="true" code="report.sendingStarted"/>',
+        sendingFinished: '<mvc:message javaScriptEscape="true" code="report.sendingFinished"/>',
+        senderInfo: '<mvc:message javaScriptEscape="true" code="mailing.sender.info"/>',
+        replyInfo: '<mvc:message javaScriptEscape="true" code="mailing.reply.info"/>',
+        openersMeasured: '<mvc:message javaScriptEscape="true" code="report.openers.measured"/>',
+        openersProxy: '<mvc:message javaScriptEscape="true" code="statistic.opener.proxy"/>',
+        openersInvisible: '<mvc:message javaScriptEscape="true" code="statistic.opener.invisible"/>',
+        softBounces: '<mvc:message javaScriptEscape="true" code="report.softbounces"/>',
+        devices: '<mvc:message javaScriptEscape="true" code="statistic.devices.end.devices"/>',
+        bounces: '<mvc:message javaScriptEscape="true" code="statistic.Bounces"/>',
+        clickStatistics: '<mvc:message javaScriptEscape="true" code="statistic.KlickStats"/>',
+        domains: '<mvc:message javaScriptEscape="true" code="Domains"/>',
+        leadingLinks: '<mvc:message javaScriptEscape="true" code="report.leadingLinks"/>',
+        adminLinks: '<mvc:message javaScriptEscape="true" code="report.adminLinks"/>'
       }
     },
 
@@ -670,7 +733,7 @@ window.I18n = {
         interest_group_name: '<mvc:message javaScriptEscape="true" code="nointerestgroup"/>',
         targetmode_and: '<mvc:message javaScriptEscape="true" code="mailing.targetmode.and"/>',
         targetmode_or: '<mvc:message javaScriptEscape="true" code="mailing.targetmode.or"/>',
-        sender_and_reply_emails_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.addresses.changed" />',
+        sender_and_reply_emails_changed: '<mvc:message javaScriptEscape="true" code="info.mailing.addresses.changed" />',
         sender_email_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.sender.changed" />',
         reply_email_changed: '<mvc:message javaScriptEscape="true" code="warning.mailing.reply.changed" />',
         grid: '<mvc:message javaScriptEscape="true" code="mailing.grid.GridMailing" />',
@@ -679,7 +742,8 @@ window.I18n = {
         mailFormat: {
           text: '<mvc:message javaScriptEscape="true" code="Text" />',
           html: '<mvc:message javaScriptEscape="true" code="HTML" />',
-          offlineHtml: '<mvc:message javaScriptEscape="true" code="OfflineHTML" />'
+          offlineHtml: '<mvc:message javaScriptEscape="true" code="OfflineHTML" />',
+          html_offline: '<mvc:message javaScriptEscape="true" code="OfflineHTML" />'
         },
         mediaType: {
           0: '<mvc:message javaScriptEscape="true" code="mailing.MediaType.0" />',
@@ -866,7 +930,7 @@ window.I18n = {
 
     statistic: {
       benchmark: {
-        openrate: '<mvc:message javaScriptEscape="true" code="benchmark.openrate"/>',
+        openrate: '<mvc:message javaScriptEscape="true" code="statistic.openrate"/>',
         clickrate: '<mvc:message javaScriptEscape="true" code="benchmark.clickrate"/>',
         optoutrate: '<mvc:message javaScriptEscape="true" code="benchmark.optoutrate"/>',
         bouncerate: '<mvc:message javaScriptEscape="true" code="benchmark.bouncerate"/>'

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -49,70 +49,35 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private String prefix;
 
 	private final List<NavigationData> navigationDataList = new Vector<>();
-	private Iterator<NavigationData> navigationDataIterator;
+	private transient Iterator<NavigationData> navigationDataIterator;
 	private int navigationIndex;
 	private Integer companyId;
 	private transient ConfigService configService;
 
-	private static class NavigationData {
-		private final String message;
-		private final String token;
-		private final String href;
-        private final Boolean hideForMysqlKey;
-        private final String iconClass;
-		private final String itemClass;
-		private final String subMenu;
-		private final String hideForToken;
-		private final String upsellingRef;
-		private final boolean conditionSatisfied;
-		private final String conditionMessage;
-
-		public NavigationData(String message, String token, String href, Boolean hideForMysqlKey, String iconClass,
-							  String subMenu, String hideForToken, String itemClass,
-							  String upsellingRef, boolean conditionSatisfied, String conditionMessage) {
-            this.message = message;
-            this.token = token;
-            this.href = href;
-            this.hideForMysqlKey = hideForMysqlKey;
-            this.iconClass = iconClass;
-			this.itemClass = itemClass;
-			this.subMenu = subMenu;
-			this.hideForToken = hideForToken;
-			this.upsellingRef = upsellingRef;
-			this.conditionSatisfied = conditionSatisfied;
-			this.conditionMessage = conditionMessage;
-		}
-
-        public String getMessage() { return message; }
-        public String getToken() { return token; }
-        public String getHref() { return href; }
-        public Boolean getHideForMysqlKey() { return hideForMysqlKey; }
-        public String getIconClass() { return iconClass; }
-
-		public String getItemClass() {
-			return itemClass;
-		}
-
-		public String getSubMenu() { return subMenu; }
-		public String getHideForToken() { return hideForToken; }
-		public String getUpsellingRef() { return upsellingRef; }
-        public boolean isConditionSatisfied() { return conditionSatisfied; }
-
-		public String getConditionMessage() {
-			return conditionMessage;
-		}
-
+	private record NavigationData(
+			String message,
+			String token,
+			String href,
+			Boolean hideForMysqlKey,
+			String iconClass,
+			String subMenu,
+			String hideForToken,
+			String itemClass,
+			String upsellingRef,
+			boolean conditionSatisfied,
+			String conditionMessage
+	) {
 		@Override
-        public String toString() {
-            return "message[" + getMessage() + "], token[" + getToken() + "], " +
-					"hideForMysqlKey[" + getHideForMysqlKey().toString() + "], iconClass[" + getIconClass()
-                    + "], href[" + getHref()
+		public String toString() {
+			return "message[" + message() + "], token[" + token() + "], " +
+					"hideForMysqlKey[" + hideForMysqlKey().toString() + "], iconClass[" + iconClass()
+					+ "], href[" + href()
 					+ "], subMenu[" + (subMenu != null ? subMenu : "")
 					+ "], upsellingRef[" + (upsellingRef != null ? upsellingRef : "")
-                    + "], conditionId[" + isConditionSatisfied()
-                    + "], conditionMessage[" + getConditionMessage()
-					+ "], itemClass[" + getItemClass() + "]";
-        }
+					+ "], conditionId[" + conditionSatisfied()
+					+ "], conditionMessage[" + conditionMessage()
+					+ "], itemClass[" + itemClass() + "]";
+		}
 	}
 
 	public void setPrefix(String prefix) {
@@ -283,26 +248,26 @@ public class ShowNavigationTag extends BodyTagSupport {
 		NavigationData navigationData = navigationDataIterator.next();
 		navigationIndex++;
 
-		logger.info("setting navigation attributes {}_navigation_href = {}", prefix, navigationData.getHref());
+		logger.trace("setting navigation attributes {}_navigation_href = {}", prefix, navigationData.href());
 
-		if (StringUtils.isNotBlank(highlightKey) && Strings.CS.equals(navigationData.getMessage(), highlightKey)) {
+		if (StringUtils.isNotBlank(highlightKey) && Strings.CS.equals(navigationData.message(), highlightKey)) {
             pageContext.setAttribute(prefix + "_navigation_isHighlightKey", Boolean.TRUE);
         } else {
             pageContext.setAttribute(prefix + "_navigation_isHighlightKey", Boolean.FALSE);
         }
 
-        pageContext.setAttribute(prefix + "_navigation_token", StringUtils.trimToEmpty(navigationData.getToken()));
-        pageContext.setAttribute(prefix + "_navigation_href", StringUtils.trimToEmpty(navigationData.getHref()));
-        pageContext.setAttribute(prefix + "_navigation_navMsg", StringUtils.trimToEmpty(navigationData.getMessage()));
+        pageContext.setAttribute(prefix + "_navigation_token", StringUtils.trimToEmpty(navigationData.token()));
+        pageContext.setAttribute(prefix + "_navigation_href", StringUtils.trimToEmpty(navigationData.href()));
+        pageContext.setAttribute(prefix + "_navigation_navMsg", StringUtils.trimToEmpty(navigationData.message()));
         pageContext.setAttribute(prefix + "_navigation_index", navigationIndex);
         if (navigationData.conditionSatisfied) {
-            pageContext.setAttribute(prefix + "_navigation_iconClass", StringUtils.trimToEmpty(navigationData.getIconClass()));
-            pageContext.setAttribute(prefix + "_navigation_itemClass", StringUtils.trimToEmpty(navigationData.getItemClass()));
+            pageContext.setAttribute(prefix + "_navigation_iconClass", StringUtils.trimToEmpty(navigationData.iconClass()));
+            pageContext.setAttribute(prefix + "_navigation_itemClass", StringUtils.trimToEmpty(navigationData.itemClass()));
         }
-		pageContext.setAttribute(prefix + "_navigation_submenu", StringUtils.trimToEmpty(navigationData.getSubMenu()));
-		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.getHideForToken()));
-		pageContext.setAttribute(prefix + "_navigation_upsellingRef", StringUtils.trimToEmpty(navigationData.getUpsellingRef()));
-        pageContext.setAttribute(prefix + "_navigation_conditionSatisfied", navigationData.isConditionSatisfied());
-        pageContext.setAttribute(prefix + "_navigation_conditionMsg", navigationData.getConditionMessage());
+		pageContext.setAttribute(prefix + "_navigation_submenu", StringUtils.trimToEmpty(navigationData.subMenu()));
+		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.hideForToken()));
+		pageContext.setAttribute(prefix + "_navigation_upsellingRef", StringUtils.trimToEmpty(navigationData.upsellingRef()));
+        pageContext.setAttribute(prefix + "_navigation_conditionSatisfied", navigationData.conditionSatisfied());
+        pageContext.setAttribute(prefix + "_navigation_conditionMsg", navigationData.conditionMessage());
 	}
 }

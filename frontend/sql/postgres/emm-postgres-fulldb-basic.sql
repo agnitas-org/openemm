@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -15,7 +15,7 @@ CREATE TABLE prevent_table_drop
     customer_id    INTEGER,
     mailinglist_id INTEGER,
     mediatype      INTEGER,
-    change_date    TIMESTAMP
+    change_date    TIMESTAMPTZ
 );
 COMMENT ON TABLE prevent_table_drop IS 'saves important tables from inadvertently dropping by FK-Constraints';
 COMMENT ON COLUMN prevent_table_drop.id IS 'Referenced integer id';
@@ -31,7 +31,7 @@ CREATE TABLE admin_group_tbl
     shortname      VARCHAR(100),
     description    VARCHAR(1000),
     deleted        SMALLINT   DEFAULT 0 NOT NULL,
-    change_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    change_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_group_tbl FOREIGN KEY (id) REFERENCES admin_group_tbl (admin_group_id);
 COMMENT ON TABLE admin_group_tbl IS 'stores groups for users to handle permissions easier';
@@ -63,11 +63,11 @@ CREATE TABLE admin_tbl
     admin_lang                VARCHAR(10) DEFAULT 'DE',
     admin_lang_variant        VARCHAR(10),
     admin_timezone            VARCHAR(50) DEFAULT 'Europe/Berlin',
-    pwdchange_date            TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    pwdchange_date            TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     stat_email                VARCHAR(200),
     default_import_profile_id INTEGER     DEFAULT 0,
-    creation_date             TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    timestamp                 TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    creation_date             TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
+    timestamp                 TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     layout_base_id            INTEGER     DEFAULT 0,
     company_name              VARCHAR(100),
     email                     VARCHAR(200),
@@ -75,11 +75,11 @@ CREATE TABLE admin_tbl
     firstname                 VARCHAR(100),
     gender                    SMALLINT    DEFAULT 2,
     title                     VARCHAR(300),
-    news_date                 TIMESTAMP,
-    message_date              TIMESTAMP,
+    news_date                 TIMESTAMPTZ,
+    message_date              TIMESTAMPTZ,
     phone_number              VARCHAR(100),
     limiting_target_id        INTEGER     DEFAULT NULL,
-    last_login_date           TIMESTAMP NULL,
+    last_login_date           TIMESTAMPTZ NULL,
     restful                   INTEGER     DEFAULT 0 NOT NULL,
     employee_id               VARCHAR(100),
     totp_secret               VARCHAR(100),
@@ -151,20 +151,20 @@ CREATE TABLE auto_optimization_tbl
     mailinglist_id    INTEGER,
     optimization_id   SERIAL PRIMARY KEY,
     result_mailing_id INTEGER,
-    result_senddate   TIMESTAMP,
+    result_senddate   TIMESTAMPTZ,
     send_delay        INTEGER,
     split_type        VARCHAR(100),
     status            INTEGER,
     target_id         INTEGER,
-    creation_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     target_expression VARCHAR(300),
     target_mode       INTEGER   DEFAULT 1,
     final_mailing_id  INTEGER,
     threshold         INTEGER,
     double_check      INTEGER,
     deleted           SMALLINT   DEFAULT 0,
-    test_senddate     TIMESTAMP,
+    test_senddate     TIMESTAMPTZ,
     test_run          INTEGER   DEFAULT 0 NOT NULL,
     workflow_id       INTEGER   DEFAULT 0 NOT NULL
 ) TABLESPACE data_accounting;
@@ -210,7 +210,7 @@ CREATE TABLE bounce_tbl
     customer_id INTEGER,
     detail      INTEGER,
     mailing_id  INTEGER,
-    timestamp   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_bounce;
 COMMENT ON TABLE bounce_tbl IS 'processing / handling bounces for all EMM-tenants';
 COMMENT ON COLUMN bounce_tbl.dsn IS 'Code reported by mailsystem';
@@ -227,8 +227,8 @@ CREATE TABLE campaign_tbl
     company_id    INTEGER,
     shortname     VARCHAR(100),
     description   VARCHAR(1000),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_cust_table;
 ALTER TABLE campaign_tbl ADD CONSTRAINT campaign$coid$nn CHECK (company_id IS NOT NULL);
 COMMENT ON TABLE campaign_tbl IS 'Table for archives, used like a folder to group mailings';
@@ -256,8 +256,8 @@ CREATE TABLE company_tbl
     notification_email         VARCHAR(100),
     mailloop_domain            VARCHAR(200),
     stat_admin                 INTEGER,
-    creation_date              TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    timestamp                  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    creation_date              TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
+    timestamp                  TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     sector                     INTEGER,
     business_field             INTEGER,
     secret_key                 VARCHAR(32),
@@ -272,7 +272,8 @@ CREATE TABLE company_tbl
     default_datasource_id      INTEGER,
     priority_count             INTEGER,
     contact_tech               VARCHAR(400),
-    company_token              VARCHAR(64)
+    company_token              VARCHAR(64),
+    system_msg_email           VARCHAR(400)
 ) TABLESPACE data_accounting;
 ALTER TABLE company_tbl ADD CONSTRAINT COMPANY$SKEY$UID$CK CHECK ((secret_key IS NULL AND uid_version IS NULL) OR secret_key IS NOT NULL);
 ALTER TABLE company_tbl ADD CONSTRAINT comp$status$val CHECK (status in ('active', 'locked', 'todelete', 'deleted', 'deletion in progress', 'toreset'));
@@ -312,6 +313,7 @@ COMMENT ON COLUMN company_tbl.priority_count IS 'max number of mails a recipient
 COMMENT ON COLUMN company_tbl.contact_tech IS 'Emails list separated by [,; ] for technical contact';
 COMMENT ON COLUMN company_tbl.parent_company_id IS 'Parent companyid for master/sub client constructs';
 COMMENT ON COLUMN company_tbl.company_token IS 'Company token';
+COMMENT ON COLUMN company_tbl.system_msg_email IS 'Emails list separated by `,` for system messages';
 
 CREATE TABLE company_info_tbl
 (
@@ -319,8 +321,8 @@ CREATE TABLE company_info_tbl
     cname         VARCHAR(64) NOT NULL,
     cvalue        VARCHAR(4000),
     description   VARCHAR(250),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    timestamp     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    timestamp     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     hostname      VARCHAR(100)
 ) TABLESPACE data_cust_table;
 CREATE UNIQUE INDEX compinfotbl$clsnamehost$uq ON company_info_tbl (company_id, cname, hostname);
@@ -339,8 +341,8 @@ CREATE TABLE config_tbl
     value         VARCHAR(4000),
     hostname      VARCHAR(100),
     description   VARCHAR(500),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 CREATE UNIQUE INDEX config_tbl$clsnamehost$uq ON config_tbl (class, name, hostname);
 COMMENT ON TABLE config_tbl IS 'several global settings';
@@ -367,9 +369,9 @@ CREATE TABLE component_tbl
     binblock            BYTEA,
     target_id           INTEGER   DEFAULT 0,
     url_id              INTEGER   DEFAULT 0 NOT NULL,
-    timestamp           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    validity_start_date TIMESTAMP,
-    validity_end_date   TIMESTAMP,
+    timestamp           TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    validity_start_date TIMESTAMPTZ,
+    validity_end_date   TIMESTAMPTZ,
     cdn_id              VARCHAR(32)
 ) TABLESPACE data_cust_table;
 ALTER TABLE component_tbl ADD CONSTRAINT component$coid$nn CHECK (company_id IS NOT NULL);
@@ -414,14 +416,14 @@ CREATE TABLE customer_1_tbl
     title                 VARCHAR(100),
     bounceload            INTEGER   DEFAULT 0 NOT NULL,
     datasource_id         INTEGER,
-    timestamp             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    lastopen_date         TIMESTAMP,
-    lastclick_date        TIMESTAMP,
+    timestamp             TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    creation_date         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    lastopen_date         TIMESTAMPTZ,
+    lastclick_date        TIMESTAMPTZ,
     latest_datasource_id  INTEGER,
-    lastsend_date         TIMESTAMP,
+    lastsend_date         TIMESTAMPTZ,
     sys_tracking_veto     SMALLINT,
-    cleaned_date          TIMESTAMP,
+    cleaned_date          TIMESTAMPTZ,
     sys_encrypted_sending INTEGER   DEFAULT 1
 ) TABLESPACE data_cust_table;
 ALTER TABLE customer_1_tbl ADD CONSTRAINT cust1$cuid$pk PRIMARY KEY (customer_id) USING INDEX TABLESPACE data_cust_index;
@@ -455,7 +457,7 @@ CREATE TABLE success_1_tbl
 (
     customer_id INTEGER,
     mailing_id  INTEGER,
-    timestamp   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_success;
 CREATE INDEX suc1$mid$idx ON success_1_tbl (mailing_id) TABLESPACE index_success;
 CREATE INDEX suc1$cid$idx ON success_1_tbl (customer_id) TABLESPACE index_success;
@@ -472,9 +474,9 @@ CREATE TABLE customer_1_binding_tbl
     user_type        CHAR(1),
     user_status      INTEGER,
     user_remark      VARCHAR(150),
-    timestamp        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     exit_mailing_id  INTEGER,
-    creation_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     mediatype        INTEGER   DEFAULT 0,
     referrer         VARCHAR(4000),
     entry_mailing_id INTEGER
@@ -507,12 +509,12 @@ CREATE TABLE hst_customer_1_binding_tbl
     user_type        CHAR(1),
     user_status      INTEGER,
     user_remark      VARCHAR(150),
-    timestamp        TIMESTAMP,
-    creation_date    TIMESTAMP,
+    timestamp        TIMESTAMPTZ,
+    creation_date    TIMESTAMPTZ,
     exit_mailing_id  INTEGER,
     mediatype        INTEGER,
     change_type      INTEGER,
-    timestamp_change TIMESTAMP,
+    timestamp_change TIMESTAMPTZ,
     client_info      VARCHAR(150),
     email            VARCHAR(100),
     referrer         VARCHAR(4000),
@@ -542,7 +544,7 @@ CREATE TABLE interval_track_1_tbl
 (
     customer_id INTEGER   NOT NULL,
     mailing_id  INTEGER   NOT NULL,
-    send_date   TIMESTAMP NOT NULL
+    send_date   TIMESTAMPTZ NOT NULL
 ) TABLESPACE data_success;
 CREATE INDEX intervtrack$1mid$idx ON interval_track_1_tbl (mailing_id) TABLESPACE data_cust_index;
 CREATE INDEX intervtrack$1$cid$idx ON interval_track_1_tbl (customer_id) TABLESPACE data_cust_index;
@@ -557,7 +559,7 @@ CREATE TABLE rdir_traffic_amount_1_tbl
     mailing_id   INTEGER,
     content_name VARCHAR(3000),
     content_size INTEGER,
-    demand_date  TIMESTAMP
+    demand_date  TIMESTAMPTZ
 ) TABLESPACE data_cust_table;
 COMMENT ON TABLE rdir_traffic_amount_1_tbl IS 'stores information on rdir traffic data amount';
 COMMENT ON COLUMN rdir_traffic_amount_1_tbl.mailing_id IS 'Referenced mailing id';
@@ -570,7 +572,7 @@ CREATE TABLE rdir_traffic_agr_1_tbl
     mailing_id   INTEGER,
     content_name VARCHAR(3000),
     content_size INTEGER,
-    demand_date  TIMESTAMP,
+    demand_date  TIMESTAMPTZ,
     amount       INTEGER
 ) TABLESPACE data_cust_table;
 COMMENT ON TABLE rdir_traffic_agr_1_tbl IS 'stores information on rdir traffic data amount with a daily aggregation of rdir_traffic_amount_1_tbl';
@@ -591,8 +593,8 @@ CREATE TABLE customer_field_tbl
     field_sort     INTEGER   DEFAULT 0 NOT NULL,
     line           INTEGER,
     isinterest     INTEGER   DEFAULT 0,
-    creation_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     historize      SMALLINT,
     allowed_values TEXT
 ) TABLESPACE data_cust_table;
@@ -621,7 +623,7 @@ CREATE TABLE datasource_description_tbl
     description    VARCHAR(500),
     company_id     INTEGER,
     sourcegroup_id INTEGER,
-    timestamp      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     url            VARCHAR(500),
     desc2          VARCHAR(500)
 ) TABLESPACE data_accounting;
@@ -641,11 +643,11 @@ COMMENT ON COLUMN datasource_description_tbl.desc2 IS 'secondary description';
 CREATE TABLE dkim_key_tbl
 (
     dkim_id              SERIAL PRIMARY KEY,
-    creation_date        TIMESTAMP,
-    timestamp            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date        TIMESTAMPTZ,
+    timestamp            TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     company_id           INTEGER,
-    valid_start          TIMESTAMP,
-    valid_end            TIMESTAMP,
+    valid_start          TIMESTAMPTZ,
+    valid_end            TIMESTAMPTZ,
     domain               VARCHAR(128),
     selector             VARCHAR(250),
     domain_key           VARCHAR(4000),
@@ -667,13 +669,13 @@ COMMENT ON COLUMN dkim_key_tbl.domain_key_encrypted IS '[secret_data] encrypted 
 CREATE TABLE deliverycheck_tbl
 (
     delivery_id   SERIAL PRIMARY KEY,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     company_id    INTEGER,
     sender        VARCHAR(256),
     receiver      VARCHAR(256),
     active        INTEGER,
-    startdate     TIMESTAMP,
-    enddate       TIMESTAMP,
+    startdate     TIMESTAMPTZ,
+    enddate       TIMESTAMPTZ,
     remark        VARCHAR(256)
 ) TABLESPACE data_accounting;
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$deliverycheck_tbl FOREIGN KEY (id) REFERENCES deliverycheck_tbl (delivery_id);
@@ -697,8 +699,8 @@ CREATE TABLE dyn_content_tbl
     dyn_content    TEXT,
     mailing_id     INTEGER,
     company_id     INTEGER,
-    creation_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_emmaux;
 ALTER TABLE dyn_content_tbl ADD CONSTRAINT dyn_content$dyncontentid$nn CHECK (dyn_content_id IS NOT NULL);
 ALTER TABLE dyn_content_tbl ADD CONSTRAINT dyn_content$dyn_name$nn CHECK (dyn_name_id IS NOT NULL);
@@ -727,10 +729,10 @@ CREATE TABLE dyn_name_tbl
     company_id        INTEGER,
     dyn_group         INTEGER   DEFAULT 0,
     interest_group    VARCHAR(50),
-    creation_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted           SMALLINT   DEFAULT 0 NOT NULL,
-    deletion_date     TIMESTAMP,
+    deletion_date     TIMESTAMPTZ,
     no_link_extension SMALLINT
 ) TABLESPACE data_accounting;
 ALTER TABLE dyn_name_tbl ADD CONSTRAINT dyn_name$dynnameid$nn CHECK (dyn_name_id IS NOT NULL);
@@ -761,8 +763,8 @@ CREATE TABLE dyn_target_tbl
     target_shortname    VARCHAR(100),
     target_sql          VARCHAR(4000),
     target_description  VARCHAR(1000),
-    creation_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted             SMALLINT  DEFAULT 0,
     admin_test_delivery INTEGER   DEFAULT 0 NOT NULL,
     locked              SMALLINT,
@@ -814,8 +816,8 @@ CREATE TABLE import_profile_tbl
     report_email              VARCHAR(255),
     check_for_duplicates      SMALLINT     NOT NULL,
     mail_type                 SMALLINT     NOT NULL,
-    creation_date             TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    change_date               TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    creation_date             TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
+    change_date               TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     update_all_duplicates     SMALLINT    DEFAULT 0,
     deleted                   SMALLINT    DEFAULT 0,
     pre_import_action         INTEGER,
@@ -873,8 +875,8 @@ CREATE TABLE import_column_mapping_tbl
     db_column     VARCHAR(255) NOT NULL,
     mandatory     SMALLINT     NOT NULL,
     default_value VARCHAR(255),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted       SMALLINT  DEFAULT 0,
     encrypted     INTEGER   DEFAULT 0
 ) TABLESPACE data_emmaux;
@@ -898,8 +900,8 @@ CREATE TABLE import_gender_mapping_tbl
     profile_id    INTEGER      NOT NULL,
     int_gender    SMALLINT     NOT NULL,
     string_gender VARCHAR(100) NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted       SMALLINT  DEFAULT 0
 ) TABLESPACE data_emmaux;
 ALTER TABLE import_gender_mapping_tbl ADD CONSTRAINT imp_gender_map$deleted$nn CHECK (deleted IS NOT NULL);
@@ -916,14 +918,14 @@ COMMENT ON COLUMN import_gender_mapping_tbl.deleted IS '1 = yes';
 CREATE TABLE maildrop_status_tbl
 (
     status_id                SERIAL PRIMARY KEY,
-    gendate                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gendate                  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     genstatus                SMALLINT  DEFAULT 3,
-    genchange                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    genchange                TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     blocksize                INTEGER,
     company_id               INTEGER,
     status_field             VARCHAR(10),
     mailing_id               INTEGER,
-    senddate                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    senddate                 TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     step                     INTEGER,
     max_recipients           INTEGER,
     admin_test_target_id     INTEGER,
@@ -966,11 +968,13 @@ CREATE TABLE mailinglist_tbl
     company_id           INTEGER,
     description          VARCHAR(500),
     shortname            VARCHAR(100),
+    sender_name          VARCHAR(200),
+    reply_to_name        VARCHAR(200),
     auto_url             VARCHAR(200),
     remove_data          INTEGER   DEFAULT 0,
     rdir_domain          VARCHAR(200),
-    creation_date        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted              SMALLINT  DEFAULT 0,
     binding_clean        SMALLINT  DEFAULT 0,
     freq_counter_enabled SMALLINT,
@@ -987,6 +991,8 @@ COMMENT ON COLUMN mailinglist_tbl.mailinglist_id IS 'unique ID, mailinglist_tbl_
 COMMENT ON COLUMN mailinglist_tbl.company_id IS 'tenant - ID (company_tbl)';
 COMMENT ON COLUMN mailinglist_tbl.description IS 'comment on mailinglist';
 COMMENT ON COLUMN mailinglist_tbl.shortname IS 'mailinglist name';
+COMMENT ON COLUMN mailinglist_tbl.sender_name IS 'Default sender name';
+COMMENT ON COLUMN mailinglist_tbl.reply_to_name IS 'Default reply-to name';
 COMMENT ON COLUMN mailinglist_tbl.auto_url IS 'legacy';
 COMMENT ON COLUMN mailinglist_tbl.remove_data IS 'legacy?';
 COMMENT ON COLUMN mailinglist_tbl.rdir_domain IS '(default) ridir domain for this mailinglist, overwrites company_id.rdir_domain, if NOT NULL';
@@ -1007,7 +1013,7 @@ CREATE TABLE mailing_account_tbl
     mailtype           INTEGER,
     no_of_mailings     INTEGER,
     no_of_bytes        INTEGER,
-    timestamp          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     maildrop_id        INTEGER,
     mailing_account_id SERIAL,
     status_field       VARCHAR(10),
@@ -1022,6 +1028,7 @@ CREATE INDEX macc$mid_noofml_stat$idx ON mailing_account_tbl (mailing_id, no_of_
 CREATE INDEX macc$tmst$idx ON mailing_account_tbl (timestamp) TABLESPACE data_emmaux_idx;
 CREATE INDEX mailingacc$maildropid$idx ON mailing_account_tbl (maildrop_id) TABLESPACE data_emmaux_idx;
 CREATE INDEX mailing_acc$coid_mid_mdid$idx ON mailing_account_tbl (company_id, mailing_id, maildrop_id) TABLESPACE data_emmaux_idx;
+CREATE INDEX mailing_acc$coid_sf_mid$idx ON mailing_account_tbl (company_id, mailing_id, status_field) TABLESPACE data_emmaux_idx;
 CREATE INDEX mailing_acc$mltp_nofm$idx ON mailing_account_tbl (mailtype, no_of_mailings) TABLESPACE data_emmaux_idx;
 ALTER TABLE mailing_account_tbl ADD CONSTRAINT mailing_acc$maid$pk PRIMARY KEY (mailing_account_id);
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$mailing_account_tbl FOREIGN KEY (id) REFERENCES mailing_account_tbl (mailing_account_id);
@@ -1049,7 +1056,7 @@ CREATE TABLE mailing_errorlog_tbl
     mailing_id     INTEGER,
     customer_id    INTEGER,
     missing_tag    VARCHAR(128),
-    creation_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE mailing_errorlog_tbl ADD CONSTRAINT merrlog$coid$nn CHECK (company_id IS NOT NULL);
 ALTER TABLE mailing_errorlog_tbl ADD CONSTRAINT merrlog$mlid$nn CHECK (mailinglist_id IS NOT NULL);
@@ -1086,27 +1093,27 @@ CREATE TABLE mailing_tbl
     work_status               VARCHAR(80),
     statmail_recp             VARCHAR(512),
     unique_link_count         INTEGER,
-    creation_date             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date             TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date               TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     cms_has_classic_content   INTEGER   DEFAULT 0,
     dynamic_template          INTEGER,
     openaction_id             INTEGER   DEFAULT 0,
     clickaction_id            INTEGER   DEFAULT 0,
     delivered                 INTEGER   DEFAULT 0,
-    plan_date                 TIMESTAMP,
+    plan_date                 TIMESTAMPTZ,
     priority                  INTEGER,
     content_type              VARCHAR(20),
     is_prioritization_allowed INTEGER,
     is_text_version_required  SMALLINT  DEFAULT 1 NOT NULL,
     statmail_onerroronly      INTEGER,
     locking_admin_id          INTEGER   DEFAULT NULL,
-    locking_expire_timestamp  TIMESTAMP DEFAULT NULL,
+    locking_expire_timestamp  TIMESTAMPTZ DEFAULT NULL,
     freq_counter_disabled     SMALLINT,
     mailerset                 VARCHAR(100),
     is_grid                   INTEGER   DEFAULT 0,
     clearance_email           VARCHAR(500),
     clearance_threshold       INTEGER,
-    send_date                 TIMESTAMP,
+    send_date                 TIMESTAMPTZ,
     workflow_id               INTEGER   DEFAULT 0,
     is_post                   INTEGER   DEFAULT 0
 ) TABLESPACE data_accounting;
@@ -1170,8 +1177,8 @@ CREATE TABLE mailing_mt_tbl
     status        INTEGER,
     param         VARCHAR(4000),
     mediatype_id  INTEGER,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE mailing_mt_tbl ADD CONSTRAINT mailing_mt$mid_mt$pk PRIMARY KEY (mailing_id, mediatype);
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$mailing_mt_tbl FOREIGN KEY (id, mediatype) REFERENCES mailing_mt_tbl (mailing_id, mediatype);
@@ -1191,8 +1198,8 @@ CREATE TABLE mailing_backend_log_tbl
     current_mails INTEGER,
     total_mails   INTEGER,
     status_id     INTEGER,
-    timestamp     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE mailing_backend_log_tbl IS 'mailing-generation process-tbl';
 COMMENT ON COLUMN mailing_backend_log_tbl.mailing_id IS 'references mailing (mailing_tbl)';
@@ -1206,7 +1213,7 @@ CREATE TABLE mailtrack_1_tbl
 (
     maildrop_status_id INTEGER,
     customer_id        INTEGER,
-    timestamp          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     mailing_id         INTEGER,
     mediatype          INTEGER
 ) TABLESPACE data_success;
@@ -1228,11 +1235,11 @@ CREATE TABLE onepixellog_1_tbl
     mailing_id   INTEGER,
     company_id   INTEGER,
     ip_adr       VARCHAR(50),
-    timestamp    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     open_count   INTEGER,
     mobile_count INTEGER,
-    first_open   TIMESTAMP,
-    last_open    TIMESTAMP
+    first_open   TIMESTAMPTZ,
+    last_open    TIMESTAMPTZ
 ) TABLESPACE data_cust_table;
 ALTER TABLE onepixellog_1_tbl ADD CONSTRAINT onpx1$cuid$nn CHECK (customer_id IS NOT NULL);
 ALTER TABLE onepixellog_1_tbl ADD CONSTRAINT onpx1$mid$nn CHECK (mailing_id IS NOT NULL);
@@ -1256,7 +1263,7 @@ CREATE TABLE rdirlog_1_tbl
     customer_id     INTEGER,
     url_id          INTEGER,
     company_id      INTEGER,
-    timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     ip_adr          VARCHAR(50),
     mailing_id      INTEGER,
     device_class_id INTEGER,
@@ -1286,7 +1293,7 @@ CREATE TABLE rdirlog_1_val_num_tbl
     ip_adr        VARCHAR(50),
     mailing_id    INTEGER,
     session_id    INTEGER,
-    timestamp     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     num_parameter DOUBLE PRECISION,
     page_tag      VARCHAR(30)
 ) TABLESPACE data_cust_table;
@@ -1310,7 +1317,7 @@ CREATE TABLE rdirlog_userform_1_tbl
     customer_id     INTEGER,
     url_id          INTEGER,
     company_id      INTEGER,
-    timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     ip_adr          VARCHAR(50),
     mailing_id      INTEGER,
     device_class_id INTEGER,
@@ -1337,8 +1344,8 @@ CREATE TABLE rdir_action_tbl
     shortname     VARCHAR(50),
     description   VARCHAR(1000),
     action_type   INTEGER   DEFAULT 0,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted       SMALLINT  DEFAULT 0,
     active        SMALLINT  DEFAULT 1 NOT NULL,
     advertising   SMALLINT  DEFAULT 0
@@ -1373,7 +1380,7 @@ CREATE TABLE rdir_url_tbl
     action_id              INTEGER,
     shortname              VARCHAR(500),
     alt_text               VARCHAR(200),
-    creation_date          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     extend_url             INTEGER   DEFAULT 0,
     admin_link             INTEGER   DEFAULT 0,
     from_mailing           INTEGER,
@@ -1381,7 +1388,8 @@ CREATE TABLE rdir_url_tbl
     original_url           VARCHAR(2000),
     static_value           SMALLINT,
     measured_separately    INTEGER   DEFAULT 0 NOT NULL,
-    create_substitute_link SMALLINT
+    create_substitute_link SMALLINT,
+    emm_trigger SMALLINT DEFAULT 0
 ) TABLESPACE data_accounting;
 ALTER TABLE rdir_url_tbl ADD CONSTRAINT rdirurl$urlid$nn CHECK (url_id IS NOT NULL);
 ALTER TABLE rdir_url_tbl ADD CONSTRAINT rdirurl$fullurl$nn CHECK (full_url IS NOT NULL);
@@ -1410,14 +1418,15 @@ COMMENT ON COLUMN rdir_url_tbl.original_url IS 'If the full_url has modified aft
 COMMENT ON COLUMN rdir_url_tbl.static_value IS 'If this value is 1 then the current value of referenced database columns are passed for redirect requests';
 COMMENT ON COLUMN rdir_url_tbl.measured_separately IS 'track link on every position mode activated 1=yes, 0=no';
 COMMENT ON COLUMN rdir_url_tbl.create_substitute_link IS '1 = create substitute link on link resolution (see LTS-376)';
+COMMENT ON COLUMN rdir_url_tbl.emm_trigger IS 'Flag indicating whether the link originates from a tag with the emm-trigger-name or emm-trigger-id attribute.';
 
 CREATE TABLE serverprio_tbl
 (
     company_id INTEGER,
     mailing_id INTEGER,
     priority   INTEGER,
-    start_date TIMESTAMP,
-    end_date   TIMESTAMP
+    start_date TIMESTAMPTZ,
+    end_date   TIMESTAMPTZ
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE serverprio_tbl IS 'allowes to set higher or lower sending priority per mailing or tenant';
 COMMENT ON COLUMN serverprio_tbl.company_id IS 'tenant - ID (company_tbl)';
@@ -1431,8 +1440,8 @@ CREATE TABLE softbounce_email_tbl
     email         VARCHAR(200),
     bnccnt        INTEGER,
     mailing_id    INTEGER,
-    creation_date TIMESTAMP,
-    timestamp     TIMESTAMP,
+    creation_date TIMESTAMPTZ,
+    timestamp     TIMESTAMPTZ,
     company_id    INTEGER
 ) TABLESPACE data_bounce;
 COMMENT ON TABLE softbounce_email_tbl IS '[secret_data] proccess-tbl for (soft-)bounce-handling';
@@ -1448,8 +1457,8 @@ CREATE TABLE sourcegroup_tbl
     sourcegroup_id   SERIAL PRIMARY KEY,
     sourcegroup_type VARCHAR(2),
     description      VARCHAR(1000),
-    timestamp        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    creation_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    creation_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE sourcegroup_tbl ADD CONSTRAINT sourcegroup_tbl$scrgrid$nn CHECK (sourcegroup_id IS NOT NULL);
 ALTER TABLE sourcegroup_tbl ADD CONSTRAINT sourcegroup_tbl$srcgrptp$nn CHECK (sourcegroup_type IS NOT NULL);
@@ -1470,7 +1479,7 @@ CREATE TABLE tag_tbl
     type        VARCHAR(10),
     company_id  INTEGER,
     description VARCHAR(1000),
-    change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    change_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deprecated  INTEGER   DEFAULT 0
 ) TABLESPACE data_accounting;
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$tag_tbl FOREIGN KEY (id) REFERENCES tag_tbl (tag_id);
@@ -1489,9 +1498,9 @@ CREATE TABLE timestamp_tbl
     timestamp_id INTEGER,
     description  VARCHAR(250),
     name         VARCHAR(64),
-    cur          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    prev         TIMESTAMP,
-    temp         TIMESTAMP
+    cur          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    prev         TIMESTAMPTZ,
+    temp         TIMESTAMPTZ
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE timestamp_tbl IS 'primary used for dataAgents, stores last run of a special service in order to provide diff - selections since last run';
 COMMENT ON COLUMN timestamp_tbl.timestamp_id IS 'unique ID, no sequence set, check max (id)';
@@ -1538,7 +1547,7 @@ CREATE TABLE trackpoint_def_tbl
     type          INTEGER,
     currency      VARCHAR(200),
     format        INTEGER,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE trackpoint_def_tbl ADD CONSTRAINT trckpdef$coid$nn CHECK (company_id IS NOT NULL);
 ALTER TABLE trackpoint_def_tbl ADD CONSTRAINT trckpdef$pagetag$nn CHECK (pagetag IS NOT NULL);
@@ -1566,12 +1575,12 @@ CREATE TABLE userform_tbl
     endaction_id         INTEGER,
     success_template     TEXT,
     error_template       TEXT,
-    creation_date        TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    creation_date        TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     success_url          VARCHAR(500),
     error_url            VARCHAR(500),
     error_use_url        SMALLINT    DEFAULT 0,
     success_use_url      SMALLINT    DEFAULT 0,
-    change_date          TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    change_date          TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     success_mimetype     VARCHAR(20) DEFAULT '',
     error_mimetype       VARCHAR(20),
     active               SMALLINT    DEFAULT 1 NOT NULL,
@@ -1610,8 +1619,8 @@ CREATE TABLE world_mailing_backend_log_tbl
     mailing_id    INTEGER,
     current_mails INTEGER,
     total_mails   INTEGER,
-    timestamp     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE world_mailing_backend_log_tbl IS 'in line with mailing_backend_log_tbl, but world mailings only. filled after mailgeneration is done';
 COMMENT ON COLUMN world_mailing_backend_log_tbl.mailing_id IS 'references mailing (mailing_tbl.mailing_id)';
@@ -1636,13 +1645,13 @@ CREATE TABLE export_predef_tbl
     description                  VARCHAR(1000),
     deleted                      SMALLINT    DEFAULT 0,
     mailinglist_id               INTEGER,
-    creation_date                TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    timestamp_start              TIMESTAMP,
-    timestamp_end                TIMESTAMP,
-    creation_date_start          TIMESTAMP,
-    creation_date_end            TIMESTAMP,
-    mailinglist_bind_start       TIMESTAMP,
-    mailinglist_bind_end         TIMESTAMP,
+    creation_date                TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
+    timestamp_start              TIMESTAMPTZ,
+    timestamp_end                TIMESTAMPTZ,
+    creation_date_start          TIMESTAMPTZ,
+    creation_date_end            TIMESTAMPTZ,
+    mailinglist_bind_start       TIMESTAMPTZ,
+    mailinglist_bind_end         TIMESTAMPTZ,
     timestamp_lastdays           INTEGER,
     creation_date_lastdays       INTEGER,
     mailinglist_bind_lastdays    INTEGER,
@@ -1703,7 +1712,7 @@ CREATE TABLE mailloop_tbl
     rid                      SERIAL PRIMARY KEY,
     company_id               INTEGER             NOT NULL,
     forward                  VARCHAR(128),
-    timestamp                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp                TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     ar_enable                INTEGER,
     forward_enable           INTEGER,
     shortname                VARCHAR(200)        NOT NULL,
@@ -1712,7 +1721,7 @@ CREATE TABLE mailloop_tbl
     subscribe_enable         INTEGER   DEFAULT 0 NOT NULL,
     mailinglist_id           INTEGER   DEFAULT 0 NOT NULL,
     form_id                  INTEGER   DEFAULT 0 NOT NULL,
-    creation_date            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date            TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     spam_required            INTEGER,
     spam_email               VARCHAR(200),
     spam_forward             INTEGER,
@@ -1749,9 +1758,9 @@ CREATE TABLE mailloop_replies_tbl
     subject             VARCHAR(200),
     sender_email        VARCHAR(200),
     response_email      VARCHAR(200),
-    timestamp           TIMESTAMP,
-    creation_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    change_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    timestamp           TIMESTAMPTZ,
+    creation_date       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    change_date         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     content             TEXT,
     content_type        SMALLINT  DEFAULT 0                 NOT NULL,
     raw_message         BYTEA,
@@ -1781,11 +1790,11 @@ COMMENT ON COLUMN mailloop_replies_tbl.customer_company_id IS 'ID of company of 
 CREATE TABLE rulebased_sent_tbl
 (
     mailing_id       INTEGER NOT NULL,
-    lastsent         TIMESTAMP,
-    creation_date    TIMESTAMP,
-    change_date      TIMESTAMP,
+    lastsent         TIMESTAMPTZ,
+    creation_date    TIMESTAMPTZ,
+    change_date      TIMESTAMPTZ,
     clearance        INTEGER DEFAULT 1,
-    clearance_change TIMESTAMP,
+    clearance_change TIMESTAMPTZ,
     clearance_origin VARCHAR(128),
     clearance_status VARCHAR(128)
 ) TABLESPACE data_accounting;
@@ -1808,7 +1817,7 @@ CREATE TABLE import_temporary_tables
     host                 VARCHAR(128),
     import_table_name    VARCHAR(255),
     description          VARCHAR(255),
-    creation_date        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE import_temporary_tables IS 'stores temporary_tables used in a certain session to run imports, also used to lock import in order to prevent rival accesses';
 COMMENT ON COLUMN import_temporary_tables.session_id IS 'creating session';
@@ -1822,7 +1831,7 @@ CREATE TABLE login_track_tbl
 (
     login_track_id SERIAL,
     ip_address     VARCHAR(50),
-    creation_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     login_status   INTEGER,
     username       VARCHAR(200)
 ) TABLESPACE data_emmaux;
@@ -1839,7 +1848,7 @@ CREATE TABLE active_subscriber_tbl
 (
     company_id         INTEGER,
     active_subscribers INTEGER,
-    timestamp          TIMESTAMP
+    timestamp          TIMESTAMPTZ
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE active_subscriber_tbl IS 'used by backend - billing scripts for monthly recipient analysis';
 COMMENT ON COLUMN active_subscriber_tbl.company_id IS 'tenant - ID (company_tbl)';
@@ -1852,7 +1861,7 @@ CREATE TABLE emm_db_errorlog_tbl
     errortext     VARCHAR(4000),
     module_name   VARCHAR(200),
     client_info   VARCHAR(500),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_emmaux;
 COMMENT ON TABLE emm_db_errorlog_tbl IS 'backend monitoring and error-handling espc. for triggers, catches errors during trigger execution, monitored by backend-script on AGN-Instances';
 COMMENT ON COLUMN emm_db_errorlog_tbl.company_id IS 'tenant - ID (company_tbl)';
@@ -1867,7 +1876,7 @@ CREATE TABLE swyn_click_tbl
     mailing_id  INTEGER,
     customer_id INTEGER,
     ip_address  VARCHAR(50),
-    timestamp   TIMESTAMP,
+    timestamp   TIMESTAMPTZ,
     selector    VARCHAR(2000)
 ) TABLESPACE data_emmaux;
 COMMENT ON TABLE swyn_click_tbl IS 'This table records all clicks for displaying a shared newsletter on a network.';
@@ -1890,8 +1899,8 @@ CREATE TABLE swyn_tbl
     icon          BYTEA,
     target        VARCHAR(1000),
     code          VARCHAR(2000),
-    creation_date TIMESTAMP,
-    timestamp     TIMESTAMP,
+    creation_date TIMESTAMPTZ,
+    timestamp     TIMESTAMPTZ,
     ISIZE         VARCHAR(2000)
 ) TABLESPACE data_emmaux;
 COMMENT ON TABLE swyn_tbl IS 'This table contains the data to be used for the [agnSWYN ...] tag (SWYN = share with your network). This information is used to build a HTML output to simply allow the recipient to share the newsletter via different networks. The link to share this newsletter as well as the icon to be displayed in the newsletter are stored herein';
@@ -1913,8 +1922,8 @@ CREATE TABLE tag_function_tbl
 (
     tag_function_id SERIAL NOT NULL,
     company_id      INTEGER      NOT NULL,
-    creation_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    timestamp       TIMESTAMP,
+    creation_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TIMESTAMPTZ,
     name            VARCHAR(128) NOT NULL,
     lang            VARCHAR(32)  NOT NULL,
     description     VARCHAR(1000),
@@ -1944,7 +1953,7 @@ CREATE TABLE undo_component_tbl
     emmblock        TEXT,
     binblock        BYTEA,
     target_id       INTEGER,
-    timestamp       TIMESTAMP,
+    timestamp       TIMESTAMPTZ,
     url_id          INTEGER DEFAULT 0 NOT NULL,
     undo_id         SERIAL            NOT NULL
 ) TABLESPACE data_emm_undo;
@@ -1976,7 +1985,7 @@ CREATE TABLE undo_dyn_content_tbl
     mailing_id     INTEGER,
     company_id     INTEGER,
     undo_id        INTEGER NOT NULL,
-    change_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    change_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_emm_undo;
 CREATE INDEX undodyncontent$mid$idx ON undo_dyn_content_tbl (mailing_id) TABLESPACE data_emm_undo;
 COMMENT ON TABLE undo_dyn_content_tbl IS 'copies entries in dyn_content_tbl (plus undo - ID) to provide undo function, for column description see dyn_content_tbl';
@@ -1995,7 +2004,7 @@ CREATE TABLE undo_mailing_tbl
 (
     mailing_id         INTEGER,
     undo_id            SERIAL,
-    undo_creation_date TIMESTAMP NOT NULL,
+    undo_creation_date TIMESTAMPTZ NOT NULL,
     undo_admin_id      INTEGER   NOT NULL
 ) TABLESPACE data_emm_undo;
 CREATE INDEX undomailing$mid$idx ON undo_mailing_tbl (mailing_id) TABLESPACE data_emm_undo;
@@ -2009,7 +2018,7 @@ CREATE INDEX undomailing$uid$idx ON undo_mailing_tbl (undo_id);
 CREATE TABLE cust1_ban_tbl
 (
     email     VARCHAR(100),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     reason    VARCHAR(500)
 ) TABLESPACE data_cust_table;
 ALTER TABLE cust1_ban_tbl ADD CONSTRAINT ban1$email$pk PRIMARY KEY (email);
@@ -2029,8 +2038,8 @@ CREATE TABLE rdir_url_userform_tbl
     action_id     INTEGER,
     shortname     VARCHAR(1000),
     deep_tracking INTEGER   DEFAULT 0,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT rdiruserformurl$urlid$nn CHECK (url_id IS NOT NULL),
     CONSTRAINT rdiruserformurl$fullurl$nn CHECK (full_url IS NOT NULL),
     CONSTRAINT rdiruserformurl$form$nn CHECK (form_id IS NOT NULL)
@@ -2063,8 +2072,8 @@ CREATE TABLE emm_layout_base_tbl
 (
     layout_base_id       SERIAL,
     base_url             VARCHAR(200) DEFAULT 'assets/core',
-    creation_date        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    change_date          TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    creation_date        TIMESTAMPTZ    DEFAULT CURRENT_TIMESTAMP,
+    change_date          TIMESTAMPTZ    DEFAULT CURRENT_TIMESTAMP,
     company_id           INTEGER,
     shortname            VARCHAR(200),
     menu_position        INTEGER      DEFAULT 0,
@@ -2108,7 +2117,7 @@ COMMENT ON COLUMN login_whitelist_tbl.description IS 'reason to whitelist';
 
 CREATE TABLE access_data_tbl
 (
-    creation_date TIMESTAMP,
+    creation_date TIMESTAMPTZ,
     user_agent    VARCHAR(2000),
     xuid          VARCHAR(500),
     ip            VARCHAR(50),
@@ -2162,7 +2171,7 @@ CREATE TABLE webservice_user_tbl
     active                 SMALLINT,
     contact_email          VARCHAR(400),
     api_call_limits        VARCHAR(100),
-    last_login_date        TIMESTAMP NULL
+    last_login_date        TIMESTAMPTZ NULL
 );
 ALTER TABLE webservice_user_tbl ADD CONSTRAINT websuser$cid$fk FOREIGN KEY (company_id) REFERENCES company_tbl (company_id);
 ALTER TABLE webservice_user_tbl ADD CONSTRAINT websuser$dds$fk FOREIGN KEY (default_data_source_id) REFERENCES datasource_description_tbl (datasource_id);
@@ -2185,9 +2194,9 @@ CREATE TABLE calendar_comment_tbl
     company_id        INTEGER,
     admin_id          INTEGER,
     comment_content   VARCHAR(1000),
-    comment_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    comment_date      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deadline          SMALLINT  DEFAULT 0,
-    planned_send_date TIMESTAMP
+    planned_send_date TIMESTAMPTZ
 );
 ALTER TABLE calendar_comment_tbl ADD CONSTRAINT calendar_comment$psd CHECK (planned_send_date IS NOT NULL);
 COMMENT ON TABLE calendar_comment_tbl IS 'in EMM - calendar comments to a specified date could be set, this data are stored here';
@@ -2223,8 +2232,8 @@ CREATE TABLE mailing_info_tbl
     name              VARCHAR(200),
     value             VARCHAR(4000),
     description       VARCHAR(500),
-    creation_date     TIMESTAMP,
-    change_date       TIMESTAMP,
+    creation_date     TIMESTAMPTZ,
+    change_date       TIMESTAMPTZ,
     creation_admin_id INTEGER,
     change_admin_id   INTEGER
 );
@@ -2289,14 +2298,14 @@ CREATE TABLE benchmark_mailing_tbl
     mailinglist_id    INTEGER,
     shortname         VARCHAR(2000),
     subject           VARCHAR(2000),
-    senddate          TIMESTAMP,
+    senddate          TIMESTAMPTZ,
     sent_text         INTEGER,
     sent_html         INTEGER,
     sent_ohtml        INTEGER,
     mail_size         INTEGER,
     target_expression VARCHAR(2000),
     target_sql        VARCHAR(4000),
-    creation_date     TIMESTAMP,
+    creation_date     TIMESTAMPTZ,
     target_sql2       VARCHAR(4000),
     target_sql3       VARCHAR(4000),
     sector            INTEGER,
@@ -2333,8 +2342,8 @@ CREATE TABLE messages_tbl
     value_nl      VARCHAR(4000),
     value_pt      VARCHAR(4000),
     value_it      VARCHAR(4000),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted       SMALLINT  DEFAULT 0 NOT NULL
 );
 COMMENT ON TABLE messages_tbl IS 'stores any messages or identifiers used in EMM-GUI including translations for different languages';
@@ -2353,17 +2362,17 @@ COMMENT ON COLUMN messages_tbl.deleted IS '1=yes';
 CREATE TABLE job_queue_tbl
 (
     id              SERIAL PRIMARY KEY,
+    job_name        VARCHAR(64) NOT NULL,
     description     VARCHAR(64)  NOT NULL,
-    created         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    lastStart       TIMESTAMP NULL,
+    created         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    lastStart       TIMESTAMPTZ NULL,
     running         SMALLINT  DEFAULT 0,
     lastresult      VARCHAR(512) NULL,
     startAfterError SMALLINT  DEFAULT 0,
     lastDuration    INTEGER   DEFAULT 0,
     interval        VARCHAR(64)  NOT NULL,
-    nextstart       TIMESTAMP NULL,
+    nextstart       TIMESTAMPTZ NULL,
     hostname        VARCHAR(64) NULL,
-    runClass        VARCHAR(128) NOT NULL,
     runOnlyOnHosts  VARCHAR(64) NULL,
     emailOnError    VARCHAR(512) NULL,
     deleted         SMALLINT  DEFAULT 0,
@@ -2375,6 +2384,7 @@ ALTER TABLE job_queue_tbl ADD CONSTRAINT jobqueue$description$unique UNIQUE (des
 ALTER TABLE job_queue_tbl ADD CONSTRAINT jobqueue$deleted$nn CHECK (deleted IS NOT NULL);
 COMMENT ON TABLE job_queue_tbl IS 'stores details and running details for automated jobs - should be monitored external!';
 COMMENT ON COLUMN job_queue_tbl.id IS 'unique ID for references';
+COMMENT ON COLUMN job_queue_tbl.job_name IS 'Name of the job';
 COMMENT ON COLUMN job_queue_tbl.description IS 'comment on entry';
 COMMENT ON COLUMN job_queue_tbl.created IS 'entry creation date';
 COMMENT ON COLUMN job_queue_tbl.lastStart IS 'timestamp when last run started';
@@ -2385,7 +2395,6 @@ COMMENT ON COLUMN job_queue_tbl.lastDuration IS 'time for last run in sec';
 COMMENT ON COLUMN job_queue_tbl.interval IS 'time (of the day) and / or day and / or intervall';
 COMMENT ON COLUMN job_queue_tbl.nextStart IS 'next execution is sheduled for this time';
 COMMENT ON COLUMN job_queue_tbl.hostname IS 'host to run this job on - wont be executed on other hosts with a running EMM - applikation';
-COMMENT ON COLUMN job_queue_tbl.runClass IS 'java class to be executed';
 COMMENT ON COLUMN job_queue_tbl.runOnlyOnHosts IS 'Optionally restricts execution of this job to a hostname list of servers like beta. If empty, then any server configured by config_tbl to execute jobs, will execute';
 COMMENT ON COLUMN job_queue_tbl.emailOnError IS '[private_data] email - recipient for and error-reports';
 COMMENT ON COLUMN job_queue_tbl.deleted IS '1 = yes';
@@ -2413,7 +2422,7 @@ CREATE TABLE rdirlog_val_num_dupl_tbl
     ip_adr        VARCHAR(50),
     mailing_id    INTEGER,
     session_id    INTEGER,
-    timestamp     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     num_parameter INTEGER,
     page_tag      VARCHAR(30)
 );
@@ -2437,8 +2446,8 @@ CREATE TABLE bounce_translate_tbl
     active        SMALLINT  DEFAULT 1 NOT NULL,
     shortname     VARCHAR(100),
     description   VARCHAR(500),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_bounce;
 COMMENT ON TABLE bounce_translate_tbl IS 'translates Delivery Status Notification (DSN) codes to qualified bounce codes';
 COMMENT ON COLUMN bounce_translate_tbl.company_id IS '0=global setting, >0 only used for this company_tbl.company_id';
@@ -2457,7 +2466,7 @@ CREATE TABLE bounce_collect_tbl
     customer_id INTEGER,
     mailing_id  INTEGER,
     company_id  INTEGER,
-    timestamp   TIMESTAMP
+    timestamp   TIMESTAMPTZ
 ) TABLESPACE data_bounce;
 CREATE INDEX bnccoll$cust$idx ON bounce_collect_tbl (customer_id) TABLESPACE data_bounce;
 CREATE INDEX bnccoll$coid$idx ON bounce_collect_tbl (company_id) TABLESPACE data_bounce;
@@ -2475,7 +2484,7 @@ CREATE TABLE onepixellog_device_1_tbl
     customer_id     INTEGER NOT NULL,
     device_class_id INTEGER,
     device_id       INTEGER,
-    creation        TIMESTAMP,
+    creation        TIMESTAMPTZ,
     client_id       INTEGER
 ) TABLESPACE data_warehouse;
 CREATE INDEX onepixdev1$mlid_cuid$idx ON onepixellog_device_1_tbl (mailing_id, customer_id) TABLESPACE index_data_warehouse;
@@ -2497,15 +2506,15 @@ CREATE TABLE workflow_tbl
     shortname              VARCHAR(100)        NOT NULL,
     description            VARCHAR(1000),
     status                 SMALLINT  DEFAULT 1 NOT NULL,
-    general_start_date     TIMESTAMP,
-    general_end_date       TIMESTAMP,
+    general_start_date     TIMESTAMPTZ,
+    general_end_date       TIMESTAMPTZ,
     general_start_reaction INTEGER   DEFAULT 0,
     general_start_event    INTEGER   DEFAULT 0,
-    created                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created                TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     end_type               SMALLINT  DEFAULT 0,
     workflow_schema        TEXT,
     pause_undo_id          INTEGER   DEFAULT NULL,
-    actual_end_date        TIMESTAMP NULL
+    actual_end_date        TIMESTAMPTZ NULL
 ) TABLESPACE data_workflow;
 ALTER TABLE workflow_tbl ADD CONSTRAINT workflow1$status$ck CHECK (status IN (1, 2, 3, 4, 5, 6, 7, 8, 9));
 COMMENT ON TABLE workflow_tbl IS 'stores workflow entities and some metadata';
@@ -2526,7 +2535,7 @@ COMMENT ON COLUMN workflow_tbl.actual_end_date IS 'Actual end date. Completion d
 
 CREATE TABLE userlog_tbl
 (
-    logtime         TIMESTAMP NOT NULL,
+    logtime         TIMESTAMPTZ NOT NULL,
     username        VARCHAR(200),
     action          VARCHAR(1000),
     description     VARCHAR(4000),
@@ -2553,17 +2562,17 @@ CREATE TABLE birtreport_tbl
     format            INTEGER   DEFAULT 0,
     email_subject     VARCHAR(200),
     email_description VARCHAR(1000),
-    creation_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    activation_date   TIMESTAMP,
-    end_date          TIMESTAMP,
+    creation_date     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    activation_date   TIMESTAMPTZ,
+    end_date          TIMESTAMPTZ,
     active_tab        SMALLINT  DEFAULT 1 NOT NULL,
     language          VARCHAR(10),
     hidden            SMALLINT  DEFAULT 0 NOT NULL,
-    change_date       TIMESTAMP,
+    change_date       TIMESTAMPTZ,
     intervalpattern   VARCHAR(100),
     lasthostname      VARCHAR(100),
-    laststart         TIMESTAMP NULL,
-    nextstart         TIMESTAMP NULL,
+    laststart         TIMESTAMPTZ NULL,
+    nextstart         TIMESTAMPTZ NULL,
     running           INTEGER   DEFAULT 0,
     lastresult        VARCHAR(512),
     deleted           SMALLINT  DEFAULT 0 NOT NULL
@@ -2615,8 +2624,8 @@ CREATE TABLE mailing_account_sum_tbl
     status_field   VARCHAR(100),
     no_of_mailings INTEGER,
     no_of_bytes    INTEGER,
-    mintime        TIMESTAMP,
-    maxtime        TIMESTAMP,
+    mintime        TIMESTAMPTZ,
+    maxtime        TIMESTAMPTZ,
     skip           INTEGER default 0,
     chunks         INTEGER default 0
 );
@@ -2638,7 +2647,7 @@ CREATE TABLE birtreport_sent_mailings_tbl
     report_id     INTEGER,
     mailing_id    INTEGER,
     company_id    INTEGER,
-    delivery_date TIMESTAMP
+    delivery_date TIMESTAMPTZ
 );
 CREATE INDEX birtrptsent$rid$idx ON birtreport_sent_mailings_tbl (report_id);
 COMMENT ON TABLE birtreport_sent_mailings_tbl IS 'Delivery statistics of birt reports';
@@ -2810,7 +2819,7 @@ CREATE TABLE workflow_reaction_tbl
     trigger_mailing_id INTEGER,
     active             SMALLINT    DEFAULT 0,
     once               SMALLINT    DEFAULT 0,
-    start_date         TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    start_date         TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     reaction_type      INTEGER,
     profile_column     VARCHAR(100),
     rules_sql          VARCHAR(2000),
@@ -2838,7 +2847,7 @@ CREATE TABLE hostauth_pending_tbl
     admin_id      INTEGER                             NOT NULL,
     host_id       VARCHAR(80)                         NOT NULL,
     security_code VARCHAR(10)                         NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (admin_id, host_id)
 );
 COMMENT ON TABLE hostauth_pending_tbl IS 'contains pending authentification info used for 2-factor-auth.';
@@ -2851,9 +2860,9 @@ CREATE TABLE authenticated_hosts_tbl
 (
     admin_id      INTEGER                             NOT NULL,
     host_id       VARCHAR(80)                         NOT NULL,
-    expire_date   TIMESTAMP                           NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expire_date   TIMESTAMPTZ                           NOT NULL,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (admin_id, host_id)
 );
 COMMENT ON TABLE authenticated_hosts_tbl IS 'contains successful authentification info used for 2-factor-auth.';
@@ -2868,8 +2877,8 @@ CREATE TABLE user_agent_tbl
     user_agent_id SERIAL PRIMARY KEY,
     user_agent    VARCHAR(2200) NOT NULL,
     req_counter   INTEGER       NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX useragent$useragent$uq ON user_agent_tbl (user_agent);
 COMMENT ON TABLE user_agent_tbl IS 'stores all client - information about clients used to open / click a mailing, evaluated regulary to keep RegEx for devices and device - classes up to date';
@@ -2973,7 +2982,7 @@ COMMENT ON COLUMN csv_imexport_description_tbl.locale_country IS 'Country part o
 CREATE TABLE job_queue_result_tbl
 (
     job_id   INTEGER                             NOT NULL,
-    time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    time     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     result   VARCHAR(512)                        NOT NULL,
     duration INTEGER   DEFAULT 0,
     hostname VARCHAR(64)                         NOT NULL
@@ -2989,8 +2998,8 @@ COMMENT ON COLUMN job_queue_result_tbl.hostname IS 'execution host';
 CREATE TABLE admin_password_reset_tbl
 (
     admin_id    INTEGER                             NOT NULL,
-    time        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    valid_until TIMESTAMP                           NOT NULL,
+    time        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    valid_until TIMESTAMPTZ                           NOT NULL,
     ip_address  VARCHAR(50)                         NOT NULL,
     token_hash  VARCHAR(64)                         NOT NULL,
     error_count INTEGER                             NOT NULL
@@ -3016,8 +3025,8 @@ CREATE TABLE form_component_tbl
     height        INTEGER,
     mimetype      VARCHAR(32)                         NOT NULL,
     description   VARCHAR(100),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    change_date   TIMESTAMP                           NOT NULL,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    change_date   TIMESTAMPTZ                           NOT NULL,
     CONSTRAINT FORMCOMP$FIDNMTYPE$UQ UNIQUE (form_id, name, type)
 );
 COMMENT ON TABLE form_component_tbl IS 'Images or other binary content for userforms';
@@ -3041,8 +3050,8 @@ CREATE TABLE mail_notification_buffer_tbl
     recipients        VARCHAR(400)  NOT NULL,
     subject           VARCHAR(400)  NOT NULL,
     text              VARCHAR(1000) NOT NULL,
-    send_time         TIMESTAMP     NOT NULL,
-    last_request_time TIMESTAMP     NOT NULL,
+    send_time         TIMESTAMPTZ     NOT NULL,
+    last_request_time TIMESTAMPTZ     NOT NULL,
     request_count     INTEGER       NOT NULL
 );
 COMMENT ON TABLE mail_notification_buffer_tbl IS 'Buffer for email notification on errors and events to not send spam emails to notified email';
@@ -3061,8 +3070,8 @@ CREATE TABLE mailing_statistic_job_tbl
     mailing_id          INTEGER NOT NULL,
     target_groups       VARCHAR(40),
     recipients_type     INTEGER NOT NULL,
-    creation_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date         TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     job_status_descr    VARCHAR(4000)
 );
 COMMENT ON TABLE mailing_statistic_job_tbl IS 'Webservice statistic jobs to request asynchronously';
@@ -3081,7 +3090,7 @@ CREATE TABLE mailing_statistic_tgtgrp_tbl
     mailing_stat_job_id    INTEGER NOT NULL,
     mailing_id             INTEGER NOT NULL,
     target_group_id        INTEGER NOT NULL,
-    creation_date          TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    creation_date          TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
     revenue                DECIMAL(5, 2) DEFAULT 0.0
 );
 COMMENT ON TABLE mailing_statistic_tgtgrp_tbl IS 'Target group lists for MailingSummary webservice';
@@ -3110,10 +3119,10 @@ CREATE TABLE server_command_tbl
 (
     command        VARCHAR(200),
     server_name    VARCHAR(50),
-    execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    execution_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     admin_id       INTEGER,
     description    VARCHAR(2000),
-    timestamp      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    timestamp      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 COMMENT ON TABLE server_command_tbl IS 'Internal command storage for EMM servers. Can be set by EMM and is executed on RDIRs';
 COMMENT ON COLUMN server_command_tbl.command IS 'Command to execute by servers like clear all image chaches';
@@ -3138,17 +3147,6 @@ COMMENT ON COLUMN calendar_custom_recipients_tbl.email IS 'Email of recipient';
 COMMENT ON COLUMN calendar_custom_recipients_tbl.admin_id IS 'Admin who created this notification request';
 COMMENT ON COLUMN calendar_custom_recipients_tbl.notified IS 'Was recipient notified yet';
 
-CREATE TABLE sessionhijackingprevention_tbl
-(
-    ip_group INTEGER,
-    ip       VARCHAR(50),
-    comments VARCHAR(200)
-);
-COMMENT ON TABLE sessionhijackingprevention_tbl IS 'Definition of groups which may change their request IP on an EMM without being blocked';
-COMMENT ON COLUMN sessionhijackingprevention_tbl.ip_group IS 'Reference key';
-COMMENT ON COLUMN sessionhijackingprevention_tbl.ip IS 'IP entry for a whitelist group';
-COMMENT ON COLUMN sessionhijackingprevention_tbl.comments IS 'Description of this group';
-
 CREATE TABLE landingpage_tbl
 (
     domain      VARCHAR(64),
@@ -3167,8 +3165,8 @@ CREATE TABLE import_action_tbl
     name            VARCHAR(128),
     type            VARCHAR(32) NOT NULL,
     action          TEXT        NOT NULL,
-    creation_date   TIMESTAMP,
-    change_date     TIMESTAMP
+    creation_date   TIMESTAMPTZ,
+    change_date     TIMESTAMPTZ
 );
 COMMENT ON TABLE import_action_tbl IS 'Pre import actions';
 COMMENT ON COLUMN import_action_tbl.importaction_id IS 'Reference key used by import_profile_tbl';
@@ -3182,7 +3180,7 @@ COMMENT ON COLUMN import_action_tbl.change_date IS 'Change date of this action';
 CREATE TABLE recipients_report_tbl
 (
     recipients_report_id SERIAL PRIMARY KEY,
-    report_date          TIMESTAMP           NOT NULL,
+    report_date          TIMESTAMPTZ           NOT NULL,
     filename             VARCHAR(500),
     datasource_id        INTEGER,
     admin_id             INTEGER             NOT NULL,
@@ -3222,7 +3220,7 @@ CREATE TABLE scripthelper_email_log_tbl
     to_email   VARCHAR(256),
     cc_email   VARCHAR(256),
     subject    VARCHAR(256),
-    send_date  TIMESTAMP,
+    send_date  TIMESTAMPTZ,
     mailing_id INTEGER,
     form_id    INTEGER
 );
@@ -3250,7 +3248,7 @@ CREATE TABLE admin_use_tbl
     admin_id  INTEGER                             NOT NULL,
     feature   VARCHAR(100)                        NOT NULL,
     use_count INTEGER   DEFAULT 0                 NOT NULL,
-    last_use  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    last_use  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 ALTER TABLE admin_use_tbl ADD CONSTRAINT pk_adminuse PRIMARY KEY (admin_id, feature);
 COMMENT ON TABLE admin_use_tbl IS 'Logging of admin usage of EMM';
@@ -3314,8 +3312,8 @@ CREATE TABLE user_agent_for_client_tbl
     user_agent_id SERIAL PRIMARY KEY,
     user_agent    VARCHAR(2200) NOT NULL,
     req_counter   INTEGER       NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX useragentcl$useragent$uq ON user_agent_for_client_tbl (user_agent);
 COMMENT ON TABLE user_agent_for_client_tbl IS 'Interim storage for email-client and browser UserAgent strings for later manually detection of new clients';
@@ -3330,7 +3328,7 @@ CREATE TABLE company_permission_tbl
     company_id      INTEGER,
     permission_name VARCHAR(40),
     description     VARCHAR(100),
-    creation_date   TIMESTAMP
+    creation_date   TIMESTAMPTZ
 ) TABLESPACE data_accounting;
 ALTER TABLE company_permission_tbl ADD CONSTRAINT compperm$id_permname$uq PRIMARY KEY (company_id, permission_name);
 COMMENT ON TABLE company_permission_tbl IS 'Store premium permissions for clients which are granted';
@@ -3372,7 +3370,7 @@ CREATE TABLE workflow_reaction_step_tbl
     previous_step_id INTEGER            NOT NULL,
     reaction_id      INTEGER            NOT NULL,
     company_id       INTEGER            NOT NULL,
-    step_date        TIMESTAMP          NOT NULL,
+    step_date        TIMESTAMPTZ          NOT NULL,
     done             SMALLINT DEFAULT 0 NOT NULL
 ) TABLESPACE data_workflow;
 ALTER TABLE workflow_reaction_step_tbl ADD CONSTRAINT workflow_reac_step$cisirici$uk UNIQUE (case_id, step_id, reaction_id, company_id);
@@ -3392,7 +3390,7 @@ CREATE TABLE workflow_reaction_out_tbl
     reaction_id INTEGER   NOT NULL,
     company_id  INTEGER   NOT NULL,
     customer_id INTEGER   NOT NULL,
-    step_date   TIMESTAMP NOT NULL
+    step_date   TIMESTAMPTZ NOT NULL
 ) TABLESPACE data_workflow;
 ALTER TABLE workflow_reaction_out_tbl ADD CONSTRAINT workflow_reaction_out$uk UNIQUE (case_id, step_id, reaction_id, company_id, customer_id);
 CREATE INDEX wfrot$datecustrea$idx ON workflow_reaction_out_tbl (customer_id, reaction_id, step_date);
@@ -3427,7 +3425,7 @@ CREATE TABLE workflow_reminder_tbl
     sender_admin_id INTEGER   NOT NULL,
     type            INTEGER   NOT NULL,
     message         VARCHAR(2000),
-    send_date       TIMESTAMP NOT NULL
+    send_date       TIMESTAMPTZ NOT NULL
 ) TABLESPACE data_workflow;
 COMMENT ON TABLE workflow_reminder_tbl IS 'stores scheduled workflow reminders';
 COMMENT ON COLUMN workflow_reminder_tbl.reminder_id IS 'a unique ID to be taken from workflow_reminder_tbl_seq';
@@ -3491,7 +3489,7 @@ CREATE TABLE pending_email_change_tbl
     customer_ref      INTEGER,
     new_email_address VARCHAR(100),
     confirmation_code VARCHAR(100),
-    creation_date     TIMESTAMP
+    creation_date     TIMESTAMPTZ
 ) TABLESPACE data_temp;
 ALTER TABLE pending_email_change_tbl ADD CONSTRAINT pndemlchg$cid$NN CHECK (company_ref IS NOT NULL);
 ALTER TABLE pending_email_change_tbl ADD CONSTRAINT pndemlchg$custid$NN CHECK (customer_ref IS NOT NULL);
@@ -3511,7 +3509,7 @@ CREATE TABLE auto_import_ws_tbl
     company_id       INTEGER             NOT NULL,
     auto_import_id   INTEGER             NOT NULL,
     status           INTEGER             NOT NULL,
-    expire_timestamp TIMESTAMP,
+    expire_timestamp TIMESTAMPTZ,
     report           TEXT
 );
 COMMENT ON TABLE auto_import_ws_tbl IS 'stores WS-triggered auto-import job state while running and some time after completion';
@@ -3541,7 +3539,7 @@ CREATE TABLE mimetype_whitelist_tbl
 (
     mimetype      VARCHAR(100),
     description   VARCHAR(100),
-    creation_date TIMESTAMP
+    creation_date TIMESTAMPTZ
 ) TABLESPACE data_accounting;
 ALTER TABLE mimetype_whitelist_tbl ADD CONSTRAINT mimewl$mt$NN CHECK (mimetype IS NOT NULL);
 ALTER TABLE mimetype_whitelist_tbl ADD CONSTRAINT mimewl$cdate$NN CHECK (creation_date IS NOT NULL);
@@ -3554,7 +3552,7 @@ CREATE TABLE license_tbl
 (
     name        VARCHAR(100) NOT NULL,
     data        BYTEA,
-    change_date TIMESTAMP
+    change_date TIMESTAMPTZ
 );
 CREATE UNIQUE INDEX license_tbl$name$uq ON license_tbl (name);
 COMMENT ON TABLE license_tbl IS 'License data';
@@ -3569,7 +3567,7 @@ CREATE TABLE permission_tbl
     sub_category    VARCHAR(32) DEFAULT NULL,
     sort_order      INTEGER     DEFAULT 0,
     feature_package VARCHAR(32) DEFAULT NULL,
-    creation_date   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+    creation_date   TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE company_permission_tbl ADD CONSTRAINT compperm$id_permname$fk FOREIGN KEY (permission_name) REFERENCES permission_tbl (permission_name);
 ALTER TABLE admin_permission_tbl ADD CONSTRAINT adminperm$perm$fk FOREIGN KEY (permission_name) REFERENCES permission_tbl (permission_name) ON DELETE CASCADE;
@@ -3753,7 +3751,7 @@ CREATE TABLE ws_login_track_tbl
 (
     login_track_id BIGSERIAL,
     ip_address     VARCHAR(50),
-    creation_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     login_status   INTEGER,
     username       VARCHAR(200)
 ) TABLESPACE data_emmaux;
@@ -3784,8 +3782,8 @@ CREATE TABLE startup_job_tbl
     company_id    INTEGER       NOT NULL,
     enabled       SMALLINT      NOT NULL,
     state         SMALLINT      NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     description   VARCHAR(1000)
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE startup_job_tbl IS 'Stores information about job to be run on context startup';
@@ -3842,8 +3840,8 @@ CREATE TABLE release_log_tbl
     host_name         VARCHAR(64),
     application_name  VARCHAR(64),
     version_number    VARCHAR(15),
-    startup_timestamp TIMESTAMP,
-    build_time        TIMESTAMP,
+    startup_timestamp TIMESTAMPTZ,
+    build_time        TIMESTAMPTZ,
     build_host        VARCHAR(100),
     build_user        VARCHAR(100)
 );
@@ -3863,8 +3861,8 @@ CREATE TABLE ref_import_action_tbl
     name                VARCHAR(128),
     type                VARCHAR(32) NOT NULL,
     action              TEXT        NOT NULL,
-    creation_date       TIMESTAMP,
-    change_date         TIMESTAMP
+    creation_date       TIMESTAMPTZ,
+    change_date         TIMESTAMPTZ
 );
 COMMENT ON TABLE ref_import_action_tbl IS 'Pre import actions for reference tables';
 COMMENT ON COLUMN ref_import_action_tbl.ref_importaction_id IS 'Unique ID of pre import action, use ref_import_action_tbl_seq';
@@ -3879,7 +3877,7 @@ CREATE TABLE feature_cleanup_tbl
 (
     company_id        INTEGER,
     feature           VARCHAR(100),
-    deactivation_date TIMESTAMP,
+    deactivation_date TIMESTAMPTZ,
     cleanup_status    INTEGER
 );
 COMMENT ON TABLE feature_cleanup_tbl IS 'Storage of data of deactivated features for later DbCleaner actions';
@@ -3892,7 +3890,7 @@ CREATE TABLE permission_category_tbl
 (
     category_name VARCHAR(32) PRIMARY KEY,
     sort_order    INTEGER   DEFAULT 0,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE permission_category_tbl IS 'All available permission categories';
 COMMENT ON COLUMN permission_category_tbl.category_name IS 'Technical name of this category';
@@ -3916,7 +3914,7 @@ CREATE TABLE permission_subcategory_tbl
     category_name    VARCHAR(32),
     subcategory_name VARCHAR(32),
     sort_order       INTEGER   DEFAULT 0,
-    creation_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (category_name, subcategory_name)
 ) TABLESPACE data_accounting;
 COMMENT ON TABLE permission_subcategory_tbl IS 'All available permission subcategories';
@@ -4034,8 +4032,8 @@ CREATE TABLE webhook_message_tbl
     message_id      BIGSERIAL PRIMARY KEY,
     company_ref     INTEGER   NOT NULL,
     event_type      SMALLINT  NOT NULL,
-    event_timestamp TIMESTAMP NOT NULL,
-    send_timestamp  TIMESTAMP NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    send_timestamp  TIMESTAMPTZ NOT NULL,
     retry_count     SMALLINT  NOT NULL,
     status          SMALLINT  NOT NULL,
     payload         TEXT      NOT NULL,
@@ -4057,7 +4055,7 @@ CREATE TABLE webhook_process_timestamp_tbl
 (
     company_ref  INTEGER   NOT NULL,
     process_type SMALLINT  NOT NULL,
-    timestamp    TIMESTAMP NOT NULL,
+    timestamp    TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (company_ref, process_type),
     CONSTRAINT webhook_prcts$cid$fk FOREIGN KEY (company_ref) REFERENCES company_tbl (company_id)
 );
@@ -4081,8 +4079,8 @@ COMMENT ON COLUMN webhook_profile_field_tbl.profile_field IS 'Name of profile fi
 CREATE TABLE webhook_backend_data_tbl
 (
     id              BIGSERIAL PRIMARY KEY,
-    creation_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    event_timestamp TIMESTAMP                           NOT NULL,
+    creation_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    event_timestamp TIMESTAMPTZ                           NOT NULL,
     event_type      SMALLINT                            NOT NULL,
     company_id      INTEGER                             NOT NULL,
     mailing_id      INTEGER,
@@ -4114,8 +4112,8 @@ CREATE TABLE bounce_rule_tbl
     company_id    INTEGER,
     rid           INTEGER,
     definition    TEXT,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_bounce;
 ALTER TABLE bounce_rule_tbl ADD CONSTRAINT bncrule$coidrid$pk PRIMARY KEY (company_id, rid);
 ALTER TABLE bounce_rule_tbl ADD CONSTRAINT bncrule$coid$nn CHECK (company_id IS NOT NULL);
@@ -4135,8 +4133,8 @@ CREATE TABLE bounce_config_tbl
     name          VARCHAR(100),
     value         TEXT,
     description   VARCHAR(500),
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_bounce;
 ALTER TABLE bounce_config_tbl ADD CONSTRAINT bnccfg$coidridname$pk PRIMARY KEY (company_id, rid, name);
 ALTER TABLE bounce_config_tbl ADD CONSTRAINT bnccfg$coid$nn CHECK (company_id IS NOT NULL);
@@ -4156,7 +4154,7 @@ CREATE TABLE bounce_ar_lastsent_tbl
 (
     rid         INTEGER,
     customer_id INTEGER,
-    lastsent    TIMESTAMP
+    lastsent    TIMESTAMPTZ
 ) TABLESPACE data_bounce;
 ALTER TABLE bounce_ar_lastsent_tbl ADD CONSTRAINT bncarl$ridcid$pk PRIMARY KEY (rid, customer_id);
 ALTER TABLE bounce_ar_lastsent_tbl ADD CONSTRAINT bncarl$rid$nn CHECK (rid IS NOT NULL);
@@ -4249,7 +4247,7 @@ CREATE TABLE mailing_import_lock_tbl
     maildrop_status_id INTEGER NOT NULL,
     auto_import_id     INTEGER NOT NULL,
     status_ok          INTEGER,
-    change_date        TIMESTAMP,
+    change_date        TIMESTAMPTZ,
     mailing_id         INTEGER NOT NULL,
     PRIMARY KEY (mailing_id, auto_import_id)
 );
@@ -4288,7 +4286,7 @@ ALTER TABLE company_tbl ADD CONSTRAINT comp$status$fk FOREIGN KEY (status) REFER
 
 CREATE TABLE restful_usage_log_tbl
 (
-    timestamp       TIMESTAMP     NOT NULL,
+    timestamp       TIMESTAMPTZ     NOT NULL,
     endpoint        VARCHAR(1000) NOT NULL,
     description     VARCHAR(4000),
     request_method  VARCHAR(7)    NOT NULL,
@@ -4312,7 +4310,7 @@ CREATE TABLE mailloop_log_tbl
 (
     mailloop_log_id SERIAL,
     rid             VARCHAR(32),
-    timestamp       TIMESTAMP,
+    timestamp       TIMESTAMPTZ,
     status          SMALLINT,
     company_id      INTEGER,
     mailing_id      INTEGER,
@@ -4357,7 +4355,7 @@ CREATE TABLE undo_workflow_tbl
     workflow_id     INTEGER                             NOT NULL,
     company_id      INTEGER                             NOT NULL,
     workflow_schema TEXT,
-    creation_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    creation_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 ALTER TABLE undo_workflow_tbl ADD CONSTRAINT undoworkflow$cid$fk FOREIGN KEY (company_id) REFERENCES company_tbl (company_id);
 ALTER TABLE undo_workflow_tbl ADD CONSTRAINT undoworkflow$adminid$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id);
@@ -4378,7 +4376,7 @@ CREATE TABLE import_size_tbl
     import_ref  INTEGER     NOT NULL,
     import_type VARCHAR(32) NOT NULL,
     lines_count INTEGER     NOT NULL,
-    timestamp   TIMESTAMP   NOT NULL
+    timestamp   TIMESTAMPTZ   NOT NULL
 ) TABLESPACE data_temp;
 COMMENT ON TABLE import_size_tbl IS 'Import sizes';
 COMMENT ON COLUMN import_size_tbl.company_ref IS 'company id';
@@ -5365,11 +5363,11 @@ VALUES (1, 'EMM Target Group: Untouched',
         '`timestamp` < TODAY-180 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0,
         0);
 
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, '0',
-        'OK', '1', '0', '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.util.quartz.LoginTrackTableCleanerJobWorker', 0,
-        2);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('LoginTrackTableCleaner', 'LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, '0',
+        'OK', '1', '0', '**00', CURRENT_TIMESTAMP, NULL, 0,
+        1);
 INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) (SELECT id, 'retentionTime', '14'
                                                                                FROM job_queue_tbl
                                                                                WHERE description = 'LoginTrackTableCleaner');
@@ -5377,76 +5375,68 @@ INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) (S
                                                                                FROM job_queue_tbl
                                                                                WHERE description = 'LoginTrackTableCleaner');
 
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('DBCleaner', CURRENT_TIMESTAMP, NULL, '0', 'OK', '0', '0', '0000',
-        CURRENT_TIMESTAMP, NULL, 'com.agnitas.util.quartz.DBCleanerJobWorker', 0, 2);
-INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) (SELECT id, 'maxNumberOfCompanyCleaningWorkers', '3'
-                                                                               FROM job_queue_tbl
-                                                                               WHERE description = 'DBCleaner');
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('CalendarCommentMailingService', 'CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, '0', 'OK',
+        '1', '0', '**00', CURRENT_TIMESTAMP, NULL, 0, 3);
 
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, '0', 'OK',
-        '1', '0', '**00', CURRENT_TIMESTAMP, NULL,
-        'com.agnitas.emm.core.calendar.service.CalendarCommentMailingServiceJobWorker', 0, 3);
-
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '23',
-        '0130', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.UndoRelictCleanerJobWorker', 0, 2);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('AutoOptimization', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '0',
-        '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.mailing.autooptimization.service.OptimizationJobWorker', 0,
-        5);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('BirtReports', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '0',
-        '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.birtreport.service.BirtReportJobWorker', 0, 4);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('WorkflowReminderServiceJobWorker', CURRENT_TIMESTAMP, NULL, '0', 'OK',
-        '1', '0', '***0;***5', CURRENT_TIMESTAMP, NULL,
-        'com.agnitas.emm.core.workflow.service.WorkflowReminderServiceJobWorker', 0, 4);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('WorkflowReactionHandler', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1',
-        '0', '***0;***5', CURRENT_TIMESTAMP, NULL,
-        'com.agnitas.emm.core.workflow.service.jobs.WorkflowReactionJobWorker', 0, 5);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('WorkflowStateHandler', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '0',
-        '***0;***5', CURRENT_TIMESTAMP, NULL,
-        'com.agnitas.emm.core.workflow.service.jobs.WorkflowStateTransitionJobWorker', 0, 5);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00',
-        CURRENT_TIMESTAMP, NULL, 'com.agnitas.util.quartz.DBErrorCheckJobWorker', 0, 3);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('WebserviceLoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK',
-        1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.util.quartz.WebserviceLoginTrackTableCleanerJobWorker', 0,
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('UndoRelictCleaner', 'UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '23',
+        '0130', CURRENT_TIMESTAMP, NULL, 0, 2);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('AutoOptimization', 'AutoOptimization', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '0',
+        '***0;***5', CURRENT_TIMESTAMP, NULL, 0,5);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('BirtReports', 'BirtReports', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '0',
+        '***0;***5', CURRENT_TIMESTAMP, NULL, 0, 4);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('WorkflowReminderService', 'WorkflowReminderServiceJobWorker', CURRENT_TIMESTAMP, NULL, '0', 'OK',
+        '1', '0', '***0;***5', CURRENT_TIMESTAMP, NULL,0, 4);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('WorkflowReactionHandler', 'WorkflowReactionHandler', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1',
+        '0', '***0;***5', CURRENT_TIMESTAMP, NULL,0, 5);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('WorkflowStateHandler', 'WorkflowStateHandler', CURRENT_TIMESTAMP, NULL, '0', 'OK', '1', '0',
+        '***0;***5', CURRENT_TIMESTAMP, NULL, 0, 5);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('DBErrorCheck','DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00',
+        CURRENT_TIMESTAMP, NULL, 0, 3);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted, criticality)
+VALUES ('WebserviceLoginTrackTableCleaner', 'WebserviceLoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK',
+        1, 0, '**00', CURRENT_TIMESTAMP, NULL, 0,
         2);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, deleted)
-VALUES ('RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00',
-        CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.RefreshUserLastLoginJobWorker', 0);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, criticality, deleted)
-VALUES ('AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '0000',
-        CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 1, 0);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, criticality, deleted)
-VALUES ('DiskSpaceCheck', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '**00',
-        CURRENT_TIMESTAMP, null, 'com.agnitas.emm.core.serverstatus.service.job.DiskSpaceCheckJobWorker', 3, 0);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, criticality, deleted)
-VALUES ('MigrationJobWorker', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, 'MoTuWeThFr:1500', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.MigrationJobWorker', 4, 0);
-INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration,
-                           interval, nextstart, hostname, runclass, criticality, deleted)
-VALUES ('UpdatePasswordReminder', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0,
-        '0800', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.UpdatePasswordReminderJobWorker', 1, 0);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, deleted)
+VALUES ('RefreshUserLastLogin','RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00',
+        CURRENT_TIMESTAMP, NULL, 0);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, criticality, deleted)
+VALUES ('AnonymizeStatistics', 'AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '0000',
+        CURRENT_TIMESTAMP, null, 1, 0);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, criticality, deleted)
+VALUES ('DiskSpaceCheck', 'DiskSpaceCheck', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '**00',
+        CURRENT_TIMESTAMP, null, 3, 0);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, criticality, deleted)
+VALUES ('MigrationJobWorker','MigrationJobWorker', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, 'MoTuWeThFr:1500', CURRENT_TIMESTAMP, null, 4, 0);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration,
+                           interval, nextstart, hostname, criticality, deleted)
+VALUES ('UpdatePasswordReminder', 'UpdatePasswordReminder', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0,
+        '0800', CURRENT_TIMESTAMP, null,1, 0);
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration, interval, nextstart, hostname, deleted, criticality)
+VALUES ('WebhookMessageDelivery','WebhookMessageDelivery', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 0,  5);
+
+INSERT INTO job_queue_tbl (job_name, description, created, laststart, running, lastresult, startaftererror, lastduration, interval, nextstart, hostname, deleted, criticality)
+VALUES ('WebhookBackendDataMessageGenerator', 'WebhookBackendDataMessageGenerator', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 0,  5);
 
 
 INSERT INTO mailing_account_sum_tbl (company_id, mailing_id, status_field, no_of_mailings, no_of_bytes, mintime, maxtime)
@@ -5752,8 +5742,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION mailing_account_sum_trigger_function()
 RETURNS TRIGGER AS $$
 DECLARE
-v_mintime    TIMESTAMP;
-    v_maxtime    TIMESTAMP;
+v_mintime    TIMESTAMPTZ;
+    v_maxtime    TIMESTAMPTZ;
     v_error_msg  TEXT;
 BEGIN
 SELECT mintime, maxtime
@@ -5836,7 +5826,7 @@ CREATE TABLE db_schema_snapshot_tbl
 (
     version_number VARCHAR(15),
     schema_json    TEXT,
-    timestamp      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    timestamp      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT PK_DB_SCHEMA_SNAPSHOT PRIMARY KEY (version_number)
 );
 COMMENT ON TABLE db_schema_snapshot_tbl IS 'Stores DB schema snapshots';
@@ -5854,8 +5844,8 @@ CREATE TABLE system_message_config_tbl
     subline       VARCHAR(255),
     content       TEXT,
     legal_notice  TEXT         NOT NULL,
-    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    change_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT sysmsg$tl$uq UNIQUE (type, locale)
 );
 COMMENT ON TABLE system_message_config_tbl IS 'Stores configuration data for system messages';
@@ -5870,6 +5860,82 @@ COMMENT ON COLUMN system_message_config_tbl.legal_notice IS 'Legal notice of sys
 COMMENT ON COLUMN system_message_config_tbl.creation_date IS 'Creation date of the configuration';
 COMMENT ON COLUMN system_message_config_tbl.change_date IS 'Change date of configuration';
 
+CREATE TABLE ui_message_tbl (
+    admin_id      INTEGER,
+    messages_json TEXT,
+    change_date   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE ui_message_tbl ADD CONSTRAINT uimessage$admin$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id);
+
+COMMENT ON TABLE ui_message_tbl IS 'Stores messages to be shown on UI';
+COMMENT ON COLUMN ui_message_tbl.admin_id IS 'Admin id of admin';
+COMMENT ON COLUMN ui_message_tbl.messages_json IS 'messages JSON array';
+COMMENT ON COLUMN ui_message_tbl.change_date IS 'time of last change';
+
+CREATE TABLE hp_clickranking_tbl
+(
+    url_id          INTEGER       NOT NULL,
+    company_id      INTEGER       NOT NULL,
+    url             VARCHAR(2000) NOT NULL,
+    topic           VARCHAR(50)   NOT NULL,
+    count           INTEGER       NOT NULL,
+    rank            INTEGER       NOT NULL,
+    first_clickdate TIMESTAMPTZ     NOT NULL
+);
+COMMENT ON TABLE hp_clickranking_tbl IS 'Stores the number of clicks per topic item to support ranking.';
+COMMENT ON COLUMN hp_clickranking_tbl.url_id IS 'References rdir_url_tbl.url_id';
+COMMENT ON COLUMN hp_clickranking_tbl.company_id IS 'ID of company';
+COMMENT ON COLUMN hp_clickranking_tbl.url IS 'References rdir_url_tbl.full_url';
+COMMENT ON COLUMN hp_clickranking_tbl.topic IS 'References rdir_action_tbl.shortname. One of the keywords (given in attribute emm-trigger-name or - if former attribute does not exist - emm-trigger-id)';
+COMMENT ON COLUMN hp_clickranking_tbl.count IS 'Total number of link clicks';
+COMMENT ON COLUMN hp_clickranking_tbl.rank IS 'Position of the link in the hit list for the respective topic (keyword)';
+COMMENT ON COLUMN hp_clickranking_tbl.first_clickdate IS 'First click on this link';
+
+CREATE TABLE oauth2_auth_req_tbl
+(
+    state         VARCHAR(128) PRIMARY KEY,
+    request_json  TEXT         NOT NULL,
+    admin_id      INTEGER      NOT NULL,
+    company_id    INTEGER      NOT NULL,
+    creation_date TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expiry_date   TIMESTAMPTZ    NOT NULL
+);
+COMMENT ON TABLE oauth2_auth_req_tbl IS 'Temporary store for OAuth2 authorization requests during binding flow';
+COMMENT ON COLUMN oauth2_auth_req_tbl.state IS 'OAuth2 state parameter - used as PK and CSRF protection token';
+COMMENT ON COLUMN oauth2_auth_req_tbl.request_json IS 'Serialized OAuth2 authorization request (JSON)';
+COMMENT ON COLUMN oauth2_auth_req_tbl.admin_id IS 'Admin user initiating the OAuth2 binding flow - ID (admin_tbl)';
+COMMENT ON COLUMN oauth2_auth_req_tbl.company_id IS 'Tenant ID (company_tbl)';
+COMMENT ON COLUMN oauth2_auth_req_tbl.creation_date IS 'Record creation timestamp';
+COMMENT ON COLUMN oauth2_auth_req_tbl.expiry_date IS 'Expiry timestamp - request must be completed before this time';
+
+ALTER TABLE oauth2_auth_req_tbl
+    ADD CONSTRAINT oauth2authreq$adminid$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id) ON DELETE CASCADE;
+ALTER TABLE oauth2_auth_req_tbl
+    ADD CONSTRAINT oauth2authreq$cid$fk FOREIGN KEY (company_id) REFERENCES company_tbl (company_id);
+
+CREATE TABLE oauth2_ext_identity_tbl
+(
+    id            SERIAL       PRIMARY KEY,
+    admin_id      INTEGER      NOT NULL,
+    company_id    INTEGER      NOT NULL,
+    issuer        VARCHAR(300) NOT NULL,
+    subject       VARCHAR(300) NOT NULL,
+    creation_date TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (issuer, subject)
+);
+COMMENT ON TABLE oauth2_ext_identity_tbl IS 'Maps EMM user accounts to external OAuth2/OIDC identities';
+COMMENT ON COLUMN oauth2_ext_identity_tbl.id IS 'Unique record ID';
+COMMENT ON COLUMN oauth2_ext_identity_tbl.admin_id IS 'EMM admin linked to the external identity - ID (admin_tbl)';
+COMMENT ON COLUMN oauth2_ext_identity_tbl.company_id IS 'Tenant ID (company_tbl)';
+COMMENT ON COLUMN oauth2_ext_identity_tbl.issuer IS 'OAuth2/OIDC issuer URL identifying the identity provider';
+COMMENT ON COLUMN oauth2_ext_identity_tbl.subject IS 'Subject identifier from the identity provider (unique user ID within issuer)';
+COMMENT ON COLUMN oauth2_ext_identity_tbl.creation_date IS 'Record creation timestamp';
+
+ALTER TABLE oauth2_ext_identity_tbl
+    ADD CONSTRAINT oauth2extid$adminid$fk FOREIGN KEY (admin_id) REFERENCES admin_tbl (admin_id) ON DELETE CASCADE;
+ALTER TABLE oauth2_ext_identity_tbl
+    ADD CONSTRAINT oauth2extid$cid$fk FOREIGN KEY (company_id) REFERENCES company_tbl (company_id);        
+        
 INSERT INTO system_message_config_tbl (type, locale, subject, reply_email, headline, subline, content, legal_notice)
 VALUES (0, 'en', 'Your password expires in {5} days', 'support@agnitas.de', 'Your password is about to expire', '', 'Hello {0} {1},
 <br />
@@ -6347,5 +6413,44 @@ Chairman of the Board: Norbert Stangl
 <br />
 <br />
 <a href="https://www.agnitas.de/en/data-protection-statement/" style="color: #444444; " target="_blank">Data Protection Statement</a>');
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.07.032', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.07.212', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.07.262', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.07.508', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.07.509', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.07.511', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.10.033', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.10.315', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.10.428', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('25.10.522', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.01.263', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.01.313', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.01.093', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.04.107', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.04.139', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.04.259', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.04.401', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.04.405', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -40,30 +40,30 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
     }
 
     @Override
-    public Map<Bounce, Integer> getSoftBounces(int mailingId, int companyId, String targetSql) {
-        String joinCustomerTbl = isBlank(targetSql)
+    public Map<Bounce, Integer> getSoftBounces(Filter filter) {
+        String joinCustomerTbl = isBlank(filter.targetSql())
                 ? "" :
-                "JOIN customer_%d_tbl cust ON (bounce.customer_id = cust.customer_id)".formatted(companyId);
+                "JOIN customer_%d_tbl cust ON (bounce.customer_id = cust.customer_id)".formatted(filter.companyId());
         return selectLinkedMap("""
                         SELECT COUNT(DISTINCT bounce.customer_id) amount, bounce.detail AS detail
                         FROM bounce_tbl bounce %s
                         WHERE bounce.company_id = ? AND bounce.mailing_id = ? AND bounce.detail <= 509 %s
                         GROUP BY detail
-                        ORDER BY detail""".formatted(joinCustomerTbl, andClause(targetSql)),
+                        ORDER BY detail""".formatted(joinCustomerTbl, andClause(filter.targetSql())),
                 (rs, rowNum) -> new Tuple<>(
                         Bounce.from(rs.getInt("detail")),
                         rs.getInt("amount")
                 ),
-                companyId,
-                mailingId
+                filter.companyId(),
+                filter.mailingId()
         );
     }
 
     @Override
-    public Map<Bounce, Integer> getHardBounces(int mailingId, int companyId, String targetSql) {
-        String joinCustomerTbl = isBlank(targetSql)
+    public Map<Bounce, Integer> getHardBounces(Filter filter) {
+        String joinCustomerTbl = isBlank(filter.targetSql())
                 ? "" :
-                "JOIN customer_%d_tbl cust ON bind.customer_id = cust.customer_id".formatted(companyId);
+                "JOIN customer_%d_tbl cust ON bind.customer_id = cust.customer_id".formatted(filter.companyId());
         return selectLinkedMap("""
                         SELECT bind.user_remark AS detail, COUNT(DISTINCT bind.customer_id) AS amount
                         FROM customer_%d_binding_tbl bind %s
@@ -72,17 +72,17 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
                           AND bind.user_type IN ('%s', '%s')
                           %s
                         GROUP BY bind.user_remark""".formatted(
-                        companyId,
+                        filter.companyId(),
                         joinCustomerTbl,
                         BindingEntry.UserType.World.getTypeCode(),
                         BindingEntry.UserType.WorldVIP.getTypeCode(),
-                        andClause(targetSql)
+                        andClause(filter.targetSql())
                 ),
                 (rs, rowNum) -> new Tuple<>(
                         getBounceFromRemark(rs.getString("detail")),
                         rs.getInt("amount")
                 ),
-                mailingId,
+                filter.mailingId(),
                 UserStatus.Bounce.getStatusCode()
         );
     }
@@ -98,7 +98,7 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
     }
 
     @Override
-    public List<EmailBounceDetail> getHardBouncesWithDetailAndEmail(int mailingId, int companyId, String targetSql) {
+    public List<EmailBounceDetail> getHardBouncesWithDetailAndEmail(Filter filter) {
         // default
         return select("""
                 SELECT
@@ -116,11 +116,11 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
                   %s
                 GROUP BY cust.email, cust.gender, cust.firstname, cust.lastname, cust.customer_id"""
                 .formatted(
-                        companyId,
-                        companyId,
+                        filter.companyId(),
+                        filter.companyId(),
                         BindingEntry.UserType.World.getTypeCode(),
                         BindingEntry.UserType.WorldVIP.getTypeCode(),
-                        andClause(targetSql)
+                        andClause(filter.targetSql())
                 ), (rs, i) -> {
             String userRemark = rs.getString("user_remark");
             int code = 510; // default
@@ -139,11 +139,11 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
                     rs.getString("lastname")
 
             );
-        }, UserStatus.Bounce.getStatusCode(), mailingId);
+        }, UserStatus.Bounce.getStatusCode(), filter.mailingId());
     }
 
     @Override
-    public List<EmailBounceDetail> getSoftBouncesWithDetailAndEmail(int mailingId, int companyId, String targetSql) {
+    public List<EmailBounceDetail> getSoftBouncesWithDetailAndEmail(Filter filter) {
         return select("""
                         SELECT cust.email email,
                                cust.gender gender,
@@ -156,7 +156,7 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
                         WHERE bounce.company_id = ?
                           AND bounce.mailing_id = ?
                           AND bounce.detail <= 509
-                          %s""".formatted(companyId, andClause(targetSql)),
+                          %s""".formatted(filter.companyId(), andClause(filter.targetSql())),
                 (rs, i) -> new EmailBounceDetail(
                         rs.getInt("detail"),
                         rs.getInt("customer_id"),
@@ -165,7 +165,7 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
                         rs.getString("firstname"),
                         rs.getString("lastname")
                 ),
-                companyId, mailingId
+                filter.companyId(), filter.mailingId()
         );
     }
 }

@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -30,7 +30,7 @@ import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.reporting.birt.external.utils.BirtReportUtils;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -164,44 +164,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return tempTableID;
     }
 
-    @DaoUpdateReturnValueCheck
-    public int prepareReportOptimization(int optimizationID, int companyID, String selectedTargetsAsString, String recipientsType, Boolean showSoftbounces, String startDate, String stopDate, Boolean hourScale) {
-        int cumulateTableId = createTempTable();
-        List<Integer> mailings = getAutoOptimizationMailings(optimizationID, companyID);
-
-        if (!CollectionUtils.isEmpty(mailings)) {
-            List<Integer> mailingTempTablesId = new ArrayList<>();
-            List<List<MailingSummaryRow>> mailingTempTablesContent = new ArrayList<>();
-            for (Integer mailingID : mailings) {
-                if (mailingID != 0) {
-                    int tempTableID = prepareReport(mailingID, companyID, selectedTargetsAsString, recipientsType, showSoftbounces, startDate, stopDate, hourScale);
-                    mailingTempTablesId.add(tempTableID);
-                    mailingTempTablesContent.add(getResultsFromTempTable(tempTableID));
-                }
-            }
-            int countTables = mailingTempTablesId.size();
-            if (countTables > 0) {
-                int countRows = mailingTempTablesContent.get(0).size();
-                for (int i = 0; i < countRows; i++) {
-                    String category = mailingTempTablesContent.get(0).get(i).getCategory();
-                    int categoryIndex = mailingTempTablesContent.get(0).get(i).getCategoryindex();
-                    int value = 0;
-                    for (int j = 0; j < countTables; j++) {
-                        value += mailingTempTablesContent.get(j).get(i).getCount();
-                    }
-                    insertIntoTempTable(cumulateTableId, category, categoryIndex, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, value, 0);
-                }
-                for (Integer tempID : mailingTempTablesId) {
-                    dropTempTable(tempID);
-                }
-                List<LightTarget> targets = getTargets(selectedTargetsAsString, companyID);
-                updateRates(cumulateTableId, companyID, targets);
-            }
-        }
-
-        return cumulateTableId;
-    }
-
     public void insertDeliveredIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets,
                                              String hiddenTargetSql, String recipientsType, DateFormats dateFormats) {
         if (successTableActivated(companyID) && hasSuccessTableData(companyID, mailingID)) {
@@ -212,9 +174,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertMailformatsIntoTempTable(int tempTableID, int mailingID, int companyID, List<BirtReporUtils.BirtReportFigure> figures, String startDateString, String endDateString) {
-        if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
-                figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML))) {
+    public void insertMailformatsIntoTempTable(int tempTableID, int mailingID, int companyID, List<BirtReportUtils.BirtReportFigure> figures, String startDateString, String endDateString) {
+        if (!(figures.contains(BirtReportUtils.BirtReportFigure.HTML) || figures.contains(BirtReportUtils.BirtReportFigure.TEXT) ||
+                figures.contains(BirtReportUtils.BirtReportFigure.OFFLINE_HTML))) {
             return;
         }
 
@@ -270,13 +232,13 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             int mailtype = toInt(map.get("mailtype"));
             int categoryIndex = 0;
             String category = "";
-            if (mailtype == MailType.HTML.getIntValue() && figures.contains(BirtReporUtils.BirtReportFigure.HTML)) {
+            if (mailtype == MailType.HTML.getIntValue() && figures.contains(BirtReportUtils.BirtReportFigure.HTML)) {
                 categoryIndex = CommonKeys.SENT_HTML_INDEX;
                 category = CommonKeys.SENT_HTML;
-            } else if (mailtype == MailType.TEXT.getIntValue() && figures.contains(BirtReporUtils.BirtReportFigure.TEXT)) {
+            } else if (mailtype == MailType.TEXT.getIntValue() && figures.contains(BirtReportUtils.BirtReportFigure.TEXT)) {
                 categoryIndex = CommonKeys.SENT_TEXT_INDEX;
                 category = CommonKeys.SENT_TEXT;
-            } else if ((mailtype == MailType.HTML_OFFLINE.getIntValue() || mailtype == 3) && figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML)) {
+            } else if ((mailtype == MailType.HTML_OFFLINE.getIntValue() || mailtype == 3) && figures.contains(BirtReportUtils.BirtReportFigure.OFFLINE_HTML)) {
                 categoryIndex = CommonKeys.SENT_OFFLINE_HTML_INDEX;
                 category = CommonKeys.SENT_OFFILE_HTML;
             }
@@ -292,22 +254,10 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
         // Inserts the Offline-HTML value witch was deferred
-        if (figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML)) {
+        if (figures.contains(BirtReportUtils.BirtReportFigure.OFFLINE_HTML)) {
             insertIntoTempTable(tempTableID, CommonKeys.SENT_OFFILE_HTML, CommonKeys.SENT_OFFLINE_HTML_INDEX, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, sentOfflineHtml, 0);
             insertMailformatRate(tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX, CommonKeys.SENT_OFFLINE_HTML_INDEX);
         }
-    }
-
-    public int prepareDashboardForCharts(int mailingID, int companyID) {
-        int tempTableID = createTempTable();
-        DateFormats dateFormats = new DateFormats();
-        insertSendIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
-        insertClickersIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, true, dateFormats);
-        insertOpenersIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, true, false, dateFormats);
-        insertBouncesIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, false, dateFormats);
-        insertOptOutsIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
-        updateDashboardRates(tempTableID);
-        return tempTableID;
     }
 
     @DaoUpdateReturnValueCheck
@@ -1049,18 +999,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    private void updateDashboardRates(int tempTableID) {
-        String queryTotalSend = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE targetgroup_index = ? AND category_index = ? ";
-
-        int totalSend = selectEmbedded(queryTotalSend, Integer.class, CommonKeys.ALL_SUBSCRIBERS_INDEX, CommonKeys.DELIVERED_EMAILS_INDEX);
-
-        if (totalSend != 0) {
-            String queryUpdateRate = "UPDATE " + getTempTableName(tempTableID) + " SET rate = (value * 1.0) / ?";
-            updateEmbedded(queryUpdateRate, totalSend);
-        }
-    }
-
-    @DaoUpdateReturnValueCheck
     private void insertSoftbouncesUndeliverable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType, boolean showSoftbounces) {
         if (!successTableActivated(companyID) || !showSoftbounces || isMailTrackingExpired(companyID, mailingID)) {
             return;
@@ -1280,8 +1218,15 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         parameters.add(mailingID);
 
-        // Exclude clickers with combinations of deviceclasses
-        queryBuilder.append(" AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rdir WHERE rdir.device_class_id != r.device_class_id AND rdir.mailing_id = r.mailing_id AND rdir.customer_id = r.customer_id)");
+        // Exclude clickers with combinations of device classes (legacy rows without a device class always pass through)
+        queryBuilder.append("""
+                 AND (r.device_class_id IS NULL OR r.customer_id IN (
+                     SELECT rdir.customer_id FROM rdirlog_%d_tbl rdir
+                     WHERE rdir.mailing_id = ? AND rdir.customer_id <> 0
+                     GROUP BY rdir.customer_id HAVING COUNT(DISTINCT rdir.device_class_id) = 1
+                 ))
+                """.formatted(companyID));
+        parameters.add(mailingID);
 
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
             queryBuilder.append(" AND (? <= r.timestamp AND r.timestamp < ?)");
@@ -1397,8 +1342,10 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         parameters.add(mailingID);
 
-        // Exclude clickers with combinations of deviceclasses
-        queryBuilder.append(" AND NOT EXISTS (SELECT 1 FROM onepixellog_device_").append(companyID).append("_tbl opl WHERE opl.device_class_id != o.device_class_id AND opl.mailing_id = o.mailing_id AND opl.customer_id = o.customer_id)");
+        // Exclude openers with combinations of deviceclasses (legacy rows without a device class always pass through)
+        queryBuilder.append(" AND (o.device_class_id IS NULL OR o.customer_id IN (SELECT opl.customer_id FROM onepixellog_device_")
+                .append(companyID).append("_tbl opl WHERE opl.mailing_id = ? AND opl.customer_id <> 0 GROUP BY opl.customer_id HAVING COUNT(DISTINCT opl.device_class_id) = 1))");
+        parameters.add(mailingID);
 
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
             queryBuilder.append(" AND (? <= o.creation AND o.creation < ?)");

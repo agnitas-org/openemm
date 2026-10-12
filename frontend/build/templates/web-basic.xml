@@ -83,6 +83,26 @@
     	<filter-name>springSecurityFilterChain</filter-name>
     	<url-pattern>*.action</url-pattern>
 	</filter-mapping>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/oauth2/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/login/oauth2/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/.well-known/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/userinfo</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/connect/*</url-pattern>
+	</filter-mapping>
 
 	<!-- HTTP Security Header -->
 	<!--
@@ -229,6 +249,14 @@
 	<servlet-mapping>
 		<servlet-name>spring-mvc</servlet-name>
 		<url-pattern>*.do</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>spring-mvc</servlet-name>
+		<url-pattern>/oauth2/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>spring-mvc</servlet-name>
+		<url-pattern>/login/oauth2/*</url-pattern>
 	</servlet-mapping>
 
 	<!-- servlets to show components and images -->

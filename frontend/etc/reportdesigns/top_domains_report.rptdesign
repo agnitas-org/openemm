@@ -32,11 +32,11 @@ reportContext.setPersistentGlobalVariable('showTotalsRow', '' + topDomainsDataSe
 
 
 
-var sentMailingsAllowed = BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENT_MAILS, figureOptions);
-var hardBouncesAllowed = BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.HARDBOUNCES, figureOptions);
-var softBouncesAllowed = BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SOFTBOUNCES, figureOptions);
-var openersAllowed = BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.OPENERS, figureOptions);
-var clickersAllowed = BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL, figureOptions);
+var sentMailingsAllowed = BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SENT_MAILS, figureOptions);
+var hardBouncesAllowed = BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.HARDBOUNCES, figureOptions);
+var softBouncesAllowed = BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.SOFTBOUNCES, figureOptions);
+var openersAllowed = BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.OPENERS, figureOptions);
+var clickersAllowed = BirtReportUtils.isOptionAllowed(BirtReportUtils.BirtReportFigure.CLICKERS_TOTAL, figureOptions);
 reportContext.setPersistentGlobalVariable('showSentMailing', sentMailingsAllowed ? "true" : "false");
 reportContext.setPersistentGlobalVariable('showHardBounces', hardBouncesAllowed ? "true" : "false");
 reportContext.setPersistentGlobalVariable('showSoftBounces', softBouncesAllowed ? "true" : "false");

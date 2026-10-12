@@ -5,7 +5,6 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 
 <emm:ShowByPermission token="calendar.show">

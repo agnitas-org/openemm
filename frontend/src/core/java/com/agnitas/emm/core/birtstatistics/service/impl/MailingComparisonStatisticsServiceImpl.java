@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -21,13 +21,15 @@ import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MailingBase;
+import com.agnitas.emm.core.birtstatistics.dto.MailingComparisonStatisticsData;
+import com.agnitas.emm.core.birtstatistics.dto.StatisticMetric;
 import com.agnitas.emm.core.birtstatistics.service.MailingComparisonStatisticsService;
+import com.agnitas.emm.core.birtstatistics.service.MailingRawMetrics;
 import com.agnitas.emm.core.birtstatistics.service.MailingStatisticsService;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.reporting.birt.external.beans.MailingComparisonStatisticsData;
-import com.agnitas.reporting.birt.external.beans.StatisticMetric;
 import com.agnitas.util.CsvWriter;
-import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -46,9 +48,9 @@ public class MailingComparisonStatisticsServiceImpl implements MailingComparison
 
     @Override
     public byte[] csv(Set<Integer> ids, Admin admin) throws Exception {
-        return CsvWriter.csv(ListUtils.union(
-                List.of(getHeaderForCsv(admin.getLocale())),
-                getRowsForCsv(ids, admin))
+        return CsvWriter.csv(
+                getHeaderForCsv(admin.getLocale()),
+                getRowsForCsv(ids, admin)
         );
     }
 
@@ -92,38 +94,30 @@ public class MailingComparisonStatisticsServiceImpl implements MailingComparison
     @Override
     public List<MailingComparisonStatisticsData> getData(Set<Integer> mailingIds, int companyId) {
         Map<Integer, MailingBase> mailingsInfos = mailingService.getMailingsInfoForComparison(mailingIds, companyId);
-        Map<Integer, StatisticMetric> sent = statisticsService.getWorldSentMailings(mailingIds);
-        Map<Integer, StatisticMetric> measuredOpeners = statisticsService.getMeasuredOpeners(mailingIds, companyId);
-        Map<Integer, StatisticMetric> hardBounces = statisticsService.getHardBounces(mailingIds, companyId);
-        Map<Integer, StatisticMetric> optOuts = statisticsService.getOptOuts(mailingIds, companyId);
-        Map<Integer, StatisticMetric> clickers = statisticsService.getClickers(mailingIds, companyId);
-        Map<Integer, StatisticMetric> delivered = statisticsService.getDelivered(mailingIds, companyId, sent, hardBounces);
-        Map<Integer, StatisticMetric> softBouncesUndeliverable = statisticsService.getSoftBouncesUndeliverable(mailingIds, companyId, sent, hardBounces);
-        Map<Integer, StatisticMetric> invisibleOpeners = statisticsService.getInvisibleOpeners(mailingIds, companyId, measuredOpeners, sent);
-        Map<Integer, StatisticMetric> totalOpeners = statisticsService.getTotalOpeners(mailingIds, invisibleOpeners, measuredOpeners);
 
         return mailingIds
                 .stream()
                 .map(id -> {
                     MailingBase mailing = mailingsInfos.get(id);
+                    MailingRawMetrics raw = statisticsService.getRawMetrics(id, companyId, Set.of(MaildropStatus.WORLD), null, new DateRange());
 
                     return new MailingComparisonStatisticsData(
                             id,
                             mailing.getShortname(),
                             mailing.getDescription(),
                             mailing.getSenddate(),
-                            totalOpeners.get(id),
-                            measuredOpeners.get(id),
-                            invisibleOpeners.get(id),
-                            statisticsService.getAnonymousOpenings(id, companyId),
-                            sent.get(id),
-                            delivered.get(id),
-                            optOuts.get(id),
-                            hardBounces.get(id),
-                            clickers.get(id),
-                            statisticsService.getAnonymousClicks(id, companyId),
-                            softBouncesUndeliverable.get(id),
-                            statisticsService.getRevenue(id, companyId).orElse(null)
+                            StatisticMetric.of(raw.totalOpeners(), raw.sentEmails()),
+                            StatisticMetric.of(raw.measuredOpeners(), raw.sentEmails()),
+                            StatisticMetric.of(raw.invisibleOpeners(), raw.sentEmails()),
+                            raw.anonymousOpenersCount(),
+                            new StatisticMetric(raw.sentEmails(), 100),
+                            raw.acceptedEmails() == null ? null : StatisticMetric.of(raw.acceptedEmails(), raw.sentEmails()),
+                            StatisticMetric.of(raw.optOuts(), raw.sentEmails()),
+                            StatisticMetric.of(raw.hardBounces(), raw.sentEmails()),
+                            StatisticMetric.of(raw.clickers(), raw.sentEmails()),
+                            raw.anonymousClickersCount(),
+                            raw.softBounces() == null ? null : StatisticMetric.of(raw.softBounces(), raw.sentEmails()),
+                            raw.revenue()
                     );
                 })
                 .toList();

@@ -1,6 +1,6 @@
 (() => {
 
-  const Controller = function(func) {
+  const Controller = function(func = _.noop) {
     func = _.bind(func, this);
     func(this);
   };
@@ -29,7 +29,7 @@
     Controller.new(name, instance => {
       const baseController = AGN.Opt.Controllers[baseName];
       if (baseController) {
-        new Controller(baseController);
+        _.bind(baseController, instance)(instance);
       }
 
       _.bind(func, instance)(instance);
@@ -42,13 +42,21 @@
       const init = AGN.Opt.Controllers[name];
 
       if (init) {
-        new AGN.Lib.Controller(init);
+        if (isClass(init)) {
+          new init();
+        } else {
+          new AGN.Lib.Controller(init);
+        }
 
         // slated for removal
         AGN.Opt.Controllers[name] = undefined;
       }
     });
   };
+
+  function isClass(func) {
+    return /^class\s/.test(Function.prototype.toString.call(func));
+  }
 
   AGN.Lib.Controller = Controller;
 

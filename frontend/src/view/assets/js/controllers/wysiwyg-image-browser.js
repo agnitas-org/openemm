@@ -68,11 +68,11 @@ AGN.Lib.Controller.new('wysiwyg-image-browser', function () {
     window.close();
   }
 
-  function normalizeName(fname) {
-    if (fname.substr(0, 4).toLowerCase() !== 'http') {
-      return `${config.rdirDomain}/image?ci=${config.companyId}&mi=${mailingId}&name=${encodeURIComponent(fname)}`;
+  function normalizeName(name) {
+    if (name.substr(0, 4).toLowerCase() !== 'http') {
+      return `${config.rdirDomain}/image?nc=true&ci=${config.companyId}&mi=${mailingId}&name=${encodeURIComponent(name)}`;
     }
-    return encodeURI(fname)
+    return encodeURI(name)
   }
 
   function getOtherImgSelectVal() {

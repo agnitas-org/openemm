@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -17,16 +17,13 @@ import static org.apache.tomcat.jakartaee.commons.lang3.StringUtils.defaultIfBla
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.SequencedSet;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -34,7 +31,6 @@ import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.emm.core.birtstatistics.dao.TrackableLinkStatisticsDao;
 import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse;
 import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse.LinkCategoryBlock;
 import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse.LinkStats;
@@ -42,27 +38,27 @@ import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse.Sh
 import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse.SummaryBlock;
 import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse.SummaryCategoryBlock;
 import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse.TargetGroupStats;
+import com.agnitas.emm.core.birtstatistics.dto.StatisticMetric;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticLinkCategory;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticLinkCategory.CategoryType;
-import com.agnitas.emm.core.birtstatistics.model.LinkClickStatisticData;
 import com.agnitas.emm.core.birtstatistics.service.ClickPerLinkMailingStatisticsService;
+import com.agnitas.emm.core.birtstatistics.service.MailingStatisticsService;
 import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkClickStatsService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkClickStatsService.ClickCounts;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkClickStatsService.ShareType;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkClickStatsService.TargetClickStats;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.StatisticMetric;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.util.CsvWriter;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 @Service
 @Primary
 public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMailingStatisticsService {
-
-    private static final int ALL_RECIPIENTS_TARGET_ID = -1;
 
     private static final Comparator<StatRow> CSV_ROW_COMPARATOR =
             Comparator.comparing(StatRow::categoryType)
@@ -72,68 +68,17 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                     .thenComparing(r -> r.url() == null ? "" : r.url());
 
     private final TrackableLinkService trackableLinkService;
-    private final TrackableLinkStatisticsDao linkStatisticsDao;
-    private final TargetService targetService;
+    private final TrackableLinkClickStatsService trackableLinkClickStatsService;
+    private final MailingStatisticsService mailingStatisticsService;
 
     public ClickPerLinkMailingStatisticsServiceImpl(
             TrackableLinkService trackableLinkService,
-            TrackableLinkStatisticsDao linkStatisticsDao,
-            TargetService targetService
+            TrackableLinkClickStatsService trackableLinkClickStatsService,
+            MailingStatisticsService mailingStatisticsService
     ) {
         this.trackableLinkService = trackableLinkService;
-        this.linkStatisticsDao = linkStatisticsDao;
-        this.targetService = targetService;
-    }
-
-    private enum ShareType {
-
-        TOTAL("report.total"),
-        MOBILE("report.mobile", DeviceClass.MOBILE, null),
-        ANONYMOUS("statistics.share.anonymous", null, 0);
-
-        final DeviceClass deviceClass;
-        final Integer customerId;
-        final String messageKey;
-
-        ShareType(String messageKey) {
-            this(messageKey, null, null);
-        }
-
-        ShareType(String messageKey, DeviceClass deviceClass, Integer customerId) {
-            this.messageKey = messageKey;
-            this.deviceClass = deviceClass;
-            this.customerId = customerId;
-        }
-
-    }
-
-    private record Counts(long clicks, long clickers) {
-        Counts add(Counts other) {
-            return new Counts(
-                    this.clicks + other.clicks,
-                    this.clickers + other.clickers
-            );
-        }
-
-        static Counts empty() {
-            return new Counts(0, 0);
-        }
-    }
-
-    private static class StatisticsDataHolder {
-
-        record DataKey(ShareType shareType, Integer targetGroupId) { }
-
-        final Map<DataKey, Map<Integer, LinkClickStatisticData>> data = new HashMap<>();
-
-        void put(ShareType shareType, Integer targetGroupId, Map<Integer, LinkClickStatisticData> data) {
-            this.data.put(new DataKey(shareType, targetGroupId), data);
-        }
-
-        Map<Integer, LinkClickStatisticData> get(ShareType shareType, Integer targetGroupId) {
-            return this.data.get(new DataKey(shareType, targetGroupId));
-        }
-
+        this.trackableLinkClickStatsService = trackableLinkClickStatsService;
+        this.mailingStatisticsService = mailingStatisticsService;
     }
 
     private enum StatRowType {
@@ -170,27 +115,27 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
 
     @Override
     public ClickStatisticsPerLinkResponse getStatistics(int mailingId, Set<Integer> targetGroups, Admin admin) {
-        targetGroups = prepareTargetIds(targetGroups);
-        List<StatRow> rows = collectStatistics(mailingId, targetGroups, admin);
+        List<LightTarget> targets = getTargets(targetGroups, admin);
+        List<StatRow> rows = collectStatistics(mailingId, targets, admin);
 
-        return UiResponseBuilder.build(rows, targetGroups, admin);
+        return UiResponseBuilder.build(rows, targets, admin);
     }
 
     private static class UiResponseBuilder {
-        static ClickStatisticsPerLinkResponse build(List<StatRow> rows, Set<Integer> targetGroups, Admin admin) {
+        static ClickStatisticsPerLinkResponse build(List<StatRow> rows, List<LightTarget> targets, Admin admin) {
             Map<StatRowType, List<StatRow>> rowsByType = rows.stream()
                     .collect(Collectors.groupingBy(StatRow::type));
 
             Map<CategoryType, StatisticLinkCategory> categoriesMap = buildCategories(admin);
 
             return new ClickStatisticsPerLinkResponse(
-                    buildSummary(rowsByType.get(StatRowType.SUMMARY), categoriesMap, targetGroups),
-                    buildLinkBlocks(rowsByType.get(StatRowType.URL), categoriesMap, targetGroups)
+                    buildSummary(rowsByType.get(StatRowType.SUMMARY), categoriesMap, targets),
+                    buildLinkBlocks(rowsByType.get(StatRowType.URL), categoriesMap, targets)
             );
         }
 
         private static SummaryBlock buildSummary(
-                List<StatRow> rows, Map<CategoryType, StatisticLinkCategory> categoriesMap, Set<Integer> targetGroupIds
+                List<StatRow> rows, Map<CategoryType, StatisticLinkCategory> categoriesMap, List<LightTarget> targets
         ) {
             Map<CategoryType, List<StatRow>> rowsByCategory = rows.stream()
                     .collect(Collectors.groupingBy(StatRow::categoryType));
@@ -199,7 +144,7 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                     .map(t ->
                             new SummaryCategoryBlock(
                                     categoriesMap.get(t),
-                                    buildTargetStats(rowsByCategory.get(t), targetGroupIds)
+                                    buildTargetStats(rowsByCategory.get(t), targets)
                             )
                     )
                     .toList();
@@ -208,7 +153,7 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
         }
 
         private static List<LinkCategoryBlock> buildLinkBlocks(
-                List<StatRow> rows, Map<CategoryType, StatisticLinkCategory> categoriesMap, Set<Integer> targetGroupIds
+                List<StatRow> rows, Map<CategoryType, StatisticLinkCategory> categoriesMap, List<LightTarget> targets
         ) {
             if (CollectionUtils.isEmpty(rows)) {
                 return Collections.emptyList();
@@ -221,12 +166,16 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                     .map(t ->
                             new LinkCategoryBlock(
                                     categoriesMap.get(t),
-                                    getLinkStats(rowsByCategory.get(t), targetGroupIds)
+                                    getLinkStats(rowsByCategory.get(t), targets)
                             )
                     ).toList();
         }
 
-        private static List<LinkStats> getLinkStats(List<StatRow> rows, Set<Integer> targetGroups) {
+        private static List<LinkStats> getLinkStats(List<StatRow> rows, List<LightTarget> targets) {
+            if (CollectionUtils.isEmpty(rows)) {
+                return Collections.emptyList();
+            }
+
             Map<String, List<StatRow>> rowsByUrl = rows.stream()
                     .collect(Collectors.groupingBy(StatRow::url));
 
@@ -239,7 +188,7 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                             new LinkStats(
                                     idsByUrl.get(e.getKey()),
                                     e.getKey(),
-                                    buildTargetStats(e.getValue(), targetGroups)
+                                    buildTargetStats(e.getValue(), targets)
                             )
                     )
                     .sorted(Comparator.<LinkStats>comparingLong(
@@ -248,14 +197,14 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                     .toList();
         }
 
-        private static List<TargetGroupStats> buildTargetStats(List<StatRow> rows, Set<Integer> targetGroups) {
-            return targetGroups.stream()
+        private static List<TargetGroupStats> buildTargetStats(List<StatRow> rows, List<LightTarget> targets) {
+            return targets.stream()
                     .map(t ->
                             new TargetGroupStats(
-                                    t == ALL_RECIPIENTS_TARGET_ID ? null : t,
-                                    toShareStats(rows, ShareType.TOTAL, t),
-                                    toShareStats(rows, ShareType.MOBILE, t),
-                                    toShareStats(rows, ShareType.ANONYMOUS, t)
+                                    t.getId() == MailingStatisticsService.ALL_SUBSCRIBERS_TARGETGROUP_ID ? null : t.getId(),
+                                    toShareStats(rows, ShareType.TOTAL, t.getId()),
+                                    toShareStats(rows, ShareType.MOBILE, t.getId()),
+                                    toShareStats(rows, ShareType.ANONYMOUS, t.getId())
                             ))
                     .toList();
         }
@@ -278,11 +227,12 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
 
     @Override
     public byte[] getCsvData(int mailingId, Set<Integer> targetGroups, Admin admin) throws Exception {
-        targetGroups = prepareTargetIds(targetGroups);
-        List<StatRow> rows = collectStatistics(mailingId, targetGroups, admin);
+        List<LightTarget> targets = getTargets(targetGroups, admin);
+        List<StatRow> rows = collectStatistics(mailingId, targets, admin);
 
         Map<CategoryType, StatisticLinkCategory> categoriesMap = buildCategories(admin);
-        Map<Integer, String> targetNames = getTargetGroupNames(targetGroups, admin);
+        Map<Integer, String> targetNames = targets.stream()
+                .collect(Collectors.toMap(LightTarget::getId, LightTarget::getName));
 
         List<CsvRow> csvRows = rows.stream()
                 .sorted(CSV_ROW_COMPARATOR)
@@ -292,10 +242,16 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                         this::addEmptyRowsAfterCategory
                 ));
 
-        return CsvWriter.csv(ListUtils.union(
-                List.of(getHeaderForCsv(admin.getLocale())),
+        return CsvWriter.csv(
+                getHeaderForCsv(admin.getLocale()),
                 getRowsForCsv(csvRows)
-        ));
+        );
+    }
+
+    private List<LightTarget> getTargets(Set<Integer> targetGroups, Admin admin) {
+        return mailingStatisticsService.getTargetsWithAllSubscribersTarget(
+                requireNonNullElse(targetGroups, Collections.emptySet()), admin
+        );
     }
 
     private List<CsvRow> addEmptyRowsAfterCategory(List<CsvRow> rows) {
@@ -358,19 +314,28 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
                 .toList();
     }
 
-    private List<StatRow> collectStatistics(int mailingId, Set<Integer> targetIds, Admin admin) {
+    private List<StatRow> collectStatistics(int mailingId, List<LightTarget> targets, Admin admin) {
         List<TrackableLink> links = trackableLinkService.getTrackableLinks(admin.getCompanyID(), mailingId, false);
         Map<CategoryType, List<TrackableLink>> linksByCategory = groupLinksByCategory(links);
+        List<Integer> allLinkIds = links.stream().map(TrackableLink::getId).toList();
 
-        StatisticsDataHolder dataHolder = loadStatistics(mailingId, admin.getCompanyID(), targetIds);
-        Map<Integer, Counts> totals = calculateTotals(links, dataHolder, targetIds);
+        Map<Integer, TargetClickStats> statsByTarget = trackableLinkClickStatsService.getClickCountsByTarget(
+                mailingId, admin.getCompanyID(), targets, new DateRange()
+        );
 
         List<StatRow> rows = new ArrayList<>();
 
-        for (CategoryType categoryType : CategoryType.values()) {
-            for (Integer targetId : targetIds) {
-                rows.addAll(collectUrlRows(linksByCategory.get(categoryType), dataHolder, categoryType, targetId, totals));
-                rows.addAll(collectSummaryRows(dataHolder, linksByCategory, categoryType, targetId, totals));
+        for (LightTarget target : targets) {
+            TargetClickStats stats = statsByTarget.get(target.getId());
+
+            Map<ShareType, ClickCounts> totals = new EnumMap<>(ShareType.class);
+            for (ShareType share : ShareType.values()) {
+                totals.put(share, stats.aggregate(share, allLinkIds));
+            }
+
+            for (CategoryType categoryType : CategoryType.values()) {
+                rows.addAll(collectUrlRows(linksByCategory.get(categoryType), stats, categoryType, target.getId(), totals));
+                rows.addAll(collectSummaryRows(linksByCategory.get(categoryType), stats, categoryType, target.getId(), totals));
             }
         }
 
@@ -379,21 +344,17 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
 
     private List<StatRow> collectUrlRows(
             List<TrackableLink> links,
-            StatisticsDataHolder dataHolder,
+            TargetClickStats stats,
             CategoryType categoryType,
-            Integer targetId,
-            Map<Integer, Counts> totals
+            int targetId,
+            Map<ShareType, ClickCounts> totals
     ) {
         List<StatRow> rows = new ArrayList<>();
 
         for (TrackableLink link : links) {
             for (ShareType share : ShareType.values()) {
-                LinkClickStatisticData data = dataHolder.get(share, targetId).get(link.getId());
-                Counts total = totals.get(targetId);
-
-                Counts counts = data == null
-                        ? Counts.empty()
-                        : new Counts(data.clicksCount(), data.clickersCount());
+                ClickCounts counts = stats.forLink(share, link.getId());
+                ClickCounts total = totals.get(share);
 
                 rows.add(new StatRow(
                         categoryType,
@@ -412,20 +373,18 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
     }
 
     private List<StatRow> collectSummaryRows(
-            StatisticsDataHolder dataHolder,
-            Map<CategoryType, List<TrackableLink>> linksByCategory,
+            List<TrackableLink> links,
+            TargetClickStats stats,
             CategoryType categoryType,
-            Integer targetId,
-            Map<Integer, Counts> totals
+            int targetId,
+            Map<ShareType, ClickCounts> totals
     ) {
         List<StatRow> rows = new ArrayList<>();
+        List<Integer> linkIds = links.stream().map(TrackableLink::getId).toList();
 
         for (ShareType share : ShareType.values()) {
-            Counts counts = aggregate(
-                    linksByCategory.get(categoryType),
-                    dataHolder.get(share, targetId)
-            );
-            Counts total = totals.get(targetId);
+            ClickCounts counts = stats.aggregate(share, linkIds);
+            ClickCounts total = totals.get(share);
 
             rows.add(new StatRow(
                     categoryType,
@@ -440,69 +399,6 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
         }
 
         return rows;
-    }
-
-    private StatisticsDataHolder loadStatistics(int mailingId, int companyId, Set<Integer> targetIds) {
-        StatisticsDataHolder dataHolder = new StatisticsDataHolder();
-
-        for (Integer targetId : targetIds) {
-            String targetSql = getTargetSql(companyId, targetId);
-
-            for (ShareType share : ShareType.values()) {
-                Map<Integer, LinkClickStatisticData> data = linkStatisticsDao.getClickStatisticsPerLink(
-                        mailingId,
-                        companyId,
-                        targetSql,
-                        Collections.emptySet(),
-                        new DateRange(),
-                        share.deviceClass,
-                        share.customerId
-                );
-
-                dataHolder.put(share, targetId, data);
-            }
-        }
-
-        return dataHolder;
-    }
-
-    private Map<Integer, Counts> calculateTotals(
-            List<TrackableLink> links,
-            StatisticsDataHolder dataHolder,
-            Set<Integer> targetIds
-    ) {
-        Map<Integer, Counts> result = new HashMap<>();
-
-        targetIds.forEach(targetId -> {
-            Counts totalCounts = Stream.of(ShareType.values())
-                    .map(shareType -> aggregate(links, dataHolder.get(shareType, targetId)))
-                    .reduce(Counts.empty(), Counts::add);
-
-            result.put(targetId, totalCounts);
-        });
-
-        return result;
-    }
-
-    private Counts aggregate(
-            Collection<TrackableLink> links,
-            Map<Integer, LinkClickStatisticData> data
-    ) {
-        Counts total = Counts.empty();
-
-        for (TrackableLink link : links) {
-            LinkClickStatisticData d = data.get(link.getId());
-            if (d != null) {
-                total = total.add(new Counts(d.clicksCount(), d.clickersCount()));
-            }
-        }
-        return total;
-    }
-
-    private String getTargetSql(int companyId, Integer targetId) {
-        return targetId != ALL_RECIPIENTS_TARGET_ID
-                ? targetService.getTargetGroup(targetId, companyId).getTargetSQL()
-                : "";
     }
 
     private Map<CategoryType, List<TrackableLink>> groupLinksByCategory(List<TrackableLink> links) {
@@ -528,25 +424,6 @@ public class ClickPerLinkMailingStatisticsServiceImpl implements ClickPerLinkMai
 
     private static String getCategoryName(CategoryType type, Admin admin) {
         return I18nString.getLocaleString(type.getMessageKey(), admin.getLocale());
-    }
-
-    private Map<Integer, String> getTargetGroupNames(Set<Integer> targetGroups, Admin admin) {
-        return targetGroups.stream()
-                .collect(Collectors.toMap(
-                        Function.identity(),
-                        id ->
-                                id == ALL_RECIPIENTS_TARGET_ID
-                                        ? getLocaleString("statistic.all_subscribers", admin.getLocale())
-                                        : targetService.getTargetGroup(id, admin.getCompanyID()).getTargetName()
-                ));
-    }
-
-    private SequencedSet<Integer> prepareTargetIds(Set<Integer> targetIds) {
-        SequencedSet<Integer> ids = new LinkedHashSet<>();
-        ids.add(ALL_RECIPIENTS_TARGET_ID);
-        ids.addAll(requireNonNullElse(targetIds, Collections.emptySet()));
-
-        return ids;
     }
 
 }

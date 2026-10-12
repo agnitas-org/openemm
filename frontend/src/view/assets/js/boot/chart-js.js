@@ -33,11 +33,21 @@
         offset: -5, // make labels closer to the bar
         formatter: value => AGN.formatNumber(value) ?? value,
         display: context => {
-          const bar = context.chart
-            .getDatasetMeta(context.datasetIndex)
+          const { chart } = context;
+          if (chart.options.indexAxis === 'y') {
+            return true;
+          }
+
+          if (context.dataset.data[context.dataIndex].y === 0) {
+            return false;
+          }
+
+          const bar = chart.getDatasetMeta(context.datasetIndex)
             .data[context.dataIndex];
 
-          return bar.width >= 10;
+          const { width } = bar.getProps(['width'], true);
+
+          return width >= 10;
         }
       },
       legend: {
@@ -156,10 +166,10 @@
   // Works like a standard doughnut chart. makes visible pieces on the graph for small percentage values that fall between 0% - 1%.
   class AgnDoughnutController extends Chart.DoughnutController {
     initialize() {
-      this._actualRealValues = this.chart.data.datasets[0].data;
-      this._initialRates = this.chart.data.datasets[0].rates;
-      this._exactPercentages = this._initialRates ?? AGN.Lib.ChartUtils.calcExactPercentages(this._actualRealValues);
-      this.chart.data.datasets[0].data = calcVisiblePercentages(this._actualRealValues)
+      this._actualValues = this.chart.data.datasets[0].data;
+      this._displayPercentages = this.chart.data.datasets[0].rates;
+      this._calculatedPercentages = AGN.Lib.ChartUtils.calcExactPercentages(this._actualValues);
+      this.chart.data.datasets[0].data = calcVisiblePercentages(this._actualValues)
       super.initialize();
     }
   }
@@ -174,15 +184,14 @@
           const controller = getChartController(legend.chart);
           const actualValues = legend.legendItems.map((item, i) => {
             if (legendItem.index === i) {
-              return item.hidden ? controller._actualRealValues[i] : 0;
+              return item.hidden ? controller._actualValues[i] : 0;
             }
 
-            return item.hidden ? 0 : controller._actualRealValues[i];
+            return item.hidden ? 0 : controller._actualValues[i];
           });
 
-          if (!controller._initialRates) {
-            controller._exactPercentages = AGN.Lib.ChartUtils.calcExactPercentages(actualValues);
-          }
+
+          controller._calculatedPercentages = AGN.Lib.ChartUtils.calcExactPercentages(actualValues);
 
           legend.chart.data.datasets[0].data = calcVisiblePercentages(actualValues);
 
@@ -191,27 +200,38 @@
         }
       },
       datalabels: {
-        // Gets label color by dougnut piece
+        // Gets label color by doughnut piece
         color: data => {
           const bgColor = data.dataset.backgroundColor[data.dataIndex];
           return AGN.Lib.Helpers.getColorLuminance(bgColor) < 0.57 ? 'white' : '#4B4B4B';
         },
-        // Shows exact percentages
         formatter: (value, context) => {
-          const exactPercentages = getChartController(context.chart)._exactPercentages;
-          const percent = exactPercentages[context.dataIndex];
+          const controller = getChartController(context.chart);
+
+          const calculatedPercentages = controller._calculatedPercentages;
+          const displayPercentages = controller._displayPercentages ?? calculatedPercentages;
+
+          const segmentPercentage = calculatedPercentages[context.dataIndex];
+          const labelPercentage = displayPercentages[context.dataIndex];
 
           const { innerRadius, outerRadius } = context.chart.getDatasetMeta(0).data[0];
+
           const labelRadius = (innerRadius + outerRadius) / 2;
-          const angle = (percent / 100) * 2 * Math.PI;
-          const availableSegmentWidth = labelRadius * angle;
-          return availableSegmentWidth < DONUT_LABEL_WIDTH ? '' : `${percent.toFixed(1)}%`;
+          const segmentAngle = (segmentPercentage / 100) * 2 * Math.PI;
+          const availableLabelWidth = labelRadius * segmentAngle;
+
+          if (availableLabelWidth < DONUT_LABEL_WIDTH) {
+            return '';
+          }
+
+          const digits = labelPercentage > 0 && labelPercentage < 0.1 ? 2 : 1;
+          return `${labelPercentage.toFixed(digits)}%`;
         }
       },
       tooltip: {
         callbacks: {
           label: context => {
-            const value = getChartController(context.chart)._actualRealValues[context.dataIndex];
+            const value = getChartController(context.chart)._actualValues[context.dataIndex];
             return AGN.formatNumber(value) ?? value;
           }
         }

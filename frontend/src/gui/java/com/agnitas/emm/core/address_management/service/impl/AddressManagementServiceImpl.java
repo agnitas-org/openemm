@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -41,6 +41,7 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.bean.ReportEntry;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
+import com.agnitas.emm.core.commons.validation.DeleteResult;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.recipient.service.RecipientService;
@@ -202,7 +203,10 @@ public class AddressManagementServiceImpl implements AddressManagementService {
 
     protected SimpleServiceResult removeEntry(String email, AddressManagementEntry entry, Admin admin) {
         if (AddressManagementCategory.RECIPIENTS.equals(entry.getCategory())) {
-            return recipientService.delete(entry.getId(), entry.getCompanyId(), admin);
+            DeleteResult result = recipientService.delete(entry.getId(), admin);
+            return result.isDeleted()
+                    ? SimpleServiceResult.simpleSuccess()
+                    : SimpleServiceResult.simpleError(result.errors());
         }
 
         if (AddressManagementCategory.USERS.equals(entry.getCategory())) {

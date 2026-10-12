@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -24,14 +24,13 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
 import com.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
 
+// TODO: GWUA-7000: Remove when removing 'mailing_summary_autoopt.rptdesign'
 public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	
 	private int mailingTempTableId;
@@ -40,9 +39,9 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	/**
 	 * This method has to be called in initialize function of the report, otherwise getOptimizationMailings will fail!
 	 */
-	public void prepareOptimizationReport(int optimizationId, int companyId, Boolean showSoftbounces) {
+	public void prepareOptimizationReport(int optimizationId, int companyId, String selectedTargets, Boolean showSoftbounces) {
 		this.mailingTempTableId = prepareOptimizationMailingsData(optimizationId, companyId);
-		this.summaryTempTableId = prepareTotalOptimizationSummaryData(companyId, showSoftbounces);
+		this.summaryTempTableId = prepareTotalOptimizationSummaryData(companyId, showSoftbounces, selectedTargets);
 	}
 	
 	/**
@@ -62,10 +61,10 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		return tempTableID;
 	}
 
-	private int prepareTotalOptimizationSummaryData(int companyID, Boolean showSoftbounces) {
+	private int prepareTotalOptimizationSummaryData(int companyID, Boolean showSoftbounces, String selectedTargets) {
 		int tempSummaryTableID = createSummaryTempTable();
 		List<OptimizationMailingData> optimizationMailingsData = getOptimizationMailings();
-		String targetSQL = allocateTargetSQL(optimizationMailingsData, companyID);
+		String targetSQL = getTargetSqlString(selectedTargets, companyID);
 		List<Integer> mailingIds = new ArrayList<>();
 		for (OptimizationMailingData data : optimizationMailingsData) {
 			insertSendIntoTempTable(tempSummaryTableID, data, companyID, targetSQL);
@@ -144,12 +143,9 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	
 	private List<OptimizationMailingData> getOptimizationMailingsData(int optimizationId, int companyId) {
 		String query = "SELECT res.mid, res.name, res.mt_param, " +
-				"  COALESCE(res.target_id, 0) AS target_id, res.target_name, " +
 				"  res.group_id, res.result_mailing, COALESCE(mac.mintime, mds.senddate) AS last_send_date" +
 				" FROM (" +
 				"  SELECT m.mailing_id AS mid, MAX(m.shortname) AS name, mt.param AS mt_param, " +
-				"  MAX(tg.target_id) AS target_id, " +
-				"  MAX(tg.target_shortname) AS target_name, " +
 				"  MAX(ao.result_mailing_id) AS result_mailing_id, " +
 				"  (CASE" +
 				"        WHEN m.mailing_id = ao.group1_id THEN 1" +
@@ -161,7 +157,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				"   END) AS group_id, " +
 				"  (CASE WHEN ao.final_mailing_id =  m.mailing_id THEN MAX(ao.result_mailing_id) ELSE 0 END) AS result_mailing" +
 				"  FROM mailing_tbl m LEFT JOIN mailing_mt_tbl mt ON m.mailing_id = mt.mailing_id AND mt.status = ? AND mt.priority = (SELECT MIN(priority) FROM mailing_mt_tbl WHERE mailing_id = m.mailing_id AND status = ?)," +
-                "  auto_optimization_tbl ao LEFT JOIN dyn_target_tbl tg ON ao.target_id = tg.target_id" +
+                "  auto_optimization_tbl ao" +
 				"  WHERE m.mailing_id IN (ao.group1_id, ao.group2_id, ao.group3_id, ao.group4_id, ao.group5_id, ao.final_mailing_id)" +
 				"  AND optimization_id = ? AND m.company_id = ?" +
 				"  GROUP BY m.mailing_id, mt.param, ao.group1_id, ao.group2_id, ao.group3_id, ao.group4_id, ao.group5_id, ao.final_mailing_id" +
@@ -174,9 +170,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 			mdata.setMailingId(resultSet.getInt("mid"));
 			mdata.setMailingName(resultSet.getString("name"));
 			mdata.setMailingSubject(getSubjectFromMTParam(resultSet.getString("mt_param")));
-			int targetId = resultSet.getInt("target_id");
-			mdata.setTargetGroupId(targetId == 0 ? ALL_SUBSCRIBERS_TARGETGROUPID : targetId);
-			mdata.setTargetGroupName(resultSet.getString("target_name"));
+			mdata.setTargetGroupId(ALL_SUBSCRIBERS_TARGETGROUPID);
 			mdata.setWinner(resultSet.getInt("group_id") == 0);
 			mdata.setGroupId(resultSet.getInt("group_id"));
 			mdata.setResultMailing(resultSet.getInt("result_mailing"));
@@ -517,22 +511,6 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		
 		insertIntoSummaryTempTable(tempTableID, CommonKeys.CLICKS_ANONYMOUS, CommonKeys.CLICKS_ANONYMOUS_INDEX,
 				data.getMailingId(), anonymousClicks, data.getGroupId());
-	}
-	
-	private String allocateTargetSQL(List<OptimizationMailingData> optimizationMailingsData, int companyID) {
-		if (CollectionUtils.isEmpty(optimizationMailingsData)) {
-			return "";
-		}
-		
-		int targetId = optimizationMailingsData.get(0).getTargetGroupId();
-		if (targetId == ALL_SUBSCRIBERS_TARGETGROUPID) {
-			return "";
-		}
-		LightTarget target = getTarget(targetId, companyID);
-		if (target == null) {
-			return "";
-		}
-		return target.getTargetSQL();
 	}
 	
 	@DaoUpdateReturnValueCheck

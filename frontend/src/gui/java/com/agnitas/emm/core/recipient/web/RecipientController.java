@@ -1,10 +1,10 @@
 /*
 
-    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.
 
 */
 
@@ -13,7 +13,6 @@ package com.agnitas.emm.core.recipient.web;
 import static com.agnitas.service.WebStorage.RECIPIENT_OVERVIEW;
 import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 import static com.agnitas.web.forms.FormSearchParams.RESET_PARAM_NAME;
 import static com.agnitas.web.forms.FormSearchParams.RESTORE_PARAM_NAME;
 
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -79,7 +77,6 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConvert
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.exception.BadRequestException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.DataSourceService;
@@ -130,6 +127,7 @@ public class RecipientController implements XssCheckAware {
 	private static final String RECIPIENT_LIST_KEY = "recipientList";
 
 	protected final RecipientService recipientService;
+	private final RecipientUiService recipientUiService;
 	protected final TargetService targetService;
 	protected final WebStorage webStorage;
 	protected final ConfigService configService;
@@ -149,27 +147,31 @@ public class RecipientController implements XssCheckAware {
 	private final EqlValidatorService eqlValidatorService;
 	private final DataSourceService dataSourceService;
 
-	public RecipientController(RecipientService recipientService,
-							   RecipientLogService recipientLogService,
-							   MailinglistApprovalService mailinglistApprovalService,
-							   TargetService targetService,
-							   UserActivityLogService userActivityLogService,
-							   DeliveryService deliveryService,
-							   MailingBaseService mailingBaseService,
-							   WebStorage webStorage,
-							   ConversionService conversionService,
-							   QueryBuilderFilterListBuilder filterListBuilder,
-							   ColumnInfoService columnInfoService,
-							   ConfigService configService,
-							   BlacklistService blacklistService,
-							   EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
-							   QueryBuilderToEqlConverter queryBuilderToEqlConverter,
-							   CompanyDao companyDao,
-							   EqlValidatorService eqlValidatorService,
-							   SubscriberLimitCheck subscriberLimitCheck,
-							   DataSourceService dataSourceService) {
+	public RecipientController(
+			RecipientService recipientService,
+			RecipientUiService recipientUiService,
+			RecipientLogService recipientLogService,
+			MailinglistApprovalService mailinglistApprovalService,
+			TargetService targetService,
+			UserActivityLogService userActivityLogService,
+			DeliveryService deliveryService,
+			MailingBaseService mailingBaseService,
+			WebStorage webStorage,
+			ConversionService conversionService,
+			QueryBuilderFilterListBuilder filterListBuilder,
+			ColumnInfoService columnInfoService,
+			ConfigService configService,
+			BlacklistService blacklistService,
+			EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
+			QueryBuilderToEqlConverter queryBuilderToEqlConverter,
+			CompanyDao companyDao,
+			EqlValidatorService eqlValidatorService,
+			SubscriberLimitCheck subscriberLimitCheck,
+			DataSourceService dataSourceService
+	) {
 		this.recipientService = recipientService;
-		this.recipientLogService = recipientLogService;
+        this.recipientUiService = recipientUiService;
+        this.recipientLogService = recipientLogService;
 		this.mailinglistApprovalService = mailinglistApprovalService;
 		this.targetService = targetService;
 		this.userActivityLogService = userActivityLogService;
@@ -738,17 +740,15 @@ public class RecipientController implements XssCheckAware {
 
 	@GetMapping(value = "/delete.action")
 	@RequiredPermission("recipient.delete")
-	public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
-		validateDeletion(bulkIds);
-
-		ServiceResult<List<RecipientLightDto>> result = recipientService.getAllowedForDeletion(bulkIds, admin);
+	public String confirmDelete(@RequestParam(required = false) List<Integer> bulkIds, Admin admin, Model model, Popups popups) {
+		ServiceResult<List<String>> result = recipientUiService.getAllowedForDeletion(bulkIds, admin);
 		popups.addPopups(result);
 
 		if (!result.isSuccess()) {
 			return MESSAGES_VIEW;
 		}
 
-        MvcUtils.addDeleteAttrs(model, result.getResult().stream().map(RecipientLightDto::getMention).toList(),
+        MvcUtils.addDeleteAttrs(model, result.getResult(),
 				"recipient.RecipientDelete", "recipient.delete.question",
 				"bulkAction.delete.recipients", "bulkAction.delete.recipient.question");
 		return DELETE_VIEW;
@@ -756,20 +756,10 @@ public class RecipientController implements XssCheckAware {
 
 	@RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
 	@RequiredPermission("recipient.delete")
-	public String delete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
-		validateDeletion(bulkIds);
-		ServiceResult<UserAction> result = recipientService.delete(bulkIds, admin);
-
-		popups.addPopups(result);
-		userActivityLogService.writeUserActivityLog(admin, result.getResult());
-
+	public String delete(@RequestParam(required = false) List<Integer> bulkIds, Admin admin, Popups popups) {
+		recipientUiService.delete(bulkIds, admin);
+		popups.selectionDeleted();
 		return String.format("redirect:/recipient/list.action?restoreSort=true&%s=true", RESTORE_PARAM_NAME);
-	}
-
-	private void validateDeletion(Set<Integer> ids) {
-		if (CollectionUtils.isEmpty(ids)) {
-			throw new BadRequestException(NOTHING_SELECTED_MSG);
-		}
 	}
 
 	@RequestMapping("/bulkView.action")

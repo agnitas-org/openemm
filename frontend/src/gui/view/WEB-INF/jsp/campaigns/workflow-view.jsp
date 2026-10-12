@@ -344,17 +344,20 @@
                                 <div class="form-label text-truncate"><mvc:message code="Templates"/></div>
                                 <div class="toolbar__icon-set">
                                     <c:forEach var="workflowSample" items="<%= SampleWorkflowType.values() %>">
-                                        <c:if test="${workflowSample eq SampleWorkflowType.AB_TEST}">
-                                            <emm:ShowByPermission token="campaign.change" ignoreException="true">
-                                                <svg class="toolbar__icon js-draggable-button w-35" data-type="scABTest" data-tooltip="<mvc:message code='mailing.autooptimization'/>">
-                                                    <use href="${iconSpriteLocation}#scABTest"></use>
+                                        <c:choose>
+                                            <c:when test="${workflowSample eq SampleWorkflowType.AB_TEST}">
+                                                <emm:ShowByPermission token="campaign.change" ignoreException="true">
+                                                    <svg class="toolbar__icon js-draggable-button" data-type="${workflowSample.value}" data-tooltip="<mvc:message code='${workflowSample.message}'/>">
+                                                        <use href="${iconSpriteLocation}#${workflowSample.value}"></use>
+                                                    </svg>
+                                                </emm:ShowByPermission>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <svg class="toolbar__icon js-draggable-button" data-type="${workflowSample.value}" data-tooltip="<mvc:message code='${workflowSample.message}'/>">
+                                                    <use href="${iconSpriteLocation}#${workflowSample.value}"></use>
                                                 </svg>
-                                            </emm:ShowByPermission>
-                                        </c:if>
-
-                                        <svg class="toolbar__icon js-draggable-button" data-type="${workflowSample.value}" data-tooltip="<mvc:message code='${workflowSample.message}'/>">
-                                            <use href="${iconSpriteLocation}#${workflowSample.value}"></use>
-                                        </svg>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </c:forEach>
 
                                     <svg class="toolbar__icon js-draggable-button" data-type="ownWorkflow" data-tooltip="<mvc:message code='workflow.ownCampaign'/>">
