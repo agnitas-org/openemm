@@ -2,6 +2,7 @@
 
 import sys
 import os
+from pathlib import Path
 
 # Allow improved editing in terminal inputs
 import readline
@@ -22,12 +23,16 @@ from EST_lib import VersionSwitchMenu
 from EST_lib import ConfigurationMenu
 from EST_lib import SupplementalMenu
 from EST_lib import TlsCertificateMenu
+from EST_lib.LoggingConfiguration import setup_logging
 
 try:
 	from packaging.version import Version
 except ImportError:
 	from EST_lib.FallBackLibrary import Version
 
+#input path completion
+readline.set_completer_delims(" \t\n;")
+readline.parse_and_bind("tab: complete")
 
 def configureTool():
 	Environment.toolName = "OpenEMM Support Tool (OST)"
@@ -55,6 +60,7 @@ def configureTool():
 
 	Environment.pythonInstallationSearchPaths = [ESTUtilities.getUserHomeDirectory("openemm") + "/opt/python3/bin/python3", "/usr/bin/python3"]
 	Environment.dbClientMariadbSearchPaths = ["/usr/bin/mariadb", "/usr/bin/mysql", "/opt/rh/rh-mariadb101/root/usr/bin/mysql", "/opt/rh/rh-mariadb102/root/usr/bin/mysql", "/opt/rh/rh-mariadb103/root/usr/bin/mysql"]
+	Environment.dbClientPostgresSearchPaths = ["/usr/bin/psql"]
 	Environment.dbClientOracleSearchPaths = []
 	Environment.javaSearchPaths = ["/opt/openemm/java"]
 	Environment.tomcatSearchPaths = [ESTUtilities.getUserHomeDirectory("openemm") + "/opt/tomcat", "/opt/openemm/tomcat"]
@@ -71,6 +77,9 @@ def configureTool():
 def main():
 	if "-debug" in sys.argv or "--debug" in sys.argv:
 		ESTUtilities.setDebugMode(True)
+		setup_logging(Path.home() / "release/log", logging.DEBUG)
+	else:
+		setup_logging(Path.home() / "release/log")
 
 	if not ESTUtilities.isDebugMode():
 		sys.tracebacklimit = 0
@@ -160,7 +169,7 @@ def main():
 		elif ESTUtilities.isBlank(Environment.catalinaHome) or not ESTUtilities.checkTomcatAvailable(Environment.javaHome, Environment.catalinaHome):
 			Environment.errors.append("Basic webapplication configuration for Tomcat/CatalinaHome is missing or invalid. Please configure.")
 			Environment.overrideNextMenu = basicWebappMenu
-		elif Version(ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)).major < 11:
+		elif Version(ESTUtilities.getTomcatVersion(Environment.catalinaHome)).major < 11:
 			Environment.warnings.append("A tomcat version below 11 was detected. It is recommended to run EMM with at least version 11.")
 		elif (DbConnector.emmDbVendor is None or not DbConnector.checkDbServiceAvailable()) and Environment.username != "mailout":
 			Environment.errors.append("Database is not running or host is invalid. Please configure.")

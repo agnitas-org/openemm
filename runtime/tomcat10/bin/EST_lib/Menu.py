@@ -82,10 +82,10 @@ class Menu:
 			if Environment.isOpenEmmServer:
 				if License.getLicenseName() is not None:
 					print("OpenEMM License: " + License.getLicenseName() + " (ID: " + License.getLicenseID() + ")")
-				print("OpenEMM Runtime Version: " + Environment.runtimeVersion)
-				print("OpenEMM Version: " + Environment.frontendVersion)
-				if Environment.manualVersion is not None and Environment.manualVersion != "Unknown":
-					print("OpenEMM Manual Version: " + Environment.manualVersion)
+				print("OpenEMM Runtime Version: " + Environment.applicationVersions.runtime)
+				print("OpenEMM Version: " + Environment.applicationVersions.frontend)
+				if Environment.applicationVersions.manual not in [None, "Unknown"]:
+					print("OpenEMM Manual Version: " + Environment.applicationVersions.manual)
 			else:
 				if License.getLicenseName() is not None:
 					print("EMM License:" + License.getLicenseName() + " (ID: " + License.getLicenseID() + ")")

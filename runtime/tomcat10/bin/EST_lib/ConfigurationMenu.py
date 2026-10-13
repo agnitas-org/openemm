@@ -6,6 +6,8 @@ from EST_lib import Colors
 from EST_lib import DbConnector
 from EST_lib import ESTUtilities
 
+logger = logging.getLogger(__name__)
+
 def configTableMenuAction(actionParameters):
 	if DbConnector.checkTableExists("config_tbl"):
 		DbConnector.checkConfigurationInDB()
@@ -29,7 +31,7 @@ def configTableMenuAction(actionParameters):
 				birtKeysExist = birtKeys is not None and birtKeys > 0
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot read birtKeys from db")
+					logger.exception("Cannot read birtKeys from db")
 				birtKeysExist = None
 
 			if Environment.isOpenEmmServer:
@@ -137,7 +139,7 @@ def configTableMenuAction(actionParameters):
 					DbConnector.updateConfigurationValueInDB(unsavedConfigChange["class"], unsavedConfigChange["name"], unsavedConfigChange["value"], Environment.hostname)
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot save file configurationValues")
+					logger.exception("Cannot save file configurationValues")
 				Environment.errors.append("Cannot save file configurationValues")
 				return False
 
@@ -242,7 +244,7 @@ def systemCfgMenuAction(actionParameters):
 				ESTUtilities.updatePropertiesFile(Environment.systemCfgFilePath, Environment.unsavedSystemCfgChanges)
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot save file: " + Environment.systemCfgFilePath)
+					logger.exception("Cannot save file: " + Environment.systemCfgFilePath)
 				Environment.errors.append("Cannot save file: " + Environment.systemCfgFilePath)
 				return False
 
@@ -391,7 +393,7 @@ def clientMenuAction(actionParameters):
 						DbConnector.update("UPDATE company_tbl SET " + propertyKey + " = ?, timestamp = CURRENT_TIMESTAMP WHERE company_id = ?", Environment.unsavedClientChanges[propertyKey], companyID)
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Cannot save client data")
+				logger.exception("Cannot save client data")
 			Environment.errors.append("Cannot save client data")
 			return
 

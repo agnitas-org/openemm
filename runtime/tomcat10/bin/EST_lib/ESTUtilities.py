@@ -1,5 +1,6 @@
 import bisect
 import inspect
+import itertools
 import shutil
 import sys
 import re
@@ -7,10 +8,11 @@ import os
 import pwd
 import ssl
 import smtplib
-import datetime
 import subprocess
 import logging
 import glob
+import tarfile
+import threading
 import time
 import tempfile
 import urllib.request, urllib.error, urllib.parse
@@ -21,6 +23,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
+from pathlib import Path
 from typing import Callable
 
 try:
@@ -28,9 +31,15 @@ try:
 except ImportError:
 	from EST_lib.FallBackLibrary import Version
 
+from pathlib import Path
+from tarfile import TarFile, TarInfo
+import zipfile
+
 from . import Colors
 
 debugMode = False
+
+logger = logging.getLogger(__name__)
 
 def setDebugMode(value):
 	global debugMode
@@ -52,8 +61,11 @@ def clearTerminalScreen():
 		#xxx
 		os.system("clear")
 
-def userExists(username):
+def userExists(username: str):
 	return username in getListOfUsers()
+
+def anyUserExists(usernames: list):
+	return any(map(lambda user: user in getListOfUsers(), usernames))
 
 def getListOfUsers():
 	users = []
@@ -76,7 +88,7 @@ def flushStdInAndGetInput(promptText):
 	inputString = input(promptText)
 	return inputString
 
-def downloadVersionInfo(versionInfoUrl):
+def downloadVersionInfo(versionInfoUrl) -> dict:
 	global debugMode
 
 	versionInfo = {}
@@ -99,7 +111,7 @@ def downloadVersionInfo(versionInfoUrl):
 			except:
 				errorText = "Download of version info failed"
 				if debugMode:
-					logging.exception(errorText + "\nUrl: " + str(versionInfoUrl))
+					logger.exception(errorText + "\nUrl: " + str(versionInfoUrl))
 					raise
 				else:
 					raise Exception(errorText)
@@ -142,7 +154,7 @@ def downloadTextFile(textFileUrl):
 		except:
 			errorText = "Download of textfile failed"
 			if debugMode:
-				logging.exception(errorText + "\nUrl: " + str(textFileUrl))
+				logger.exception(errorText + "\nUrl: " + str(textFileUrl))
 				raise
 			else:
 				raise Exception(errorText)
@@ -170,7 +182,7 @@ def readTextFile(filePath):
 	with open(filePath, "r", encoding="UTF-8") as fileHandle:
 		return fileHandle.read()
 
-def printError(message):
+def printStdError(message):
 	sys.stderr.write(message)
 
 def sslIsAvailable():
@@ -178,24 +190,17 @@ def sslIsAvailable():
 		import ssl
 		ssl # silent pyflakes
 		return True
-	except:
+	except ModuleNotFoundError:
 		return False
 
 def chown(filePath, userName = None, groupName = None):
 	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
-		if groupName is not None:
-			os.system("chown -h " + userName + ":" + groupName + " " + filePath)
-		else:
-			os.system("chown -h " + userName + " " + filePath)
+		shutil.chown(filePath, user=userName, group=groupName)
 
-def chownRecursive(filePath, userName = None, groupName = None, get_group_from_owner = False):
+def chownRecursive(filePath: str | Path, userName: str = None, groupName: str = None, keepPreviousGroup: bool = False):
 	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
-		if groupName is not None:
-			os.system("chown -R " + userName + ":" + groupName + " " + filePath)
-		elif get_group_from_owner:
-			os.system("chown -R " + userName + ". " + filePath)
-		else:
-			os.system("chown -R " + userName + " " + filePath)
+		for item in Path(filePath).rglob('*'):
+			shutil.chown(item, user=userName, group=item.stat().st_gid if keepPreviousGroup else groupName)
 
 def createLink(referencedPath, linkPath, userName = None, groupName = None):
 	os.symlink(referencedPath, linkPath)
@@ -205,13 +210,10 @@ def createLink(referencedPath, linkPath, userName = None, groupName = None):
 		else:
 			os.system("chown -h " + userName + " " + linkPath)
 
-def createDirectory(directoryPath, userName = None, groupName = None):
-	os.mkdir(directoryPath)
-	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
-		if groupName is not None:
-			os.system("chown " + userName + ":" + groupName + " " + directoryPath)
-		else:
-			os.system("chown " + userName + " " + directoryPath)
+def createDirectory(directoryPath: str | Path, userName: str = None, groupName: str = None):
+	directoryPath = Path(directoryPath)
+	directoryPath.mkdir()
+	chown(directoryPath, userName, groupName)
 
 def createDirectories(directoryPath, userName = None, groupName = None):
 	if directoryPath is not None and isNotBlank(directoryPath):
@@ -268,14 +270,14 @@ def checkJavaAvailable(javaHome):
 		return False
 
 def getJavaVersion(javaHome):
-	if isBlank(javaHome) or not os.path.isfile(javaHome + "/bin/java"):
+	if not javaHome or not Path(javaHome, "bin/java").is_file():
 		return None
-
 	try:
-		subProcess = subprocess.Popen(javaHome + "/bin/java -version 2>&1", shell=True, stdout=subprocess.PIPE)
-		processOutput, processError = subProcess.communicate()
+		output = subprocess.run([Path(javaHome,"bin/java"), "-version"], capture_output=True)
+		#subProcess = subprocess.Popen(javaHome + "/bin/java -version 2>&1", shell=True, stdout=subprocess.PIPE)
+
 		version_pattern = re.compile('([0-9.]+\\+[0-9]+)')
-		if processOutput and (version := version_pattern.search(processOutput.decode("UTF-8"))):
+		if output and (version := version_pattern.search(output.stderr.decode("UTF-8"))):
 			return version.group(1).replace("+", ".")
 		else:
 			return None
@@ -302,32 +304,12 @@ def getJavaVendor(javaHome):
 def checkTomcatAvailable(javaHome, catalinaHome):
 	return catalinaHome is not None and catalinaHome != "" and os.path.isfile(catalinaHome + "/lib/catalina.jar")
 
-def getTomcatVersion(javaHome, catalinaHome):
-	if catalinaHome is None:
-		return None
-	elif not os.path.isdir(catalinaHome):
-		return None
-	elif not os.path.isfile(catalinaHome + "/lib/catalina.jar"):
-		return None
-	elif not checkJavaAvailable(javaHome):
-		raise Exception("Java path is invalid for check of Tomcat version: " + str(javaHome))
-	else:
-		try:
-			process = subprocess.Popen([javaHome + "/bin/java", "-cp", catalinaHome + "/lib/catalina.jar", "org.apache.catalina.util.ServerInfo"], stdout=subprocess.PIPE)
-			processOutput, processError = process.communicate()
-			if processOutput is not None:
-				processOutput = processOutput.decode("UTF-8").strip()
-
-			if processError is None and processOutput is not None:
-				versionLineStartIndex = processOutput.index("Server number:")
-				version = processOutput[versionLineStartIndex + 14:processOutput.index("\n", versionLineStartIndex + 14)].strip()
-				return version
-			else:
-				return None
-		except:
-			if isDebugMode():
-				logging.exception("Cannot read TomcatVersion")
-			return None
+def getTomcatVersion(catalinaHome: str):
+	if Path(catalinaHome).is_dir():
+		catalinaHome += "/lib/catalina.jar"
+	with zipfile.ZipFile(catalinaHome) as jar:
+		content = jar.read("org/apache/catalina/util/ServerInfo.properties")
+		return readProperties(content.decode("UTF-8")).get("server.number")
 
 # Read the text value of a xml node
 def getXmlNodeText(xmlNode):
@@ -337,19 +319,23 @@ def getXmlNodeText(xmlNode):
 			text.append(node.data)
 	return "".join(text)
 
+def readProperties(propertiesString):
+	properties = {}
+	for line in propertiesString.splitlines():
+		line = line.strip()
+		if line and not line.startswith("#") and "=" in line:
+			name, value = line.split("=", 1)
+			if value == "":
+				properties[name.strip()] = None
+			else:
+				properties[name.strip()] = value.strip()
+	return properties
 # Read a properties file (no comments read)
 def readPropertiesFile(propertiesFilePath):
 	properties = {}
 	if os.path.isfile(propertiesFilePath):
 		with open(propertiesFilePath, "r", encoding="UTF-8") as propertiesFileHandle:
-			for line in propertiesFileHandle:
-				line = line.strip()
-				if line and not line.startswith("#") and "=" in line:
-					name, value = line.split("=", 1)
-					if value == "":
-						properties[name.strip()] = None
-					else:
-						properties[name.strip()] = value.strip()
+			properties = readProperties(propertiesFileHandle.read())
 	return properties
 
 # Write the special dbcfg file format
@@ -517,36 +503,68 @@ def unzipFile(zipFilePath, directoryPathToExtractTo):
 	bashCommand = "unzip \"" + zipFilePath + "\" -d \"" + directoryPathToExtractTo + "/\" 1>/dev/null"
 	os.system(bashCommand)
 
-def unTarGzFile(tarGzFilePath, filePathToExtractTo, userName = None, groupName = None):
-	if filePathToExtractTo.endswith("/"):
-		filePathToExtractTo = filePathToExtractTo[:-1]
+def unTarGzFile(tarGzFilePath: str | Path, filePathToExtractTo: str | Path, userName: str = None, groupName: str = None) -> Path:
+	def extract_filter(member: tarfile.TarInfo, destination: str):
+		if member.issym() and member.linkpath == '/opt/agnitas.com/software/tomcat/webapps/manager':
+			return member
+		return tarfile.data_filter(member, destination)
+	filePathToExtractTo = Path(filePathToExtractTo)
+	extractedItemNames = []
+	toplevelDirectory: str
 
-	if groupName is None and (userName is None or userName == os.environ["USER"]):
-		bashCommand = "cd " + filePathToExtractTo + " && tar xfz \"" + tarGzFilePath + "\" -C \"" + filePathToExtractTo + "/\""
-		os.system(bashCommand)
+	with tarfile.open(tarGzFilePath, 'r:gz') as tar:
+		tar: TarFile
+		for member in tar:
+			targetPathMember = filePathToExtractTo / member.name
+			if targetPathMember.is_file():
+				targetPathMember.unlink()
+			tar.extract(member,filePathToExtractTo, filter=extract_filter)
+			extractedItemNames.append(filePathToExtractTo / member.name)
+		toplevelDirectory = os.path.commonpath(tar.getnames())
+		if groupName or (userName or userName is not os.environ["USER"]):
+			for extractedItem in extractedItemNames:
+				chown(extractedItem, userName, groupName)
+	if toplevelDirectory:
+		return filePathToExtractTo / toplevelDirectory
 	else:
-		now = datetime.datetime.now()
-		nowString = now.strftime("%Y-%m-%d_%H-%M-%S")
-		tempdir = "/tmp/EmmExtract_" + nowString
-		createDirectory(tempdir)
-
-		bashCommand = "cd " + tempdir + " && tar xfz \"" + tarGzFilePath + "\" -C \"" + tempdir + "/\""
-		os.system(bashCommand)
-
-		if groupName is not None:
-			os.system("chown -R " + userName + ":" + groupName + " " + tempdir)
-		else:
-			os.system("chown -R " + userName + " " + tempdir)
-
-		os.system("cp -rp " + tempdir + "/* " + filePathToExtractTo + "/")
-		os.system("rm -r " + tempdir)
+		return filePathToExtractTo
 
 def unTarGzFileAsRoot(tarGzFilePath, filePathToExtractTo):
-	if filePathToExtractTo.endswith("/"):
-		filePathToExtractTo = filePathToExtractTo[:-1]
+	tarGzFilePath = Path(tarGzFilePath).expanduser().resolve().absolute()
+	filePathToExtractTo = Path(filePathToExtractTo).expanduser().resolve().absolute()
 
-	bashCommand = "cd " + filePathToExtractTo + " && sudo tar xapf \"" + tarGzFilePath + "\" -C \"" + filePathToExtractTo + "/\""
-	os.system(bashCommand)
+	bashCommand = f"cd {filePathToExtractTo} && sudo tar xapf \"{tarGzFilePath}\" -C \"{filePathToExtractTo}/\""
+	subprocess.run(bashCommand)
+
+
+def spinner(message: str, stopEvent: threading.Thread, printCharacter=".", characterCount=4):
+	spinner = itertools.cycle([(printCharacter * i).ljust(characterCount) for i in range(1, characterCount + 1)])
+	while not stopEvent.is_set():
+		sys.stdout.write(f"\r{message} {next(spinner)}\r")
+		sys.stdout.flush()
+		time.sleep(0.4)
+		sys.stdout.write("\b")
+		sys.stdout.flush()
+
+
+def unTarGzFileWithSpinner(tarGzFilePath: str | Path, filePathToExtractTo: str | Path, userName: str = None,
+                           groupName: str | None = None) -> Path | None:
+	message = "Extracting {tarGzFilePath}"
+	stopEvent = threading.Event()
+
+	spinnerThread = threading.Thread(
+		target=spinner,
+		args=(message, stopEvent),
+		daemon=True
+	)
+	spinnerThread.start()
+
+	try:
+		extractedDirectory = unTarGzFile(tarGzFilePath, filePathToExtractTo, userName, groupName)
+	finally:
+		stopEvent.set()
+		spinnerThread.join(timeout=1)
+	return extractedDirectory
 
 def getPostfixVersion():
 	try:
@@ -565,7 +583,7 @@ def getPostfixVersion():
 				return None
 	except:
 		if isDebugMode():
-			logging.exception("Cannot detect PostfixVersion")
+			logger.exception("Cannot detect PostfixVersion")
 		return None
 
 def hasRootPermissions():
@@ -574,8 +592,8 @@ def hasRootPermissions():
 	except:
 		return False
 
-def getVersionFromFilename(fileName):
-	versionRegExpResult = re.findall("[0-9]+[.][0-9]+[.][0-9]+(?:[.][0-9]+)?", fileName)
+def getVersionFromFilename(fileName: str | Path):
+	versionRegExpResult = re.findall("[0-9]+[.][0-9]+[.][0-9]+(?:[.][0-9]+)?", str(fileName))
 	if len(versionRegExpResult) > 0:
 		return versionRegExpResult[0]
 	else:
@@ -624,6 +642,15 @@ def isWritable(path):
 	else:
 		return False
 
+def writePathIfWritable(path: str | Path) -> bool:
+	try:
+		Path(path).mkdir(parents=True, exist_ok=True)
+		with tempfile.NamedTemporaryFile(dir=path) as tempFile: #Python EAFP principle
+			pass
+		return True
+	except (PermissionError, OSError, FileNotFoundError):
+		return False
+
 def checkDownloadFileIsAvailable(fileUrl):
 	downloadPageResponse = None
 	try:
@@ -631,7 +658,7 @@ def checkDownloadFileIsAvailable(fileUrl):
 		return True
 	except urllib.error.HTTPError as e:
 		if isDebugMode():
-			logging.exception("Error")
+			logger.exception("Error")
 		if e.code == 404:
 			# File not found
 			return False
@@ -639,7 +666,7 @@ def checkDownloadFileIsAvailable(fileUrl):
 			return False
 	except:
 		if isDebugMode():
-			logging.exception("Error")
+			logger.exception("Error")
 		return False
 	finally:
 		if downloadPageResponse is not None:
@@ -846,7 +873,7 @@ def checkPackageIsInstalled(osVendor, packageName):
 				return False
 		except:
 			if debugMode:
-				logging.exception("Error while checking for installed package: " + str(packageName))
+				logger.exception("Error while checking for installed package: " + str(packageName))
 			return False
 	else:
 		try:
@@ -857,7 +884,7 @@ def checkPackageIsInstalled(osVendor, packageName):
 				return False
 		except:
 			if debugMode:
-				logging.exception("Error while checking for installed package: " + str(packageName))
+				logger.exception("Error while checking for installed package: " + str(packageName))
 			return False
 
 def restart(scriptFilePath, *arguments):
@@ -873,10 +900,10 @@ def restart(scriptFilePath, *arguments):
 		print(Colors.YELLOW + "Restarting ..." + Colors.DEFAULT)
 	os.execl(sys.executable, sys.executable, *arguments)
 
-def check_tree_permissions(path):
+def checkWriteAccessibility(path):
 	if not os.access(path, os.W_OK):
 		if isDebugMode():
-			logging.exception("PermissionError: No write permission for '{path}'.")
+			logger.exception("PermissionError: No write permission for '{path}'.")
 		return False
 
 	if os.path.isdir(path):
@@ -885,6 +912,21 @@ def check_tree_permissions(path):
 			if not os.access(entry_path, os.W_OK):
 				return False
 	return True
+
+def checkPathAccessibility(path_str: str):
+	path = Path(path_str)
+	try:
+		if not path.exists():
+			return 0
+		if path.is_dir():
+			next(path.iterdir())
+		else:
+			path.stat()
+		return 1
+	except PermissionError:
+		return -1
+	except Exception as e:
+		return -1
 
 def str_to_int(string,default: int | None=None):
 	try:
@@ -896,7 +938,7 @@ def getNodeVersion():
 	if shutil.which("node"):
 		nodeCall = subprocess.run("node --version", shell=True, capture_output=True)
 		if nodeCall.stdout:
-			return nodeCall.stdout.decode()
+			return nodeCall.stdout.decode().strip("\n")
 	return None
 
 def parse_header (content: str) -> dict[str, str]:
@@ -910,3 +952,51 @@ def parse_header (content: str) -> dict[str, str]:
 def filter_argument_list(func: Callable, data: dict) -> dict:
 	sig = inspect.signature(func)
 	return {k:data[k] for k in sig.parameters.keys() if k in data}
+
+def printWarning(*args):
+	print(Colors.YELLOW, *args, Colors.DEFAULT, sep=None)
+
+def printError(*args):
+	print(Colors.RED, *args, Colors.DEFAULT, sep=None)
+
+def printSuccess(*args):
+	print(Colors.GREEN, *args, Colors.DEFAULT, sep=None)
+
+
+def askNy(message: str, customDefaultName="No"):
+	print(message, f"(N/y, Blank => {customDefaultName}):")
+	choice = input(" > ").strip().lower()
+	return choice in ["n","no","nein"] or choice == ""
+
+def askYn(message: str, customDefaultName="No"):
+	print(message, f"(Y/n, Blank => {customDefaultName}):")
+	choice = input(" > ").strip().lower()
+	return choice in ["y","yes","j","ja"] or choice == ""
+
+def askNyCancel(message: str):
+	return askNy(message, "Cancel")
+
+def spinner(message: str, stopEvent: threading.Thread, printCharacter=".", characterCount=4):
+	spinnerChar = itertools.cycle([(printCharacter * i).ljust(characterCount) for i in range(1, characterCount + 1)])
+	while not stopEvent.is_set():
+		sys.stdout.write(f"\r{message} {next(spinnerChar)}\r")
+		sys.stdout.flush()
+		time.sleep(0.4)
+		sys.stdout.write("\b")
+
+def executeCallableWithSpinner(message: str, callable: Callable,  printCharacter=".", characterCount=4) :
+	stopEvent = threading.Event()
+
+	spinnerThread = threading.Thread(
+		target=spinner,
+		args=(message, stopEvent, printCharacter, characterCount),
+		daemon=True
+	)
+	spinnerThread.start()
+
+	try:
+		callableReturnValue = callable()
+	finally:
+		stopEvent.set()
+		spinnerThread.join(timeout=1)
+	return callableReturnValue

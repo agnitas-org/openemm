@@ -15,9 +15,11 @@ from pathlib import Path
 
 from EST_lib import ESTUtilities
 
+logger = logging.getLogger(__name__)
+
 oraclePythonDriverAvailable = None
-mysqlPythonDriverAvailable = None
 mariadbPythonDriverAvailable = None
+postgresPythonDriverAvailable = None
 dbClientPath = None
 emmDbVendor = None
 
@@ -51,7 +53,7 @@ def is_connectable(host: str, port: int | str, timeout: None | int | float = Non
 		return True
 	except Exception as e:
 		if verbose:
-			logging.warning(f'{host}:{port}: failed to connect: {e}')
+			logger.warning(f'{host}:{port}: failed to connect: {e}')
 	finally:
 		if sock is not None:
 			with suppress(Exception):
@@ -90,26 +92,16 @@ def recheckMariadbDriverModuleAvailability():
 		mariadbPythonDriverAvailable = False
 	return mariadbPythonDriverAvailable
 
-def isMysqlDriverModuleAvailable():
-	global mysqlPythonDriverAvailable
+def isPostgresDriverModuleAvailable():
+	global postgresPythonDriverAvailable
 
-	if mysqlPythonDriverAvailable is None:
+	if postgresPythonDriverAvailable is None:
 		try:
-			import MySQLdb
-			mysqlPythonDriverAvailable = True
+			import psycopg2
+			postgresPythonDriverAvailable = True
 		except ModuleNotFoundError:
-			mysqlPythonDriverAvailable = False
-	return mysqlPythonDriverAvailable
-
-def recheckMysqlDriverModuleAvailability():
-	global mysqlPythonDriverAvailable
-
-	try:
-		import MySQLdb
-		mysqlPythonDriverAvailable = True
-	except ModuleNotFoundError:
-		mysqlPythonDriverAvailable = False
-	return mysqlPythonDriverAvailable
+			postgresPythonDriverAvailable = False
+	return postgresPythonDriverAvailable
 
 # Read the special dbcfg file format (no comments read)
 # Attention: ', ' characters are not allowed in keypair names or values, especially in passwords
@@ -236,11 +228,51 @@ def _openOracleConnection():
 			attemptedInitializingThickClient = True
 			oracledb.init_oracle_client()
 
-		def inputTypeHandler(cursor, value, arraysize):
-			if isinstance(value, (bytes, bytearray)):
-				cursor.var(oracledb.BLOB)
-				return cursor.var(oracledb.BLOB, value)
-			return None
+		def _connect(dbcfg: dict):
+			parameters = {}
+			host = dbcfg.get("host", "")
+
+			if host:
+				parsedHost = urlparse(f"tcp://{host}")
+				parameters["port"] = parsedHost.port
+				parameters["host"] = parsedHost.hostname or host
+
+			parameters["user"] = dbcfg.get("user", "")
+			parameters["password"] = dbcfg.get("password", "")
+			pyConnect = dbcfg.get("py-connect", {})
+			if isinstance(pyConnect, dict):
+				parameters.update(pyConnect)
+
+			if dbcfg.get("secure", "").lower().strip() == "true":
+				connectString = ("(description= (retry_count=20)(retry_delay=3)"
+								 f"(address=(protocol=tcps)(port={parameters.get('port', 2848)})(host={host}))"
+								 f"(connect_data=(service_name={dbcfg.get('sid')})))"
+								)
+				parameters["dsn"] = connectString
+			elif parameters.get("host"):
+				parameters["dsn"] = oracledb.makedsn(host, parameters.get('port', 1521), service_name=dbcfg["sid"])
+			else:
+				parameters = {"dsn": parameters["user"] + "/" + parameters["password"] + "@" + dbcfg["sid"]}
+			try:
+				connection = oracledb.connect(**parameters)
+				return connection
+			except Exception as e:
+				if 'DPY-3010' in str(e):
+					try:
+						import cx_oracle
+						connection = cx_oracle.connect(**parameters)
+						return connection
+					except Exception as e:
+						raise Exception(str(e))
+				logging.error(f"Instantiation of oracledb related functionality failed unexpectedly: {e}")
+
+		return _connect
+	except ImportError:
+		pass
+
+def _openPostgresConnection():
+	try:
+		import psycopg2
 
 		def _connect(dbcfg: dict):
 			parameters = {}
@@ -254,26 +286,15 @@ def _openOracleConnection():
 
 			parameters["user"] = dbcfg.get("user", "")
 			parameters["password"] = dbcfg.get("password", "")
-			parameters.update(dbcfg.get("py-connect", {}))
-
-			if dbcfg.get("secure", "").lower().strip() == "true":
-				oracledb.connect()
-				connectString = ("(description= (retry_count=20)(retry_delay=3)"
-								 f"(address=(protocol=tcps)(port={parameters.get('port', 2848)})(host={host}))"
-								 f"(connect_data=(service_name={dbcfg.get('sid')})))"
-								)
-				parameters["dsn"] = connectString
-			elif parameters.get("host"):
-				parameters["dsn"] = oracledb.makedsn(host, parameters.get('port', 1521), service_name=dbcfg["sid"])
-			else:
-				parameters = {"dsn": parameters["user"] + "/" + parameters["password"] + "@" + dbcfg["sid"]}
-			parameters.update(dbcfgEntry.get("py-connect", {}))
+			parameters["dbname"] = dbcfg.get("name", "")
+			pyConnect = dbcfg.get("py-connect", {})
+			if isinstance(pyConnect, dict):
+				parameters.update(pyConnect)
 			try:
-				connection = oracledb.connect(**parameters)
-				connection.inputtypehandler = inputTypeHandler
+				connection = psycopg2.connect(**parameters)
 				return connection
 			except Exception as e:
-				logging.error(f"Instantiation of oracledb related functionality failed unexpectedly: {e}")
+				logger.error(f"Instantiation of postgreSQL related functionality failed unexpectedly: {e}")
 
 		return _connect
 	except ImportError:
@@ -286,7 +307,6 @@ def _openMariadbConnection():
 			parameters = {}
 
 			host = dbcfg.get("host", "")
-
 			if host:
 				parsedHost = urlparse(f"tcp://{host}")
 				parameters["port"] = parsedHost.port or 3306
@@ -295,7 +315,9 @@ def _openMariadbConnection():
 			parameters["user"] = dbcfg.get("user", "")
 			parameters["password"] = dbcfg.get("password", "")
 			parameters["database"] = dbcfg.get("name", "")
-			parameters.update(dbcfg.get("py-connect", {}))
+			pyConnect = dbcfg.get("py-connect", {})
+			if isinstance(pyConnect, dict):
+				parameters.update(pyConnect)
 
 			if dbcfg.get("secure", "").lower().strip() == "true":
 				parameters["ssl"] = True
@@ -306,7 +328,7 @@ def _openMariadbConnection():
 				if str(e).startswith("Unknown database"):
 					errorMessage = f"Database {dbcfg.get('name')} is not accessible or does not exist"
 					if ESTUtilities.isDebugMode():
-						logging.exception(errorMessage)
+						logger.exception(errorMessage)
 					raise DatabaseMissingException(errorMessage, e)
 				return None
 
@@ -314,49 +336,20 @@ def _openMariadbConnection():
 	except ImportError:
 		pass
 
-def _openMySQLConnection():
-	try:
-		import MySQLdb
-		def _connect(dbcfg: dict):
-			parameters = {}
-
-			host = dbcfg.get("host", "")
-
-			if host:
-				parsedHost = urlparse(f"tcp://{host}")
-				parameters["port"] = parsedHost.port or 3306
-				parameters["host"] = parsedHost.hostname or host
-
-			parameters["user"] = dbcfg.get("user", "")
-			parameters["password"] = dbcfg.get("password", "")
-			parameters["database"] = dbcfg.get("name", "")
-			parameters["charset"] = "UTF-8"
-			parameters.update(dbcfg.get("py-connect", {}))
-
-			if dbcfg.get("secure", "").lower().strip() == "true":
-				parameters["ssl"] = True
-			try:
-				MySQLdb.connect(**parameters)
-			except Exception as e:
-				logging.error(f"Instantiation of MySQLdb related functionality failed unexpectedly: {e}")
-
-		return _connect
-	except ImportError:
-		pass
 
 def detectNeededConnectionMethod(dbms: str) -> "mariadb.Connection oracledb.Connection":
 	if dbms.lower() == "oracle":
 		if not checkModuleAvailable('oracledb'):
 			raise MissingDatabaseVendorException(dbms)
 		return _openOracleConnection()
-	elif dbms.lower() == "mysql":
-		if not checkModuleAvailable('MySQLdb'):
-			raise MissingDatabaseVendorException(dbms)
-		return _openMySQLConnection()
 	elif dbms.lower() == "mariadb":
 		if not checkModuleAvailable('mariadb'):
 			raise MissingDatabaseVendorException(dbms)
 		return _openMariadbConnection()
+	elif dbms.lower() == "postgres":
+		if not checkModuleAvailable('psycopg2'):
+			raise MissingDatabaseVendorException(dbms)
+		return _openPostgresConnection()
 	else:
 		raise Exception("The Database Management System {dbms} is not supported by this Tool.")
 
@@ -375,12 +368,13 @@ def openDbConnection(dbcfg: dict | None = None):
 		if 'ORA-00942' in errorMessage:
 			raise MissingTableException() from e
 		elif errorMessage.startswith("Table") and errorMessage.endswith("doesn't exist"):
-			raise MissingTableException(errorMessage.split("'")[1::3])
+			table = errorMessage.split("'")[1::3]
+			raise MissingTableException(table)
 	finally:
 		if connection:
 			connection.close()
 
-def detectDbClientPath(emmDbVendor, dbClientOracleSearchPaths, dbClientMariadbSearchPaths):
+def detectDbClientPath(emmDbVendor, dbClientOracleSearchPaths, dbClientMariadbSearchPaths, dbClientPostgresSearchPaths):
 	global dbClientPath
 
 	if emmDbVendor == "oracle":
@@ -394,17 +388,23 @@ def detectDbClientPath(emmDbVendor, dbClientOracleSearchPaths, dbClientMariadbSe
 				if os.path.isfile(dbClientSearchPath):
 					dbClientPath = dbClientSearchPath
 					break
+	elif emmDbVendor == "postgres":
+		try:
+			dbClientPath = subprocess.check_output("which psql 2>/dev/null", shell=True).decode("UTF-8").strip()
+			dbClientPath = os.path.realpath(dbClientPath)
+		except:
+			dbClientPath = None
+		if dbClientPath is None:
+			for dbClientSearchPath in dbClientPostgresSearchPaths:
+				if os.path.isfile(dbClientSearchPath):
+					dbClientPath = dbClientSearchPath
+					break
 	else:
 		try:
 			dbClientPath = subprocess.check_output("which mariadb 2>/dev/null", shell=True).decode("UTF-8").strip()
 			dbClientPath = os.path.realpath(dbClientPath)
 		except:
 			dbClientPath = None
-		if dbClientPath is None:
-			try:
-				dbClientPath = subprocess.check_output("which mysql 2>/dev/null", shell=True).decode("UTF-8").strip()
-			except:
-				dbClientPath = None
 		if dbClientPath is None:
 			for dbClientSearchPath in dbClientMariadbSearchPaths:
 				if os.path.isfile(dbClientSearchPath):
@@ -469,13 +469,19 @@ def executeSql(sqlStatement: str, isUpdate: bool = True, *parameters, withoutDat
 				for parameterIndex in range(0, placeholderOccurrence):
 					sqlStatement = sqlStatement.replace("?", f":{parameterIndex}", 1)
 				cursor.execute(sqlStatement, parameters, fetch_lobs=False)
+			elif "psycopg2" in str(type(connection)).lower():
+				sqlStatement = sqlStatement.replace("?", "%s")
+				cursor.execute(sqlStatement,parameters)
 			else:
 				cursor.execute(sqlStatement, parameters)
 			if not isUpdate:
 				for row in cursor:
 					rowArray = []
 					for i in range(len(row)):
-						rowArray.append(row[i])
+						if isinstance(row[i],memoryview):
+							rowArray.append(row[i].tobytes())
+						else:
+							rowArray.append(row[i])
 					result.append(rowArray)
 			connection.commit()
 			return result
@@ -483,7 +489,7 @@ def executeSql(sqlStatement: str, isUpdate: bool = True, *parameters, withoutDat
 		if ESTUtilities.isDebugMode():
 			print("SQL: " + sqlStatement)
 			print("Parameters: " + str(parameters))
-			logging.exception("executeSql")
+			logger.exception("executeSql")
 		return None
 
 
@@ -502,25 +508,26 @@ def executeMissingUpdates(sqlUpdateScriptFilePath: str | Path):
 		else:
 			necessarySQLScripts.append(file)
 
-	query = f"""
+	query = """
 	SELECT uv.version_number
 	FROM (
 	SELECT ? AS version_number FROM dual 
-		{'UNION ALL SELECT ? FROM dual ' * (len(sqlUpdateVersions) - 1)}
+		{}
 	) uv 
 	WHERE NOT EXISTS ( 
 	SELECT 1 FROM agn_dbversioninfo_tbl version_tbl 
 	WHERE version_tbl.version_number = uv.version_number
 	)
-	"""
+	""".format("UNION ALL SELECT ? FROM dual " * (len(sqlUpdateVersions) - 1))
 	missingVersions = select(query, *sqlUpdateVersions.keys())
 
 	if missingVersions:
-		for version in set(sqlUpdateVersions.keys()) - set((itertools.chain.from_iterable(missingVersions))):
+		missingVersions = list(itertools.chain.from_iterable(missingVersions))
+		for version in set(sqlUpdateVersions.keys()) - set(missingVersions):
 			print("DB already contains version", version)
 
-		updateFilesNeeded = itemgetter(*missingVersions[0])(sqlUpdateVersions)
-		updateFilesNeeded = updateFilesNeeded if isinstance(updateFilesNeeded, list) else [updateFilesNeeded]
+		updateFilesNeeded = itemgetter(*missingVersions)(sqlUpdateVersions)
+		updateFilesNeeded = updateFilesNeeded if isinstance(updateFilesNeeded, (list, tuple)) else [updateFilesNeeded]
 		for sqlFile in updateFilesNeeded:
 			executeSqlScriptFile(sqlUpdateScriptFilePath / sqlFile)
 
@@ -552,10 +559,10 @@ def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
 			return True
 		except Exception as e:
 			if ESTUtilities.isDebugMode():
-				logging.exception(f"Error in executeSqlScriptFile: {e}")
+				logger.exception(f"Error in executeSqlScriptFile: {e}")
 			return False
 
-	elif emmDbVendor == "mysql" or emmDbVendor == "mariadb":
+	elif emmDbVendor in ["mariadb", "postgresql"]:
 		host = dbcfgEntry["host"]
 		if host is None or len(host) == 0:
 			print("Missing database host configuration")
@@ -618,12 +625,15 @@ def checkDbServiceAvailable():
 			port = int(portString)
 			host = host[0:portStartIndex]
 		else:
-			port = 3306
+			if dbcfgEntry["dbms"].lower() == "postgres":
+				port = 5432
+			else:
+				port = 3306
 
 		return is_connectable(host, port, 1)
 
 def checkDbConnectionWithoutDatabase():
-	if emmDbVendor in ["mariadb", "mysql"]:
+	if emmDbVendor == "mariadb":
 		result = executeSql("SELECT VERSION()", withoutDatabase=True)
 		if result:
 			return True
@@ -635,7 +645,7 @@ def checkDbConnectionWithoutDatabase():
 				connection.cursor()
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Error in checkDbConnection")
+				logger.exception("Error in checkDbConnection")
 			return False
 	return True
 
@@ -655,21 +665,7 @@ def checkDbConnection():
 					raise Exception("Configured database vendor is MariaDB and used database is MariaDB, but the configured database driver is not MariaDB. Please adjust database configuration in menu Configuration, sub-menu Change configuration of database connection.")
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Error in checkDbConnection")
-			return False
-	elif emmDbVendor == "mysql":
-		try:
-			versionText = selectValue("SELECT VERSION()")
-			if versionText is None:
-				raise Exception("Cannot detect database vendor and version")
-			elif "MariaDB" in versionText:
-				raise Exception("Configured database vendor is MySQL, but actually used database is no MySQL. Please adjust database configuration in menu Configuration, sub-menu Change configuration of database connection.")
-			else:
-				if not dbcfgEntry["jdbc-driver"] == "com.mysql.jdbc.Driver" and not dbcfgEntry["jdbc-driver"] == "com.mysql.cj.jdbc.Driver":
-					raise Exception("Configured database vendor is MariaDB and used database is MariaDB, but the configured database driver is not MariaDB. Please adjust database configuration in menu Configuration, sub-menu Change configuration of database connection.")
-		except:
-			if ESTUtilities.isDebugMode():
-				logging.exception("Error in checkDbConnection")
+				logger.exception("Error in checkDbConnection")
 			return False
 	else:
 		try:
@@ -678,7 +674,7 @@ def checkDbConnection():
 					raise Exception("Cannot establish db connection")
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Error in checkDbConnection")
+				logger.exception("Error in checkDbConnection")
 			return False
 	return True
 
@@ -689,7 +685,7 @@ def checkDbExists(databaseName: str | None = None):
 		return selectIntValue("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = ?", databaseName) >= 0
 	except:
 		if ESTUtilities.isDebugMode():
-			logging.exception("Error in checkDbExists")
+			logger.exception("Error in checkDbExists")
 		return False
 
 def checkDbStructureExists():
@@ -764,7 +760,7 @@ def createDatabaseBackup(applicationName, currentVersion):
 					raise Exception("Database user needs grant 'SELECT ON mysql.proc' to backup database data. (e.g. GRANT SELECT ON mysql.proc TO '" + dbcfgEntry["user"] + "'@'%';)")
 	except Exception as e:
 		errorText = "Error while creating backup of database: " + str(e)
-		logging.exception(errorText)
+		logger.exception(errorText)
 		raise Exception(errorText)
 
 def createDatabaseAndUser(host, dbname, username, userpassword, dbRootPassword=None):
@@ -878,7 +874,7 @@ def readConfigurationValueFromDB(configClass, configName, hostname):
 		return valueBuffer
 	except:
 		if ESTUtilities.isDebugMode():
-			logging.exception("Error in readConfigurationValueFromDB")
+			logger.exception("Error in readConfigurationValueFromDB")
 		return None
 
 def updateConfigurationValueInDB(configClass, configName, configValue, hostname):
@@ -1013,7 +1009,7 @@ def updateLandingPageInDB(domain, landingPage):
 					update("INSERT INTO landingpage_tbl (domain, landingpage) VALUES (?, ?)", domain, landingPage)
 	except:
 		if ESTUtilities.isDebugMode():
-			logging.exception("Executing SQL to update Landing Page failed")
+			logger.exception("Executing SQL to update Landing Page failed")
 		return None
 
 def setupSecureOracleDbLibrariesForStartup(username):

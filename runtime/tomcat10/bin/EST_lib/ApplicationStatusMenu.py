@@ -16,6 +16,8 @@ from EST_lib.Environment import Environment
 from EST_lib.License import License
 from EST_lib import CheckMenu
 
+logger = logging.getLogger(__name__)
+
 def statusMenuAction(actionParameters):
 	print(Environment.applicationName + " status:")
 	print(readApplicationStatus(True))
@@ -80,10 +82,10 @@ def readApplicationStatus(colorize = True):
 		statusText += errorColorCode + "DBCFG: File is not configured" + defaultColorCode + "\n"
 
 	dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName] if DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties else None
-	if not "oracle" in Environment.allowedDbmsSystems and not DbConnector.isMysqlDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable():
+	if not "oracle" in Environment.allowedDbmsSystems and not DbConnector.isMariadbDriverModuleAvailable() and not DbConnector.isPostgresDriverModuleAvailable():
 		statusText += errorColorCode + "The database vendor " + dbcfgEntry["dbms"] + " is not supported by this python installation" + defaultColorCode + "\n"
-	elif not DbConnector.isOracleDriverModuleAvailable() and not DbConnector.isMysqlDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable():
-		statusText += errorColorCode + "No database vendor 'oracle', 'mariadb, 'maysql' is supported by this python installation" + defaultColorCode + "\n"
+	elif not DbConnector.isOracleDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable() and not DbConnector.isPostgresDriverModuleAvailable():
+		statusText += errorColorCode + "No database vendor 'oracle', 'mariadb, 'postgres' is supported by this python installation" + defaultColorCode + "\n"
 
 	Environment.postfixVersion = ESTUtilities.getPostfixVersion()
 
@@ -102,7 +104,7 @@ def readApplicationStatus(colorize = True):
 				statusText += "Database client version: " + dbClientVersion + "\n"
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Database client status")
+				logger.exception("Database client status")
 			statusText += errorColorCode + "Database client status: ERROR" + defaultColorCode + "\n"
 	else:
 		statusText += errorColorCode + "Database client NOT available" + defaultColorCode + "\n"
@@ -121,7 +123,7 @@ def readApplicationStatus(colorize = True):
 					dbConnectionWorked = True
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Database Connection")
+				logger.exception("Database Connection")
 			statusText += errorColorCode + "Database Connection: ERROR" + defaultColorCode + "\n"
 
 	statusText += "System-Time: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
@@ -136,7 +138,7 @@ def readApplicationStatus(colorize = True):
 			statusText += "System-Time-DB: " + str(dbTime) + "\n"
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Detect database time")
+				logger.exception("Detect database time")
 			statusText += errorColorCode + "System-Time-DB: ERROR" + defaultColorCode + "\n"
 
 		# Database version
@@ -148,14 +150,14 @@ def readApplicationStatus(colorize = True):
 			elif DbConnector.emmDbVendor == "mariadb":
 				versionText = DbConnector.selectValue("SELECT VERSION()")
 				dbVersion = "MariaDB " + versionText
-			elif DbConnector.emmDbVendor == "mysql":
+			elif DbConnector.emmDbVendor == "postgres":
 				versionText = DbConnector.selectValue("SELECT VERSION()")
-				dbVersion = "MySQL " + versionText
+				dbVersion = "PostgreSQL " + versionText
 
 			statusText += "Database version: " + dbVersion + "\n"
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Detect database version")
+				logger.exception("Detect database version")
 			statusText += errorColorCode + "Detect database version: ERROR" + defaultColorCode + "\n"
 
 		# Check for existing database scheme
@@ -165,7 +167,7 @@ def readApplicationStatus(colorize = True):
 				structureVersion = DbConnector.selectValue("SELECT MAX(version_number) FROM agn_dbversioninfo_tbl")
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Database structure")
+					logger.exception("Database structure")
 				statusText += errorColorCode + "Database structure: ERROR" + defaultColorCode + "\n"
 			statusText += Environment.applicationName + " database structure exists (Version " + structureVersion + ")" + "\n"
 			databaseAvailable = True
@@ -185,7 +187,7 @@ def readApplicationStatus(colorize = True):
 				statusText += "Database table emm_db_errorlog_tbl: OK" + "\n"
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Database table emm_db_errorlog_tbl")
+				logger.exception("Database table emm_db_errorlog_tbl")
 			statusText += errorColorCode + "Database table emm_db_errorlog_tbl: ERROR" + defaultColorCode + "\n"
 
 		# Mandatory configuration values
@@ -207,7 +209,7 @@ def readApplicationStatus(colorize = True):
 
 		# Jobqueue status
 		try:
-			if DbConnector.emmDbVendor == "oracle":
+			if DbConnector.emmDbVendor in ["oracle", "postgres"]:
 				result = DbConnector.select("SELECT description FROM job_queue_tbl WHERE deleted = 0 AND ((lastresult != 'OK' AND lastresult IS NOT NULL) OR (nextstart < CURRENT_TIMESTAMP - INTERVAL '15' MINUTE) OR (running = 1 AND laststart < CURRENT_TIMESTAMP - INTERVAL '5' HOUR))")
 			else:
 				result = DbConnector.select("SELECT description FROM job_queue_tbl WHERE deleted = 0 AND ((lastresult != 'OK' AND lastresult IS NOT NULL) OR (nextstart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE)) OR (running = 1 AND laststart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 5 HOUR)))")
@@ -232,7 +234,7 @@ def readApplicationStatus(colorize = True):
 				statusText += "Jobqueue status: OK" + "\n"
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Check Jobqueue status")
+				logger.exception("Check Jobqueue status")
 			statusText += errorColorCode + "Check Jobqueue status: ERROR" + defaultColorCode + "\n"
 
 		# Show DKIM domains
@@ -251,7 +253,7 @@ def readApplicationStatus(colorize = True):
 				statusText += "DKIM keys available for domains: " + dkimDomains + "\n"
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("DKIM keys")
+					logger.exception("DKIM keys")
 				statusText += "No DKIM keys" + "\n"
 		else:
 			statusText += "No DKIM keys" + "\n"
@@ -261,19 +263,19 @@ def readApplicationStatus(colorize = True):
 		statusText += "Java version: " + ESTUtilities.getJavaVersion(Environment.javaHome) + " (" + ESTUtilities.getJavaVendor(Environment.javaHome) + ")" + "\n"
 	except:
 		if ESTUtilities.isDebugMode():
-			logging.exception("Error while checking for Java version")
+			logger.exception("Error while checking for Java version")
 		statusText += errorColorCode + "Error while checking for Java version" + defaultColorCode + "\n"
 
 	# Tomcat version
 	try:
-		version = ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)
+		version = ESTUtilities.getTomcatVersion(Environment.catalinaHome)
 		if version is not None:
 			statusText += "Tomcat version: " + version + "\n"
 		else:
 			statusText += errorColorCode + "Detect Tomcat version: ERROR" + defaultColorCode + "\n"
 	except:
 		if ESTUtilities.isDebugMode():
-			logging.exception("Error while detecting Tomcat version")
+			logger.exception("Error while detecting Tomcat version")
 		statusText += errorColorCode + "Error while detecting Tomcat version" + defaultColorCode + "\n"
 
 	# Application status
@@ -309,11 +311,11 @@ def readApplicationStatus(colorize = True):
 				statusText += errorColorCode + Environment.applicationName + " Application is NOT running" + defaultColorCode + "\n"
 			else:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Error while checking for " + Environment.applicationName + "Application running")
+					logger.exception("Error while checking for " + Environment.applicationName + "Application running")
 				statusText += errorColorCode + "Error while checking for " + Environment.applicationName + "Application running" + defaultColorCode + "\n"
 		except:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Error while checking for " + Environment.applicationName + "Application running")
+				logger.exception("Error while checking for " + Environment.applicationName + "Application running")
 			statusText += errorColorCode + "Error while checking for " + Environment.applicationName + "Application running" + defaultColorCode + "\n"
 
 	# Backend status
@@ -437,50 +439,24 @@ def sendConfigAndLogsAction(actionParameters):
 				if License.getLicenseName() is not None:
 					statusText += "License: " + License.getLicenseName() + " (ID: " + License.getLicenseID() + ")\n"
 
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName + "/tomcat/conf/version.txt")):
-					with open(ESTUtilities.getUserHomeDirectory(applicationUserName + "/tomcat/conf/version.txt")) as runtimeVersionFile:
-						Environment.runtimeVersion = runtimeVersionFile.read().strip()
-				else:
-					Environment.runtimeVersion = "Unknown"
-				statusText += "Runtime Version: " + Environment.runtimeVersion + "\n"
-
-				if Environment.isOpenEmmServer:
-					if os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/manual/de"):
-						manualApplicationPath = os.path.realpath(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/manual/de")
-						manualVersion = ESTUtilities.getVersionFromFilename(manualApplicationPath)
-						if manualVersion is not None:
-							Environment.manualVersion = manualVersion
-						else:
-							Environment.manualVersion = "Unknown"
-					else:
-						Environment.manualVersion = "Unknown"
-				elif Environment.isEmmFrontendServer:
-					if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/manual/de"):
-						manualApplicationPath = os.path.realpath(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/manual/de")
-						manualVersion = ESTUtilities.getVersionFromFilename(manualApplicationPath)
-						if manualVersion is not None:
-							Environment.manualVersion = manualVersion
-						else:
-							Environment.manualVersion = "Unknown"
-					else:
-						Environment.manualVersion = "Unknown"
+				statusText += "Runtime Version: " + Environment.applicationVersions.runtime.refresh() + "\n"
 
 				if Environment.isEmmFrontendServer:
-					statusText += Environment.applicationName + " Version: " + Environment.frontendVersion + "\n"
+					statusText += Environment.applicationName + " Version: " + Environment.applicationVersions.frontend + "\n"
 				elif Environment.isEmmStatisticsServer:
-					statusText += Environment.applicationName + " Statistics Version: " + Environment.statisticsVersion + "\n"
+					statusText += Environment.applicationName + " Statistics Version: " + Environment.applicationVersions.statistics + "\n"
 				elif Environment.isEmmWebservicesServer:
-					statusText += Environment.applicationName + " Webservices Version: " + Environment.webservicesVersion + "\n"
+					statusText += Environment.applicationName + " Webservices Version: " + Environment.applicationVersions.webservices + "\n"
 				elif Environment.isEmmConsoleRdirServer:
-					statusText += Environment.applicationName + " Console-Rdir Version: " + Environment.consoleRdirVersion + "\n"
+					statusText += Environment.applicationName + " Console-Rdir Version: " + Environment.applicationVersions.consoleRdir + "\n"
 				elif Environment.isEmmRdirServer:
-					statusText += Environment.applicationName + " Rdir Version: " + Environment.rdirVersion + "\n"
+					statusText += Environment.applicationName + " Rdir Version: " + Environment.applicationVersions.rdir + "\n"
 				elif Environment.isEmmMergerServer:
-					statusText += Environment.applicationName + " Merger Version: " + Environment.mergerBackendVersion + "\n"
+					statusText += Environment.applicationName + " Merger Version: " + Environment.applicationVersions.mergerBackend + "\n"
 				elif Environment.isEmmMailerServer:
-					statusText += Environment.applicationName + " Mailer Version: " + Environment.mailerBackendVersion + "\n"
+					statusText += Environment.applicationName + " Mailer Version: " + Environment.applicationVersions.mailerBackend + "\n"
 				elif Environment.isEmmMailloopServer:
-					statusText += Environment.applicationName + " Mailloop Version: " + Environment.mailloopBackendVersion + "\n"
+					statusText += Environment.applicationName + " Mailloop Version: " + Environment.applicationVersions.mailloopBackend + "\n"
 				else:
 					statusText += Environment.applicationName + " Version: Unknown\n"
 
@@ -501,7 +477,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				print(Colors.RED + "Cannot export status" + Colors.DEFAULT)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot export status")
+					logger.exception("Cannot export status")
 					raise
 
 			# Update log files of application user
@@ -622,7 +598,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				print(Colors.RED + "Cannot export config_tbl" + Colors.DEFAULT)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot export config_tbl")
+					logger.exception("Cannot export config_tbl")
 					raise
 
 			# company info table
@@ -648,7 +624,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				print(Colors.RED + "Cannot export company_info_tbl" + Colors.DEFAULT)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot export company_info_tbl")
+					logger.exception("Cannot export company_info_tbl")
 					raise
 			finally:
 				if os.path.isfile(configTblExportFilePath):
@@ -674,7 +650,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				print(Colors.RED + "Cannot export release_log_tbl" + Colors.DEFAULT)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot export release_log_tbl")
+					logger.exception("Cannot export release_log_tbl")
 					raise
 
 			if Environment.applicationName == "EMM":
@@ -696,7 +672,7 @@ def sendConfigAndLogsAction(actionParameters):
 				except:
 					print(Colors.RED + "Cannot export serverset_tbl" + Colors.DEFAULT)
 					if ESTUtilities.isDebugMode():
-						logging.exception("Cannot export serverset_tbl")
+						logger.exception("Cannot export serverset_tbl")
 						raise
 				finally:
 					if os.path.isfile(serverSetTblExportFilePath):
@@ -720,7 +696,7 @@ def sendConfigAndLogsAction(actionParameters):
 				except:
 					print(Colors.RED + "Cannot export serverset_desc_tbl" + Colors.DEFAULT)
 					if ESTUtilities.isDebugMode():
-						logging.exception("Cannot export serverset_desc_tbl")
+						logger.exception("Cannot export serverset_desc_tbl")
 						raise
 				finally:
 					if os.path.isfile(serverSetDescTblExportFilePath):
@@ -746,7 +722,7 @@ def sendConfigAndLogsAction(actionParameters):
 				except:
 					print(Colors.RED + "Cannot export serverprop_tbl" + Colors.DEFAULT)
 					if ESTUtilities.isDebugMode():
-						logging.exception("Cannot export serverprop_tbl")
+						logger.exception("Cannot export serverprop_tbl")
 						raise
 				finally:
 					if os.path.isfile(serverPropTblExportFilePath):
@@ -774,7 +750,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				print(Colors.RED + "Cannot export company_tbl" + Colors.DEFAULT)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot export company_tbl")
+					logger.exception("Cannot export company_tbl")
 					raise
 			finally:
 				if os.path.isfile(companyTblExportFilePath):
@@ -802,7 +778,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				print(Colors.RED + "Cannot export Home directory files tree" + Colors.DEFAULT)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot export Home directory files tree")
+					logger.exception("Cannot export Home directory files tree")
 					raise
 			finally:
 				if os.path.isfile(homeDirectoryTreeExportFilePath):
@@ -815,31 +791,26 @@ def sendConfigAndLogsAction(actionParameters):
 				emailText += Environment.toolName + " v" + Environment.toolVersion + "\n"
 				emailText += "Host: " + Environment.hostname + "\n"
 
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/version.txt"):
-					with open(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/version.txt") as runtimeVersionFile:
-						Environment.runtimeVersion = runtimeVersionFile.read().strip()
-				else:
-					Environment.runtimeVersion = "Unknown"
-				emailText += "Runtime Version: " + Environment.runtimeVersion + "\n"
+				emailText += "Runtime Version: " + Environment.applicationVersions.runtimeVersion + "\n"
 
 				if Environment.isOpenEmmServer:
-					emailText += Environment.applicationName + " Version: " + Environment.frontendVersion + "\n"
+					emailText += Environment.applicationName + " Version: " + Environment.applicationVersions.frontend + "\n"
 				elif Environment.isEmmFrontendServer:
-					emailText += Environment.applicationName + " Version: " + Environment.frontendVersion + "\n"
+					emailText += Environment.applicationName + " Version: " + Environment.applicationVersions.frontend + "\n"
 				elif Environment.isEmmStatisticsServer:
-					emailText += Environment.applicationName + " Statistics Version: " + Environment.statisticsVersion + "\n"
+					emailText += Environment.applicationName + " Statistics Version: " + Environment.applicationVersions.statistics + "\n"
 				elif Environment.isEmmWebservicesServer:
-					emailText += Environment.applicationName + " Webservices Version: " + Environment.webservicesVersion + "\n"
+					emailText += Environment.applicationName + " Webservices Version: " + Environment.applicationVersions.webservices + "\n"
 				elif Environment.isEmmConsoleRdirServer:
-					emailText += Environment.applicationName + " Console-Rdir Version: " + Environment.consoleRdirVersion + "\n"
+					emailText += Environment.applicationName + " Console-Rdir Version: " + Environment.applicationVersions.consoleRdir + "\n"
 				elif Environment.isEmmRdirServer:
-					emailText += Environment.applicationName + " Rdir Version: " + Environment.rdirVersion + "\n"
+					emailText += Environment.applicationName + " Rdir Version: " + Environment.applicationVersions.rdir + "\n"
 				elif Environment.isEmmMergerServer:
-					emailText += Environment.applicationName + " Merger Version: " + Environment.mergerBackendVersion + "\n"
+					emailText += Environment.applicationName + " Merger Version: " + Environment.applicationVersions.mergerBackend + "\n"
 				elif Environment.isEmmMailerServer:
-					emailText += Environment.applicationName + " Mailer Version: " + Environment.mailerBackendVersion + "\n"
+					emailText += Environment.applicationName + " Mailer Version: " + Environment.applicationVersions.mailerBackend+ "\n"
 				elif Environment.isEmmMailloopServer:
-					emailText += Environment.applicationName + " Mailloop Version: " + Environment.mailloopBackendVersion + "\n"
+					emailText += Environment.applicationName + " Mailloop Version: " + Environment.applicationVersions.mailloopBackend + "\n"
 				else:
 					emailText += Environment.applicationName + " Version: Unknown\n"
 
@@ -852,7 +823,7 @@ def sendConfigAndLogsAction(actionParameters):
 			except:
 				Environment.errors.append("Cannot send email. File created for manually sending: " + configAndLogsZipFilePath)
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot send email")
+					logger.exception("Cannot send email")
 
 			if Environment.errors is None or len(Environment.errors) == 0:
 				Environment.messages.append("Email with configuration and log files was sent to '" + emailAddress + "'\nFor content see " + configAndLogsZipFilePath)

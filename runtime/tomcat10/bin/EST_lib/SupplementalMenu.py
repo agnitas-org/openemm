@@ -14,11 +14,13 @@ import urllib.request, urllib.error, urllib.parse
 import shlex
 
 from EST_lib.Environment import Environment
-from EST_lib import Colors, FrontendRuntimeInstaller
+from EST_lib import Colors
 from EST_lib import DbConnector
 from EST_lib import ESTUtilities
 from EST_lib.License import License
 from EST_lib.ESTUtilities import restart, parse_header
+from EST_lib.PackageInstaller import RuntimePackageHandler
+
 
 def masterPasswordMenuAction(actionParameters):
 	if Environment.isOpenEmmServer:
@@ -67,6 +69,8 @@ def masterPasswordMenuAction(actionParameters):
 					generatedPasswordHash = generatedPasswordHash.strip()
 					if DbConnector.emmDbVendor == "oracle":
 						DbConnector.update("UPDATE admin_tbl SET secure_password_hash = ?, pwdchange_date = CURRENT_TIMESTAMP - 91 WHERE admin_id = ?", generatedPasswordHash.upper(), 1)
+					elif DbConnector.emmDbVendor == "postgres":
+						DbConnector.update("UPDATE admin_tbl SET secure_password_hash = ?, pwdchange_date = CURRENT_TIMESTAMP - INTERVAL '91' DAY WHERE admin_id = ?", generatedPasswordHash.upper(), 1)
 					else:
 						DbConnector.update("UPDATE admin_tbl SET secure_password_hash = ?, pwdchange_date = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL -91 DAY) WHERE admin_id = ?", generatedPasswordHash.upper(), 1)
 					Environment.messages.append("New initial password for user 'emm-master': " + generatedPassword)
@@ -139,12 +143,12 @@ def restartMenuAction(actionParameters):
 		Environment.messages.append("Restart canceled")
 
 def backupTomcatConfigAction(actionParameters):
-
-	print("Please enter the absolute path of the desired directories, separated by space: (Blank => Cancel)")
+	print("Directories outside the permission scope of this user may prompt sudo access.")
+	print("Please enter the absolute path of the desired directories or files, separated by space: (Blank => Cancel)")
 	choice = input("> ")
 	backup_choices = shlex.split(choice)
 	if backup_choices:
-		output_path = FrontendRuntimeInstaller.createTarGZSystemFileBackup(backup_choices)
+		output_path = RuntimePackageHandler.createTarGZSystemFileBackup(backup_choices)
 		if output_path:
 			Environment.messages.append("Created Backup  folder: " + output_path)
 

@@ -4,40 +4,42 @@ import time
 import shutil
 
 from EST_lib.Environment import Environment
-from EST_lib import ESTUtilities, FrontendRuntimeInstaller
+from EST_lib import ESTUtilities
+from EST_lib.PackageInstaller import RuntimePackageHandler
+
 
 def switchVersionMenuAction(actionParameters):
 	print("Currently active application versions:")
 
 	if Environment.isOpenEmmServer or Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer or Environment.isEmmConsoleRdirServer or Environment.isEmmRdirServer:
-		print(" Runtime:          " + Environment.runtimeVersion)
+		print(" Runtime:          " + Environment.applicationVersions.runtime)
 
 	if Environment.isOpenEmmServer:
-		print(" Frontend:         " + Environment.frontendVersion)
+		print(" Frontend:         " + Environment.applicationVersions.frontend)
 		if os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/manual") or os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/manual"):
-			print(" Manual:           " + Environment.manualVersion)
+			print(" Manual:           " + Environment.applicationVersions.manual)
 	else:
 		if Environment.isEmmFrontendServer:
-			print(" Frontend:         " + Environment.frontendVersion)
-			print(" Manual:           " + Environment.manualVersion)
+			print(" Frontend:         " + Environment.applicationVersions.frontend)
+			print(" Manual:           " + Environment.applicationVersions.manual)
 		if Environment.isEmmConsoleRdirServer:
-			print(" ConsoleRdir:      " + Environment.consoleRdirVersion)
+			print(" ConsoleRdir:      " + Environment.applicationVersions.consoleRdir)
 		if Environment.isEmmRdirServer:
-			print(" Rdir:             " + Environment.rdirVersion)
+			print(" Rdir:             " + Environment.applicationVersions.rdir)
 
 	if Environment.isOpenEmmServer:
-		print(" Backend:          " + Environment.emmBackendVersion)
+		print(" Backend:          " + Environment.applicationVersions.emmBackend)
 	else:
 		if Environment.isEmmFrontendServer:
-			print(" Backend-Console:  " + Environment.emmBackendVersion)
-		if Environment.runtimeBackendVersion is not None:
-			print(" Backend-Runtime:  " + Environment.runtimeBackendVersion)
+			print(" Backend-Console:  " + Environment.applicationVersions.emmBackend)
+		if Environment.applicationVersions.runtimeBackendVersion != "Unknown":
+			print(" Backend-Runtime:  " + Environment.applicationVersions.runtimeBackend)
 		if Environment.isEmmMergerServer:
-			print(" Backend-Merger:   " + Environment.mergerBackendVersion)
+			print(" Backend-Merger:   " + Environment.applicationVersions.mergerBackend)
 		if Environment.isEmmMailerServer:
-			print(" Backend-Mailer:   " + Environment.mailerBackendVersion)
+			print(" Backend-Mailer:   " + Environment.applicationVersions.mailerBackend)
 		if Environment.isEmmMailloopServer:
-			print(" Backend-Mailloop: " + Environment.mailloopBackendVersion)
+			print(" Backend-Mailloop: " + Environment.applicationVersions.mailloopBackend)
 
 	print()
 	print("Please enter application to change version for (Blank => Back):")
@@ -46,7 +48,7 @@ def switchVersionMenuAction(actionParameters):
 	choice = choice.strip().lower()
 	print()
 	if choice == "":
-		return
+		return None
 	elif choice == "runtime" and (Environment.isOpenEmmServer or Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer or Environment.isEmmConsoleRdirServer or Environment.isEmmRdirServer):
 		print("Available versions for 'Runtime':")
 		availableVersions = getAvailableRuntimeVersions()
@@ -60,21 +62,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.runtimeVersion:
+			if choice != Environment.applicationVersions.runtime:
 				activateRuntimeVersion(availableVersions[choice])
-
-				if Environment.isOpenEmmServer:
-					applicationUserName = "openemm"
-				elif Environment.isEmmRdirServer:
-					applicationUserName = Environment.getRdirApplicationUserName()
-				else:
-					applicationUserName = Environment.getFrontendApplicationUserName()
-
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/version.txt"):
-					with open(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/version.txt") as runtimeVersionFile:
-						Environment.runtimeVersion = runtimeVersionFile.read().strip()
-				else:
-					Environment.runtimeVersion = "Unknown"
+				Environment.applicationVersions.runtime.refresh()
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -99,7 +89,7 @@ def switchVersionMenuAction(actionParameters):
 				neededTomcatMainVersion = ["10.", "11."]
 				if ESTUtilities.compareVersions("21.05", version) < 0:
 					neededTomcatMainVersion = ["9."]
-				currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)
+				currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.catalinaHome)
 				if validVersion and not any(currentTomcatVersion.startswith(p) for p in neededTomcatMainVersion):
 					tomcatVersions = getAvailableTomcatVersions()
 					validVersion = False
@@ -119,7 +109,7 @@ def switchVersionMenuAction(actionParameters):
 			if choice == "":
 				return True
 			elif choice in availableVersions:
-				if choice != Environment.frontendVersion:
+				if choice != Environment.applicationVersions.frontend:
 					activateEmmVersion(availableEmmVersions[choice])
 
 					activateStatisticsVersion(availableStatisticsVersions[choice])
@@ -127,16 +117,11 @@ def switchVersionMenuAction(actionParameters):
 					if choice in availableWebservicesVersions:
 						activateWebservicesVersion(availableWebservicesVersions[choice])
 
-					if Environment.isOpenEmmServer:
-						Environment.frontendVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/emm/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-					else:
-						Environment.frontendVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/emm/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-
 					# Version 21.04.000 or less needs Tomcat 9, newer versions need Tomcat 10
 					neededTomcatMainVersion = "10."
 					if ESTUtilities.compareVersions("21.05", choice) < 0:
 						neededTomcatMainVersion = "9."
-					currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)
+					currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.catalinaHome)
 					if not currentTomcatVersion.startswith(neededTomcatMainVersion):
 						tomcatVersions = getAvailableTomcatVersions()
 						useTomcatVersion = None
@@ -169,7 +154,7 @@ def switchVersionMenuAction(actionParameters):
 				neededTomcatMainVersion = "10."
 				if ESTUtilities.compareVersions("21.05", version) < 0:
 					neededTomcatMainVersion = "9."
-				currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)
+				currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.catalinaHome)
 				if validVersion and not currentTomcatVersion.startswith(neededTomcatMainVersion) and ESTUtilities.hasRootPermissions():
 					tomcatVersions = getAvailableTomcatVersions()
 					validVersion = False
@@ -189,23 +174,20 @@ def switchVersionMenuAction(actionParameters):
 			if choice == "":
 				return True
 			elif choice in availableVersions:
-				if choice != Environment.frontendVersion:
+				if choice != Environment.applicationVersions.frontend:
 					activateEmmVersion(availableEmmVersions[choice])
-					Environment.frontendVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/emm/WEB-INF/classes/emm.properties")["ApplicationVersion"]
 
 					if Environment.isEmmStatisticsServer:
 						activateStatisticsVersion(availableStatisticsVersions[choice])
-						Environment.statisticsVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/statistics/WEB-INF/classes/emm.properties")["ApplicationVersion"]
 
 					if Environment.isEmmWebservicesServer:
 						activateWebservicesVersion(availableWebservicesVersions[choice])
-						Environment.webservicesVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/webservices/WEB-INF/classes/emm.properties")["ApplicationVersion"]
 
 					# Version 21.04.000 or less needs Tomcat 9, newer versions need Tomcat 10
 					neededTomcatMainVersion = "10."
 					if ESTUtilities.compareVersions("21.05", choice) < 0:
 						neededTomcatMainVersion = "9."
-					currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)
+					currentTomcatVersion = ESTUtilities.getTomcatVersion(Environment.catalinaHome)
 					if not currentTomcatVersion.startswith(neededTomcatMainVersion) and ESTUtilities.hasRootPermissions():
 						tomcatVersions = getAvailableTomcatVersions()
 						useTomcatVersion = None
@@ -222,6 +204,7 @@ def switchVersionMenuAction(actionParameters):
 			else:
 				Environment.errors.append("Unavailable application version for 'Frontend': '" + choice + "'")
 				return True
+		return None
 	elif choice == "rdir":
 		print("Available versions for 'Rdir':")
 		availableVersions = getAvailableRdirVersions()
@@ -235,9 +218,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.rdirVersion:
+			if choice != Environment.applicationVersions.rdirVersion:
 				activateRdirVersion(availableVersions[choice])
-				Environment.rdirVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.properties")["ApplicationVersion"]
+				Environment.applicationVersions.rdir = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.properties")["ApplicationVersion"]
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -256,9 +239,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.emmBackendVersion:
+			if choice != Environment.applicationVersions.emmBackend:
 				activateBackendVersion("openemm", choice)
-				Environment.emmBackendVersion = choice
+				Environment.applicationVersions.emmBackend = choice
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -277,9 +260,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.emmBackendVersion:
+			if choice != Environment.applicationVersions.emmBackend:
 				activateBackendVersion(Environment.getFrontendApplicationUserName(), choice)
-				Environment.emmBackendVersion = choice
+				Environment.applicationVersions.emmBackend = choice
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -298,9 +281,8 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.runtimeBackendVersion:
+			if choice != Environment.applicationVersions.runtimeBackend:
 				activateBackendRuntimeVersion(choice)
-				Environment.runtimeBackendVersion = choice
 			return True
 		else:
 			Environment.errors.append("Unavailable application version for 'Backend-Runtime': '" + choice + "'")
@@ -318,9 +300,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.mergerBackendVersion:
+			if choice != Environment.applicationVersions.mergerBackend:
 				activateBackendVersion("merger", choice)
-				Environment.mergerBackendVersion = choice
+				Environment.applicationVersions.mergerBackend = choice
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -339,9 +321,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.mailerBackendVersion:
+			if choice != Environment.applicationVersions.mailerBackend:
 				activateBackendVersion("mailout", choice)
-				Environment.mailerBackendVersion = choice
+				Environment.applicationVersions.mailerBackend = choice
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -360,9 +342,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.mailloopBackendVersion:
+			if choice != Environment.applicationVersions.mailloopBackend:
 				activateBackendVersion("mailloop", choice)
-				Environment.mailloopBackendVersion = choice
+				Environment.applicationVersions.mailloopBackend.refresh()
 				Environment.rebootNeeded = True
 			return True
 		else:
@@ -381,9 +363,9 @@ def switchVersionMenuAction(actionParameters):
 		if choice == "":
 			return True
 		elif choice in availableVersions:
-			if choice != Environment.manualVersion:
+			if choice != Environment.applicationVersions.manual:
 				activateManualVersion(availableVersions[choice])
-				Environment.manualVersion = choice
+				Environment.applicationVersions.manual.refresh()
 			return True
 		else:
 			Environment.errors.append("Unavailable application version for 'Manual': '" + choice + "'")
@@ -428,22 +410,22 @@ def activateRuntimeVersion(versionFilePath):
 		applicationUserName = "mailloop"
 	else:
 		applicationUserName = Environment.getFrontendApplicationUserName()
+	try:
+		RuntimePackageHandler.createTemporarySystemFileBackup()
 
-	FrontendRuntimeInstaller.createTemporarySystemFileBackup()
+		# Delete old runtime data
+		if os.path.islink(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat"):
+			os.unlink(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat")
+		if os.path.isdir(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps-leave-empty"):
+			shutil.rmtree(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps-leave-empty")
+		for listedFile in os.listdir(ESTUtilities.getUserHomeDirectory(applicationUserName)):
+			if re.search("^tomcat.*$", listedFile) and os.path.isdir(listedFile):
+				shutil.rmtree(listedFile)
 
-	# Delete old runtime data
-	if os.path.islink(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat"):
-		os.unlink(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat")
-	if os.path.isdir(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps-leave-empty"):
-		shutil.rmtree(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps-leave-empty")
-	for listedFile in os.listdir(ESTUtilities.getUserHomeDirectory(applicationUserName)):
-		if re.search("^tomcat.*$", listedFile) and os.path.isdir(listedFile):
-			shutil.rmtree(listedFile)
-
-	# Extract targz-file for runtime
-	ESTUtilities.unTarGzFile(versionFilePath, ESTUtilities.getUserHomeDirectory(applicationUserName) + "/", applicationUserName)
-
-	FrontendRuntimeInstaller.restoreTemporarySystemFileBackup()
+		# Extract targz-file for runtime
+		ESTUtilities.unTarGzFile(versionFilePath, ESTUtilities.getUserHomeDirectory(applicationUserName) + "/", applicationUserName)
+	finally:
+		RuntimePackageHandler.restoreTemporarySystemFileBackup()
 
 def getAvailableEmmVersions():
 	if Environment.isOpenEmmServer:
@@ -464,6 +446,8 @@ def getAvailableRdirVersions():
 		applicationUserName = Environment.getRdirApplicationUserName()
 	elif Environment.isEmmConsoleRdirServer:
 		applicationUserName = Environment.getFrontendApplicationUserName()
+	else:
+		applicationUserName = None
 	availableVersions = {}
 	if applicationUserName is not None and os.path.isdir(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/release/rdir"):
 		for versionDir in os.listdir(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/release/rdir"):
@@ -630,7 +614,7 @@ def activateBackendVersion(backendUsername, version):
 	if os.path.islink(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/bin/" + backendRestartToolName):
 		print("*** Stopping backend ***")
 		restartLogFile = "/tmp/emm_restart_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()) + ".log"
-		print("Restart log in file: " + restartLogFile);
+		print("Restart log in file: " + restartLogFile)
 
 		print("Stopping with: " + backendRestartToolName)
 		if ESTUtilities.hasRootPermissions():
@@ -650,7 +634,7 @@ def activateBackendVersion(backendUsername, version):
 	if os.path.islink(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/bin/" + backendRestartToolName):
 		print("*** Starting backend ***")
 		restartLogFile = "/tmp/emm_restart_" + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()) + ".log"
-		print("Restart log in file: " + restartLogFile);
+		print("Restart log in file: " + restartLogFile)
 
 		print("Starting with: " + backendRestartToolName)
 		if ESTUtilities.hasRootPermissions():
@@ -670,7 +654,7 @@ def getAvailableBackendRuntimeVersions():
 					availableVersions[version] = "/root/release/" + versionDir
 	return availableVersions
 
-def activateBackendRuntimeVersion(version):
+def activateBackendRuntimeVersion(version: str):
 	if os.path.islink("/root/release/previous"):
 		os.unlink("/root/release/previous")
 	if os.path.islink("/root/release/current"):

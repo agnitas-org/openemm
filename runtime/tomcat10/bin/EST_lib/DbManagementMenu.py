@@ -167,13 +167,11 @@ def dbcfgMenuAction(actionParameters):
 					Environment.unsavedDbcfgChanges["secure"] = "false"
 					if "sid" in Environment.unsavedDbcfgChanges: Environment.unsavedDbcfgChanges.pop("sid")
 					if "tablespaces" in Environment.unsavedDbcfgChanges: Environment.unsavedDbcfgChanges.pop("tablespaces")
-				elif Environment.unsavedDbcfgChanges["dbms"] == "mysql":
-					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:mysql://localhost/" + Environment.applicationName.lower() + "?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8"
-					Environment.unsavedDbcfgChanges["jdbc-driver"] = "com.mysql.cj.jdbc.Driver"
+				if Environment.unsavedDbcfgChanges["dbms"] == "postgres":
+					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:postgresql://localhost:5432/emm"
+					Environment.unsavedDbcfgChanges["jdbc-driver"] = "org.postgresql.Driver"
 					Environment.unsavedDbcfgChanges["secure"] = "false"
-					if "sid" in Environment.unsavedDbcfgChanges: Environment.unsavedDbcfgChanges.pop("sid")
-					if "tablespaces" in Environment.unsavedDbcfgChanges: Environment.unsavedDbcfgChanges.pop("tablespaces")
-
+					Environment.unsavedDbcfgChanges["tablespaces"] = "true"
 			return True
 		else:
 			Environment.errors.append("Invalid database entry key name: " + choice)
@@ -286,8 +284,13 @@ def clearDatabaseMenuAction(actionParameters):
 					print("Press any key to continue.")
 					choice = input(" > ")
 					return
-
-				sqlUpdateReturnCode = os.system(DbConnector.getDbClientPath() + " -u root" + passwordParameterPart + " --default-character-set=utf8 -e \"DROP DATABASE " + dbcfgEntry["name"] + "\"")
+				if DbConnector.emmDbVendor == "postgres":
+					sqlUpdateReturnCode = subprocess.run(
+						[DbConnector.getDbClientPath(), '-h', 'localhost', '-U', 'root', '-d', 'postgres', '-c',
+						 f'"DROP DATABASE {dbcfgEntry["name"]};"'],
+						env=dict(os.environ, PGPASSWORD=passwordParameterPart), stderr=subprocess.PIPE).stderr
+				else:
+					sqlUpdateReturnCode = os.system(DbConnector.getDbClientPath() + " -u root" + passwordParameterPart + " --default-character-set=utf8 -e \"DROP DATABASE " + dbcfgEntry["name"] + "\"")
 				if sqlUpdateReturnCode != 0:
 					Environment.errors.append("Error while dropping database")
 					return
@@ -310,8 +313,7 @@ def clearDatabaseMenuAction(actionParameters):
 		if DbConnector.checkDbStructureExists():
 			print("Database structure already exists")
 			Environment.messages.append("Database structure already exists")
-		elif not os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-fulldb-basic.sql")\
-			and not os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-basic.sql"):
+		elif not os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-fulldb-basic.sql"):
 			print("Database structure file is not available")
 			Environment.messages.append("Database structure file is not available. Please install " + Environment.applicationName + " application.")
 		elif os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-fulldb-basic.sql"):
@@ -354,71 +356,6 @@ def clearDatabaseMenuAction(actionParameters):
 			if os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh"):
 				os.system("chmod u+x " + ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh")
 				sqlUpdateReturnCode = os.system(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh " + DbConnector.dbcfgPropertiesFilePath)
-			else:
-				os.system("chmod u+x " + ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-execute-missing-updates.sh")
-				sqlUpdateReturnCode = os.system(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-execute-missing-updates.sh " + DbConnector.dbcfgPropertiesFilePath)
-
-			if sqlUpdateReturnCode != 0:
-				print("SQL database updates caused an error. Press any key to continue.")
-				choice = input(" > ")
-				Environment.errors.append("Error while executing database update scripts")
-				print("Database update had errors")
-			else:
-				DbConnector.storeJobQueueHostInDB(Environment.hostname, True)
-				DbConnector.removeJobQueueHostFromDB("<hostname>[to be defined]")
-				DbConnector.insertBirtKeysInDb("openemm" if Environment.isOpenEmmServer else Environment.getFrontendApplicationUserName())
-				print("Database update finished")
-
-			Environment.messages.append("Database data was dropped and recreated")
-
-			DbConnector.storeJobQueueHostInDB(Environment.hostname, True)
-			DbConnector.removeJobQueueHostFromDB("<hostname>[to be defined]")
-			DbConnector.insertBirtKeysInDb("openemm" if Environment.isOpenEmmServer else Environment.getFrontendApplicationUserName())
-			return
-		elif os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-basic.sql"):
-			print("Creating new database structure")
-			sqlUpdateLogfilePath = ESTUtilities.getUserHomeDirectory(applicationUserName) + "/release/log/emm-mysql-fulldb-basic_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-			fullDbScriptSuccess = DbConnector.executeSqlScriptFile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-basic.sql", sqlUpdateLogfilePath)
-			if not fullDbScriptSuccess:
-				if sqlUpdateLogfilePath is not None and os.path.isfile(sqlUpdateLogfilePath):
-					with open(sqlUpdateLogfilePath) as sqlUpdateLogfile:
-						sqlLogContent = sqlUpdateLogfile.read()
-						print(str(sqlLogContent))
-				Environment.errors.append("Error while executing full database script")
-				return
-			elif os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-extended.sql"):
-				print("Creating extended database structure ...")
-				sqlUpdateLogfilePath = ESTUtilities.getUserHomeDirectory(applicationUserName) + "/release/log/emm-mysql-fulldb-extended_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-				fullDbExtendedScriptSuccess = DbConnector.executeSqlScriptFile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-extended.sql", sqlUpdateLogfilePath)
-				if not fullDbExtendedScriptSuccess:
-					if sqlUpdateLogfilePath is not None and os.path.isfile(sqlUpdateLogfilePath):
-						with open(sqlUpdateLogfilePath) as sqlUpdateLogfile:
-							sqlLogContent = sqlUpdateLogfile.read()
-							print(str(sqlLogContent))
-					Environment.errors.append("Error while executing full database extended script")
-					return
-			else:
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-openemm.sql"):
-					print("Creating OpenEMM database structure ...")
-					sqlUpdateLogfilePath = ESTUtilities.getUserHomeDirectory(applicationUserName) + "/release/log/emm-mysql-fulldb-openemm_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".log"
-					openemmFullDbScriptSuccess = DbConnector.executeSqlScriptFile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-fulldb-openemm.sql", sqlUpdateLogfilePath)
-					if not openemmFullDbScriptSuccess:
-						if sqlUpdateLogfilePath is not None and os.path.isfile(sqlUpdateLogfilePath):
-							with open(sqlUpdateLogfilePath) as sqlUpdateLogfile:
-								sqlLogContent = sqlUpdateLogfile.read()
-								print(str(sqlLogContent))
-						Environment.errors.append("Error while executing OpenEMM full database script")
-						return
-
-			print("Database update started")
-
-			if os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh"):
-				os.system("chmod u+x " + ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh")
-				sqlUpdateReturnCode = os.system(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh " + DbConnector.dbcfgPropertiesFilePath)
-			else:
-				os.system("chmod u+x " + ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-execute-missing-updates.sh")
-				sqlUpdateReturnCode = os.system(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/webapps/emm/WEB-INF/sql/mysql/emm-mysql-execute-missing-updates.sh " + DbConnector.dbcfgPropertiesFilePath)
-
 			if sqlUpdateReturnCode != 0:
 				print("SQL database updates caused an error. Press any key to continue.")
 				choice = input(" > ")
@@ -439,23 +376,23 @@ def clearDatabaseMenuAction(actionParameters):
 
 def dbBackupMenuAction(actionParameters):
 	if Environment.isOpenEmmServer:
-		currentVersion = Environment.frontendVersion
+		currentVersion = Environment.applicationVersions.frontend
 	elif Environment.isEmmFrontendServer:
-		currentVersion = Environment.frontendVersion
+		currentVersion = Environment.applicationVersions.frontendVersion
 	elif Environment.isEmmStatisticsServer:
-		currentVersion = Environment.statisticsVersion
+		currentVersion = Environment.applicationVersions.statisticsVersion
 	elif Environment.isEmmWebservicesServer:
-		currentVersion = Environment.webservicesVersion
+		currentVersion = Environment.applicationVersions.webservicesVersion
 	elif Environment.isEmmConsoleRdirServer:
-		currentVersion = Environment.consoleRdirVersion
+		currentVersion = Environment.applicationVersions.consoleRdirVersion
 	elif Environment.isEmmRdirServer:
-		currentVersion = Environment.rdirVersion
+		currentVersion = Environment.applicationVersions.rdirVersion
 	elif Environment.isEmmMergerServer:
-		currentVersion = Environment.mergerBackendVersion
+		currentVersion = Environment.applicationVersions.mergerBackendVersion
 	elif Environment.isEmmMailerServer:
-		currentVersion = Environment.mailerBackendVersion
+		currentVersion = Environment.applicationVersions.mailerBackendVersion
 	elif Environment.isEmmMailloopServer:
-		currentVersion = Environment.mailloopBackendVersion
+		currentVersion = Environment.applicationVersions.mailloopBackendVersion
 	else:
 		currentVersion = "Unknown"
 	dumpFile = DbConnector.createDatabaseBackup(Environment.applicationName, currentVersion)
@@ -475,23 +412,23 @@ def dbRestoreMenuAction(actionParameters):
 	answer = input(" > ").lower().strip()
 	if answer == "" or answer.startswith("y") or answer.startswith("j"):
 		if Environment.isOpenEmmServer:
-			currentVersion = Environment.frontendVersion
+			currentVersion = Environment.applicationVersions.frontend
 		elif Environment.isEmmFrontendServer:
-			currentVersion = Environment.frontendVersion
+			currentVersion = Environment.applicationVersions.frontend
 		elif Environment.isEmmStatisticsServer:
-			currentVersion = Environment.statisticsVersion
+			currentVersion = Environment.applicationVersions.statistics
 		elif Environment.isEmmWebservicesServer:
-			currentVersion = Environment.webservicesVersion
+			currentVersion = Environment.applicationVersions.webservices
 		elif Environment.isEmmConsoleRdirServer:
-			currentVersion = Environment.consoleRdirVersion
+			currentVersion = Environment.applicationVersions.consoleRdir
 		elif Environment.isEmmRdirServer:
-			currentVersion = Environment.rdirVersion
+			currentVersion = Environment.applicationVersions.rdir
 		elif Environment.isEmmMergerServer:
-			currentVersion = Environment.mergerBackendVersion
+			currentVersion = Environment.applicationVersions.mergerBackend
 		elif Environment.isEmmMailerServer:
-			currentVersion = Environment.mailerBackendVersion
+			currentVersion = Environment.applicationVersions.mailerBackend
 		elif Environment.isEmmMailloopServer:
-			currentVersion = Environment.mailloopBackendVersion
+			currentVersion = Environment.applicationVersions.mailloopBackend
 		else:
 			currentVersion = "Unknown"
 		dumpFile = DbConnector.createDatabaseBackup(Environment.applicationName, currentVersion)
@@ -541,8 +478,7 @@ def dbRestoreMenuAction(actionParameters):
 def deleteMarkedCompaniesAction(actionParameters):
 	companiesWithDeletionInProgress = []
 	while True:
-		companyIDsWithStatusToDelete = [entry for entry in DbConnector.getCompaniesWithToDelete() if
-		                                entry[0] not in companiesWithDeletionInProgress]
+		companyIDsWithStatusToDelete = [entry for entry in DbConnector.getCompaniesWithToDelete() if entry[0] not in companiesWithDeletionInProgress]
 		if not companyIDsWithStatusToDelete:
 			Environment.warnings.append("There are currently no available companies with status todelete")
 			return
@@ -554,7 +490,7 @@ def deleteMarkedCompaniesAction(actionParameters):
 		choice = input(" > ").strip()
 		if choice == "":
 			break
-		choice = ESTUtilities.str_to_int(choice, 0) - 1
+		choice = ESTUtilities.str_to_int(choice,0) -1
 		if choice is not None and 0 <= choice <= len(companyIDsWithStatusToDelete):
 			cid = companyIDsWithStatusToDelete[choice][0]
 
@@ -569,8 +505,7 @@ def deleteMarkedCompaniesAction(actionParameters):
 				return
 			try:
 				print()
-				connection = ESTUtilities.openUrlConnection(Environment.getSystemUrl() + "/demoaccount?" + urlencode(
-					{"companyID": str(cid), "svu": svu, "method": "deleteaccount", "pwd": pwd}))
+				connection = ESTUtilities.openUrlConnection(Environment.getSystemUrl() + "/demoaccount?" + urlencode({"companyID":str(cid),"svu": svu, "method":"deleteaccount", "pwd": pwd}))
 				if connection.read() == "Access denied":
 					print("request returned: access denied")
 					Environment.errors.append("Supervisor credentials are incorrect")

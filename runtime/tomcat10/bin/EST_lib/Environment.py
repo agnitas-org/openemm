@@ -5,19 +5,22 @@ import os
 import shutil
 import logging
 import subprocess
-from collections import defaultdict
+from pathlib import Path
+from typing import Callable
 
 from EST_lib import Colors
 from EST_lib import DbConnector
 from EST_lib import ESTUtilities
 from EST_lib.License import License
 
+logger = logging.getLogger(__name__)
+
 class Environment:
 	################################################
 	# OpenEMM and EMM specific settings start here #
 	################################################
 
-	toolVersion = "26.05.115" #Dummy version number. This is going to be replaced by build tools.
+	toolVersion = "26.11.035" #Dummy version number. This is going to be replaced by build tools.
 	toolName = None
 
 	applicationName = None
@@ -42,6 +45,7 @@ class Environment:
 	pythonInstallationSearchPaths = None
 	dbClientMariadbSearchPaths = None
 	dbClientOracleSearchPaths = None
+	dbClientPostgresSearchPaths = None
 	javaSearchPaths = None
 	tomcatSearchPaths = None
 	dbcfgPropertiesFileSearchPaths = None
@@ -58,8 +62,8 @@ class Environment:
 	# General tool settings start here #
 	####################################
 
-	osVendor = None
-	osVersion = None
+	osVendor = "Unknown"
+	osVersion = "Unknown"
 
 	agnitasDownloadSiteUrlReachable = False
 
@@ -113,48 +117,36 @@ class Environment:
 
 	# "ulimit -n": Needed minimum of simultaneously opened files allowed by OS
 	noFileLimit = 16384
-
-	runtimeVersion = "Unknown"
+	applicationVersions = None
 
 	isOpenEmmServer = False
 
-	frontendVersion = "Unknown"
 	isEmmFrontendServer = False
 
-	statisticsVersion = "Unknown"
 	isEmmStatisticsServer = False
 
-	webservicesVersion = "Unknown"
 	isEmmWebservicesServer = False
 
-	consoleRdirVersion = "Unknown"
 	isEmmConsoleRdirServer = False
 
-	rdirVersion = "Unknown"
 	isEmmRdirServer = False
-	rdirRuntimeVersion = "Unknown"
 
-	emmBackendVersion = "Unknown"
-	rdirBackendVersion = "Unknown"
-
-	runtimeBackendVersion = None
 
 	isEmmMergerServer = False
-	mergerBackendVersion = "Unknown"
 
 	isEmmMailerServer = False
-	mailerBackendVersion = "Unknown"
 
 	isEmmMailloopServer = False
-	mailloopBackendVersion = "Unknown"
 	
 	isEmmUnifiedServer = False
 	unifiedBackendVersion = "Unknown"
 
-	manualVersion = "Unknown"
 
 	overrideNextMenu = None
 	configTableMenu = None
+
+	numberOfMajorMinorVersionsToKeep = 2
+	updateVersionHotfixVersionsToKeep = 2
 
 	@staticmethod
 	def getPythonCommand():
@@ -171,7 +163,6 @@ class Environment:
 	@staticmethod
 	def readSystemValues():
 		Environment.refreshUsernameCaches()
-
 		possibleUpdateChannelFilePaths = [
 			Environment.currentUserHomeDirectory + "/etc/agnitas.update.channel",
 			ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/etc/agnitas.update.channel",
@@ -185,41 +176,7 @@ class Environment:
 				if Environment.updateChannel in Environment.agnitasUpdateChannels:
 					Environment.agnitasDownloadPathVersionInfo = Environment.agnitasUpdateChannels[Environment.updateChannel]
 					break
-
-		if os.path.isfile("/etc/os-release"):
-			osProperties = ESTUtilities.readPropertiesFile("/etc/os-release")
-			if not ESTUtilities.isBlank(osProperties["NAME"]):
-				Environment.osVendor = osProperties["NAME"].strip().strip("\"").strip()
-				if "AlmaLinux" in Environment.osVendor:
-					Environment.osVendor = "Alma"
-				elif "CentOS" in Environment.osVendor:
-					Environment.osVendor = "CentOS"
-				elif "Red Hat" in Environment.osVendor or "RedHat" in Environment.osVendor:
-					Environment.osVendor = "RedHat"
-				elif "SLES" in Environment.osVendor or "SUSE" in Environment.osVendor:
-					Environment.osVendor = "Suse"
-			else:
-				Environment.osVendor = "Unknown"
-
-			if not ESTUtilities.isBlank(osProperties["VERSION_ID"]):
-				Environment.osVersion = osProperties["VERSION_ID"].strip().strip("\"").strip()
-				if "." in Environment.osVersion:
-					Environment.osVersion = Environment.osVersion[0:Environment.osVersion.index(".")]
-			else:
-				Environment.osVersion = "Unknown"
-		elif os.path.isfile("/etc/issue"):
-			osPropertiesText = ESTUtilities.readTextFile("/etc/issue")
-			if "CentOS" in osPropertiesText:
-				Environment.osVendor = "CentOS"
-				Environment.osVersion = ESTUtilities.getFirstVersionFromText(osPropertiesText)
-				if ESTUtilities.isBlank(Environment.osVersion):
-					Environment.osVersion = "Unknown"
-			else:
-				Environment.osVendor = "Unknown"
-				Environment.osVersion = "Unknown"
-		else:
-			Environment.osVendor = "Unknown"
-			Environment.osVersion = "Unknown"
+		Environment.determineOS()
 
 		# Check ulimit (maximum parallel files open)
 		ulimitValueString = subprocess.check_output("ulimit -n", shell=True).decode("UTF-8")
@@ -239,10 +196,10 @@ class Environment:
 					os.system("echo '* soft nofile " + str(Environment.noFileLimit) + "' | sudo tee --append /etc/security/limits.conf > /dev/null")
 					os.system("echo 'root hard nofile " + str(Environment.noFileLimit) + "' | sudo tee --append /etc/security/limits.conf > /dev/null")
 					os.system("echo 'root soft nofile " + str(Environment.noFileLimit) + "' | sudo tee --append /etc/security/limits.conf > /dev/null")
-					if os.path.isfile("/etc/systemd/user.conf"):
+					if Path("/etc/systemd/user.conf").is_file():
 						print("Changing /etc/systemd/user.conf")
 						os.system("echo 'DefaultLimitNOFILE=" + str(Environment.noFileLimit) + "' | sudo tee --append /etc/systemd/user.conf > /dev/null")
-					if os.path.isfile("/etc/systemd/system.conf"):
+					if Path("/etc/systemd/system.conf").is_file():
 						print("Changing /etc/systemd/system.conf")
 						os.system("echo 'DefaultLimitNOFILE=" + str(Environment.noFileLimit) + "' | sudo tee --append /etc/systemd/system.conf > /dev/null")
 
@@ -250,7 +207,7 @@ class Environment:
 				except:
 					print(Colors.RED + "Change of system value for maximum parallel files open (= ulimit) was not successful." + Colors.DEFAULT)
 					if ESTUtilities.isDebugMode():
-						logging.exception("ulimit change was not successful")
+						logger.exception("ulimit change was not successful")
 				sys.exit(1)
 			else:
 				print(Colors.RED + "System value for maximum parallel files open (= ulimit) is too low." + Colors.DEFAULT)
@@ -284,8 +241,8 @@ class Environment:
 		if DbConnector.applicationDbcfgEntryName is None:
 			DbConnector.applicationDbcfgEntryName = Environment.applicationDbcfgEntryDefaultName
 
-		if not os.path.isfile(DbConnector.dbcfgPropertiesFilePath):
-			if ESTUtilities.userExists("openemm") or ESTUtilities.userExists(Environment.getFrontendApplicationUserName()) or ESTUtilities.userExists(Environment.getRdirApplicationUserName()) or ESTUtilities.userExists("merger") or ESTUtilities.userExists("mailloop"):
+		if not Path(DbConnector.dbcfgPropertiesFilePath).is_file():
+			if ESTUtilities.anyUserExists(("openemm",Environment.getFrontendApplicationUserName(),Environment.getRdirApplicationUserName(),"merger", "mailloop")):
 				with open(DbConnector.dbcfgPropertiesFilePath, "w", encoding="UTF-8") as propertiesFileHandle:
 					propertiesFileHandle.write(DbConnector.applicationDbcfgEntryName + ": dbms=, host=localhost, user=, password=, name=" + Environment.applicationName.lower())
 				DbConnector.dbcfgProperties = DbConnector.readDbcfgPropertiesFile(DbConnector.dbcfgPropertiesFilePath)
@@ -318,21 +275,8 @@ class Environment:
 				DbConnector.emmDbVendor = "oracle"
 			elif "mariadb" == dbVendor.lower().strip():
 				DbConnector.emmDbVendor = "mariadb"
-			elif "mysql" == dbVendor.lower().strip():
-				DbConnector.emmDbVendor = "mysql"
-				if DbConnector.dbcfgEntry["jdbc-driver"] == "com.mysql.jdbc.Driver":
-					Environment.messages.append("Updating MySQL jdbc driver class name in dbcfg")
-					DbConnector.dbcfgEntry["jdbc-driver"] = "com.mysql.cj.jdbc.Driver"
-					DbConnector.dbcfgEntry["dbEntryName"] = DbConnector.applicationDbcfgEntryName
-
-					if ESTUtilities.userExists("openemm") and (os.environ["USER"] == "openemm" or ESTUtilities.hasRootPermissions()):
-						usernameForSecureLibImportScript = "openemm"
-					elif ESTUtilities.userExists(Environment.getRdirApplicationUserName()) and (os.environ["USER"] == Environment.getRdirApplicationUserName() or ESTUtilities.hasRootPermissions()):
-						usernameForSecureLibImportScript = Environment.getRdirApplicationUserName()
-					elif ESTUtilities.userExists(Environment.getFrontendApplicationUserName()) and (os.environ["USER"] == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
-						usernameForSecureLibImportScript = Environment.getFrontendApplicationUserName()
-						
-					DbConnector.updateDbcfgPropertiesFile(DbConnector.dbcfgPropertiesFilePath, DbConnector.dbcfgEntry, usernameForSecureLibImportScript)
+			elif "postgres" == dbVendor.lower().strip():
+				DbConnector.emmDbVendor = "postgres"
 			else:
 				Environment.errors.append("Invalid database vendor in dbcfg: " + dbVendor.lower())
 		else:
@@ -352,21 +296,8 @@ class Environment:
 					DbConnector.emmDbVendor = "oracle"
 				elif "mariadb" == dbVendor.lower().strip():
 					DbConnector.emmDbVendor = "mariadb"
-				elif "mysql" == dbVendor.lower().strip():
-					DbConnector.emmDbVendor = "mysql"
-					if DbConnector.dbcfgEntry["jdbc-driver"] == "com.mysql.jdbc.Driver":
-						Environment.messages.append("Updating MySQL jdbc driver class name in dbcfg")
-						DbConnector.dbcfgEntry["jdbc-driver"] = "com.mysql.cj.jdbc.Driver"
-						DbConnector.dbcfgEntry["dbEntryName"] = DbConnector.applicationDbcfgEntryName
-
-						if ESTUtilities.userExists("openemm") and (os.environ["USER"] == "openemm" or ESTUtilities.hasRootPermissions()):
-							usernameForSecureLibImportScript = "openemm"
-						elif ESTUtilities.userExists(Environment.getRdirApplicationUserName()) and (os.environ["USER"] == Environment.getRdirApplicationUserName() or ESTUtilities.hasRootPermissions()):
-							usernameForSecureLibImportScript = Environment.getRdirApplicationUserName()
-						elif ESTUtilities.userExists(Environment.getFrontendApplicationUserName()) and (os.environ["USER"] == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
-							usernameForSecureLibImportScript = Environment.getFrontendApplicationUserName()
-
-						DbConnector.updateDbcfgPropertiesFile(DbConnector.dbcfgPropertiesFilePath, DbConnector.dbcfgProperties, usernameForSecureLibImportScript)
+				elif "postgres" == dbVendor.lower().strip():
+					DbConnector.emmDbVendor = "postgres"
 				else:
 					Environment.errors.append("Invalid database vendor in dbcfg: " + dbVendor.lower())
 			elif ESTUtilities.userExists("openemm") or ESTUtilities.userExists(Environment.getFrontendApplicationUserName()) or ESTUtilities.userExists(Environment.getRdirApplicationUserName()) or ESTUtilities.userExists("merger") or ESTUtilities.userExists("mailloop"):
@@ -378,17 +309,11 @@ class Environment:
 		if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 8):
 			print("This python installation (" + str(sys.version_info[0]) + "." + str(sys.version_info[1]) + "." + str(sys.version_info[2]) + ") does not support the needed database drivers.\nPlease install at least python version 3.8 or above")
 			sys.exit(1)
-		elif not "oracle" in Environment.allowedDbmsSystems and not DbConnector.isMysqlDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable():
-			installCommandMysqlPythonModule = "sudo " + Environment.getPythonCommand() + " -m pip install mysqlclient"
+		elif not "oracle" in Environment.allowedDbmsSystems and not "postgres" in Environment.allowedDbmsSystems and not DbConnector.isMariadbDriverModuleAvailable():
 			installCommandMariadbPythonModule = "sudo " + Environment.getPythonCommand() + " -m pip install mariadb"
 
 			if Environment.osVendor == "Suse":
-				print("The mandatory database vendor MySQL/MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
-				print(" for MySQL:")
-				print("  'zypper install -y libmariadb-devel python-devel'")
-				print("  '" + installCommandMysqlPythonModule + "'")
-				print("or")
-				print(" for MariaDB:")
+				print("The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
 				print("  Configure the official MariaDB repository 'https://downloads.mariadb.org/mariadb/repositories/'")
 				print("  'zypper install -y MariaDB-devel MariaDB-shared MariaDB-client'")
 				print("  '" + installCommandMariadbPythonModule + "'")
@@ -397,43 +322,31 @@ class Environment:
 			else:
 				installCommandMariadbAlternative = None
 				if Environment.osVendor == "Alma" and Environment.osVersion == "7":
-					installCommandMysql = "sudo yum install -y MySQL-python"
 					installCommandMariadb = "sudo yum install -y MariaDB-shared MariaDB-devel"
 					installCommandMariadbAlternative = "sudo yum install -y mariadb-common"
 				elif Environment.osVendor == "Alma":
-					installCommandMysql = "sudo yum install -y MySQL-python"
 					installCommandMariadb = "sudo yum install -y mariadb-connector-c mariadb-connector-c-devel"
 				elif Environment.osVendor == "CentOS" and Environment.osVersion == "7":
-					installCommandMysql = "sudo yum install -y MySQL-python"
 					installCommandMariadb = "sudo yum install -y MariaDB-shared MariaDB-devel"
 					installCommandMariadbAlternative = "sudo yum install -y mariadb-common"
 				elif Environment.osVendor == "CentOS":
-					installCommandMysql = "sudo yum install -y MySQL-python"
 					installCommandMariadb = "sudo yum install -y mariadb-connector-c mariadb-connector-c-devel"
 				elif Environment.osVendor == "RedHat" and Environment.osVersion == "7":
-					installCommandMysql = "sudo yum install -y MySQL-python"
 					installCommandMariadb = "sudo yum install -y MariaDB-shared MariaDB-devel"
 					installCommandMariadbAlternative = "sudo yum install -y mariadb-common"
 				elif Environment.osVendor == "RedHat":
-					installCommandMysql = "sudo yum install -y MySQL-python"
 					installCommandMariadb = "sudo yum install -y mariadb-connector-c mariadb-connector-c-devel"
 				else:
-					installCommandMysql = "sudo " + Environment.getPythonCommand() + " -m pip install mysqlclient"
 					installCommandMariadb = "sudo " + Environment.getPythonCommand() + " -m pip install mariadb"
 
 				detectMariaDbDriverSuccess = (os.system("ld -o /dev/null -shared -lmariadb") == 0)
 
 				if detectMariaDbDriverSuccess:
 					# MariaDB driver is not available, but special driver detection was successful. This is an undefined state and cannot be handled automatically.
-					print("The mandatory database vendor MySQL/MariaDB is not supported by this python installation.\nPlease install mandatory driver manually")
+					print("The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver manually")
 					sys.exit(1)
 				else:
-					print("The mandatory database vendor MySQL/MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
-					print(" for MySQL:")
-					print("  '" + installCommandMysql + "'")
-					print("  '" + installCommandMysqlPythonModule + "'")
-					print("or")
-					print(" for MariaDB:")
+					print("The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
 					print("  '" + installCommandMariadb + "'")
 					if installCommandMariadbAlternative is not None and installCommandMariadbAlternative.strip() != "":
 						print("  or")
@@ -441,7 +354,7 @@ class Environment:
 					print("  '" + installCommandMariadbPythonModule + "'")
 					print("and restart")
 
-					while not DbConnector.isMysqlDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable():
+					while not DbConnector.isMariadbDriverModuleAvailable():
 						print()
 						print("Install mandatory python database driver for MariaDB now? (N/y, Blank => Cancel):")
 						choice = input(" > ")
@@ -459,12 +372,12 @@ class Environment:
 								except:
 									print(Colors.RED + "Installation of MariaDB was not successful" + Colors.DEFAULT)
 									if ESTUtilities.isDebugMode():
-										logging.exception("Error")
+										logger.exception("Error")
 									sys.exit(1)
 							else:
 								print(Colors.RED + "Installation of MariaDB was not successful" + Colors.DEFAULT)
 								if ESTUtilities.isDebugMode():
-									logging.exception("Error")
+									logger.exception("Error")
 								sys.exit(1)
 
 						try:
@@ -472,19 +385,13 @@ class Environment:
 						except:
 							print(Colors.RED + "Installation of MariaDB-python was not successful" + Colors.DEFAULT)
 							if ESTUtilities.isDebugMode():
-								logging.exception("Error")
+								logger.exception("Error")
 							sys.exit(1)
 
 						DbConnector.recheckMariadbDriverModuleAvailability()
-						DbConnector.recheckMysqlDriverModuleAvailability()
 
-						if not DbConnector.isMysqlDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable():
-							print(Colors.RED + "The mandatory database vendor MySQL/MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
-							print(" for MySQL:")
-							print("  '" + installCommandMysql + "'")
-							print("  '" + installCommandMysqlPythonModule + "'")
-							print("or")
-							print(" for MariaDB:")
+						if not DbConnector.isMariadbDriverModuleAvailable():
+							print(Colors.RED + "The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
 							print("  '" + installCommandMariadb + "'")
 							print("  '" + installCommandMariadbPythonModule + "'")
 							print("and restart" + Colors.DEFAULT)
@@ -523,7 +430,7 @@ class Environment:
 
 				if detectMariaDbDriverSuccess:
 					# MariaDB driver is not available, but special driver detection was successful. This is an undefined state and cannot be handled automatically.
-					print("The mandatory database vendor MySQL/MariaDB is not supported by this python installation.\nPlease install mandatory driver manually")
+					print("The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver manually")
 					sys.exit(1)
 				else:
 					print("The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
@@ -552,12 +459,12 @@ class Environment:
 								except:
 									print(Colors.RED + "Installation of MariaDB was not successful" + Colors.DEFAULT)
 									if ESTUtilities.isDebugMode():
-										logging.exception("Error")
+										logger.exception("Error")
 									sys.exit(1)
 							else:
 								print(Colors.RED + "Installation of MariaDB was not successful" + Colors.DEFAULT)
 								if ESTUtilities.isDebugMode():
-									logging.exception("Error")
+									logger.exception("Error")
 								sys.exit(1)
 
 						try:
@@ -565,81 +472,13 @@ class Environment:
 						except:
 							print(Colors.RED + "Installation of MariaDB-python was not successful" + Colors.DEFAULT)
 							if ESTUtilities.isDebugMode():
-								logging.exception("Error")
+								logger.exception("Error")
 							sys.exit(1)
 
 						if not DbConnector.recheckMariadbDriverModuleAvailability():
 							print(Colors.RED + "The mandatory database vendor MariaDB is not supported by this python installation.\nPlease install mandatory driver via")
 							print("  '" + installCommandMariadb + "'")
 							print("  '" + installCommandMariadbPythonModule + "'")
-							print("and restart" + Colors.DEFAULT)
-							sys.exit(1)
-		elif DbConnector.emmDbVendor == "mysql" and not DbConnector.isMysqlDriverModuleAvailable():
-			installCommandMysqlPythonModule = "sudo " + Environment.getPythonCommand() + " -m pip install mysqlclient"
-
-			if Environment.osVendor == "Suse":
-				print("The database vendor MySQL is not supported by this python installation.\nPlease install driver via")
-				print("  'zypper install -y libmariadb-devel python-devel'")
-				print("  '" + installCommandMysqlPythonModule + "'")
-				print("and restart")
-				sys.exit(1)
-			else:
-				if Environment.osVendor == "Alma" and Environment.osVersion == "7":
-					installCommandMysql = "sudo yum install -y MySQL-python"
-				elif Environment.osVendor == "Alma":
-					installCommandMysql = "sudo yum install -y MySQL-python"
-				elif Environment.osVendor == "CentOS" and Environment.osVersion == "7":
-					installCommandMysql = "sudo yum install -y MySQL-python"
-				elif Environment.osVendor == "CentOS":
-					installCommandMysql = "sudo yum install -y MySQL-python"
-				elif Environment.osVendor == "RedHat" and Environment.osVersion == "7":
-					installCommandMysql = "sudo yum install -y MySQL-python"
-				elif Environment.osVendor == "RedHat":
-					installCommandMysql = "sudo yum install -y MySQL-python"
-				else:
-					installCommandMysql = "sudo " + Environment.getPythonCommand() + " -m pip install mysqlclient"
-
-				detectMariaDbDriverSuccess = (os.system("ld -o /dev/null -shared -lmariadb") == 0)
-
-				if detectMariaDbDriverSuccess:
-					# MariaDB driver is not available, but special driver detection was successful. This is an undefined state and cannot be handled automatically.
-					print("The mandatory database vendor MySQL/MariaDB is not supported by this python installation.\nPlease install mandatory driver manually")
-					sys.exit(1)
-				else:
-					print("The mandatory database vendor MySQL is not supported by this python installation.\nPlease install mandatory driver via")
-					print("  '" + installCommandMysql + "'")
-					print("  '" + installCommandMysqlPythonModule + "'")
-					print("and restart")
-
-					while not DbConnector.isMysqlDriverModuleAvailable():
-						print()
-						print("Install mandatory python database driver for MySQL now? (N/y, Blank => Cancel):")
-						choice = input(" > ")
-						choice = choice.strip().lower()
-						if not (choice.startswith("y") or choice.startswith("j")):
-							print("Declined needed python database driver installation\n")
-							sys.exit(1)
-
-						try:
-							os.system(installCommandMysql)
-						except:
-							print(Colors.RED + "Installation of MySQL was not successful" + Colors.DEFAULT)
-							if ESTUtilities.isDebugMode():
-								logging.exception("Error")
-							sys.exit(1)
-
-						try:
-							os.system(installCommandMysqlPythonModule)
-						except:
-							print(Colors.RED + "Installation of MySQL-python was not successful" + Colors.DEFAULT)
-							if ESTUtilities.isDebugMode():
-								logging.exception("Error")
-							sys.exit(1)
-
-						if not DbConnector.recheckMysqlDriverModuleAvailability():
-							print(Colors.RED + "The mandatory database vendor MySQL is not supported by this python installation.\nPlease install mandatory driver via")
-							print("  '" + installCommandMysql + "'")
-							print("  '" + installCommandMysqlPythonModule + "'")
 							print("and restart" + Colors.DEFAULT)
 							sys.exit(1)
 
@@ -694,7 +533,7 @@ class Environment:
 				Environment.messages.append("Created initial setenv.sh file '" + Environment.environmentConfigurationFilePath + "'")
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot create initial setenv.sh file")
+					logger.exception("Cannot create initial setenv.sh file")
 				Environment.errors.append("Cannot create initial setenv.sh file '" + Environment.environmentConfigurationFilePath + "'")
 				Environment.environmentConfigurationFilePath = None
 		elif ESTUtilities.userExists(Environment.getRdirApplicationUserName()):
@@ -736,7 +575,7 @@ class Environment:
 				Environment.messages.append("Created initial setenv.sh file '" + Environment.environmentConfigurationFilePath + "'")
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Cannot create initial setenv.sh file")
+					logger.exception("Cannot create initial setenv.sh file")
 				Environment.errors.append("Cannot create initial setenv.sh file '" + Environment.environmentConfigurationFilePath + "'")
 				Environment.environmentConfigurationFilePath = None
 
@@ -838,7 +677,7 @@ class Environment:
 			# Just setting them in os.environ at runtime is not enough for Oracle driver.
 			os.execv(sys.argv[0], sys.argv)
 
-		DbConnector.detectDbClientPath(DbConnector.emmDbVendor, Environment.dbClientOracleSearchPaths, Environment.dbClientMariadbSearchPaths)
+		DbConnector.detectDbClientPath(DbConnector.emmDbVendor, Environment.dbClientOracleSearchPaths, Environment.dbClientMariadbSearchPaths, Environment.dbClientPostgresSearchPaths)
 
 		if Environment.systemCfgFileSearchPaths is not None and len(Environment.systemCfgFileSearchPaths) > 0:
 			Environment.systemCfgFilePath = Environment.systemCfgFileSearchPaths[0]
@@ -913,6 +752,7 @@ class Environment:
 		if os.path.islink(ESTUtilities.getUserHomeDirectory(Environment.username) + "/bin/EmmMaintenanceTool.sh"):
 			os.remove(ESTUtilities.getUserHomeDirectory(Environment.username) + "/bin/EmmMaintenanceTool.sh")
 
+		Environment.applicationVersions = ApplicationVersions()
 		Environment.checkMigration()
 
 	@staticmethod
@@ -920,67 +760,44 @@ class Environment:
 		# Check application types
 		if "OpenEMM" in Environment.applicationName and ESTUtilities.userExists("openemm"):
 			Environment.isOpenEmmServer = True
+			openemmHome = Path(ESTUtilities.getUserHomeDirectory("openemm"))
+			openemmNeededDirectories = ["bin", "release", "webapps", "temp", ]
+			openemmNeededSymlinks = {
+				"conf": "tomcat/conf",
+				"logs": "tomcat/logs",
+				"JAVA": "/release/backend/current/JAVA",
+				"lib": "release/backend/current/lib",
+				"scripts": "/release/backend/current/scripts",
+			}
+			
+			for subDirectory in openemmNeededDirectories:
+				if not (openemmDirectory := openemmHome / subDirectory).is_dir():
+					ESTUtilities.createDirectory(openemmDirectory, "openemm")
 
-			if ESTUtilities.hasRootPermissions() and not os.path.isfile("/usr/local/bin/OMT.sh") and not os.path.islink("/usr/local/bin/OMT.sh"):
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/bin/OMT.sh"):
-					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/bin/OMT.sh", "/usr/local/bin/OMT.sh", "root")
-				elif os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin/OMT.sh"):
-					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin/OMT.sh", "/usr/local/bin/OMT.sh", "root")
+			for symlink, targetDirectory in openemmNeededSymlinks.items():
+				symlinkPath = openemmHome / symlink
+				targetDirectoryPath = openemmHome / targetDirectory
+				if not symlinkPath.exists() and targetDirectoryPath.exists():
+					symlinkPath.symlink_to(targetDirectoryPath)
 
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/bin"):
-				ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("openemm") + "/bin", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/release"):
-				ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("openemm") + "/release", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps"):
-				ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/temp"):
-				ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("openemm") + "/temp", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/conf") and not os.path.islink(ESTUtilities.getUserHomeDirectory("openemm") + "/conf"):
-				ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf", ESTUtilities.getUserHomeDirectory("openemm") + "/conf", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/JAVA") and not os.path.islink(ESTUtilities.getUserHomeDirectory("openemm") + "/JAVA") and os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current/JAVA"):
-				ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current/JAVA", ESTUtilities.getUserHomeDirectory("openemm") + "/JAVA", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/lib") and not os.path.islink(ESTUtilities.getUserHomeDirectory("openemm") + "/lib") and os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current/lib"):
-				ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current/lib", ESTUtilities.getUserHomeDirectory("openemm") + "/lib", "openemm")
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/scripts") and not os.path.islink(ESTUtilities.getUserHomeDirectory("openemm") + "/scripts") and os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current/scripts"):
-				ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current/scripts", ESTUtilities.getUserHomeDirectory("openemm") + "/scripts", "openemm")
-			if not os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/server.xml") and os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/server.xml.template"):
-				shutil.copy(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/server.xml.template", ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/server.xml")
-				ESTUtilities.chown(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/server.xml", "openemm", "openemm")
-				ESTUtilities.manageTlsCertificateForTomcat(ESTUtilities.getUserHomeDirectory("openemm") + "/etc/ssl", ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/server.xml", Environment.applicationName, False, 8080)
-			if not os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/logs") and not os.path.islink(ESTUtilities.getUserHomeDirectory("openemm") + "/logs"):
-				ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/logs", ESTUtilities.getUserHomeDirectory("openemm") + "/logs", "openemm")
-			if os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current"):
-				Environment.emmBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory("openemm") + "/release/backend/current"))
-				if Environment.emmBackendVersion is not None and Environment.emmBackendVersion.startswith("V"):
-					Environment.emmBackendVersion = Environment.emmBackendVersion[1:len(Environment.emmBackendVersion)]
+			serverXMLPath = openemmHome / "tomcat/conf/server.xml"
+			serverXMLTemplatePath = openemmHome / "/tomcat/conf/server.xml.template"
+			if not serverXMLPath.is_file() and serverXMLTemplatePath.is_file():
+				shutil.copy(serverXMLTemplatePath, serverXMLPath)
+				ESTUtilities.chown(serverXMLPath, "openemm", "openemm")
+				ESTUtilities.manageTlsCertificateForTomcat(openemmHome / "etc/ssl", serverXMLPath, Environment.applicationName, False, 8080)
 
-			if not os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/bin/" + Environment.restartToolName) and os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/bin/" + Environment.restartToolName):
-				ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/bin/" + Environment.restartToolName, ESTUtilities.getUserHomeDirectory("openemm") + "/bin/" + Environment.restartToolName, "openemm")
+			restartToolPath = openemmHome /"bin" / Environment.restartToolName
+			restartToolFullPath = openemmHome / "tomcat/bin" / Environment.restartToolName
+			if not restartToolPath.exists() and restartToolFullPath.is_file():
+				restartToolPath.symlink_to(restartToolFullPath)
+			Environment.emmLicenseFilePath = openemmHome / "/webapps/emm/WEB-INF/classes/emm.license.xml"
 
-			if os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/version.txt"):
-				with open(ESTUtilities.getUserHomeDirectory("openemm") + "/tomcat/conf/version.txt") as runtimeVersionFile:
-					Environment.runtimeVersion = runtimeVersionFile.read().strip()
-			else:
-				Environment.runtimeVersion = "Unknown"
-
-			Environment.emmLicenseFilePath = ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/emm/WEB-INF/classes/emm.license.xml"
-			if os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/emm/WEB-INF/classes/emm.properties"):
-				Environment.frontendVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/emm/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-			if os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/statistics/WEB-INF/classes/emm.properties"):
-				Environment.statisticsVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/statistics/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-			if os.path.isfile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/webservices/WEB-INF/classes/emm.properties"):
-				Environment.webservicesVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/webservices/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-
-			if os.path.isdir(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/manual/de"):
-				manualApplicationPath = os.path.realpath(ESTUtilities.getUserHomeDirectory("openemm") + "/webapps/manual/de")
-				manualVersion = ESTUtilities.getVersionFromFilename(manualApplicationPath)
-				if manualVersion is not None:
-					Environment.manualVersion = manualVersion
 		else:
 			if ESTUtilities.hasRootPermissions():
 				if not os.path.isfile("/usr/local/bin/EST.sh") and not os.path.islink("/usr/local/bin/EST.sh") and Environment.scriptFilePath.startswith("/home/") and len(Environment.scriptFilePath) > 6:
 					scriptHomeUser = Environment.scriptFilePath[6:]
-					scriptHomeUser = scriptHomeUser[0:scriptHomeUser.index("/")]
+					scriptHomeUser = scriptHomeUser.partition("/")[0]
 					if os.path.isfile(ESTUtilities.getUserHomeDirectory(scriptHomeUser) + "/bin/EST.sh"):
 						ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(scriptHomeUser) + "/bin/EST.sh", "/usr/local/bin/EST.sh", "root")
 			else:
@@ -998,9 +815,6 @@ class Environment:
 
 			# Rdir Runtime information
 			if ESTUtilities.userExists(Environment.getRdirApplicationUserName()) and (Environment.username == Environment.getRdirApplicationUserName() or ESTUtilities.hasRootPermissions()):
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/conf/version.txt"):
-					with open(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/conf/version.txt") as runtimeVersionFile:
-						Environment.runtimeVersion = runtimeVersionFile.read().strip()
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/bin"):
 					ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/bin", Environment.getRdirApplicationUserName())
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/release"):
@@ -1028,9 +842,6 @@ class Environment:
 
 			# Frontend Runtime information
 			if ESTUtilities.userExists(Environment.getFrontendApplicationUserName()) and (Environment.username == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/tomcat/conf/version.txt"):
-					with open(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/tomcat/conf/version.txt") as runtimeVersionFile:
-						Environment.runtimeVersion = runtimeVersionFile.read().strip()
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin"):
 					ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin", Environment.getFrontendApplicationUserName())
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release"):
@@ -1063,24 +874,10 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/tomcat/bin/" + Environment.restartToolName, ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin/" + Environment.restartToolName, Environment.getFrontendApplicationUserName())
 
 				Environment.emmLicenseFilePath = ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/emm/WEB-INF/classes/emm.license.xml"
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/emm/WEB-INF/classes/emm.properties"):
-					Environment.frontendVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/emm/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/backend/current"):
-					Environment.emmBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/backend/current"))
-					if Environment.emmBackendVersion is not None and Environment.emmBackendVersion.startswith("V"):
-						Environment.emmBackendVersion = Environment.emmBackendVersion[1:len(Environment.emmBackendVersion)]
 
 			if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/manual") and (Environment.username == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
 				if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/manual/de"):
 					manualApplicationPath = os.path.realpath(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/manual/de")
-					manualVersion = ESTUtilities.getVersionFromFilename(manualApplicationPath)
-					if manualVersion is not None:
-						Environment.manualVersion = manualVersion
-					else:
-						Environment.manualVersion = "Unknown"
-				else:
-					Environment.manualVersion = "Unknown"
 
 			if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/statistics") and (Environment.username == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
 				Environment.isEmmStatisticsServer = True
@@ -1088,8 +885,6 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/tomcat/bin/" + Environment.restartToolName, ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin/" + Environment.restartToolName, Environment.getFrontendApplicationUserName())
 
 				Environment.emmLicenseFilePath = ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/statistics/WEB-INF/classes/emm.license.xml"
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/statistics/WEB-INF/classes/emm.properties"):
-					Environment.statisticsVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/statistics/WEB-INF/classes/emm.properties")["ApplicationVersion"]
 
 			if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/webservices") and (Environment.username == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
 				Environment.isEmmWebservicesServer = True
@@ -1097,13 +892,6 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/tomcat/bin/" + Environment.restartToolName, ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin/" + Environment.restartToolName, Environment.getFrontendApplicationUserName())
 
 				Environment.emmLicenseFilePath = ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/webservices/WEB-INF/classes/emm.license.xml"
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/webservices/WEB-INF/classes/emm.properties"):
-					Environment.webservicesVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/webservices/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/backend/current"):
-					Environment.emmBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/backend/current"))
-					if Environment.emmBackendVersion is not None and Environment.emmBackendVersion.startswith("V"):
-						Environment.emmBackendVersion = Environment.emmBackendVersion[1:len(Environment.emmBackendVersion)]
 
 			if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/rdir") and (Environment.username == Environment.getFrontendApplicationUserName() or ESTUtilities.hasRootPermissions()):
 				# Also check for the application "rdir" installed under user "console". This is indeed the configuration on some "Inhouse" customer systems.
@@ -1112,13 +900,6 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/tomcat/bin/" + Environment.restartToolName, ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/bin/" + Environment.restartToolName, Environment.getFrontendApplicationUserName())
 
 				Environment.emmLicenseFilePath = ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.license.xml"
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.properties"):
-					Environment.consoleRdirVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.properties")["ApplicationVersion"]
-
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/backend/current"):
-					Environment.emmBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory(Environment.getFrontendApplicationUserName()) + "/release/backend/current"))
-					if Environment.emmBackendVersion is not None and Environment.emmBackendVersion.startswith("V"):
-						Environment.emmBackendVersion = Environment.emmBackendVersion[1:len(Environment.emmBackendVersion)]
 
 			if ESTUtilities.userExists(Environment.getRdirApplicationUserName()) \
 					and (Environment.username == Environment.getRdirApplicationUserName() or ESTUtilities.hasRootPermissions()) \
@@ -1127,13 +908,7 @@ class Environment:
 				if not os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/bin/" + Environment.restartToolName) and os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/bin/" + Environment.restartToolName):
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/bin/" + Environment.restartToolName, ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/bin/" + Environment.restartToolName, Environment.getRdirApplicationUserName())
 
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/conf/version.txt"):
-					with open(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/conf/version.txt") as runtimeVersionFile:
-						Environment.rdirRuntimeVersion = runtimeVersionFile.read().strip()
-
 				Environment.emmLicenseFilePath = ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.license.xml"
-				if os.path.isfile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.properties"):
-					Environment.rdirVersion = ESTUtilities.readPropertiesFile(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/webapps/rdir/WEB-INF/classes/emm.properties")["ApplicationVersion"]
 
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/bin"):
 					ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/bin", Environment.getRdirApplicationUserName())
@@ -1151,10 +926,6 @@ class Environment:
 					ESTUtilities.manageTlsCertificateForTomcat(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/sslcert", ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/conf/server.xml", Environment.applicationName)
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/logs") and not os.path.islink(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/logs"):
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/tomcat/logs", ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/logs", Environment.getRdirApplicationUserName())
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/release/backend/current"):
-					Environment.rdirBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName()) + "/release/backend/current"))
-					if Environment.rdirBackendVersion is not None and Environment.rdirBackendVersion.startswith("V"):
-						Environment.rdirBackendVersion = Environment.rdirBackendVersion[1:len(Environment.rdirBackendVersion)]
 
 			if ESTUtilities.userExists("merger") and (Environment.username == "merger" or ESTUtilities.hasRootPermissions()):
 				Environment.isEmmMergerServer = True
@@ -1162,10 +933,6 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("merger") + "/release/current/bin", ESTUtilities.getUserHomeDirectory("merger") + "/bin", "merger")
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory("merger") + "/release"):
 					ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("merger") + "/release", "merger")
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory("merger") + "/release/current"):
-					Environment.mergerBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory("merger") + "/release/current"))
-					if Environment.mergerBackendVersion is not None and Environment.mergerBackendVersion.startswith("V"):
-						Environment.mergerBackendVersion = Environment.mergerBackendVersion[1:len(Environment.mergerBackendVersion)]
 				if "agnitas.emm" in DbConnector.dbcfgProperties:
 					DbConnector.applicationDbcfgEntryName = "agnitas.emm"
 					DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName]
@@ -1176,10 +943,6 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("mailout") + "/release/current/bin", ESTUtilities.getUserHomeDirectory("mailout") + "/bin", "mailout")
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory("mailout") + "/release"):
 					ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("mailout") + "/release", "mailout")
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory("mailout") + "/release/current"):
-					Environment.mailerBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory("mailout") + "/release/current"))
-					if Environment.mailerBackendVersion is not None and Environment.mailerBackendVersion.startswith("V"):
-						Environment.mailerBackendVersion = Environment.mailerBackendVersion[1:len(Environment.mailerBackendVersion)]
 				if "agnitas.emm" in DbConnector.dbcfgProperties:
 					DbConnector.applicationDbcfgEntryName = "agnitas.emm"
 					DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName]
@@ -1190,10 +953,6 @@ class Environment:
 					ESTUtilities.createLink(ESTUtilities.getUserHomeDirectory("mailloop") + "/release/current/bin", ESTUtilities.getUserHomeDirectory("mailloop") + "/bin", "mailloop")
 				if not os.path.isdir(ESTUtilities.getUserHomeDirectory("mailloop") + "/release"):
 					ESTUtilities.createDirectory(ESTUtilities.getUserHomeDirectory("mailloop") + "/release", "mailloop")
-				if os.path.isdir(ESTUtilities.getUserHomeDirectory("mailloop") + "/release/current"):
-					Environment.mailloopBackendVersion = os.path.basename(os.path.realpath(ESTUtilities.getUserHomeDirectory("mailloop") + "/release/current"))
-					if Environment.mailloopBackendVersion is not None and Environment.mailloopBackendVersion.startswith("V"):
-						Environment.mailloopBackendVersion = Environment.mailloopBackendVersion[1:len(Environment.mailloopBackendVersion)]
 				if "agnitas.emm" in DbConnector.dbcfgProperties:
 					DbConnector.applicationDbcfgEntryName = "agnitas.emm"
 					DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName]
@@ -1201,16 +960,37 @@ class Environment:
 			if DbConnector.dbcfgEntry is None and Environment.applicationDbcfgEntryDefaultName in DbConnector.dbcfgProperties:
 				DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[Environment.applicationDbcfgEntryDefaultName]
 
-		if os.path.isdir("/root/release/current"):
-			Environment.runtimeBackendVersion = os.path.basename(os.path.realpath("/root/release/current"))
-			if Environment.runtimeBackendVersion is not None and Environment.runtimeBackendVersion.startswith("V"):
-				Environment.runtimeBackendVersion = Environment.runtimeBackendVersion[1:len(Environment.runtimeBackendVersion)]
-
 		if not Environment.isOpenEmmServer \
 			and not Environment.isEmmFrontendServer and not Environment.isEmmStatisticsServer and not Environment.isEmmWebservicesServer \
 			and not Environment.isEmmConsoleRdirServer and not Environment.isEmmRdirServer \
 			and not Environment.isEmmMergerServer and not Environment.isEmmMailerServer and not Environment.isEmmMailloopServer:
 				Environment.errors.append("No " + Environment.applicationName + " application is currently installed")
+
+
+	@staticmethod
+	def determineOS():
+		if Path("/etc/os-release").is_file():
+			osProperties = ESTUtilities.readPropertiesFile("/etc/os-release")
+			osVendor = osProperties.get("NAME", "").strip(' "')
+			if osVendor:
+				if "AlmaLinux" in Environment.osVendor:
+					Environment.osVendor = "Alma"
+				elif "CentOS" in Environment.osVendor:
+					Environment.osVendor = "CentOS"
+				elif "Red Hat" in Environment.osVendor or "RedHat" in Environment.osVendor:
+					Environment.osVendor = "RedHat"
+				elif "SLES" in Environment.osVendor or "SUSE" in Environment.osVendor:
+					Environment.osVendor = "Suse"
+
+			osVersion = osProperties.get("VERSION_ID", "").strip(' "')
+			if osVersion:
+				Environment.osVersion = osVersion.partition(".")[0]
+
+		elif Path("/etc/issue").is_file():
+			osPropertiesText = ESTUtilities.readTextFile("/etc/issue")
+			if "CentOS" in osPropertiesText:
+				Environment.osVendor = "CentOS"
+				Environment.osVersion = ESTUtilities.getFirstVersionFromText(osPropertiesText)
 
 	@staticmethod
 	def getSystemUrl():
@@ -1263,7 +1043,7 @@ class Environment:
 					Environment.warnings.append("Your " + Environment.applicationName + " database contains userform links in mailings of the old '.../form.do?...' format. Please switch those to the new format '.../form.action?...'. If you need help, please contact support.")
 		except Exception as e:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Cannot check migration")
+				logger.exception("Cannot check migration")
 			if hasattr(e, 'message'):
 				Environment.errors.append("Cannot check migration: " + str(e.message))
 			else:
@@ -1318,7 +1098,6 @@ class Environment:
 					Environment.frontendApplicationUsername = Environment.username
 			else:
 				Environment.frontendApplicationUsername = Environment.username
-
 			if ESTUtilities.hasRootPermissions():
 				if ESTUtilities.userExists("rdir"):
 					Environment.rdirApplicationUsername = "rdir"
@@ -1400,11 +1179,11 @@ class Environment:
 					return None
 				else:
 					if ESTUtilities.isDebugMode():
-						logging.exception("Error while checking for Backend running")
+						logger.exception("Error while checking for Backend running")
 					return None
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Error while checking for Backend running")
+					logger.exception("Error while checking for Backend running")
 				return None
 		else:
 			return None
@@ -1448,14 +1227,15 @@ class Environment:
 					return None
 				else:
 					if ESTUtilities.isDebugMode():
-						logging.exception("Error while checking for Backend running")
+						logger.exception("Error while checking for Backend running")
 					return None
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Error while checking for Backend running")
+					logger.exception("Error while checking for Backend running")
 				return None
 		else:
 			return None
+
 	@staticmethod
 	def getApplicationUsername():
 		if Environment.isOpenEmmServer:
@@ -1510,11 +1290,11 @@ class Environment:
 					return None
 				else:
 					if ESTUtilities.isDebugMode():
-						logging.exception("Error while checking for Backend running")
+						logger.exception("Error while checking for Backend running")
 					return None
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Error while checking for Backend running")
+					logger.exception("Error while checking for Backend running")
 				return None
 		else:
 			return None
@@ -1558,11 +1338,11 @@ class Environment:
 					return None
 				else:
 					if ESTUtilities.isDebugMode():
-						logging.exception("Error while checking for Backend running")
+						logger.exception("Error while checking for Backend running")
 					return None
 			except:
 				if ESTUtilities.isDebugMode():
-					logging.exception("Error while checking for Backend running")
+					logger.exception("Error while checking for Backend running")
 				return None
 		else:
 			return None
@@ -1599,69 +1379,66 @@ class Environment:
 
 		frontend_application_mapping = {
 			"Runtime": {
-				"output" : Environment.runtimeVersion,
-				"condition" : condition_any_frontend_based_server or condition_current_user_is_frontend_app_user
+				"output": Environment.applicationVersions.runtime,
+				"condition": condition_any_frontend_based_server or condition_current_user_is_frontend_app_user
 			},
 			"Frontend": {
-				"output": Environment.frontendVersion,
+				"output": Environment.applicationVersions.frontend,
 				"condition": Environment.isEmmFrontendServer or condition_current_user_is_frontend_app_user
 			},
 			"Statistics": {
-				"output": Environment.statisticsVersion,
+				"output": Environment.applicationVersions.statistics,
 				"condition": Environment.isEmmStatisticsServer
 			},
 			"Webservices": {
-				"output": Environment.webservicesVersion,
+				"output": Environment.applicationVersions.webservices,
 				"condition": Environment.isEmmWebservicesServer
 			},
 			"Console-Rdir": {
-				"output": Environment.consoleRdirVersion,
+				"output": Environment.applicationVersions.consoleRdir,
 				"condition": Environment.isEmmConsoleRdirServer
 			},
 			"Backend": {
-				"output": Environment.emmBackendVersion,
+				"output": Environment.applicationVersions.emmBackend,
 				"condition": condition_any_frontend_based_server or condition_current_user_is_frontend_app_user
 			},
 			"Rdir Runtime": {
-				"output": Environment.rdirRuntimeVersion,
+				"output": Environment.applicationVersions.rdirRuntime,
 				"condition": Environment.isEmmRdirServer and condition_any_frontend_based_server,
 				"alternative_name_if_error": "Runtime"
 			},
 			"Rdir": {
-				"output": Environment.rdirRuntimeVersion,
-				"condition":  Environment.isEmmRdirServer
+				"output": Environment.applicationVersions.rdirRuntime,
+				"condition": Environment.isEmmRdirServer
 			},
 			"Rdir Backend": {
-				"output": Environment.rdirBackendVersion,
-				"condition":  Environment.isEmmRdirServer and bool(Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer or Environment.isEmmConsoleRdirServer),
+				"output": Environment.applicationVersions.rdirBackend,
+				"condition": Environment.isEmmRdirServer and bool(Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer or Environment.isEmmConsoleRdirServer),
 				"alternative_name_if_error": "Backend"
 			}
 		}
 
 		backend_application_mapping = {
 			"Runtime Backend": {
-				"output": Environment.runtimeBackendVersion,
-				"condition": Environment.runtimeBackendVersion is not None
+				"output": Environment.applicationVersions.runtimeBackend,
+				"condition": Environment.applicationVersions.runtimeBackend != "Unknown"
 			},
 			"Merger Backend": {
-				"output": Environment.mergerBackendVersion,
+				"output": Environment.applicationVersions.mergerBackend,
 				"condition": Environment.isEmmMergerServer
 			},
 			"Mailer Backend": {
-				"output": Environment.mailerBackendVersion,
+				"output": Environment.applicationVersions.mailerBackend,
 				"condition": Environment.isEmmMailerServer
 			},
 			"Mailloop Backend": {
-				"output": Environment.mailloopBackendVersion,
+				"output": Environment.applicationVersions.mailloopBackend,
 				"condition": Environment.isEmmMailloopServer
 			},
 		}
 
 		Environment.printApplicationMapping(frontend_application_mapping)
 		Environment.printApplicationMapping(backend_application_mapping)
-
-
-
 
 	@staticmethod
 	def check_tomcat_process_for_user(username: str):
@@ -1707,3 +1484,148 @@ class Environment:
 	def checkForMissingPuppeteerRequirements():
 		Vendors = "Rhel" if Environment.osVendor in ["Alma", "CentOS", "RedHat"] else Environment.osVendor
 		return list(filter(lambda package: not ESTUtilities.checkPackageIsInstalled(Environment.osVendor,package), Environment.puppeteerRequirements.get(Vendors,list())))
+
+class ApplicationVersions:
+	_frontendUserHome = ESTUtilities.getUserHomeDirectory("openemm" if Environment.isOpenEmmServer else Environment.getFrontendApplicationUserName())
+	_rdirUserHome = ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName())
+	_frontedVersionFile: Callable[[str],str] = lambda s: f"webapps/{s}/WEB-INF/classes/emm.properties"
+
+	_backendExtractor: Callable[[Path],str] = lambda p: p.resolve().name.lstrip("V")
+	_runtimeExtractor: Callable[[str],str] = lambda p: Path.read_text(p).strip(" \n")
+	_frontedExtractor: Callable[[str],str] = lambda p: ESTUtilities.readPropertiesFile(p).get("ApplicationVersion")
+
+	_applicationVersions = {}
+	_applications: dict[str,list] = {
+		"runtime": [
+			_frontendUserHome,
+			"tomcat/conf/version.txt",
+			_runtimeExtractor
+		],
+		"frontend": [
+			_frontendUserHome,
+			_frontedVersionFile("emm"),
+			_frontedExtractor
+		],
+		"statistics": [
+			_frontendUserHome,
+			_frontedVersionFile("statistics"),
+			_frontedExtractor
+		],
+		"webservices": [
+			_frontendUserHome,
+			_frontedVersionFile("webservices"),
+			_frontedExtractor
+		],
+		"consoleRdir": [
+			_frontendUserHome,
+			_frontedVersionFile("rdir"),
+			_frontedExtractor
+		],
+		"rdir": [
+			_rdirUserHome,
+			_frontedVersionFile("rdir"),
+			_frontedExtractor
+		],
+		"rdirRuntime": [
+			_rdirUserHome,
+			"tomcat/conf/version.txt",
+			_runtimeExtractor
+		],
+		"emmBackend": [
+			_frontendUserHome,
+			"release/backend/current",
+			_backendExtractor
+		],
+		"rdirBackend": [
+			_rdirUserHome,
+			"release/backend/current",
+			_backendExtractor
+		],
+		"runtimeBackend": [
+			"/root",
+			"release/current",
+			_backendExtractor
+		],
+		"mergerBackend": [
+			ESTUtilities.getUserHomeDirectory("merger"),
+			"release/current",
+			_backendExtractor
+		],
+		"mailerBackend": [
+			ESTUtilities.getUserHomeDirectory("mailout"),
+			"release/current",
+			_backendExtractor
+		],
+		"mailloopBackend": [
+			ESTUtilities.getUserHomeDirectory("mailloop"),
+			"release/current",
+			_backendExtractor
+		],
+		#"unifiedBackend": [],
+		"manual":[
+			_frontendUserHome,
+			"webapps/manual/de",
+			lambda p: ESTUtilities.getVersionFromFilename(str(p.resolve()))
+		],
+		"java": [
+			"",
+			lambda: Environment.javaHome or (Environment.optDefaultPath or Environment.optDefaultPathSecondary or "") + "/java",
+			ESTUtilities.getJavaVersion
+		],
+		"tomcat": [
+			"",
+			lambda: (Environment.catalinaHome or (Environment.optDefaultPath or "") + "/tomcat") +"/lib/catalina.jar",
+			ESTUtilities.getTomcatVersion
+
+		]
+	}
+	_aliases: dict = {
+		"emm": "frontend",
+		"openemm": "frontend",
+		"backend-console": "emmBackend",
+		"backend": "emmBackend"
+	}
+	def __init__(self):
+		self._applicationVersions = self._evaluate()
+
+	class VersionString(str):
+		def __new__(cls, value, refreshReference):
+			instance = super().__new__(cls, value)
+			instance.refreshReference = refreshReference
+			return instance
+
+		def refresh(self):
+			return self.__class__(
+				self.refreshReference(),
+				self.refreshReference
+			)
+
+	def refresh(self, identifier=None):
+		return self._evaluate(identifier)
+
+
+	def _evaluate(self, singleApplication: str | None=None):
+		if not singleApplication:
+			applicationResult: dict[str, str] = {}
+			for application in self._applications.keys():
+				applicationResult[application] = self._evaluate(application)
+			return applicationResult
+		else:
+			user, path, extractor = self._applications[singleApplication]
+			if callable(path):
+				path = path()
+			checkPath = Path(user,path)
+			if os.access(checkPath, os.F_OK) and checkPath.exists():
+				return self.VersionString(extractor(Path(user, path)), lambda: self.refresh(singleApplication))
+			else:
+				return self.VersionString("Unknown", lambda: self.refresh(singleApplication))
+
+	def getAll(self):
+		return self._evaluate()
+
+	def __getattr__(self, applicationName):
+		if applicationName in self._applications:
+			return self._applicationVersions.get(applicationName)
+		elif applicationName in self._aliases:
+			return self._applicationVersions.get(self._aliases.get(applicationName))
+		return self.VersionString("Unknown", lambda: "Unknown")
