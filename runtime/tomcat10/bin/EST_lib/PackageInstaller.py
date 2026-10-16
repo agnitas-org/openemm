@@ -423,9 +423,11 @@ class BackendPackageHandler(PackageHandler):
 			self.fail("Necessary User for this application is missing: " + applicationUserName)
 		self.operationalHomeDirectory = self.getOperationalHomeDirectory(applicationUserName)
 		releasePackagePath = self.unpackBackendWhereNeeded(applicationUserName, releaseSubDirectory)
+		self.stopBackend()
 		self.relinkApplicationVersion(releasePackagePath.parent, releasePackagePath)
 		getattr(Environment.applicationVersions, applicationUserName.lower()).refresh()
 		self.postProcess()
+		self.startBackend()
 
 	def postProcess(self) -> None:
 		backendBinDir = self.operationalHomeDirectory / "bin"
@@ -437,6 +439,28 @@ class BackendPackageHandler(PackageHandler):
 
 		self.promptRestartIfNecessary()
 
+	def backendSH(self, command):
+		applicationUserName = self.detectNecessaryApplicationUserName()
+		backendTool = Path(applicationUserName, "bin/backend.sh")
+		if backendTool.exists():
+			if ESTUtilities.hasRootPermissions():
+				result = subprocess.run(["su", "-c", f"{backendTool} {command}", applicationUserName], capture_output=True,
+				                        text=True)
+			else:
+				result = subprocess.run([backendTool, command], capture_output=True, text=True)
+
+			for line in result.stdout.splitlines():
+				logger.info(line)
+			for line in result.stderr.splitlines():
+				logger.error(line)
+
+	def startBackend(self):
+		print("Starting with: backend.sh")
+		self.backendSH("start")
+
+	def stopBackend(self):
+		print("Stopping with: backend.sh")
+		self.backendSH("stop")
 
 class ComponentPackageHandler(PackageHandler):
 	def getInstallBaseDirectory(self, applicationName: str, username: str|None):
@@ -736,6 +760,7 @@ class RuntimePackageHandler(PackageHandler):
 			return Environment.getFrontendApplicationUserName()
 	def detectNecessaryApplicationName(self) -> str | None:
 		return "runtime"
+
 	@staticmethod
 	def cleanRuntimeData(userHome):
 		tomcatPath = userHome / "tomcat"
@@ -759,7 +784,7 @@ class RuntimePackageHandler(PackageHandler):
 
 class FrontendPackageHandler(PackageHandler):
 	def getReleaseSubDirectory(self) -> str:
-		if self.packageType in (PackageType.FRONTEND_EMM, PackageType.FRONTEND_RDIR, PackageType.FRONTEND_STATISTICS, PackageType.FRONTEND_WEBSERVICES, PackageType.FRONTEND_RDIR, PackageType.MANUAL):
+		if self.packageType in (PackageType.FRONTEND_EMM, PackageType.FRONTEND_RDIR, PackageType.FRONTEND_STATISTICS, PackageType.FRONTEND_WEBSERVICES, PackageType.FRONTEND_RDIR, PackageType.MANUAL, PackageType.REST_MCP):
 			return self.detectNecessaryApplicationName()
 		else:
 			return "backend"

@@ -20,7 +20,7 @@ class Environment:
 	# OpenEMM and EMM specific settings start here #
 	################################################
 
-	toolVersion = "26.11.035" #Dummy version number. This is going to be replaced by build tools.
+	toolVersion = "26.11.053" #Dummy version number. This is going to be replaced by build tools.
 	toolName = None
 
 	applicationName = None

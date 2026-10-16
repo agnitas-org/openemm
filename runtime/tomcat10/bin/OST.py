@@ -6,6 +6,7 @@ from pathlib import Path
 
 # Allow improved editing in terminal inputs
 import readline
+import logging
 
 from EST_lib.Environment import Environment
 from EST_lib import Colors
