@@ -1766,6 +1766,11 @@
       "default": "true"
     },
     {
+      "ident": "OAuth2AccessTokenValidityMinutes",
+      "name": "oauth2.access_token.validity.minutes",
+      "default": "600"
+    },
+    {
       "ident": "LogonTotpEnabled",
       "name": "logon.totp.enabled",
       "default": "false"
