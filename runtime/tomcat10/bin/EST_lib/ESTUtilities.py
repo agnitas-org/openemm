@@ -24,7 +24,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 try:
 	from packaging.version import Version
@@ -200,7 +200,10 @@ def chown(filePath, userName = None, groupName = None):
 def chownRecursive(filePath: str | Path, userName: str = None, groupName: str = None, keepPreviousGroup: bool = False):
 	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
 		for item in Path(filePath).rglob('*'):
-			shutil.chown(item, user=userName, group=item.stat().st_gid if keepPreviousGroup else groupName)
+			try:
+				shutil.chown(item, user=userName, group=item.stat().st_gid if keepPreviousGroup else groupName)
+			except (FileNotFoundError, OSError):
+				continue
 
 def createLink(referencedPath, linkPath, userName = None, groupName = None):
 	os.symlink(referencedPath, linkPath)
@@ -900,6 +903,22 @@ def restart(scriptFilePath, *arguments):
 		print(Colors.YELLOW + "Restarting ..." + Colors.DEFAULT)
 	os.execl(sys.executable, sys.executable, *arguments)
 
+def checkGeneralAccessibility(path):
+	path = Path(path)
+	try:
+		if path.exists():
+			print("Path exists and is accessible")
+			return 1
+		elif not os.access(path, os.F_OK):
+			path.stat()
+			return 1
+		else:
+			return -1
+	except PermissionError:
+		return 0
+	except FileNotFoundError:
+		return -1
+
 def checkWriteAccessibility(path):
 	if not os.access(path, os.W_OK):
 		if isDebugMode():
@@ -1000,3 +1019,48 @@ def executeCallableWithSpinner(message: str, callable: Callable,  printCharacter
 		stopEvent.set()
 		spinnerThread.join(timeout=1)
 	return callableReturnValue
+
+
+def runSubprocess(
+		*args,
+		onStdout: Optional[Callable[[str], None]] = None,
+		onStderr: Optional[Callable[[str], None]] = None,
+		**kwargs
+) -> Tuple[list, list]:
+	stdout = []
+	stderr = []
+
+	def captureAndPrint(stream, linesList, callback, printFile):
+		for line in stream:
+			line = line.rstrip('\n')
+			print(line, file=printFile)
+			linesList.append(line)
+			if callback:
+				callback(line)
+
+	process = subprocess.Popen(
+		*args,
+		**kwargs,
+		stdout=subprocess.PIPE,
+		stderr=subprocess.PIPE,
+		text=True,
+		bufsize=1
+	)
+
+	stdoutThread = threading.Thread(
+		target=captureAndPrint,
+		args=(process.stdout, stdout, onStdout, sys.stdout)
+	)
+	stderrThread = threading.Thread(
+		target=captureAndPrint,
+		args=(process.stderr, stderr, onStderr, sys.stderr)
+	)
+
+	stdoutThread.start()
+	stderrThread.start()
+
+	process.wait()
+	stdoutThread.join()
+	stderrThread.join()
+
+	return stdout, stderr

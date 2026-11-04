@@ -177,6 +177,7 @@ def parseDownloadablePackages(versionInfo: dict[str,list[str]]) -> dict[str,str]
 			"frontend-statistics|statistics": (initialInstall or Environment.isEmmStatisticsServer) and "statistics" in versionInfo,
 			"frontend-webservices": (initialInstall or Environment.isEmmWebservicesServer) and "frontend-webservices" in versionInfo,
 			"frontend-webservices|webservices": (initialInstall or Environment.isEmmWebservicesServer) and "webservices" in versionInfo,
+			"rest-mcp": (initialInstall or Environment.isEmmFrontendServer) and "rest-mcp" in versionInfo,
 
 			"backend-one": Environment.isEmmUnifiedServer and "backend-one" in versionInfo,
 			"backend-one|backend-console": (initialInstall or any((Environment.isEmmFrontendServer,

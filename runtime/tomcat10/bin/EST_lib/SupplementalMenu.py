@@ -150,7 +150,7 @@ def backupTomcatConfigAction(actionParameters):
 	if backup_choices:
 		output_path = RuntimePackageHandler.createTarGZSystemFileBackup(backup_choices)
 		if output_path:
-			Environment.messages.append("Created Backup  folder: " + output_path)
+			Environment.messages.append(f"Created Backup archive: {output_path}")
 
 def restartEST(actionParameters):
 	restart(Environment.scriptFilePath, *sys.argv)

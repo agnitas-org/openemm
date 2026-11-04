@@ -497,10 +497,11 @@ def executeMissingUpdates(sqlUpdateScriptFilePath: str | Path):
 	sqlUpdateScriptFilePath = Path(sqlUpdateScriptFilePath)
 	sqlUpdateVersions: dict = {}
 	sqlUpdateFiles = chain.from_iterable([sqlUpdateScriptFilePath.joinpath().glob(i) for i in
-	                                      ["emm-*update*.sql", "emm-*-messages*.sql", "../userrights.sql",
+	                                      ["emm-*update*.sql", "emm-*-messages.sql", "emm-*-messages-*.sql", "../userrights.sql",
 	                                       "emm-*-migration.sql"]])
 	versionFilePattern = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+((\.|-hf)[0-9]+)?")
 	necessarySQLScripts = []
+
 	for file in sqlUpdateFiles:
 		sqlUpdateScript = versionFilePattern.search(file.name)
 		if sqlUpdateScript:
@@ -523,15 +524,19 @@ def executeMissingUpdates(sqlUpdateScriptFilePath: str | Path):
 
 	if missingVersions:
 		missingVersions = list(itertools.chain.from_iterable(missingVersions))
-		for version in set(sqlUpdateVersions.keys()) - set(missingVersions):
+		for version in sorted(set(sqlUpdateVersions.keys()) - set(missingVersions)):
 			print("DB already contains version", version)
 
 		updateFilesNeeded = itemgetter(*missingVersions)(sqlUpdateVersions)
 		updateFilesNeeded = updateFilesNeeded if isinstance(updateFilesNeeded, (list, tuple)) else [updateFilesNeeded]
 		for sqlFile in updateFilesNeeded:
+			print("Executing", sqlFile)
 			executeSqlScriptFile(sqlUpdateScriptFilePath / sqlFile)
-
+	else:
+		for version in sorted(set(sqlUpdateVersions.keys())):
+			print("DB already contains version", version)
 	for sqlFile in necessarySQLScripts:
+		print("Executing",sqlFile)
 		executeSqlScriptFile(sqlUpdateScriptFilePath / sqlFile)
 
 def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
@@ -562,7 +567,7 @@ def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
 				logger.exception(f"Error in executeSqlScriptFile: {e}")
 			return False
 
-	elif emmDbVendor in ["mariadb", "postgresql"]:
+	elif emmDbVendor == "mariadb":
 		host = dbcfgEntry["host"]
 		if host is None or len(host) == 0:
 			print("Missing database host configuration")
@@ -582,6 +587,35 @@ def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
 
 		if logFilePath is not None:
 			sqlUpdateReturnCode = os.system("/bin/bash -c '" + commandText + " 2>&1 | tee " + logFilePath + "; test ${PIPESTATUS[0]} -eq 0'")
+		else:
+			sqlUpdateReturnCode = os.system(commandText)
+
+		if sqlUpdateReturnCode == 0:
+			return True
+		else:
+			if ESTUtilities.isDebugMode():
+				print("Error while executing '" + commandText + "'")
+			return False
+	elif emmDbVendor == "postgres":
+		host = dbcfgEntry["host"]
+		if host is None or len(host) == 0:
+			print("Missing database host configuration")
+			sys.exit(1)
+
+		portStartIndex = host.find(":")
+		if portStartIndex > 0:
+			portString = host[portStartIndex + 1:]
+			if "/" in portString:
+				portString = portString[0:portString.find("/")]
+			port = int(portString)
+			host = host[0:portStartIndex]
+		else:
+			port = 5432
+
+		commandText = f'PGPASSWORD={dbcfgEntry["password"]} {getDbClientPath()} -h {host} -U {user} --dbname={dbcfgEntry["name"]} -p {str(port)} < {sqlScriptFilePath}'
+		if logFilePath is not None:
+			sqlUpdateReturnCode = os.system(
+				"/bin/bash -c '" + commandText + " 2>&1 | tee " + logFilePath + "; test ${PIPESTATUS[0]} -eq 0'")
 		else:
 			sqlUpdateReturnCode = os.system(commandText)
 

@@ -69,7 +69,7 @@ def configureTool():
 	Environment.optDefaultPath = ESTUtilities.getUserHomeDirectory("openemm") + "/opt"
 	Environment.optDefaultPathSecondary = ESTUtilities.getUserHomeDirectory("openemm") + "/opt"
 	Environment.systemCfgFileSearchPaths = None
-	Environment.allowedDbmsSystems = ["mariadb"]
+	Environment.allowedDbmsSystems = ["mariadb", "postgres"]
 	Environment.restartToolName = "openemm.sh"
 
 	Environment.javaHome = None

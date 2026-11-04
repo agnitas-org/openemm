@@ -12,15 +12,15 @@ import tarfile
 import tempfile
 import time
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from enum import Enum, auto
 from itertools import chain
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import NoReturn
-
+from typing import NoReturn, Any
 
 from EST_lib import ESTUtilities, Colors, DbConnector
-from EST_lib.ESTUtilities import restart, userExists
+from EST_lib.ESTUtilities import restart, userExists, printWarning
 from EST_lib.Environment import Environment
 
 logger = logging.getLogger(__name__)
@@ -119,6 +119,35 @@ class PackageHandler(ABC):
 		self.interactive = interactive
 
 	@staticmethod
+	@contextmanager
+	def changeUserAndGroupOperation(username: str):
+		if os.geteuid() != 0:
+			yield
+			return
+
+		originalUid = os.geteuid()
+		originalGid = os.getegid()
+
+		uid, gid = PackageHandler.getUserAndGroup(username)
+		try:
+			os.setegid(gid)
+			os.seteuid(uid)
+			yield
+		finally:
+			os.seteuid(originalUid)
+			os.setegid(originalGid)
+
+	@staticmethod
+	def defaultUserGroup():
+		return "openemm" if Environment.isOpenEmmServer else "agnitas"
+
+	@staticmethod
+	def adjustUserAndGroupPermissions(directories, user, group=None, keepPreviousGroup=None):
+		if ESTUtilities.hasRootPermissions():
+			for path in directories:
+				ESTUtilities.chownRecursive(path, user, group, keepPreviousGroup)
+
+	@staticmethod
 	def refreshApplicationVersion(applicationName: str):
 		return getattr(Environment.applicationVersions, applicationName.lower()).refresh()
 
@@ -134,8 +163,8 @@ class PackageHandler(ABC):
 		print()
 		if versionCompare < 1:
 			print(
-				f"Package contains application type '{applicationDisplayName}' of version '{ESTUtilities.normalizeVersion(ESTUtilities.getVersionFromFilename(self.packageFile))}'.\n"
-				f"Your current version is '{ESTUtilities.normalizeVersion(currentVersion)}'.")
+				f"Package contains application type '{applicationDisplayName}' of version '{ESTUtilities.getVersionFromFilename(self.packageFile)}'.\n"
+				f"Your current version is '{currentVersion}'.")
 
 			if self.interactive:
 				if versionCompare == 0:
@@ -159,13 +188,13 @@ class PackageHandler(ABC):
 					return True
 		else:
 			print(
-				f"Found update package '{self.packageFile.name}' for application '{applicationDisplayName}' with version '{ESTUtilities.normalizeVersion(ESTUtilities.getVersionFromFilename(self.packageFile))}'.\nYour current version is '{ESTUtilities.normalizeVersion(currentVersion)}'.")
+				f"Found update package '{self.packageFile.name}' for application '{applicationDisplayName}' with version '{ESTUtilities.getVersionFromFilename(self.packageFile)}'.\nYour current version is '{currentVersion}'.")
 			if self.interactive:
 				print("Continue with update? (Y/n, Blank => Yes):")
 				choice = input(" > ").strip().lower()
 				if choice and not choice.startswith(("y", "j")):
 					Environment.warnings.append(f"Update of '{applicationDisplayName}' canceled")
-					updateLogger.debug("Update of '" + applicationName + "' canceled" + "\n")
+					updateLogger.info("Update of '" + applicationName + "' canceled" + "\n")
 					return False
 				else:
 					return True
@@ -322,19 +351,24 @@ class PackageHandler(ABC):
 		updateLogger.exception(errorMessage)
 		raise PackageInstallationException(informativeMessage or "During Package Installation an error occurred: ", errorMessage)
 
-	def relinkApplicationVersion(self, releaseBaseDir: str | Path, releasePackagePath: str | Path, createLinkInWebapps=False) -> None:
-		updateLogger.debug("Updating Application Links")
+	def relinkApplicationVersion(self, releaseBaseDir: str | Path, releasePackagePath: str | Path, createLinkInWebapps=False) -> \
+	list[Any]:
+		updateLogger.info("Updating Application Links")
 		packagePath = pathlib.Path(releasePackagePath)
 		releaseBaseDir = pathlib.Path(releaseBaseDir)
+
+		changedSymlinks = []
 
 		previousVersion = releaseBaseDir / "previous"
 		currentVersion  = releaseBaseDir / "current"
 		previousVersion.unlink(missing_ok=True)
 		if currentVersion.exists():
-			previousVersion.symlink_to(currentVersion.with_name("previous"), target_is_directory=True)
+			previousVersion.symlink_to(currentVersion.resolve(), target_is_directory=True)
+			changedSymlinks.append(previousVersion)
 
 		currentVersion.unlink(missing_ok=True)
 		currentVersion.symlink_to(packagePath,target_is_directory=True)
+		changedSymlinks.append(currentVersion)
 
 		if createLinkInWebapps:
 			applicationLinkPath = pathlib.Path(self.userHomeDirectory) / "webapps" / self.getReleaseSubDirectory()
@@ -343,10 +377,16 @@ class PackageHandler(ABC):
 			elif applicationLinkPath.is_dir():
 				shutil.rmtree(applicationLinkPath)
 
-			applicationLinkPath.symlink_to(currentVersion, True)
+			applicationLinkPath.symlink_to(currentVersion.resolve(), True)
+			changedSymlinks.append(applicationLinkPath)
+		return changedSymlinks
 
 	def getReleaseSubDirectory(self):
 		return ""
+
+	@staticmethod
+	def getUserAndGroup(username) -> tuple[int, int]:
+		return pwd.getpwnam(username).pw_uid, pwd.getpwnam(username).pw_gid
 
 
 class BackendPackageHandler(PackageHandler):
@@ -404,7 +444,7 @@ class BackendPackageHandler(PackageHandler):
 		releasePackagePath = Path(releaseDirectoryFilePath) / (
 					"V" + ESTUtilities.getVersionFromFilename(str(self.packageFile)))
 
-		updateLogger.debug(f"Unpacking {self.packageType} into the directory {releaseDirectoryFilePath}")
+		updateLogger.info(f"Unpacking {self.packageType} into the directory {releaseDirectoryFilePath}")
 
 		unpackingTool(self.packageFile, releaseDirectoryFilePath)
 		return Path(releasePackagePath)
@@ -421,13 +461,18 @@ class BackendPackageHandler(PackageHandler):
 		releaseSubDirectory = self.getReleaseSubDirectory()
 		if not userExists(applicationUserName):
 			self.fail("Necessary User for this application is missing: " + applicationUserName)
+
 		self.operationalHomeDirectory = self.getOperationalHomeDirectory(applicationUserName)
 		releasePackagePath = self.unpackBackendWhereNeeded(applicationUserName, releaseSubDirectory)
-		self.stopBackend()
-		self.relinkApplicationVersion(releasePackagePath.parent, releasePackagePath)
+		backendTool = self.getBackendTool()
+
+		self.stopBackend(backendTool)
+		applicationLinks = self.relinkApplicationVersion(releasePackagePath.parent, releasePackagePath)
+		if not self.operationalHomeDirectory == "/root":
+			self.adjustUserAndGroupPermissions([releasePackagePath, self.packageFile] + applicationLinks, applicationUserName, self.defaultUserGroup())
 		getattr(Environment.applicationVersions, applicationUserName.lower()).refresh()
 		self.postProcess()
-		self.startBackend()
+		self.startBackend(backendTool)
 
 	def postProcess(self) -> None:
 		backendBinDir = self.operationalHomeDirectory / "bin"
@@ -439,32 +484,35 @@ class BackendPackageHandler(PackageHandler):
 
 		self.promptRestartIfNecessary()
 
-	def backendSH(self, command):
+	def backendTool(self, toolName, action):
 		applicationUserName = self.detectNecessaryApplicationUserName()
-		backendTool = Path(applicationUserName, "bin/backend.sh")
+		backendTool = Path(ESTUtilities.getUserHomeDirectory(applicationUserName), "bin/" + toolName)
+
 		if backendTool.exists():
 			if ESTUtilities.hasRootPermissions():
-				result = subprocess.run(["su", "-c", f"{backendTool} {command}", applicationUserName], capture_output=True,
-				                        text=True)
+				command = ["su", "-c", f"{backendTool} {action}", applicationUserName]
 			else:
-				result = subprocess.run([backendTool, command], capture_output=True, text=True)
+				command = [backendTool, action]
 
-			for line in result.stdout.splitlines():
-				logger.info(line)
-			for line in result.stderr.splitlines():
-				logger.error(line)
+			ESTUtilities.runSubprocess(command, onStdout=logger.info, onStderr=logger.error)
 
-	def startBackend(self):
-		print("Starting with: backend.sh")
-		self.backendSH("start")
+	def startBackend(self, toolName):
+		print(f"Starting with: {toolName}")
+		self.backendTool(toolName, "start")
 
-	def stopBackend(self):
-		print("Stopping with: backend.sh")
-		self.backendSH("stop")
+	def stopBackend(self, toolName):
+		print(f"Starting with: {toolName}")
+		self.backendTool(toolName, "stop")
+
+	def getBackendTool(self):
+		return {
+			PackageType.BACKEND_MAILER : "mailer.sh",
+			PackageType.BACKEND_MAILLOOP : "mailloop.sh",
+			PackageType.BACKEND_MERGER: "merger.sh",
+		}.get(self.packageType, "backend.sh")
 
 class ComponentPackageHandler(PackageHandler):
 	def getInstallBaseDirectory(self, applicationName: str, username: str|None):
-
 		if applicationName == "tomcat":
 			componentHomeParent = ESTUtilities.getParentPath(Environment.catalinaHome) if Environment.catalinaHome else None
 		elif applicationName == "java":
@@ -509,7 +557,7 @@ class ComponentPackageHandler(PackageHandler):
 			componentHome.unlink()
 			componentHome.symlink_to(updatedApplicationPath)
 			Environment.rebootNeeded = True
-			updateLogger.debug(f"Created new application link '{componentHome}'")
+			updateLogger.info(f"Created new application link '{componentHome}'")
 		elif componentHome.is_file() or componentHome.is_dir():
 			errorText = f"Cannot update {applicationName.upper()} in '{componentHome}'"
 			Environment.errors.append(errorText)
@@ -518,7 +566,8 @@ class ComponentPackageHandler(PackageHandler):
 			alternativeComponentPath = updatedApplicationPath.parent / applicationName
 			alternativeComponentPath.symlink_to(updatedApplicationPath)
 			Environment.rebootNeeded = True
-			updateLogger.debug(f"Created new application link '{alternativeComponentPath}'")
+			updateLogger.info(f"Created new application link '{alternativeComponentPath}'")
+		return componentHome
 
 	def process(self) -> None:
 		applicationName = self.detectNecessaryApplicationName()
@@ -533,14 +582,11 @@ class ComponentPackageHandler(PackageHandler):
 			Environment.errors.append(errorText)
 			self.fail(errorText)
 		self.updateEnvironmentComponentPath(applicationName, installBaseDirectoryPath)
-
 		extractedArchive = ESTUtilities.unTarGzFile(self.packageFile, str(installBaseDirectoryPath))
-		updateLogger.debug(f"Extracted file '{self.packageFile}' to '{extractedArchive}'")
-
-		self.adjustUserAndGroupPermissions(installBaseDirectoryPath)
-
-		self.relinkComponent(applicationName, extractedArchive)
+		updateLogger.info(f"Extracted file '{self.packageFile}' to '{extractedArchive}'")
+		componentHome = self.relinkComponent(applicationName, extractedArchive)
 		self.refreshApplicationVersion(applicationName)
+		self.adjustUserAndGroupPermissions([installBaseDirectoryPath, extractedArchive, componentHome], applicationUserName, self.defaultUserGroup())
 		self.postProcess()
 
 	def updateEnvironmentComponentPath(self, applicationName: str, installBaseDirectoryPath: str | Path):
@@ -553,16 +599,8 @@ class ComponentPackageHandler(PackageHandler):
 			environmentProperties["JAVA_HOME"] = Environment.javaHome
 		else:
 			return
-		ESTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, self.detectNecessaryApplicationName(),
-		                                             environmentProperties)
 
-	@staticmethod
-	def adjustUserAndGroupPermissions(installBaseDirectoryPath):
-		if ESTUtilities.hasRootPermissions():
-			if Environment.isOpenEmmServer:
-				ESTUtilities.chownRecursive(installBaseDirectoryPath, "openemm")
-			else:
-				ESTUtilities.chownRecursive(installBaseDirectoryPath, "root", "agnitas")
+		ESTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, None, environmentProperties)
 
 
 class RuntimePackageHandler(PackageHandler):
@@ -592,35 +630,30 @@ class RuntimePackageHandler(PackageHandler):
 		confPath = userHome / "conf"
 		logsPath = userHome / "logs"
 
-		managerPath = userHome / "webapps/manager"
 		optTomcatPath = userHome / "/opt/tomcat"
+		with self.changeUserAndGroupOperation(applicationUserName):
+			# Create needed links, if missing
+			if not newToolPath.is_file() and not newToolPath.is_symlink() and originalToolPath.is_file():
+				newToolPath.symlink_to(originalToolPath)
+			if not newEmmShPath.is_file() and not newEmmShPath.is_symlink() and originalEmmShPath.is_file():
+				newEmmShPath.symlink_to(originalEmmShPath)
+			if not confPath.is_symlink() and not confPath.is_dir():
+				confPath.symlink_to(userHome / "tomcat/conf")
+			if not logsPath.is_symlink() and not logsPath.is_dir():
+				logsPath.symlink_to(userHome / "tomcat/logs")
 
-		# Create needed links, if missing
-		if not newToolPath.is_file() and not newToolPath.is_symlink() and originalToolPath.is_file():
-			newToolPath.symlink_to(originalToolPath)
-		if not newEmmShPath.is_file() and not newEmmShPath.is_symlink() and originalEmmShPath.is_file():
-			newEmmShPath.symlink_to(originalEmmShPath)
-		if not confPath.is_symlink() and not confPath.is_dir():
-			confPath.symlink_to(userHome / "tomcat/conf")
-		if not logsPath.is_symlink() and not logsPath.is_dir():
-			logsPath.symlink_to(userHome / "tomcat/logs")
 
-		if managerPath.is_symlink() and optTomcatPath.is_dir():
-			managerPath.unlink()
-			managerPath.symlink_to("opt/tomcat/webapps/manager")
-			#logfile.write("Created new link for tomcat manager app" + "\n")
+			# Create server.xml from template, if missing
+			if not serverXML.is_file() and serverXMLTemplate.is_file():
+				shutil.copy(serverXMLTemplate, serverXML)
+				ESTUtilities.chown(serverXML, applicationUserName, applicationUserName)
+				ESTUtilities.manageTlsCertificateForTomcat(
+					userHome / "etc/ssl",
+					userHome / "tomcat/conf/server.xml",
+					Environment.applicationName)
+				# logfile.write("Created file '" + ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/server.xml" + "'\n")
 
-		# Create server.xml from template, if missing
-		if not serverXML.is_file() and serverXMLTemplate.is_file():
-			shutil.copy(serverXMLTemplate, serverXML)
-			ESTUtilities.chown(serverXML, applicationUserName, applicationUserName)
-			ESTUtilities.manageTlsCertificateForTomcat(
-				userHome / "etc/ssl",
-				userHome / "tomcat/conf/server.xml",
-				Environment.applicationName)
-			# logfile.write("Created file '" + ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/server.xml" + "'\n")
-
-		# Read new version info
+			# Read new version info
 		Environment.applicationVersions.runtime.refresh()
 		self.promptRestartIfNecessary()
 
@@ -645,7 +678,7 @@ class RuntimePackageHandler(PackageHandler):
 				print("Created Backup:", output_path)  # In case of the user restarting the runtime immediately after update, environment message won't be shown
 
 	@staticmethod
-	def createTarGZSystemFileBackup(backup_choices):
+	def createTarGZSystemFileBackup(backupChoices: list[str]):
 		""" Create temporary backup of system specific configuration files and folders, compressed into a tar file"""
 		applicationUserName = Environment.getApplicationUsername()
 		home = Path(ESTUtilities.getUserHomeDirectory(applicationUserName))
@@ -653,17 +686,18 @@ class RuntimePackageHandler(PackageHandler):
 		output_path = home / filename
 		unixPathValidationPattern = re.compile(r"^(/[^/ ]*)+/?$|^\.(/[^/ ]*)+/?$|^\.\./([^/ ]*/)*[^/ ]*$")
 
-		validBackupChoices = [path for path in backup_choices if unixPathValidationPattern.match(path)]
-		higherAccessBackupChoices = [path for path in validBackupChoices if
-									 not ESTUtilities.checkWriteAccessibility(path)]
+		validBackupChoices = [Path(path) for path in backupChoices if unixPathValidationPattern.match(path)]
+		higherAccessBackupChoices = [path for path in validBackupChoices if ESTUtilities.checkGeneralAccessibility(path) == 0]
+		verifiedValidBackupChoices = [path for path in validBackupChoices if not path in higherAccessBackupChoices and path.absolute().exists()]
 
-		if validBackupChoices:
+		if verifiedValidBackupChoices or higherAccessBackupChoices:
 			print("Depending on the size of the provided directories, this might take some time...")
 			if higherAccessBackupChoices:
+				printWarning("Provided file path/s may require 'sudo' for access in backup")
 				with tempfile.TemporaryDirectory() as backupTempDirectory:
 					try:
 						subprocess.run(
-							["sudo", "cp", "--parents", "--no-preserve", "ownership", "-r", *higherAccessBackupChoices,
+							["sudo", "cp", "--parents", "--no-preserve", "ownership", "-r", "-L", *higherAccessBackupChoices,
 							 "-t", backupTempDirectory], check=False)
 						subprocess.run(["sudo", "chown", "-R",
 										str(pwd.getpwnam(Environment.username).pw_uid) + ":" + str(
@@ -681,16 +715,15 @@ class RuntimePackageHandler(PackageHandler):
 
 						base_dir = pathlib.Path(backupTempDirectory)
 						backupChoices = [path for path in higherAccessBackupChoices if
-										 (base_dir / path.lstrip("/")).exists() or (
-													 base_dir / path.lstrip("/")).is_symlink()]
+										 (base_dir / str(path).lstrip("/")).exists() or (
+													 base_dir / str(path).lstrip("/")).is_symlink()]
 						if backupChoices:
 							print("Backing up: ", *backupChoices)
-							tar.add(backupTempDirectory, arcname=".")
+							tar.add(backupTempDirectory, arcname="")
 			else:
 				with tarfile.open(output_path, "w:gz", dereference=True) as tar:
-					for path in validBackupChoices:
-						print("Backing up: " + path)
-						tar.add(path, arcname=os.path.relpath(path, home))
+					for path in verifiedValidBackupChoices:
+						tar.add(path.absolute(), arcname=Path(path).absolute().relative_to(home))
 			return output_path
 		else:
 			print("No valid paths for System File Backup were provided")
@@ -817,7 +850,7 @@ class FrontendPackageHandler(PackageHandler):
 		else:
 			updateScriptPath = Path(executionBaseDirectory) / "WEB-INF/sql/oracle"
 
-		updateLogger.debug("Starting execution of missing updates.")
+		updateLogger.info("Starting execution of missing updates.")
 		DbConnector.executeMissingUpdates(updateScriptPath)
 
 	@staticmethod
@@ -828,9 +861,11 @@ class FrontendPackageHandler(PackageHandler):
 	def installNPMPackages(directory: str | Path, user:str):
 		npmExecutionDirectory =  Path(directory) / "WEB-INF"
 		try:
-			subprocess.run(["npm","install"], cwd=str(npmExecutionDirectory), user=user, stdout=subprocess.PIPE, check=True)
+			env = os.environ.copy()
+			env["HOME"] = ESTUtilities.getUserHomeDirectory(user)
+			ESTUtilities.runSubprocess(["npm","install"], cwd=str(npmExecutionDirectory), user=user, env=env)
 		except CalledProcessError as npmError:
-			updateLogger.debug(f"Running npm install returned: {npmError}")
+			updateLogger.info(f"Running npm install returned: {npmError}")
 
 	def detectNecessaryApplicationUserName(self):
 		return Environment.getFrontendApplicationUserName()
@@ -846,7 +881,6 @@ class FrontendPackageHandler(PackageHandler):
 				self.fail("Mandatory database configuration not found")
 			else:
 				self.fail("Mandatory database client is NOT available, but needed for frontend application update")
-
 		releaseDirectoryFilePath = self.createReleaseSubDirectoryIfNotExists(releaseSubDirectory, applicationUserName)
 		releasePackagePath = pathlib.Path(releaseDirectoryFilePath) / Path(self.packageFile).stem.removesuffix(".tar")
 		cleanupNeeded = releasePackagePath.exists() and any(releasePackagePath.iterdir())
@@ -855,21 +889,23 @@ class FrontendPackageHandler(PackageHandler):
 			updateLogger.debug("Removing previous installation remnants from identical package version.")
 			shutil.rmtree(releasePackagePath)
 		packageVersion = ESTUtilities.getVersionFromFilename(str(self.packageFile.resolve()))
-		updateLogger.debug(f"Unpacking: {self.packageFile} into {releaseDirectoryFilePath}")
+		updateLogger.info(f"Unpacking: {self.packageFile} into {releaseDirectoryFilePath}")
 		ESTUtilities.unTarGzFile(self.packageFile, releaseDirectoryFilePath)
 
-		self.relinkApplicationVersion(releaseDirectoryFilePath, releasePackagePath, True)
+		applicationLinks = self.relinkApplicationVersion(releaseDirectoryFilePath, releasePackagePath, True)
+		self.adjustUserAndGroupPermissions([releaseDirectoryFilePath] + applicationLinks, applicationUserName)
 
 		if applicationName == "emm":
 			updateLogger.debug("Triggering Installation of npm packages.")
-			self.installNPMPackages(releasePackagePath, applicationUserName)
+			with self.changeUserAndGroupOperation(applicationUserName):
+				self.installNPMPackages(releasePackagePath, applicationUserName)
+				updateLogger.debug("Carrying over session timeout settings from previous version.")
+				self.preserveSessionTimeoutSettings(releasePackagePath)
 			updateLogger.debug("Check and Execute necessary migration")
 			self.handleFrontendDatabaseMigration(packageVersion)
-			updateLogger.debug("Carrying over session timeout settings from previous version.")
-			self.preserveSessionTimeoutSettings(releasePackagePath)
 			updateLogger.debug("Further check and repair of potentially missing DB structure")
 			self.handleDatabaseStructure(releasePackagePath)
-			updateLogger.debug("Executing missing Database Updates")
+			updateLogger.info("Executing missing Database Updates")
 			self.executeDatabaseUpdates(releasePackagePath)
 		self.refreshApplicationVersion(applicationName)
 

@@ -20,7 +20,7 @@ class Environment:
 	# OpenEMM and EMM specific settings start here #
 	################################################
 
-	toolVersion = "26.11.053" #Dummy version number. This is going to be replaced by build tools.
+	toolVersion = "26.11.136" #Dummy version number. This is going to be replaced by build tools.
 	toolName = None
 
 	applicationName = None
@@ -1394,6 +1394,10 @@ class Environment:
 				"output": Environment.applicationVersions.webservices,
 				"condition": Environment.isEmmWebservicesServer
 			},
+			"REST-MCP": {
+				"output": getattr(Environment.applicationVersions, "rest-mcp").refresh(),
+				"condition": Environment.isEmmWebservicesServer
+			},
 			"Console-Rdir": {
 				"output": Environment.applicationVersions.consoleRdir,
 				"condition": Environment.isEmmConsoleRdirServer
@@ -1486,8 +1490,8 @@ class Environment:
 		return list(filter(lambda package: not ESTUtilities.checkPackageIsInstalled(Environment.osVendor,package), Environment.puppeteerRequirements.get(Vendors,list())))
 
 class ApplicationVersions:
-	_frontendUserHome = ESTUtilities.getUserHomeDirectory("openemm" if Environment.isOpenEmmServer else Environment.getFrontendApplicationUserName())
-	_rdirUserHome = ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName())
+	_frontendUserHome = lambda: ESTUtilities.getUserHomeDirectory("openemm" if Environment.isOpenEmmServer else Environment.getFrontendApplicationUserName())
+	_rdirUserHome = lambda: ESTUtilities.getUserHomeDirectory(Environment.getRdirApplicationUserName())
 	_frontedVersionFile: Callable[[str],str] = lambda s: f"webapps/{s}/WEB-INF/classes/emm.properties"
 
 	_backendExtractor: Callable[[Path],str] = lambda p: p.resolve().name.lstrip("V")
@@ -1530,6 +1534,11 @@ class ApplicationVersions:
 			_rdirUserHome,
 			"tomcat/conf/version.txt",
 			_runtimeExtractor
+		],
+		"rest-mcp": [
+			_frontendUserHome,
+			_frontedVersionFile("rest-mcp"),
+			_frontedExtractor
 		],
 		"emmBackend": [
 			_frontendUserHome,
@@ -1583,8 +1592,12 @@ class ApplicationVersions:
 		"emm": "frontend",
 		"openemm": "frontend",
 		"backend-console": "emmBackend",
+		"backend-merger": "mergerBackend",
+		"backend-mailloop": "mailloopBackend",
+		"backend-mailer": "mailerBackend",
 		"backend": "emmBackend"
 	}
+
 	def __init__(self):
 		self._applicationVersions = self._evaluate()
 
@@ -1612,6 +1625,8 @@ class ApplicationVersions:
 			return applicationResult
 		else:
 			user, path, extractor = self._applications[singleApplication]
+			if callable(user):
+				user = user()
 			if callable(path):
 				path = path()
 			checkPath = Path(user,path)
