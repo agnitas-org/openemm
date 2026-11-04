@@ -10,9 +10,11 @@
 
 package com.agnitas.emm.mcp.v1.mailing.dto;
 
+import java.time.Instant;
+
 public record MailingParameterResponse(
         String name,
         String value,
         String description,
-        String creationDate
+        Instant creationDate
 ) {}

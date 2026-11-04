@@ -1,0 +1,15 @@
+# -*- scope: openemm -*-
+swagger-initializer.js
+1) Used url: 'openapi'
+2) Applied layout: "BaseLayout", instead of 'StandaloneLayout'
+3) Set queryConfigEnabled: false
+4) Set docExpansion: "none",
+5) Added ExtendedScopeBadgePlugin
+6) Added ThemeTogglePlugin
+7) Added UncheckSendEmptyValuePlugin
+8) Hidden servers dropdown
+
+index.html
+1) Applied dark mode by default
+2) Added ui/ prefix to Swagger UI index.html links to fix path resolution issues when accessed via /rest/v2/ui
+3) Added <script src="ui/non-blankable-form-fields.js" charset="UTF-8"> </script> as a bridge between post-process and UncheckSendEmptyValuePlugin

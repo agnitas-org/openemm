@@ -44,6 +44,7 @@ public class BlocklistTools {
 
     @McpTool(
             name = "get_blocklist_entries",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of blocklisted email addresses"
     )
     public PageResponse<BlocklistEntryResponse> getList(
@@ -56,6 +57,7 @@ public class BlocklistTools {
 
     @McpTool(
             name = "get_blocklist_entry_by_email",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a blocklist entry by email address"
     )
     public BlocklistEntryResponse getByEmail(
@@ -68,6 +70,7 @@ public class BlocklistTools {
 
     @McpTool(
             name = "create_blocklist_entry",
+            annotations = @McpTool.McpAnnotations(openWorldHint = false),
             description = "Adds an email address to the blocklist, preventing it from receiving mailings"
     )
     public BlocklistEntryResponse create(
@@ -80,6 +83,7 @@ public class BlocklistTools {
 
     @McpTool(
             name = "update_blocklist_entry",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates the reason of an existing blocklist entry"
     )
     public BlocklistEntryResponse patch(
@@ -93,6 +97,7 @@ public class BlocklistTools {
 
     @McpTool(
             name = "delete_blocklist_entry",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Removes an email address from the blocklist"
     )
     public void delete(

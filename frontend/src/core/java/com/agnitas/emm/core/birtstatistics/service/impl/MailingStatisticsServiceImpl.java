@@ -151,7 +151,7 @@ public class MailingStatisticsServiceImpl implements MailingStatisticsService {
             return Optional.empty();
         }
 
-        return Optional.of(sentCount - getDeliveredMailsCount(mailingId, companyId, targetSql, dateRange) - hardBouncesCount);
+        return Optional.of(Math.max(0, sentCount - getDeliveredMailsCount(mailingId, companyId, targetSql, dateRange) - hardBouncesCount));
     }
 
     @Override
@@ -555,11 +555,11 @@ public class MailingStatisticsServiceImpl implements MailingStatisticsService {
         }
 
         return new ByDeviceClass(
-                byDeviceClass.get(DeviceClass.DESKTOP),
-                byDeviceClass.get(DeviceClass.TABLET),
-                byDeviceClass.get(DeviceClass.MOBILE),
-                byDeviceClass.get(DeviceClass.SMARTTV),
-                multi
+                byDeviceClass.getOrDefault(DeviceClass.DESKTOP, 0),
+                byDeviceClass.getOrDefault(DeviceClass.TABLET, 0),
+                byDeviceClass.getOrDefault(DeviceClass.MOBILE, 0),
+                byDeviceClass.getOrDefault(DeviceClass.SMARTTV, 0),
+                Math.max(0, multi)
         );
     }
 

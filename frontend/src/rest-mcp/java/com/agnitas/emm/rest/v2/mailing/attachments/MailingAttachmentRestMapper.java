@@ -10,9 +10,12 @@
 
 package com.agnitas.emm.rest.v2.mailing.attachments;
 
+import com.agnitas.beans.MailingComponent;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.rest.v2.infrastructure.mapper.RestMapper;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -24,6 +27,20 @@ interface MailingAttachmentRestMapper extends RestMapper {
     @Mapping(target = "originalSizeBytes", source = "originalSize")
     @Mapping(target = "emailSizeBytes", source = "emailSize")
     AttachmentResponse toResponse(MailingAttachmentDto dto);
+
+    @Mapping(target = "targetId", source = "targetID")
+    @Mapping(target = "originalSizeBytes", expression = "java(toOriginalSize(component))")
+    @Mapping(target = "name", source = "componentName")
+    @Mapping(target = "emailSizeBytes", expression = "java(toEmailSizeBytes(component))")
+    AttachmentResponse toResponse(MailingComponent component);
+
+    default long toEmailSizeBytes(MailingComponent component) {
+        return StringUtils.length(AgnUtils.encodeBase64(component.getBinaryBlock()));
+    }
+
+    default long toOriginalSize(MailingComponent component) {
+        return ArrayUtils.getLength(component.getBinaryBlock());
+    }
 
     @Mapping(target = "backgroundFile", source = "pdfBackgroundFile")
     @Mapping(target = "useUpload", ignore = true)

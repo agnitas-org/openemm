@@ -14,8 +14,11 @@
 
 	<!-- ========================= RESOURCE DEFINITIONS ========================= -->
 
-	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
-		<property name="jndiName" value="java:comp/env/jdbc/emm_db" />
+	<!-- Factory method instead of JndiObjectFactoryBean: Spring knows the bean type (DataSource) from the method
+	     signature, so it does not have to create the bean early while registering BeanPostProcessors -->
+	<bean id="jndiDataSourceLookup" class="org.springframework.jdbc.datasource.lookup.JndiDataSourceLookup" />
+	<bean id="dataSource" factory-bean="jndiDataSourceLookup" factory-method="getDataSource">
+		<constructor-arg value="java:comp/env/jdbc/emm_db" />
 	</bean>
 
 	<!-- enable the configuration of transactional behavior based on annotations -->

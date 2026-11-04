@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.rest.v2.mailing.attachments;
 
-record AttachmentResponse(
+public record AttachmentResponse(
         int id,
         String name,
         int targetId,

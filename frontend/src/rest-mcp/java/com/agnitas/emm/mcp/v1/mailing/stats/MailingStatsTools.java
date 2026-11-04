@@ -36,6 +36,7 @@ public class MailingStatsTools {
 
     @McpTool(
             name = "get_mailing_stats",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns sending and engagement statistics for a mailing (opens, clicks, bounces, unsubscribes, revenue, etc.)"
     )
     public MailingStatsResponse getStats(

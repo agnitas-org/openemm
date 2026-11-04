@@ -10,24 +10,30 @@
 
 package com.agnitas.emm.mcp.v1.target.service;
 
+import java.util.List;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.target.dto.TargetInclude;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.target.dto.CreateTargetGroupRequest;
+import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupLightResponse;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupResponse;
-import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 
 public interface TargetGroupMcpService {
 
-    PageResponse<TargetGroupLightResponse> list(McpPageable pageable, Admin admin);
+    PageResponse<TargetGroupLightResponse> list(McpPageable pageable, Set<TargetInclude> include, Admin admin);
 
-    TargetGroupResponse getById(int id, int companyId);
+    TargetGroupResponse getById(int id, Set<TargetInclude> include, Admin admin);
 
-    TargetGroupResponse create(CreateTargetGroupRequest request, int companyId);
+    TargetGroupResponse create(CreateTargetGroupRequest request, Admin admin);
 
-    TargetGroupResponse patch(int id, PatchTargetGroupRequest request, int companyId);
+    TargetGroupResponse patch(int id, PatchTargetGroupRequest request, Admin admin);
 
     void delete(int id, Admin admin);
 
+    List<TargetGroupResponse> getMailingTargets(Mailing mailing, Admin admin);
 }

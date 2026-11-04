@@ -135,7 +135,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	private int workflowId;
 
-	private long sentEmails;
+	private Long sentEmails;
 
 	@Override
 	public int getPreviewComponentId() {
@@ -1304,12 +1304,12 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public long getSentEmails() {
+	public Long getSentEmails() {
 		return sentEmails;
 	}
 
 	@Override
-	public void setSentEmails(long sentEmails) {
+	public void setSentEmails(Long sentEmails) {
 		this.sentEmails = sentEmails;
 	}
 

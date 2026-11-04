@@ -11,6 +11,8 @@
 package com.agnitas.emm.core.target.service.impl;
 
 import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
+import static com.agnitas.emm.core.target.dto.TargetInclude.RECIPIENT_COUNT;
+import static com.agnitas.emm.core.target.validation.TargetGroupConstraints.MAX_PAGE_SIZE_WITH_RECIPIENT_COUNT;
 import static java.util.Collections.emptySet;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -58,6 +60,7 @@ import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailing.forms.SplitSettings;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
@@ -71,6 +74,8 @@ import com.agnitas.emm.core.target.complexity.bean.impl.TargetComplexityEvaluati
 import com.agnitas.emm.core.target.complexity.service.TargetComplexityEvaluator;
 import com.agnitas.emm.core.target.dto.CreateTargetCommand;
 import com.agnitas.emm.core.target.dto.PatchTargetCommand;
+import com.agnitas.emm.core.target.dto.TargetInclude;
+import com.agnitas.emm.core.target.dto.TargetView;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
@@ -105,6 +110,7 @@ import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
@@ -148,6 +154,7 @@ public class TargetServiceImpl implements TargetService {
     private MailingContentService mailingContentService;
 	private BulkActionValidationService<Integer, String> bulkActionValidationService;
 	private TargetMapper targetMapper;
+	private RecipientService recipientService;
 
     @Override
 	public SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin) {
@@ -525,6 +532,15 @@ public class TargetServiceImpl implements TargetService {
         return getTargetGroup(targetId, companyId, 0);
     }
 
+	@Override
+	public TargetView getTargetGroup(int targetId, Admin admin, Set<TargetInclude> include) {
+		Target target = getTargetGroup(targetId, admin.getCompanyID());
+		Integer recipientsCount = SetUtils.emptyIfNull(include).contains(RECIPIENT_COUNT)
+				? recipientService.calculateRecipient(admin, targetId, 0)
+				: null;
+		return targetMapper.toViewDto(target, recipientsCount);
+	}
+
     @Override
 	public Target getTargetGroup(int targetId, int companyId, int adminId) {
 		logger.info("Retrieving target group ID {} for company ID {}", targetId, companyId);
@@ -722,6 +738,37 @@ public class TargetServiceImpl implements TargetService {
 
 		options.setRecipientCountBasedComplexityAdjustment(TargetUtils.getComplexityAdjustment(numberOfRecipients));
 		return targetDao.getPaginatedTargetLightsBySearchParameters(options);
+	}
+
+	@Override
+	public PaginatedList<TargetView> find(TargetLightsOptions options, Set<TargetInclude> include, Admin admin) {
+		boolean includeRecipientCount = SetUtils.emptyIfNull(include).contains(RECIPIENT_COUNT);
+		if (includeRecipientCount && options.getPageSize() > MAX_PAGE_SIZE_WITH_RECIPIENT_COUNT) {
+			throw ValidationException.exact(
+                    "Page size must not exceed %d when 'recipientCount' is requested via 'include'."
+							.formatted(MAX_PAGE_SIZE_WITH_RECIPIENT_COUNT)
+			);
+		}
+		PaginatedList<TargetLight> page = getTargetLightsPaginated(options, null);
+
+		List<Integer> ids = page.getList().stream().map(TargetLight::getId).toList();
+
+		Map<Integer, Integer> counts = !ids.isEmpty() && includeRecipientCount
+				? targetDao.recipientCountForTargets(ids, admin.getAdminID(), admin.getCompanyID())
+				: Map.of();
+
+		List<TargetView> list = page.getList()
+				.stream()
+				.map(t -> targetMapper.toViewDto(t, counts.get(t.getId())))
+				.toList();
+		return new PaginatedList<>(
+				list,
+				page.getFullListSize(),
+				page.getPageSize(),
+				page.getPageNumber(),
+				page.getSortCriterion(),
+				page.getSortDirection().name()
+		);
 	}
 
 	@Override
@@ -1385,6 +1432,10 @@ public class TargetServiceImpl implements TargetService {
 
 	public void setTargetMapper(TargetMapper targetMapper) {
 		this.targetMapper = targetMapper;
+	}
+
+	public void setRecipientService(RecipientService recipientService) {
+		this.recipientService = recipientService;
 	}
 
 	// endregion

@@ -14,7 +14,6 @@
 <%--@elvariable id="isEverSent" type="java.lang.Boolean"--%>
 <%--@elvariable id="isMailingGrid" type="java.lang.Boolean"--%>
 <%--@elvariable id="allowBenchmark" type="java.lang.Boolean"--%>
-<%--@elvariable id="birtUrl" type="java.lang.String"--%>
 <%--@elvariable id="reports" type="java.util.Map"--%>
 <%--@elvariable id="monthlist" type="java.util.List<java.lang.String[]>"--%>
 <%--@elvariable id="yearlist" type="java.util.List<java.lang.Integer>"--%>
@@ -128,7 +127,7 @@
                     </mvc:select>
                 </c:if>
 
-                <c:if test="${isReportCanBeShown && (mailingStatisticForm.dateSelectMode ne 'NONE')}">
+                <c:if test="${(!isTopDomainStats or isEverSent) and (mailingStatisticForm.dateSelectMode ne 'NONE')}">
                     <c:set var="workflowStatUrl" value="" />
                     <c:if test="${isWorkflowStatistics}">
                         <c:url var="workflowStatUrl" value="/workflow/${statWorkflowId}/statistic.action" />
@@ -258,18 +257,11 @@
                 <c:when test="${isNumTrackingPointStat}">
                     <%@ include file="fragments/num-tracking-points-stat.jspf" %>
                 </c:when>
-                <c:when test="${isSimpleTrackingPointStat && emm:permissionAllowed('migration.simple.point.stat', pageContext.request)}">
+                <c:when test="${isSimpleTrackingPointStat}">
                     <%@ include file="fragments/simple-tracking-points-stat.jspf" %>
                 </c:when>
-                <c:when test="${forCampaign and mailingId eq null and emm:permissionAllowed('migration.campaigns.stat', pageContext.request)}">
+                <c:when test="${forCampaign and mailingId eq null}">
                     <%@ include file="fragments/workflow-stat.jspf" %>
-                </c:when>
-                <c:when test="${birtUrl ne null && isReportCanBeShown}">
-                    <div class="position-relative js-scrollable overflow-auto hide-scroll">
-                        <iframe src="${birtUrl}" style="width: 100%">
-                            Your Browser does not support IFRAMEs, please update!
-                        </iframe>
-                    </div>
                 </c:when>
             </c:choose>
         </div>

@@ -38,7 +38,7 @@ public class DynCont {
 				scratch += message;
 			}
 			if (profileField != null) {
-				scratch += " [agnDB column\"" + profileField + "\"/]";
+				scratch += " [agnDB column=\"" + profileField + "\"/]";
 			}
 			if ((language != null) && ((message = messages.get ("mailing.ai.prompt.language", language, language)) != null)) {
 				scratch += " " + message;

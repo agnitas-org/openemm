@@ -111,7 +111,12 @@
 		<property name="datasourceDescriptionFactory" ref="DatasourceDescriptionFactory" />
 	</bean>
 
-<!-- ============================================================================================================================== Devices -->
+	<bean id="SeasonKeyDao" class="com.agnitas.dao.impl.SeasonKeyDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
+	<!-- ============================================================================================================================== Devices -->
 	
 	<bean id="ClientDao" class="com.agnitas.emm.core.mobile.dao.impl.ClientDaoImpl">
 		<property name="dataSource" ref="dataSource" />

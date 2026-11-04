@@ -14,8 +14,10 @@ import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
@@ -63,6 +65,16 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         return campaignDao.getCampaign(id, companyID);
+    }
+
+    @Override
+    public Map<Integer, String> getArchiveNames(Admin admin) {
+        return campaignDao.getCampaignList(admin.getCompanyID(), "lower(shortname)", 1).stream()
+                .limit(500)
+                .collect(Collectors.toMap(
+                        Campaign::getId,
+                        Campaign::getShortname
+                ));
     }
 
     @Override

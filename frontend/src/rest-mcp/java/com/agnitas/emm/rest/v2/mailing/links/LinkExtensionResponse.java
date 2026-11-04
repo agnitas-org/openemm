@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.rest.v2.mailing.links;
 
-record LinkExtensionResponse(
+public record LinkExtensionResponse(
         String name,
         String value
 ) {

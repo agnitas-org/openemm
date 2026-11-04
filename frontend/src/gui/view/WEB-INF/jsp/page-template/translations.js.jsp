@@ -1,4 +1,4 @@
-<%@ page contentType="application/javascript" %>
+<%@ page contentType="application/javascript; charset=utf-8" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring"%>
 
 window.I18n = {
@@ -639,6 +639,11 @@ window.I18n = {
         error: {
           name: '<mvc:message javaScriptEscape="true" code="error.referenceTable.name.invalid"/>',
           keyColumn: '<mvc:message javaScriptEscape="true" code="error.referenceTable.keyColumn.invalid"/>'
+        }
+      },
+      filter: {
+        error: {
+          rangeInvalid: '<mvc:message javaScriptEscape="true" code="GWUA.error.referenceTable.filter.rangeInvalid"/>'
         }
       }
     },

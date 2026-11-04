@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.emm.common.FollowUpType;
@@ -32,23 +33,29 @@ import com.agnitas.emm.core.commons.dto.PatchField;
 import com.agnitas.emm.core.mailing.MailingSortCriteria;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.dto.PatchMailingSettingsCommand;
-import com.agnitas.emm.core.mailing.settings.EmailMediatypePatch;
-import com.agnitas.emm.core.mailing.settings.MediatypePatch;
+import com.agnitas.emm.core.mailing.settings.EmailMediaTypePatch;
+import com.agnitas.emm.core.mailing.settings.MediaTypePatch;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.rest.v2.infrastructure.mapper.RestMapper;
+import com.agnitas.emm.rest.v2.mailing.attachments.AttachmentResponse;
+import com.agnitas.emm.rest.v2.mailing.content.MailingContentResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.CreateMailingParameterRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.CreateMailingRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.FollowupType;
 import com.agnitas.emm.rest.v2.mailing.dto.ListMailingsRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.ListTemplatesRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.MailFormat;
+import com.agnitas.emm.rest.v2.mailing.dto.MailingFullResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.MailingLightResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.MailingResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.OnePixelPosition;
 import com.agnitas.emm.rest.v2.mailing.dto.PatchMailingRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.RestCharset;
-import com.agnitas.emm.rest.v2.mailing.dto.RestMediatype;
+import com.agnitas.emm.rest.v2.mailing.dto.MailingMediaType;
 import com.agnitas.emm.rest.v2.mailing.dto.UpdateMailingParameterRequest;
+import com.agnitas.emm.rest.v2.mailing.images.ImageResponse;
+import com.agnitas.emm.rest.v2.mailing.links.LinkResponse;
+import com.agnitas.emm.rest.v2.target.TargetResponse;
 import com.agnitas.util.importvalues.Charset;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -114,7 +121,7 @@ interface MailingRestMapper extends RestMapper {
                 .toList();
     }
 
-    default MailingLightResponse toMailingLightResponse(Map<String, Object> source) {
+    default MailingLightResponse toMailingLightResponse(Map<String, Object> source, boolean isTemplate) {
         return new MailingLightResponse(
                 (Integer) source.get("mailingid"),
                 MailingType.getByCode((Integer) source.get("mailing_type")).name(),
@@ -123,9 +130,9 @@ interface MailingRestMapper extends RestMapper {
                 Optional.ofNullable((Timestamp) source.get("senddate"))
                         .map(Timestamp::toInstant)
                         .orElse(null),
-                Optional.ofNullable((Number) source.get("recipientsCount"))
+                isTemplate ? null : Optional.ofNullable((Number) source.get("recipientsCount"))
                         .map(Number::longValue)
-                        .orElse(0L)
+                        .orElse(null)
         );
     }
 
@@ -145,9 +152,9 @@ interface MailingRestMapper extends RestMapper {
     @Mapping(target = "useDynamicTemplate", expression = "java(PatchField.absent())")
     @Mapping(target = "referenceContentSettings", expression = "java(PatchField.absent())")
     @Mapping(target = "frequencyCounterDisabled", expression = "java(PatchField.absent())")
-    @Mapping(target = "activeMediatypesOrder", expression = "java(map(request.mediatypes(), this::mapMediatypesList))")
-    @Mapping(target = "mediatypes", expression = "java(map(mediatypes))")
-    PatchMailingSettingsCommand toPatchCommand(PatchMailingRequest request, Map<MediaTypes, MediatypePatch> mediatypes);
+    @Mapping(target = "activeMediaTypesOrder", expression = "java(map(request.mediaTypes(), this::mapMediaTypesList))")
+    @Mapping(target = "mediaTypes", expression = "java(map(mediaTypes))")
+    PatchMailingSettingsCommand toPatchCommand(PatchMailingRequest request, Map<MediaTypes, MediaTypePatch> mediaTypes);
 
     @Mapping(target = "useDynamicTemplate", expression = "java(PatchField.absent())")
     @Mapping(target = "splitId", expression = "java(PatchField.absent())")
@@ -155,14 +162,14 @@ interface MailingRestMapper extends RestMapper {
     @Mapping(target = "planDate", expression = "java(PatchField.absent())")
     @Mapping(target = "frequencyCounterDisabled", expression = "java(PatchField.absent())")
     @Mapping(target = "archived", expression = "java(PatchField.absent())")
-    @Mapping(target = "activeMediatypesOrder", expression = "java(map(mapMediatypesList(request.mediatypes())))")
-    @Mapping(target = "mediatypes", expression = "java(map(mediatypes))")
+    @Mapping(target = "activeMediaTypesOrder", expression = "java(map(mapMediaTypesList(request.mediaTypes())))")
+    @Mapping(target = "mediaTypes", expression = "java(map(mediaTypes))")
     PatchMailingSettingsCommand toPatchCommand(
             CreateMailingRequest request,
-            Map<MediaTypes, MediatypePatch> mediatypes
+            Map<MediaTypes, MediaTypePatch> mediaTypes
     );
 
-    default List<MediaTypes> mapMediatypesList(List<RestMediatype> source) {
+    default List<MediaTypes> mapMediaTypesList(List<MailingMediaType> source) {
         return source.stream().map(this::map).toList();
     }
 
@@ -194,11 +201,11 @@ interface MailingRestMapper extends RestMapper {
         return type == null ? null : type.getCoreVal();
     }
 
-    default MediaTypes map(RestMediatype mediatype) {
+    default MediaTypes map(MailingMediaType mediaType) {
         return Arrays.stream(MediaTypes.values())
-                .filter(value -> Strings.CI.equals(value.toString(), mediatype.toString()))
+                .filter(value -> Strings.CI.equals(value.toString(), mediaType.toString()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown media type: " + mediatype.toString()));
+                .orElseThrow(() -> new IllegalArgumentException("Unknown media type: " + mediaType.toString()));
     }
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -231,9 +238,9 @@ interface MailingRestMapper extends RestMapper {
     @Mapping(target = "format", expression = "java(MailFormat.from(mailing.getEmailParam().getMailFormat()))")
     @Mapping(target = "followupForId", expression = "java(NumberUtils.toInt(mailing.getEmailParam().getFollowupFor(), 0))")
     @Mapping(target = "charset", source = "emailParam.charset")
-    @Mapping(target = "mediatypes", expression = "java(toMediatypes(mailing))")
-    @Mapping(target = "htmlTemplate", source = "emailParam.htmlTemplate")
-    @Mapping(target = "textTemplate", source = "emailParam.template")
+    @Mapping(target = "mediaTypes", expression = "java(toMediaTypes(mailing))")
+    @Mapping(target = "htmlTemplate", expression = "java(toHtmlTemplate(mailing))")
+    @Mapping(target = "textTemplate", expression = "java(toTextTemplate(mailing))")
     @Mapping(target = "sendDate", source = "senddate")
     MailingResponse internalToResponse(Mailing mailing);
 
@@ -241,21 +248,31 @@ interface MailingRestMapper extends RestMapper {
         return internalToResponse(mailing);
     }
 
-    default List<RestMediatype> toMediatypes(Mailing mailing) {
+    default String toHtmlTemplate(Mailing mailing) {
+        MailingComponent component = mailing.getHtmlTemplate();
+        return component != null ? component.getEmmBlock() : mailing.getEmailParam().getHtmlTemplate();
+    }
+
+    default String toTextTemplate(Mailing mailing) {
+        MailingComponent component = mailing.getTextTemplate();
+        return component != null ? component.getEmmBlock() : mailing.getEmailParam().getTemplate();
+    }
+
+    default List<MailingMediaType> toMediaTypes(Mailing mailing) {
         return mailing.getMediatypes().values().stream()
                 .filter(Objects::nonNull)
                 .filter(Mediatype::isActive)
                 .sorted(Comparator.comparingInt(Mediatype::getPriority))
                 .map(Mediatype::getMediaType)
                 .map(MediaTypes::name)
-                .map(this::toRestMediatype)
+                .map(this::toRestMediaType)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private RestMediatype toRestMediatype(String name) {
+    private MailingMediaType toRestMediaType(String name) {
         try {
-            return RestMediatype.valueOf(name);
+            return MailingMediaType.valueOf(name);
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -266,9 +283,18 @@ interface MailingRestMapper extends RestMapper {
     @Mapping(target = "charset", expression = "java(map(request.charset(), this::map))")
     @Mapping(target = "format", expression = "java(map(request.format(), this::map))")
     @Mapping(target = "followupType", expression = "java(map(request.followupType(), this::map))")
-    EmailMediatypePatch toEmailPatch(PatchMailingRequest request);
+    EmailMediaTypePatch toEmailPatch(PatchMailingRequest request);
 
     @Mapping(target = "withHtmlTemplate", ignore = true)
     @Mapping(target = "onePixel", source = "request.measureOpeningRate")
-    EmailMediatypePatch toEmailPatch(CreateMailingRequest request);
+    EmailMediaTypePatch toEmailPatch(CreateMailingRequest request);
+
+    MailingFullResponse toFullResponse(
+            MailingResponse response,
+            List<TargetResponse> targets,
+            List<ImageResponse> images,
+            List<AttachmentResponse> attachments,
+            List<MailingContentResponse> contentBlocks,
+            List<LinkResponse> links
+    );
 }

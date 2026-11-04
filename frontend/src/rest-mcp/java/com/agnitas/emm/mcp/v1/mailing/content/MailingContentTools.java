@@ -31,6 +31,8 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class MailingContentTools {
 
+    private static final String ID_OR_NAME_REQUIRED_MESSAGE = "Either contentId or contentBlockName must be provided";
+
     private final MailingContentMcpService contentService;
     private final McpAdminProvider adminProvider;
 
@@ -41,7 +43,9 @@ public class MailingContentTools {
 
     @McpTool(
             name = "get_mailing_contents",
-            description = "Returns all content blocks for a mailing"
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
+            description = "Returns all content blocks for a mailing. There is no tool to create a content block: add an "
+                    + "[agnDYN name=\"...\" /] reference to a mailing template via update_mailing, then fill it with update_mailing_content."
     )
     public List<MailingContentResponse> getList(
             @McpToolParam(description = "Mailing ID") @Positive int mailingId,
@@ -53,6 +57,7 @@ public class MailingContentTools {
 
     @McpTool(
             name = "get_mailing_content",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a mailing content block by its ID or name. Provide either contentId or contentBlockName."
     )
     public MailingContentResponse get(
@@ -68,13 +73,18 @@ public class MailingContentTools {
         if (contentBlockName != null) {
             return contentService.getByName(contentBlockName, mailingId, admin.getCompanyID());
         }
-        throw ValidationException.exact("Either contentId or contentBlockName must be provided");
+        throw ValidationException.exact(ID_OR_NAME_REQUIRED_MESSAGE);
     }
 
     @McpTool(
             name = "update_mailing_content",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates an existing mailing content block by its ID or name. Provide either contentId or contentBlockName. "
-                    + "Fields not passed (null) are left unchanged."
+                    + "Fields not passed (null) are left unchanged. Content blocks cannot be created directly: to create a new one, "
+                    + "first add a reference such as [agnDYN name=\"my_block\" /] to htmlTemplate/textTemplate/smsTemplate/rcsTemplate "
+                    + "via create_mailing or update_mailing (the block is created when the mailing is saved), then call this tool "
+                    + "with contentBlockName=\"my_block\" to set its content per target group. To change an image, reference "
+                    + "an uploaded image (create_mailing_image / get_mailing_images) via agnIMAGE and keep the surrounding HTML."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
     public MailingContentResponse patch(
@@ -91,11 +101,12 @@ public class MailingContentTools {
         if (contentBlockName != null) {
             return contentService.patch(contentBlockName, mailingId, request, admin);
         }
-        throw ValidationException.exact("Either contentId or contentBlockName must be provided");
+        throw ValidationException.exact(ID_OR_NAME_REQUIRED_MESSAGE);
     }
 
     @McpTool(
             name = "delete_mailing_content",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a mailing content block by its ID or name. Provide either contentId or contentBlockName."
     )
     public void delete(
@@ -113,7 +124,7 @@ public class MailingContentTools {
             contentService.delete(contentBlockName, mailingId, admin.getCompanyID());
             return;
         }
-        throw ValidationException.exact("Either contentId or contentBlockName must be provided");
+        throw ValidationException.exact(ID_OR_NAME_REQUIRED_MESSAGE);
     }
 
     @SuppressWarnings("unused")

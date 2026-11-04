@@ -26,7 +26,7 @@ public record CreateBindingRequest(
         Integer mailinglistId,
 
         @McpToolParam(description = "Media type of the binding, e.g. EMAIL")
-        MediaTypes mediatype,
+        MediaTypes mediaType,
 
         @McpToolParam(description = "Subscription status to set for the binding")
         UserStatus userStatus,

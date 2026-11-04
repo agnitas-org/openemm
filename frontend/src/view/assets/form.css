@@ -693,8 +693,12 @@ img {
   outline: 0;
   text-decoration: none;
   -ms-interpolation-mode: bicubic;
-  width: 100%;
-  max-width: 100%;
+  max-width: 100%
+}
+img:not([width]):not([height]) {
+  width: 100%
+}
+img:not([height]) {
   height: auto
 }
 p {

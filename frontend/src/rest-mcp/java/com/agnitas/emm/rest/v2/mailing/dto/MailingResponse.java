@@ -40,7 +40,7 @@ public record MailingResponse(
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         int clickTriggerId,
 
-        List<RestMediatype> mediatypes,
+        List<MailingMediaType> mediaTypes,
         // endregion
 
         // region Targeting settings
@@ -51,7 +51,7 @@ public record MailingResponse(
         boolean needsTarget,
         // endregion
 
-        // region EMAIL mediatype settings
+        // region EMAIL media type settings
         @JsonInclude(JsonInclude.Include.NON_NULL)
         String subject,
 
@@ -95,7 +95,7 @@ public record MailingResponse(
         String envelopeEmail,
         // endregion
 
-        // region SMS mediatype settings
+        // region SMS media type settings
         @JsonInclude(JsonInclude.Include.NON_NULL)
         String smsTemplate,
 
@@ -109,8 +109,8 @@ public record MailingResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL)
         Instant sendDate,
 
-        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-        long sentEmails,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Long sentEmails,
 
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
         List<MailingParameterResponse> parameters

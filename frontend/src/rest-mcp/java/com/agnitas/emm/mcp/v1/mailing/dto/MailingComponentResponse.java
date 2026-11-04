@@ -10,33 +10,18 @@
 
 package com.agnitas.emm.mcp.v1.mailing.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 public record MailingComponentResponse(
         int id,
-        @NotBlank
         String name,
         String description,
-        @Pattern(
-                regexp = "[012345678]",
-                message = """
-                        Allowed values: [\
-                                Template(0), \
-                                Image(1), \
-                                Attachment(3), \
-                                PersonalizedAttachment(4), \
-                                HostedImage(5), \
-                                PrecAAttachement(7), \
-                                ThumbnailImage(8)
-                        ]"""
-        )
-        String type,
-        Integer target_id,
+        int type,
+        @JsonAlias("target_id") Integer targetId,
         String url,
-        Integer urlId,
-        String mimetype,
-        String emm_block,
-        String bin_block
+        @JsonAlias("url_id") Integer urlId,
+        @JsonAlias("mimetype") String mimeType,
+        @JsonAlias("emm_block") String emmBlock,
+        @JsonAlias("bin_block") String binBlock
 ) {
 }

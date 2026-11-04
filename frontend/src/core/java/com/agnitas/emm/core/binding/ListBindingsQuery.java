@@ -25,7 +25,7 @@ public record ListBindingsQuery(
         Set<Integer> recipientIds,
         Set<String> emails,
         Set<Integer> mailinglistIds,
-        Set<MediaTypes> mediatypes,
+        Set<MediaTypes> mediaTypes,
         Set<UserStatus> userStatuses,
         String date,
         int page,
@@ -39,7 +39,7 @@ public record ListBindingsQuery(
                 .map(String::toLowerCase)
                 .collect(Collectors.toUnmodifiableSet());
         mailinglistIds = Set.copyOf(emptyIfNull(mailinglistIds));
-        mediatypes = Set.copyOf(emptyIfNull(mediatypes));
+        mediaTypes = Set.copyOf(emptyIfNull(mediaTypes));
         userStatuses = Set.copyOf(emptyIfNull(userStatuses));
 
         if (recipientIds.stream().anyMatch(id -> id <= 0)) {

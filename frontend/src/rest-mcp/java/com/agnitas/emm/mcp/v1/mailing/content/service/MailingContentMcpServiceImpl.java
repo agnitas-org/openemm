@@ -10,16 +10,22 @@
 
 package com.agnitas.emm.mcp.v1.mailing.content.service;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.mailingcontent.dto.PatchMailingContentCommand;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.mcp.v1.mailing.content.MailingContentResponse;
 import com.agnitas.emm.mcp.v1.mailing.content.dto.PatchMailingContentRequest;
 import com.agnitas.emm.mcp.v1.mailing.content.mapper.MailingContentMcpMapper;
 import com.agnitas.service.MailingContentService;
+import com.agnitas.util.LinkUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,26 +34,46 @@ public class MailingContentMcpServiceImpl implements MailingContentMcpService {
     private final MailingContentService contentService;
     private final MailingContentMcpMapper mapper;
     private final ThumbnailService thumbnailService;
+    private final CompanyTokenService companyTokenService;
 
     public MailingContentMcpServiceImpl(
             MailingContentService contentService,
             MailingContentMcpMapper mapper,
-            ThumbnailService thumbnailService
+            ThumbnailService thumbnailService,
+            CompanyTokenService companyTokenService
     ) {
         this.contentService = contentService;
         this.mapper = mapper;
         this.thumbnailService = thumbnailService;
+        this.companyTokenService = companyTokenService;
     }
 
     @Override
     public List<MailingContentResponse> list(int mailingId, int companyId) {
         List<DynamicTag> tags = contentService.getDynamicTags(mailingId, companyId);
+        putPlaceholders(tags, companyId);
         return mapper.toResponses(tags);
+    }
+
+    private void putPlaceholders(Collection<DynamicTag> tags, int companyId) {
+        tags.forEach(tag -> putPlaceholders(tag, companyId));
+    }
+
+    private void putPlaceholders(DynamicTag tag, int companyId) {
+        String companyToken = companyTokenService.getCompanyToken(companyId).orElse("");
+        MapUtils.emptyIfNull(tag.getDynContent()).values()
+                .forEach(content -> {
+                    String text = LinkUtils.replaceCompanyParamValuesWithPlaceholders(
+                            content.getDynContent(), companyToken, companyId
+                    );
+                    content.setDynContent(text);
+                });
     }
 
     @Override
     public MailingContentResponse getById(int contentId, int mailingId, int companyId) {
         DynamicTag tag = contentService.getDynamicTag(contentId, mailingId, companyId);
+        putPlaceholders(tag, companyId);
         return mapper.toResponse(tag);
     }
 
@@ -79,5 +105,12 @@ public class MailingContentMcpServiceImpl implements MailingContentMcpService {
     @Override
     public void delete(String name, int mailingId, int companyId) {
         contentService.markDeleted(name, mailingId, companyId);
+    }
+
+    @Override
+    public List<MailingContentResponse> getMailingContentBlocks(Mailing mailing) {
+        Collection<DynamicTag> dynamicTags = MapUtils.emptyIfNull(mailing.getDynTags()).values();
+        putPlaceholders(dynamicTags, mailing.getCompanyID());
+        return mapper.toResponses(new ArrayList<>(dynamicTags));
     }
 }

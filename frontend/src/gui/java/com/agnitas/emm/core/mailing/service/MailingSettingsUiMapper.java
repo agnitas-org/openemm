@@ -22,7 +22,7 @@ import com.agnitas.beans.impl.MediatypeEmailImpl;
 import com.agnitas.emm.core.commons.dto.PatchField;
 import com.agnitas.emm.core.mailing.dto.PatchMailingSettingsCommand;
 import com.agnitas.emm.core.mailing.settings.MailingSettingsForm;
-import com.agnitas.emm.core.mailing.settings.MediatypePatch;
+import com.agnitas.emm.core.mailing.settings.MediaTypePatch;
 import com.agnitas.emm.core.mailing.settings.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.settings.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -52,7 +52,7 @@ public interface MailingSettingsUiMapper {
     @Mapping(target = "archived", source = "form.archived")
     @Mapping(target = "contentType", source = "form.mailingContentType")
     @Mapping(target = "targetExpression", source = "targetExpression")
-    @Mapping(target = "mediatypes", expression = "java(mapToPatchField(mapMediatypes(form)))")
+    @Mapping(target = "mediaTypes", expression = "java(mapToPatchField(mapMediatypes(form)))")
     @Mapping(target = "planDate", expression = "java(mapToPatchField(mapPlanDate(form.getPlanDate(), admin)))")
     PatchMailingSettingsCommand internalMapToPatchCommand(MailingSettingsForm form, int splitId, String targetExpression, @Context Admin admin);
 
@@ -61,7 +61,7 @@ public interface MailingSettingsUiMapper {
     }
 
     @SuppressWarnings("unused")
-    default EnumMap<MediaTypes, MediatypePatch> mapMediatypes(MailingSettingsForm form) {
+    default EnumMap<MediaTypes, MediaTypePatch> mapMediatypes(MailingSettingsForm form) {
         EnumMap<MediaTypes, Mediatype> enumMap = new EnumMap<>(MediaTypes.class);
         for (Map.Entry<Integer, MediatypeForm> entry : form.getMediatypes().entrySet()) {
             MediaTypes key = MediaTypes.getMediaTypeForCode(entry.getKey());

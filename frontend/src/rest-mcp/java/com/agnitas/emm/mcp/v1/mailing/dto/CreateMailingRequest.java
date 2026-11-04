@@ -49,9 +49,9 @@ public record CreateMailingRequest(
         @Positive
         Integer archiveId,
 
-        @McpToolParam(description = "Active mediatypes in priority order. RCS can only be used together with SMS")
+        @McpToolParam(description = "Active media types in priority order. RCS can only be used together with SMS")
         @NotEmpty
-        List<MailingMediatype> mediatypes,
+        List<@NotNull MailingMediaType> mediaTypes,
 
         @McpToolParam(description = "Trigger ID to execute on email open", required = false)
         @Positive
@@ -77,15 +77,15 @@ public record CreateMailingRequest(
         Boolean needsTarget,
         // endregion
 
-        // region EMAIL mediatype settings
-        @McpToolParam(description = "Subject line. Required when the EMAIL mediatype is selected", required = false)
+        // region EMAIL media type settings
+        @McpToolParam(description = "Subject line. Required when the EMAIL media type is selected", required = false)
         @Size(min = MailingConstraints.SUBJECT_MIN_LENGTH)
         String subject,
 
         @McpToolParam(description = "Pre-header text", required = false)
         String preHeader,
 
-        @McpToolParam(description = "Sender email address. Required when the EMAIL mediatype is selected", required = false)
+        @McpToolParam(description = "Sender email address. Required when the EMAIL media type is selected", required = false)
         @Email
         String senderAddress,
 
@@ -93,7 +93,7 @@ public record CreateMailingRequest(
         @Size(max = MailingConstraints.SENDER_FULL_NAME_MAX_LENGTH)
         String senderName,
 
-        @McpToolParam(description = "Reply-to email address. Required when the EMAIL mediatype is selected", required = false)
+        @McpToolParam(description = "Reply-to email address. Required when the EMAIL media type is selected", required = false)
         @Email
         String replyAddress,
 
@@ -109,10 +109,10 @@ public record CreateMailingRequest(
         @Positive
         Integer followupForId,
 
-        @McpToolParam(description = "Text version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"Text\" /] to fill later with update_mailing_content", required = false)
+        @McpToolParam(description = "Text version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"Text\" /] to fill later with update_mailing_content. See docs://mailings/agn-tags", required = false)
         String textTemplate,
 
-        @McpToolParam(description = "HTML version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"HTML-Version\" /] to fill later with update_mailing_content", required = false)
+        @McpToolParam(description = "HTML version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"HTML-Version\" /] to fill later with update_mailing_content. See docs://mailings/agn-tags", required = false)
         String htmlTemplate,
 
         @McpToolParam(description = "Charset of the email", required = false)
@@ -129,11 +129,11 @@ public record CreateMailingRequest(
         String envelopeEmail,
         // endregion
 
-        // region SMS mediatype settings
+        // region SMS media type settings
         @McpToolParam(description = "SMS version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"SMS-Version\" /] to fill later with update_mailing_content", required = false)
         String smsTemplate,
 
-        @McpToolParam(description = "SMS sender address. Required when the SMS/RCS mediatype is selected", required = false)
+        @McpToolParam(description = "SMS sender address. Required when the SMS/RCS media type is selected", required = false)
         @Size(min = MailingConstraints.SMS_ADDRESS_MIN_LENGTH)
         String smsSenderAddress,
 

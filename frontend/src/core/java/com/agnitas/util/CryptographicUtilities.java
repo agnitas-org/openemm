@@ -29,7 +29,10 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.PSSParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -65,6 +68,7 @@ public class CryptographicUtilities {
 	public static final Logger logger = LogManager.getLogger(CryptographicUtilities.class);
 	
 	private static final String DEFAULT_SIGNATURE_METHOD = "SHA256WithRSA";
+	private static final String DEFAULT_SEASON_SIGNATURE_METHOD = "RSASSA-PSS"; //"SHA256withRSAandMGF1";
 	private static final String DEFAULT_ASYMMETRIC_ENCRYPTION_METHOD = "RSA/ECB/PKCS1Padding";
 	
 	/** BouncyCastle security provider. */
@@ -306,7 +310,7 @@ public class CryptographicUtilities {
 		}
 
 		try {
-			Signature signature = Signature.getInstance(signatureMethod, "BC");
+			Signature signature = Signature.getInstance(DEFAULT_SIGNATURE_METHOD, "BC");
 			signature.initVerify(publicKey);
 			signature.update(data);
 			return signature.verify(signatureData);
@@ -357,5 +361,29 @@ public class CryptographicUtilities {
 		} catch (@SuppressWarnings("unused") final Exception cpbe) {
 			return false;
 		}
+	}
+
+	public static boolean verifySeasonKey(final PublicKey masterPublicKey, final byte[] seasonKey, final byte[] seasonSignature) {
+		Security.addProvider(new BouncyCastleProvider());
+		try {
+			Signature signature = Signature.getInstance(DEFAULT_SEASON_SIGNATURE_METHOD, "BC");
+
+			int maxSaltLength = getRSAMaxSaltLength((RSAPublicKey) masterPublicKey);
+			PSSParameterSpec pssSpec = new PSSParameterSpec("SHA-256",	"MGF1", new MGF1ParameterSpec("SHA-256"), maxSaltLength, 1);
+
+			signature.initVerify(masterPublicKey); //pb_key
+			signature.setParameter(pssSpec);
+
+			signature.update(seasonKey);
+
+			return signature.verify(seasonSignature);
+		} catch (Exception e) {
+			return false;
+		}
+	}
+	public static int getRSAMaxSaltLength(RSAPublicKey rsaPubKey) {
+		int keySizeInBytes = rsaPubKey.getModulus().bitLength() / 8;
+		int hashSizeInBytes = 32; // SHA-256
+		return keySizeInBytes - hashSizeInBytes - 2;
 	}
 }

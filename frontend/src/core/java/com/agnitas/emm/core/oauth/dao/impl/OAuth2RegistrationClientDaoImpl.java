@@ -12,6 +12,8 @@ package com.agnitas.emm.core.oauth.dao.impl;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -20,6 +22,7 @@ import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.oauth.dao.OAuth2RegistrationClientDao;
 import com.agnitas.emm.core.oauth.model.OAuth2RegistrationClientRecord;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.RowMapper;
@@ -123,6 +126,19 @@ public class OAuth2RegistrationClientDaoImpl extends BaseDaoImpl implements OAut
                 clientRecord.tokenSettings(),
                 clientRecord.id()
         );
+    }
+
+    @Override
+    public void deleteIssuedBefore(Instant threshold, String excludedClientId) {
+        String sql = "DELETE FROM oauth2_reg_client_tbl WHERE client_id_issued_at < ?";
+        List<Object> params = new ArrayList<>(List.of(toTimestamp(threshold)));
+
+        if (StringUtils.isNotEmpty(excludedClientId)) {
+            sql += " AND client_id != ?";
+            params.add(excludedClientId);
+        }
+
+        update(sql, params.toArray());
     }
 
     private Instant toInstant(Timestamp ts) {

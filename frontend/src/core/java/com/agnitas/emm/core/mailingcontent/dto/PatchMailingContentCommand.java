@@ -10,20 +10,57 @@
 
 package com.agnitas.emm.core.mailingcontent.dto;
 
+import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
+
 import java.util.List;
+import java.util.Objects;
 
 import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.emm.core.commons.dto.PatchField;
 import com.agnitas.emm.core.validator.DynTagValidationField;
+import com.agnitas.messages.Message;
 
 public record PatchMailingContentCommand(
         PatchField<Boolean> disableLinkExtension,
         PatchField<List<DynamicTagContent>> content
 ) {
     public PatchMailingContentCommand {
+        content.ifPresent(blocks -> blocks.stream()
+                .filter(Objects::nonNull)
+                .filter(c -> c.getDynOrder() <= 0)
+                .forEach(c -> c.setDynOrder(1)));
         content.check(
-                blocks -> blocks == null || blocks.stream().allMatch(b -> b.getTargetID() >= 0 && b.getDynOrder() > 0),
-                DynTagValidationField.CONTENT
+                PatchMailingContentCommand::isValidOrders,
+                DynTagValidationField.CONTENT,
+                Message.exact("Duplicate order. Each target group must have a unique order.")
         );
+        content.check(
+                PatchMailingContentCommand::isTargetIdsPositive,
+                DynTagValidationField.CONTENT,
+                Message.exact("Invalid negative target ID.")
+        );
+        content.check(
+                PatchMailingContentCommand::isValidTargetIds,
+                DynTagValidationField.CONTENT,
+                Message.exact("Duplicate target ID. Each block must have a unique target ID. 0 - All recipients.")
+        );
+    }
+
+    private static boolean isTargetIdsPositive(List<DynamicTagContent> blocks) {
+        return emptyIfNull(blocks).stream().allMatch(b -> b.getTargetID() >= 0);
+    }
+
+    private static boolean isValidTargetIds(List<DynamicTagContent> blocks) {
+        return emptyIfNull(blocks).stream()
+                .map(DynamicTagContent::getTargetID)
+                .distinct()
+                .count() == blocks.size();
+    }
+
+    private static boolean isValidOrders(List<DynamicTagContent> blocks) {
+        return emptyIfNull(blocks).stream()
+                .map(DynamicTagContent::getDynOrder)
+                .distinct()
+                .count() == blocks.size();
     }
 }

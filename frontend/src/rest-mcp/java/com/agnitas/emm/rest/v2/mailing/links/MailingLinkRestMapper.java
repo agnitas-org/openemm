@@ -18,6 +18,7 @@ import com.agnitas.emm.core.trackablelinks.dto.PatchLinkCommand;
 import com.agnitas.emm.rest.v2.infrastructure.mapper.RestMapper;
 import com.agnitas.util.LinkUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -28,15 +29,16 @@ interface MailingLinkRestMapper extends RestMapper {
     @Mapping(target = "extensions", source = "properties")
     @Mapping(target = "retargeting", source = "deepTracking")
     @Mapping(target = "tracking", source = "usage")
-    @Mapping(target = "url", expression = "java(toFullUrl(link))")
+    @Mapping(target = "url", expression = "java(toFullUrl(link, companyToken, companyId))")
     @Mapping(target = "staticLink", source = "staticValue")
     @Mapping(target = "triggerId", source = "actionID")
     @Mapping(target = "description", source = "shortname")
     @Mapping(target = "administrative", source = "adminLink")
-    LinkResponse toResponse(TrackableLink link);
+    LinkResponse toResponse(TrackableLink link, @Context String companyToken, @Context int companyId);
 
-    default String toFullUrl(TrackableLink link) {
-        return LinkUtils.getPlainFullUrlWithExtensions(link.getFullUrl(), link.getProperties());
+    default String toFullUrl(TrackableLink link, String companyToken, int companyId) {
+        String url = LinkUtils.getPlainFullUrlWithExtensions(link.getFullUrl(), link.getProperties());
+        return LinkUtils.replaceCompanyParamValuesWithPlaceholders(url, companyToken, companyId);
     }
 
     default LinkTracking toLinkTracking(int code) {

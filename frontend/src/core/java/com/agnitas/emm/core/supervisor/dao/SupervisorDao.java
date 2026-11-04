@@ -103,4 +103,6 @@ public interface SupervisorDao {
 	boolean deleteSupervisorPermissionByCompany(int companyID);
 	
 	boolean existsSupervisor(String supervisorName);
+
+	boolean updateLastLoginDate(int supervisorId);
 }

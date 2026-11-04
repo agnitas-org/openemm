@@ -52,8 +52,6 @@
 		<property name="licenseDao" ref="licenseDao" />
 	</bean>
 
-	<bean id="WorkflowDataParser" class="com.agnitas.emm.core.workflow.service.WorkflowDataParser" />
-    
     <bean id="permissionService" class="com.agnitas.emm.core.permission.service.PermissionServiceImpl">
     	<property name="permissionDao" ref="permissionDao" />
     </bean>
@@ -65,6 +63,10 @@
     <bean id="licenseDao" class="com.agnitas.dao.impl.LicenseDaoImpl">
         <property name="dataSource" ref="dataSource" />
     </bean>
+
+	<bean id="seasonKeyDao" class="com.agnitas.dao.impl.SeasonKeyDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
     
     <bean id="configTableDao" class="com.agnitas.dao.impl.ConfigTableDaoImpl">
    		<constructor-arg ref="dataSource" />

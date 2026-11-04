@@ -103,7 +103,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.context.request.RequestContextHolder;
 
 public class MailingBirtStatController implements XssCheckAware {
 	
@@ -559,29 +558,6 @@ public class MailingBirtStatController implements XssCheckAware {
         model.addAttribute("targetlist", targetService.getTargetLights(admin));
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         model.addAttribute("yearlist", AgnUtils.getYearList(getStartYear(mailingStatisticDto.getMailingStartDate())));
-        model.addAttribute("birtUrl", StringUtils.defaultString(getBirtUrl(mailingStatisticDto, admin)));
-        model.addAttribute("downloadBirtUrl", StringUtils.defaultString(getBirtDownloadUrl(mailingStatisticDto, admin)));
-    }
-
-    // TODO: GWUA-7000: Remove after migration
-    private String getBirtUrl(MailingStatisticDto mailingStatisticDto, Admin admin) {
-        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-        if (mailingStatisticDto.getType() == null || mailingStatisticDto.getType() == StatisticType.BENCHMARK) {
-            return null;
-        }
-
-        return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, mailingStatisticDto);
-    }
-
-    // TODO: GWUA-7000: Remove after migration
-    private String getBirtDownloadUrl(MailingStatisticDto mailingStatisticDto, Admin admin) {
-        String birtUrl = getBirtUrl(mailingStatisticDto, admin);
-        String birtDownloadUrl = "";
-        if (StringUtils.isNotBlank(birtUrl)) {
-            birtDownloadUrl = birtStatisticsService.changeFormat(birtUrl, "csv");
-        }
-
-        return birtDownloadUrl;
     }
 
     private StatisticType getReportType(StatisticType statisticType, AdminPreferences adminPreferences) {

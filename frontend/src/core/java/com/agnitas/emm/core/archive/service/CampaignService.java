@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.archive.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,6 +32,8 @@ public interface CampaignService {
     Campaign getCampaign(int id, int companyID);
 
     Campaign getOrNull(int id, int companyID);
+
+    Map<Integer, String> getArchiveNames(Admin admin);
 
     boolean exists(int id, int companyId);
 

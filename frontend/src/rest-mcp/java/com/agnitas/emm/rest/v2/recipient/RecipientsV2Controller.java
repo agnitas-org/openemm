@@ -29,6 +29,7 @@ import com.agnitas.emm.rest.v2.recipient.dto.BulkUpsertResponse;
 import com.agnitas.emm.rest.v2.recipient.dto.Groups;
 import com.agnitas.emm.rest.v2.recipient.dto.RecipientSubscribeRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -52,7 +53,7 @@ public class RecipientsV2Controller {
 
     private final RecipientRestService recipientRestService;
 
-    public RecipientsV2Controller(RecipientRestService recipientRestService) {
+    RecipientsV2Controller(RecipientRestService recipientRestService) {
         this.recipientRestService = recipientRestService;
     }
 
@@ -74,10 +75,22 @@ public class RecipientsV2Controller {
         return recipientRestService.list(pageable, fieldFilters, admin);
     }
 
+    @GetMapping("/ids")
+    @PermissionAllowed("recipient.show")
+    public List<Integer> listIds(Admin admin, @RequestParam Map<String, String> filters) {
+        return recipientRestService.listIds(filters, admin);
+    }
+
     @GetMapping("/{id:\\d+}")
     @PermissionAllowed("recipient.show")
     public Map<String, Object> getById(@PathVariable @Positive int id, Admin admin) {
-        return recipientRestService.getById(id, admin);
+        return recipientRestService.find(id, admin);
+    }
+
+    @GetMapping("/by-email/{email}")
+    @PermissionAllowed("recipient.show")
+    public Map<String, Object> getByEmail(@PathVariable @Email String email, Admin admin) {
+        return recipientRestService.find(email, admin);
     }
 
     @PostMapping
@@ -115,6 +128,18 @@ public class RecipientsV2Controller {
         return recipientRestService.updatePartially(id, fields, subscribeRequest, admin);
     }
 
+    @PatchMapping("/by-email/{email}")
+    @XssExclude(checkMethod = "isExcludedFromXssCheck")
+    @PermissionAllowed("recipient.change")
+    public Map<String, Object> updatePartially(
+            @PathVariable @Email String email,
+            @RequestBody Map<String, Object> fields,
+            @Valid RecipientSubscribeRequest subscribeRequest,
+            Admin admin
+    ) {
+        return recipientRestService.updatePartially(email, fields, subscribeRequest, admin);
+    }
+
     @PatchMapping("/bulk")
     @XssExclude(checkMethod = "isExcludedFromXssCheck")
     @PermissionAllowed("recipient.change;import.mode.add_update")
@@ -131,6 +156,13 @@ public class RecipientsV2Controller {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable int id, Admin admin) {
         recipientRestService.delete(id, admin);
+    }
+
+    @DeleteMapping("/by-email/{email}")
+    @PermissionAllowed("recipient.delete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable @Email String email, Admin admin) {
+        recipientRestService.delete(email, admin);
     }
 
     @DeleteMapping("/bulk")

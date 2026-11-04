@@ -21,7 +21,7 @@ import com.agnitas.emm.core.mailing.dto.PatchMailingSettingsCommand;
 import com.agnitas.emm.core.mailing.service.CopyMailingService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.settings.MailingSettingsService;
-import com.agnitas.emm.core.mailing.settings.MediatypePatch;
+import com.agnitas.emm.core.mailing.settings.MediaTypePatch;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
@@ -29,64 +29,81 @@ import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.CreateMailingRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.ListMailingsRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.ListTemplatesRequest;
-import com.agnitas.emm.mcp.v1.mailing.dto.MailingFullResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.MailingLightResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.MailingResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.PatchMailingRequest;
 import com.agnitas.emm.mcp.v1.mailing.mapper.MailingMcpMapper;
-import com.agnitas.service.MailingExporter;
+import com.agnitas.emm.mcp.v1.mailing.attachments.service.MailingAttachmentMcpService;
+import com.agnitas.emm.mcp.v1.mailing.content.service.MailingContentMcpService;
+import com.agnitas.emm.mcp.v1.mailing.dto.MailingFullResponse;
+import com.agnitas.emm.mcp.v1.mailing.images.service.MailingImageMcpService;
+import com.agnitas.emm.mcp.v1.mailing.links.service.MailingLinkMcpService;
+import com.agnitas.emm.mcp.v1.target.service.TargetGroupMcpService;
 import com.agnitas.service.ServiceResult;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class MailingMcpServiceImpl implements MailingMcpService {
-
-    private static final JsonMapper JSON_MAPPER = JsonMapper.builder()
-            .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
-            .build();
 
     protected final MailingMcpMapper mailingMcpMapper;
     protected final MailingService mailingService;
     private final CopyMailingService copyMailingService;
     private final ThumbnailService thumbnailService;
-    private final MailingExporter mailingExporter;
     private final MailingSettingsService mailingSettingsService;
+    private final TargetGroupMcpService targetService;
+    private final MailingImageMcpService mailingImageService;
+    private final MailingAttachmentMcpService attachmentService;
+    private final MailingContentMcpService contentService;
+    private final MailingLinkMcpService linkService;
 
     public MailingMcpServiceImpl(
             MailingService mailingService,
             MailingMcpMapper mailingMcpMapper,
             CopyMailingService copyMailingService,
             ThumbnailService thumbnailService,
-            MailingExporter mailingExporter,
-            MailingSettingsService mailingSettingsService
+            MailingSettingsService mailingSettingsService,
+            TargetGroupMcpService targetService,
+            MailingImageMcpService mailingImageService,
+            MailingAttachmentMcpService attachmentService,
+            MailingContentMcpService contentService,
+            MailingLinkMcpService linkService
     ) {
         this.mailingService = mailingService;
         this.mailingMcpMapper = mailingMcpMapper;
         this.copyMailingService = copyMailingService;
         this.thumbnailService = thumbnailService;
-        this.mailingExporter = mailingExporter;
         this.mailingSettingsService = mailingSettingsService;
+        this.targetService = targetService;
+        this.mailingImageService = mailingImageService;
+        this.attachmentService = attachmentService;
+        this.contentService = contentService;
+        this.linkService = linkService;
     }
 
     @Override
-    public PageResponse<MailingLightResponse> list(ListMailingsRequest query, McpPageable pageable, Admin admin) {
-        return list(mailingMcpMapper.toListProperties(query, pageable), admin);
+    public PageResponse<MailingLightResponse> list(ListMailingsRequest request, McpPageable pageable, Admin admin) {
+        return list(request, pageable, admin, false);
     }
 
     @Override
-    public PageResponse<MailingLightResponse> listTemplates(ListTemplatesRequest query, McpPageable pageable, Admin admin) {
-        MailingsListProperties listProps = mailingMcpMapper.toListProperties(mailingMcpMapper.toListRequest(query), pageable);
-        listProps.setTemplate(true);
-        return list(listProps, admin);
+    public PageResponse<MailingLightResponse> listTemplates(
+            ListTemplatesRequest request,
+            McpPageable pageable,
+            Admin admin
+    ) {
+        return list(mailingMcpMapper.toListRequest(request), pageable, admin, true);
     }
 
-    private PageResponse<MailingLightResponse> list(MailingsListProperties listProps, Admin admin) {
+    private PageResponse<MailingLightResponse> list(
+            ListMailingsRequest request,
+            McpPageable pageable,
+            Admin admin,
+            boolean isTemplate
+    ) {
+        MailingsListProperties listProps = mailingMcpMapper.toListProperties(request, pageable);
+        listProps.setTemplate(isTemplate);
         PaginatedList<Map<String, Object>> overview = mailingService.getOverview(admin, listProps);
-        return mailingMcpMapper.toPageResponse(overview);
+        return mailingMcpMapper.toPageResponse(overview, m -> mailingMcpMapper.toMailingLightResponse(m, isTemplate));
     }
 
     @Override
@@ -102,36 +119,31 @@ public class MailingMcpServiceImpl implements MailingMcpService {
     }
 
     @Override
-    public MailingFullResponse getFull(int id, int companyId) {
-        try {
-            byte[] bytes = mailingExporter.exportMailingToByteArray(id, companyId);
-            return JSON_MAPPER.readValue(bytes, MailingFullResponse.class);
-        } catch (Exception e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error occurred while trying to export mailing to JSON.",
-                    e
-            );
-        }
+    public MailingFullResponse getMailingFullById(int mailingId, Admin admin) {
+        Mailing mailing = mailingService.getMailingOnly(mailingId, admin.getCompanyID());
+        return getMailingFullResponse(mailing, admin);
     }
 
     @Override
-    public MailingFullResponse getFullTemplate(int id, int companyId) {
-        try {
-            byte[] bytes = mailingExporter.exportTemplateToByteArray(id, companyId);
-            return JSON_MAPPER.readValue(bytes, MailingFullResponse.class);
-        } catch (Exception e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error occurred while trying to export template to JSON.",
-                    e
-            );
-        }
+    public MailingFullResponse getTemplateFullById(int templateId, Admin admin) {
+        Mailing template = mailingService.getTemplate(templateId, admin.getCompanyID());
+        return getMailingFullResponse(template, admin);
+    }
+
+    private MailingFullResponse getMailingFullResponse(Mailing mailing, Admin admin) {
+        return mailingMcpMapper.toFullResponse(
+                mailingMcpMapper.toResponse(mailing),
+                targetService.getMailingTargets(mailing, admin),
+                mailingImageService.getMailingImages(mailing, admin),
+                attachmentService.getAttachments(mailing, admin),
+                contentService.getMailingContentBlocks(mailing),
+                linkService.getMailingLinks(mailing)
+        );
     }
 
     @Override
     public MailingResponse create(CreateMailingRequest request, Admin admin) {
-        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediaTypePatches(request));
         ServiceResult<Integer> result = mailingSettingsService.createMailing(command, admin);
         thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), result.getResult());
         return getById(result.getResult(), admin.getCompanyID());
@@ -139,7 +151,7 @@ public class MailingMcpServiceImpl implements MailingMcpService {
 
     @Override
     public MailingResponse createTemplate(CreateMailingRequest request, Admin admin) {
-        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediaTypePatches(request));
         ServiceResult<Integer> result = mailingSettingsService.createStandardTemplate(command, admin);
         thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), result.getResult());
         return getTemplate(result.getResult(), admin.getCompanyID());
@@ -167,14 +179,14 @@ public class MailingMcpServiceImpl implements MailingMcpService {
 
     @Override
     public MailingResponse patch(int id, PatchMailingRequest request, Admin admin) {
-        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediaTypePatches(request));
         mailingSettingsService.updateSettings(id, command, admin);
         return getById(id, admin.getCompanyID());
     }
 
     @Override
     public MailingResponse patchTemplate(int id, PatchMailingRequest request, Admin admin) {
-        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMcpMapper.toPatchCommand(request, buildMediaTypePatches(request));
         mailingSettingsService.updateSettings(id, command, admin);
         return getTemplate(id, admin.getCompanyID());
     }
@@ -200,16 +212,16 @@ public class MailingMcpServiceImpl implements MailingMcpService {
     }
 
     // overridden in extended class
-    protected Map<MediaTypes, MediatypePatch> buildMediatypePatches(PatchMailingRequest request) {
-        Map<MediaTypes, MediatypePatch> patches = new EnumMap<>(MediaTypes.class);
-        if (request.hasAnyEmailMediatypeField()) {
+    protected Map<MediaTypes, MediaTypePatch> buildMediaTypePatches(PatchMailingRequest request) {
+        Map<MediaTypes, MediaTypePatch> patches = new EnumMap<>(MediaTypes.class);
+        if (request.hasAnyEmailMediaTypeField()) {
             patches.put(MediaTypes.EMAIL, mailingMcpMapper.toEmailPatch(request));
         }
         return patches;
     }
 
-    protected Map<MediaTypes, MediatypePatch> buildMediatypePatches(CreateMailingRequest request) {
-        Map<MediaTypes, MediatypePatch> patches = new EnumMap<>(MediaTypes.class);
+    protected Map<MediaTypes, MediaTypePatch> buildMediaTypePatches(CreateMailingRequest request) {
+        Map<MediaTypes, MediaTypePatch> patches = new EnumMap<>(MediaTypes.class);
         patches.put(MediaTypes.EMAIL, mailingMcpMapper.toEmailPatch(request));
         return patches;
     }

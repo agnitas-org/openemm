@@ -28,6 +28,6 @@ public record BulkDeleteBindingsRequest(
         Set<@Positive Integer> mailinglistIds,
 
         @McpToolParam(description = "Restrict deletion to these media types; if omitted, bindings of all media types are deleted", required = false)
-        Set<MediaTypes> mediatypes
+        Set<MediaTypes> mediaTypes
 ) {
 }

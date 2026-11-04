@@ -16,6 +16,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class GuideResources {
 
+    private static final String MANUAL_REFERENCE = """
+            # EMM user manual
+
+            The full EMM user manual is available online at https://docs.agnitas.de/manual
+
+            It explains EMM concepts and features in detail (mailings, recipients, mailinglists, target groups, \
+            forms, triggers/actions, workflows, statistics, etc.). Consult it for background information not \
+            covered by the tool descriptions or the other `docs://` resources.
+            """;
+
     private static final String DOI_WORKFLOW_GUIDE = """
             # create and activate DOI (double opt-in) workflow
 
@@ -68,6 +78,17 @@ public class GuideResources {
     )
     public String doiWorkflowGuide() {
         return DOI_WORKFLOW_GUIDE;
+    }
+
+    @McpResource(
+            uri = "docs://manual",
+            name = "emm_manual",
+            description = "Link to the full EMM user manual (https://docs.agnitas.de/manual) for additional "
+                    + "information about EMM concepts and features.",
+            mimeType = "text/markdown"
+    )
+    public String manualReference() {
+        return MANUAL_REFERENCE;
     }
 
 }

@@ -36,8 +36,6 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.dto.StatisticMetric;
-import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.birtstatistics.service.MailingRawMetrics;
@@ -51,7 +49,6 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import com.agnitas.emm.core.workflow.dto.WorkflowStatisticsResponse;
 import com.agnitas.emm.core.workflow.dto.WorkflowStatisticsResponse.DeviceType;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
@@ -428,53 +425,6 @@ public class WorkflowStatisticsService {
 				.filter(WorkflowUtils::isMailingIcon)
 				.filter(icon -> mailingService.exists(WorkflowUtils.getMailingId(icon), admin.getCompanyID()))
 				.collect(Collectors.toMap(WorkflowUtils::getMailingId, WorkflowIcon::getIconTitle, (a, b) -> b));
-	}
-
-    // TODO: GWUA-7000: Remove when removing 'workflow.rptdesign'
-	public String getWorkflowStatUrl(Workflow workflow, Admin admin, String sessionId, MailingStatisticForm form) {
-		int companyId = admin.getCompanyID();
-		form.setStatisticType(null);
-		if (!isTotalStatisticAvailable(workflow, companyId)) {
-			return getWorkflowStatUrl(workflow.getWorkflowId(), admin, form);
-		}
-
-		int finalMailingId = optimizationService.getFinalMailingId(companyId, workflow.getWorkflowId());
-		MailingStatisticDto statDto = getMailingStatisticDto(finalMailingId, admin);
-        statDto.setSelectedTargets(form.getSelectedTargets());
-		statDto.setType(StatisticType.SUMMARY_AUTO_OPT);
-		statDto.setOptimizationId(optimizationService.getOptimizationIdByFinalMailing(finalMailingId, companyId));
-		return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, statDto);
-	}
-
-	private MailingStatisticDto getMailingStatisticDto(int mailingId, Admin admin) {
-		MailingStatisticDto statDto = new MailingStatisticDto();
-		Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
-		statDto.setMailingId(mailingId);
-		statDto.setDateMode(DateMode.NONE);
-		statDto.setType(StatisticType.SUMMARY);
-		statDto.setShortname(mailing.getShortname());
-		statDto.setDescription(mailing.getDescription());
-		return statDto;
-	}
-
-	private String getWorkflowStatUrl(int workflowId, Admin admin, MailingStatisticForm form) {
-		LocalDateTime minSendDate = Optional.ofNullable(findMinSendDate(workflowId, admin))
-				.map(d -> DateUtilities.toLocalDateTime(d, admin.getZoneId()))
-				.orElse(null);
-
-		DateTimeRange dateRestrictions = getDateTimeRestrictions(form, minSendDate, admin.getDateFormatter());
-		form.getStartDate().set(dateRestrictions.getFrom(), admin.getDateFormatter());
-		form.getEndDate().set(dateRestrictions.getTo(), admin.getDateFormatter());
-
-		WorkflowStatisticDto statistic = new WorkflowStatisticDto();
-
-		statistic.setCompanyId(admin.getCompanyID());
-		statistic.setFormat("html");
-		statistic.setWorkflowId(workflowId);
-		statistic.setDateMode(form.getDateMode());
-		statistic.setDateRange(dateRestrictions);
-
-		return birtStatisticsService.getWorkflowStatisticUrl(admin, statistic);
 	}
 
 	private DateTimeRange getDateTimeRestrictions(MailingStatisticForm form, LocalDateTime mailingStart, DateTimeFormatter dateFormatter) {

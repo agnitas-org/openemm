@@ -14,7 +14,7 @@ import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-record ImageResponse(
+public record ImageResponse(
         int id,
         String fileName,
 

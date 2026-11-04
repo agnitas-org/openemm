@@ -10,7 +10,18 @@ spring:
         name: streamable-mcp-server
         version: 1.0.0
         type: SYNC
-        instructions: "Provides tools to manage EMM data: mailings, recipients, mailinglists, target groups, etc."
+        instructions: >-
+          Provides tools to manage EMM data: mailings, recipients, mailinglists, target groups, etc.
+          Mailing templates and content use agn tags instead of hard-coded values: [agnDYN name="..." /] marks a
+          content block (placeholder filled via update_mailing_content), [agnIMAGE name="<fileName>"] (add
+          source="mediapool" for mediapool images) generates an image URL - never use bare filenames or hard-coded
+          image URLs - and [agnDB column="<profile field>"] inserts a recipient's profile field value.
+          Additional documentation is available as resources (read them with resources/read):
+          docs://manual (link to the full EMM user manual at https://docs.agnitas.de/manual),
+          docs://mailings/agn-tags (agn tags in mailing templates and content: agnDYN, agnIMAGE, agnDB),
+          docs://workflows/doi-setup (how to set up a double opt-in workflow),
+          docs://target-groups/eql-syntax (EQL syntax used by target groups),
+          docs://triggers/operation-types (trigger operation types).
         resource-change-notification: true
         tool-change-notification: true
         prompt-change-notification: true

@@ -15,7 +15,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.oauth.dao.OAuth2AuthorizationRequestDao;
+import com.agnitas.emm.core.oauth.dao.OAuth2RegistrationClientDao;
 import com.agnitas.emm.core.oauth.model.OAuthRequestRecord;
 import com.agnitas.emm.core.oauth.service.OAuth2AuthorizationRequestService;
 import org.springframework.stereotype.Service;
@@ -25,11 +28,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class OAuth2AuthorizationRequestServiceImpl implements OAuth2AuthorizationRequestService {
 
     private static final int TTL_MINUTES = 5;
+    private static final int CLIENT_REGISTRATION_RETENTION_DAYS = 90;
 
     private final OAuth2AuthorizationRequestDao dao;
+    private final OAuth2RegistrationClientDao registrationClientDao;
+    private final ConfigService configService;
 
-    public OAuth2AuthorizationRequestServiceImpl(OAuth2AuthorizationRequestDao dao) {
+    public OAuth2AuthorizationRequestServiceImpl(OAuth2AuthorizationRequestDao dao, OAuth2RegistrationClientDao registrationClientDao, ConfigService configService) {
+        this.configService = configService;
         this.dao = dao;
+        this.registrationClientDao = registrationClientDao;
     }
 
     @Override
@@ -54,6 +62,15 @@ public class OAuth2AuthorizationRequestServiceImpl implements OAuth2Authorizatio
     @Override
     public void deleteExpired() {
         dao.deleteExpired();
+    }
+
+    @Override
+    public void deleteOldClientRegistrations() {
+        // The client configured for an external OAuth server is re-saved only on startup, so never age it out
+        registrationClientDao.deleteIssuedBefore(
+                Instant.now().minus(CLIENT_REGISTRATION_RETENTION_DAYS, ChronoUnit.DAYS),
+                configService.getValue(ConfigValue.OAuth2ServerClientId)
+        );
     }
 
 }

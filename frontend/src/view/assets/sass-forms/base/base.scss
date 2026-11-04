@@ -23,9 +23,16 @@ img {
   outline: none;
   text-decoration: none;
   -ms-interpolation-mode: bicubic;
-  width: 100%;
   max-width: 100%;
-  height: auto;
+
+  // Keep explicit width/height attributes (e.g. set in the form builder) instead of overriding them
+  &:not([width]):not([height]) {
+    width: 100%;
+  }
+
+  &:not([height]) {
+    height: auto;
+  }
 }
 
 p {

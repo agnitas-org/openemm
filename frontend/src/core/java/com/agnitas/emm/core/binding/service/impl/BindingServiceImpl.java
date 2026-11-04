@@ -244,7 +244,7 @@ public class BindingServiceImpl implements BindingService {
 				query.recipientId(),
 				companyId,
 				query.mailinglistId(),
-				query.mediatype().getMediaCode()
+				query.mediaType().getMediaCode()
 		));
 	}
 
@@ -275,7 +275,7 @@ public class BindingServiceImpl implements BindingService {
 				command.recipientId(),
 				companyId,
 				command.mailinglistId(),
-				command.mediatype().getMediaCode()
+				command.mediaType().getMediaCode()
 		);
 	}
 
@@ -295,7 +295,7 @@ public class BindingServiceImpl implements BindingService {
 	private void validateForCreate(CreateBindingCommand query, int companyId) {
 		validateRecipient(query.recipientId(), companyId);
 		validateMailinglist(query.mailinglistId(), companyId);
-		if (exist(query.recipientId(), companyId, query.mailinglistId(), query.mediatype())) {
+		if (exist(query.recipientId(), companyId, query.mailinglistId(), query.mediaType())) {
 			throw new EntityAlreadyExistsException("Binding");
 		}
 		if (query.triggerId() > 0 && !emmActionService.actionExists(query.triggerId(), companyId)) {
@@ -344,7 +344,7 @@ public class BindingServiceImpl implements BindingService {
 		List<CreateBindingCommand> updates = new ArrayList<>();
 		List<UpsertBindingResult> results = new ArrayList<>();
 
-		for (MediaTypes mediaType : command.mediatypes()) {
+		for (MediaTypes mediaType : command.mediaTypes()) {
 			for (Integer mlId : command.mailinglistIds()) {
 				for (Integer recipientId : command.recipientIds()) {
 					UserStatus currentStatus = existingState.get(new BindingIdentifier(recipientId, mlId, mediaType));
@@ -354,7 +354,7 @@ public class BindingServiceImpl implements BindingService {
 								.userType(UserType.World)
 								.userStatus(command.status())
 								.mailinglistId(mlId)
-								.mediatype(mediaType)
+								.mediaType(mediaType)
 								.userRemark(command.remark())
 								.build());
 						results.add(new UpsertBindingResult(mediaType, mlId, recipientId, UpsertResult.INSERTED));
@@ -363,7 +363,7 @@ public class BindingServiceImpl implements BindingService {
 								.recipientId(recipientId)
 								.userStatus(command.status())
 								.mailinglistId(mlId)
-								.mediatype(mediaType)
+								.mediaType(mediaType)
 								.userRemark(command.remark())
 								.build());
 						results.add(new UpsertBindingResult(mediaType, mlId, recipientId, UpsertResult.UPDATED));

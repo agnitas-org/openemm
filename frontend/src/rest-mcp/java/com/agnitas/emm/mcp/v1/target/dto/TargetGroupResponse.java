@@ -12,6 +12,8 @@ package com.agnitas.emm.mcp.v1.target.dto;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public record TargetGroupResponse(
         int id,
         String name,
@@ -20,5 +22,11 @@ public record TargetGroupResponse(
         String eql,
         boolean valid,
         Instant creationDate,
-        Instant changeDate
+        Instant changeDate,
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        boolean isAccessLimiting,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Integer recipientCount
 ) {}

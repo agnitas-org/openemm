@@ -5317,49 +5317,49 @@ VALUES (1, 'EMM Target Group: Openers and Clickers',
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Lead',
-        '(((to_char(cust.creation_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) AND ((cust.lastopen_date IS NULL) AND (cust.lastclick_date IS NULL))) OR (((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1)) OR (to_char(cust.lastsend_date, ''YYYYMMDD'') = to_char((SYSDATE) - (90), ''YYYYMMDD''))))',
+        '(((to_char(cust.creation_date, ''YYYYMMDD'') > to_char((current_timestamp) - (91) * INTERVAL ''1 day'', ''YYYYMMDD'')) AND ((cust.lastopen_date IS NULL) AND (cust.lastclick_date IS NULL))) OR (((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1)) OR (to_char(cust.lastsend_date, ''YYYYMMDD'') = to_char((current_timestamp) - (90) * INTERVAL ''1 day'', ''YYYYMMDD''))))',
         '(`creation_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' AND `lastopen_date` IS EMPTY AND `lastclick_date` IS EMPTY) OR (`sys_tracking_veto` IS EMPTY OR `sys_tracking_veto` <> 1) OR `lastsend_date` = TODAY-90 DATEFORMAT ''YYYYMMDD''',
         NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Newcomer',
-        '(to_char(cust.creation_date, ''YYYYMMDD'') > to_char((SYSDATE) - (31), ''YYYYMMDD''))',
+        '(to_char(cust.creation_date, ''YYYYMMDD'') > to_char((current_timestamp) - (31) * INTERVAL ''1 day'', ''YYYYMMDD''))',
         '`creation_date` > TODAY-31 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0,
         0, 0);
 
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Opportunity',
-        '((to_char(cust.lastopen_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) OR ((to_char(cust.lastclick_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) OR (cust.sys_tracking_veto = 1)))',
+        '((to_char(cust.lastopen_date, ''YYYYMMDD'') > to_char((current_timestamp) - (91) * INTERVAL ''1 day'', ''YYYYMMDD'')) OR ((to_char(cust.lastclick_date, ''YYYYMMDD'') > to_char((current_timestamp) - (91) * INTERVAL ''1 day'', ''YYYYMMDD'')) OR (cust.sys_tracking_veto = 1)))',
         '`lastopen_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' OR `lastclick_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' OR `sys_tracking_veto` = 1',
         NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Sleeper',
-        '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) AND (((cust.lastopen_date IS NULL) OR (to_char(cust.lastopen_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD''))) AND (((cust.lastclick_date IS NULL) OR (to_char(cust.lastclick_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD''))) AND ((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1))))))',
+        '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((current_timestamp) - (90) * INTERVAL ''1 day'', ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') > to_char((current_timestamp) - (91) * INTERVAL ''1 day'', ''YYYYMMDD'')) AND (((cust.lastopen_date IS NULL) OR (to_char(cust.lastopen_date, ''YYYYMMDD'') < to_char((current_timestamp) - (90) * INTERVAL ''1 day'', ''YYYYMMDD''))) AND (((cust.lastclick_date IS NULL) OR (to_char(cust.lastclick_date, ''YYYYMMDD'') < to_char((current_timestamp) - (90) * INTERVAL ''1 day'', ''YYYYMMDD''))) AND ((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1))))))',
         '`creation_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'' AND `lastsend_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' AND (`lastopen_date` IS EMPTY OR `lastopen_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'') AND (`lastclick_date` IS EMPTY OR `lastclick_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'') AND (`sys_tracking_veto` IS EMPTY OR `sys_tracking_veto` <> 1)',
         NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Unattended 3 Months',
-        '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((SYSDATE) - (30), ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD'')) OR (cust.lastsend_date IS NULL)))',
+        '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((current_timestamp) - (30) * INTERVAL ''1 day'', ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') < to_char((current_timestamp) - (90) * INTERVAL ''1 day'', ''YYYYMMDD'')) OR (cust.lastsend_date IS NULL)))',
         '`creation_date` < TODAY-30 DATEFORMAT ''YYYYMMDD'' AND (`lastsend_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'' OR `lastsend_date` IS EMPTY)',
         NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Unattended 6 Months',
-        '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((SYSDATE) - (30), ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') < to_char((SYSDATE) - (180), ''YYYYMMDD'')) OR (cust.lastsend_date IS NULL)))',
+        '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((current_timestamp) - (30) * INTERVAL ''1 day'', ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') < to_char((current_timestamp) - (180) * INTERVAL ''1 day'', ''YYYYMMDD'')) OR (cust.lastsend_date IS NULL)))',
         '`creation_date` < TODAY-30 DATEFORMAT ''YYYYMMDD'' AND (`lastsend_date` < TODAY-180 DATEFORMAT ''YYYYMMDD'' OR `lastsend_date` IS EMPTY)',
         NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted,
                             change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 VALUES (1, 'EMM Target Group: Untouched',
-        '(to_char(cust.timestamp, ''YYYYMMDD'') < to_char((SYSDATE) - (180), ''YYYYMMDD''))',
+        '(to_char(cust.timestamp, ''YYYYMMDD'') < to_char((current_timestamp) - (180) * INTERVAL ''1 day'', ''YYYYMMDD''))',
         '`timestamp` < TODAY-180 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0,
         0);
 

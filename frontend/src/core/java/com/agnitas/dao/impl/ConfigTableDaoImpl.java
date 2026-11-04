@@ -119,6 +119,19 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	}
 
 	@Override
+	public String getValueEntry(String classString, String nameString, String hostName) {
+		String sql;
+		if (isOracleDB()) {
+			sql = "SELECT value FROM config_tbl WHERE hostname = ? OR hostname IS NULL OR TRIM(hostname) IS NULL";
+		} else {
+			sql = "SELECT value FROM config_tbl WHERE hostname = ? OR hostname IS NULL OR TRIM(hostname) = ''";
+		}
+        Map<String, Object> result = selectSingleRow(sql, classString, nameString, hostName);
+
+        return (String) result.get("value");
+    }
+
+	@Override
 	public void deleteEntry(String classString, String name) {
 		update("DELETE FROM config_tbl WHERE class = ? AND name = ?", classString, name);
 	}
@@ -200,7 +213,7 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			try {
 				runtimeVersion = new Version(FileUtils.readFileToString(new File(runtimeVersionFilePath), StandardCharsets.UTF_8).trim());
 			} catch (Exception e) {
-				logger.error("Cannot store relealog data for runtime");
+				logger.error("Cannot store releaselog data for runtime");
 			}
 			if (runtimeVersion != null) {
 				String lastStartedRuntimeVersion;

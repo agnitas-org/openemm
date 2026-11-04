@@ -28,7 +28,7 @@
         <dependency org="org.springframework" name="spring-webmvc" rev="7.0.8" conf="compile->default;sources->sources(*)"/>
 
         <!-- This one is separate from Spring Framework -->
-        <dependency org="org.springframework.ws" name="spring-xml" rev="5.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ws" name="spring-xml" rev="5.0.2" conf="compile->default;sources->sources(*)"/>
 
         <!-- commons -->
         <dependency org="org.apache.commons" name="commons-lang3" rev="3.18.0" conf="compile->default;sources->sources(*)" />
@@ -83,7 +83,7 @@
 
         <dependency org="org.mapstruct" name="mapstruct" rev="1.6.3" conf="compile->default;sources->sources(*)" />
 
-        <dependency org="org.apache.httpcomponents.client5" name="httpclient5" rev="5.6.2" conf="compile->default;sources->sources(*)" />
+        <dependency org="org.apache.httpcomponents.client5" name="httpclient5" rev="5.6.5" conf="compile->default;sources->sources(*)" />
 
         <dependency org="org.jsoup" name="jsoup" rev="1.14.3" conf="compile->default;sources->sources(*)" />
 

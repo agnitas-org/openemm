@@ -24,7 +24,7 @@ public record ListBindingsRequest(
         Set<@Positive Integer> recipientIds,
         Set<@NotBlank @Email String> emails,
         Set<@Positive Integer> mailinglistIds,
-        Set<@NotNull MediaTypes> mediatypes,
+        Set<@NotNull MediaTypes> mediaTypes,
         Set<@NotNull UserStatus> userStatuses,
 
         @Pattern(

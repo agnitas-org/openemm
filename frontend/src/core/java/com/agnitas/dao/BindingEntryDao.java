@@ -31,7 +31,7 @@ public interface BindingEntryDao {
 			Set<Integer> recipientIds,
 			Set<String> emails,
 			Set<Integer> mailinglistIds,
-			Set<MediaTypes> mediatypes,
+			Set<MediaTypes> mediaTypes,
 			Set<UserStatus> userStatuses,
 			String date,
 			int page,
@@ -43,7 +43,7 @@ public interface BindingEntryDao {
 			int companyId,
 			List<Integer> recipientIds,
 			Set<Integer> mailinglistIds,
-			Set<MediaTypes> mediatypes
+			Set<MediaTypes> mediaTypes
 	) {
 	}
 

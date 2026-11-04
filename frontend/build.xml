@@ -14,7 +14,7 @@
 		</classpath>
 	</taskdef>
 
-	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MariaDB, createMandatoryDbChanges_MariaDB, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
+	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MariaDB, createMandatoryDbChanges_MariaDB, copyDbChanges_PostgreSQL, createMandatoryDbChanges_PostgreSQL, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
 		<echo message="Application built." />
 	</target>
 
@@ -337,12 +337,10 @@
 		<copy todir="${deploydir}${appname}/WEB-INF/sql">
 			<fileset dir="${basecss}/sql">
 				<include name="**/mariadb/**" />
-				<include name="**/postgres/**" />
 				<include name="**/emm_messages*.sql" />
 				<include name="**/emm_deleted_messages*.sql" />
 				<include name="**/userrights*.sql" />
 				<include name="**/emm-mariadb-execute-updates.sh" />
-				<include name="**/emm-postgres-execute-updates.sh" />
 				<exclude name="**/old/**" />
 				<exclude name="**/*test*" />
 				<exclude name="**/*fulldb*" />
@@ -351,9 +349,9 @@
 			</fileset>
 		</copy>
 
-		<!-- Copy data for first initial setup installation-->
-		<copy todir="${deploydir}${appname}/WEB-INF/sql">
-			<fileset dir="${basecss}/sql">
+		<echo message="Copy fulldb sql data for mariadb" />
+		<copy todir="${deploydir}${appname}/WEB-INF/sql/mariadb">
+			<fileset dir="${basecss}/sql/mariadb">
 				<include name="**/*create-database*" />
 				<include name="**/*create-tablespaces*" />
 				<include name="**/*create-user*" />
@@ -377,6 +375,47 @@
 		<propertyregex property="mandatoryDbChangesList_mariadb" input="${mandatoryDbChangesFileList_mariadb}" regexp=".*-((\d+\.\d+\.\d+\.\d+)|(\d+\.\d+\.\d+)).*" replace="\1" global="true" />
 		<echo file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mariadb.csv" message="${mandatoryDbChangesList_mariadb}" />
 		<echo message="Created mandatoryDbChanges_mariadb.csv" />
+	</target>
+
+	<target name="copyDbChanges_PostgreSQL" depends="checkForPropertiesFile">
+		<copy todir="${deploydir}${appname}/WEB-INF/sql">
+			<fileset dir="${basecss}/sql">
+				<include name="**/postgres/**" />
+				<include name="**/emm_messages*.sql" />
+				<include name="**/emm_deleted_messages*.sql" />
+				<include name="**/userrights*.sql" />
+				<include name="**/emm-postgres-execute-updates.sh" />
+				<exclude name="**/old/**" />
+				<exclude name="**/*test*" />
+				<exclude name="**/*fulldb*" />
+				<exclude name="**/*create*" />
+				<exclude name="**/*drop*" />
+			</fileset>
+		</copy>
+
+		<echo message="Copy fulldb sql data for postgres" />
+		<copy todir="${deploydir}${appname}/WEB-INF/sql/postgres">
+			<fileset dir="${basecss}/sql/postgres">
+				<include name="**/*create-database*" />
+				<include name="**/*create-tablespaces*" />
+				<include name="**/*create-user*" />
+				<include name="**/*fulldb*" />
+				<exclude name="**/old/**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="createMandatoryDbChanges_PostgreSQL" depends="copyDbChanges_PostgreSQL">
+		<delete file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_postgres.csv" />
+		<fileset id="mandatoryDbChanges_postgres" dir="${deploydir}${appname}/WEB-INF/sql/postgres">
+			<include name="emm-postgres-update-*.sql" />
+		</fileset>
+		<pathconvert property="mandatoryDbChangesFileList_postgres" refid="mandatoryDbChanges_postgres" pathsep="${line.separator}">
+			<map from="${deploydir}${appname}/WEB-INF/sql/postgres/" to="" />
+		</pathconvert>
+		<propertyregex property="mandatoryDbChangesList_postgres" input="${mandatoryDbChangesFileList_postgres}" regexp=".*-((\d+\.\d+\.\d+\.\d+)|(\d+\.\d+\.\d+)).*" replace="\1" global="true" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_postgres.csv" message="${mandatoryDbChangesList_postgres}" />
+		<echo message="Created mandatoryDbChanges_postgres.csv" />
 	</target>
 
 	<target name="compile-core" description="Compile core Java sources">

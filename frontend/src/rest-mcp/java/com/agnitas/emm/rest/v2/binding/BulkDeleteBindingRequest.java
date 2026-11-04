@@ -27,6 +27,6 @@ public record BulkDeleteBindingRequest(
         @Size(min = 1, max = 1000)
         Set<@Positive Integer> mailinglistIds,
 
-        Set<MediaTypes> mediatypes
+        Set<MediaTypes> mediaTypes
 ) {
 }

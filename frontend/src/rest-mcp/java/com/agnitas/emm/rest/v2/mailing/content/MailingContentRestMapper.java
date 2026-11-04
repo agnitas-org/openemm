@@ -31,7 +31,7 @@ interface MailingContentRestMapper extends RestMapper {
 
     @Mapping(source = "dynName", target = "name")
     @Mapping(source = "dynContent", target = "content")
-    MailingContentResponse toMailingContentResponse(DynamicTag dynTag);
+    MailingContentResponse toResponse(DynamicTag dynTag);
 
     @Mapping(source = "targetID", target = "targetId")
     @Mapping(source = "dynOrder", target = "order")
@@ -46,7 +46,7 @@ interface MailingContentRestMapper extends RestMapper {
                 .toList();
     }
 
-    List<MailingContentResponse> toMailingContentResponseList(List<DynamicTag> dynamicTags);
+    List<MailingContentResponse> toResponse(List<DynamicTag> dynamicTags);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     DynamicTagImpl toDynTag(CreateMailingContentRequest request);

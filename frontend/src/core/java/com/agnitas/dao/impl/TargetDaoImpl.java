@@ -54,6 +54,7 @@ import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.SqlPreparedStatementManager;
+import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -1086,6 +1087,64 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 	public boolean exist(int targetId, int companyId) {
 		return selectInt("SELECT COUNT(*) FROM dyn_target_tbl WHERE target_id = ? AND company_id = ? AND deleted = 0",
 			targetId, companyId) > 0;
+	}
+
+	@Override
+	public Map<Integer, Integer> recipientCountForTargets(List<Integer> targetIds, int adminId, int companyId) {
+		if (targetIds.isEmpty()) {
+			return Map.of();
+		}
+		Map<Integer, String> sqlById = getTargetSqlMap(targetIds, companyId);
+		StringBuilder cases = new StringBuilder();
+		for (int i = 0; i < targetIds.size(); i++) {
+			String condition = sqlById.get(targetIds.get(i));
+			if (i > 0) {
+				cases.append(", ");
+			}
+			cases.append("COUNT(CASE WHEN (").append(condition).append(") THEN 1 END) AS c").append(i);
+		}
+		Map<Integer, Integer> result = new HashMap<>();
+		select(
+				"""
+				 SELECT %s
+				 FROM customer_%d_tbl cust
+				 WHERE NOT EXISTS (
+				   SELECT 1
+				   FROM customer_%d_binding_tbl bind
+				   JOIN disabled_mailinglist_tbl dis ON dis.mailinglist_id = bind.mailinglist_id
+				     AND dis.company_id = ?
+				     AND dis.admin_id = ?
+				   WHERE bind.customer_id = cust.customer_id
+				 )
+				""".formatted(cases, companyId, companyId),
+				(rs, rowNum) -> {
+					for (int i = 0; i < targetIds.size(); i++) {
+						result.put(targetIds.get(i), rs.getInt(i + 1));
+					}
+					return result;
+				},
+				companyId, adminId
+		);
+		return result;
+	}
+
+	private Map<Integer, String> getTargetSqlMap(Collection<Integer> ids, int companyId) {
+		List<Object> params = new ArrayList<>();
+		params.add(companyId);
+		params.addAll(ids);
+		return selectMap(
+				"""
+				SELECT target_id, target_sql
+				FROM dyn_target_tbl
+				WHERE company_id = ?
+				  AND target_id IN (%s)
+				""".formatted(AgnUtils.csvQMark(ids.size())),
+				(rs, i) -> {
+					String targetSql = rs.getString("target_sql");
+					return Tuple.of(rs.getInt("target_id"), StringUtils.isBlank(targetSql) ? "1 <> 1" : targetSql);
+				},
+				params.toArray()
+		);
 	}
 
 	public void setConfigService(ConfigService configService) {

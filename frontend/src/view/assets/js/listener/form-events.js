@@ -137,7 +137,16 @@ If the trigger for the directives cannot be placed inside the form, e.g. in case
 
   function clearAllInputs($container) {
     $container.find(":input, select").val("").trigger('change');
-    $container.find(":checkbox, :radio").prop("checked", false);
+    $container.find(":checkbox").prop("checked", false);
+
+    $container.find(":radio").each(function () {
+      const restored = this.checked !== this.defaultChecked;
+      this.checked = this.defaultChecked;
+
+      if (restored && this.checked) {
+        $(this).trigger('change');
+      }
+    });
     AGN.Lib.CoreInitializer.run('select', $container);
   }
 

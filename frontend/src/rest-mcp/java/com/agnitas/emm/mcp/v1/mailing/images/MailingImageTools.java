@@ -34,6 +34,7 @@ public class MailingImageTools {
 
     private static final String ID_DESCRIPTION = "Image ID";
     private static final String FILENAME_DESCRIPTION = "Image filename";
+    private static final String USAGE_HINT = "Reference an image in mailing content by its fileName as [agnIMAGE name=\"<fileName>\"].";
 
     private final MailingImageMcpService mailingImageMcpService;
     private final McpAdminProvider adminProvider;
@@ -48,7 +49,8 @@ public class MailingImageTools {
 
     @McpTool(
             name = "get_mailing_images",
-            description = "Returns a paginated list of mailing images"
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
+            description = "Returns a paginated list of mailing images. " + USAGE_HINT
     )
     public PageResponse<ImageLightResponse> getList(
             @McpToolParam(description = "Mailing ID") @Positive int mailingId,
@@ -61,6 +63,7 @@ public class MailingImageTools {
 
     @McpTool(
             name = "get_mailing_image",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns an image of a mailing by its ID or filename, including a signed URL to "
                     + "download its binary content. Provide either imageId or filename."
     )
@@ -82,7 +85,8 @@ public class MailingImageTools {
 
     @McpTool(
             name = "create_mailing_image",
-            description = "Creates a new image"
+            annotations = @McpTool.McpAnnotations(idempotentHint = true),
+            description = "Creates a new image. " + USAGE_HINT
     )
     public ImageResponse create(
             @McpToolParam(description = "Mailing ID") @Positive int mailingId,
@@ -95,6 +99,7 @@ public class MailingImageTools {
 
     @McpTool(
             name = "delete_mailing_image",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes an image by its ID or filename. Provide either imageId or filename."
     )
     public void delete(

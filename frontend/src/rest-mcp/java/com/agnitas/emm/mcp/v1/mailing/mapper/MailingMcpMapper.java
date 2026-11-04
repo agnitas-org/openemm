@@ -21,9 +21,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.FollowUpType;
 import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
@@ -31,12 +31,13 @@ import com.agnitas.emm.core.commons.dto.PatchField;
 import com.agnitas.emm.core.mailing.MailingSortCriteria;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.dto.PatchMailingSettingsCommand;
-import com.agnitas.emm.core.mailing.settings.EmailMediatypePatch;
-import com.agnitas.emm.core.mailing.settings.MediatypePatch;
+import com.agnitas.emm.core.mailing.settings.EmailMediaTypePatch;
+import com.agnitas.emm.core.mailing.settings.MediaTypePatch;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
-import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.common.mapper.McpMapper;
+import com.agnitas.emm.mcp.v1.mailing.attachments.dto.AttachmentResponse;
+import com.agnitas.emm.mcp.v1.mailing.content.MailingContentResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.CreateMailingParameterRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.CreateMailingRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.FollowupType;
@@ -44,12 +45,16 @@ import com.agnitas.emm.mcp.v1.mailing.dto.ListMailingsRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.ListTemplatesRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.MailFormat;
 import com.agnitas.emm.mcp.v1.mailing.dto.MailingCharset;
+import com.agnitas.emm.mcp.v1.mailing.dto.MailingFullResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.MailingLightResponse;
-import com.agnitas.emm.mcp.v1.mailing.dto.MailingMediatype;
+import com.agnitas.emm.mcp.v1.mailing.dto.MailingMediaType;
 import com.agnitas.emm.mcp.v1.mailing.dto.MailingResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.OnePixelPosition;
 import com.agnitas.emm.mcp.v1.mailing.dto.PatchMailingRequest;
 import com.agnitas.emm.mcp.v1.mailing.dto.UpdateMailingParameterRequest;
+import com.agnitas.emm.mcp.v1.mailing.images.dto.ImageResponse;
+import com.agnitas.emm.mcp.v1.mailing.links.MailingLinkResponse;
+import com.agnitas.emm.mcp.v1.target.dto.TargetGroupResponse;
 import com.agnitas.util.importvalues.Charset;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -94,11 +99,7 @@ public interface MailingMcpMapper extends McpMapper {
     @Mapping(target = "statuses", ignore = true)
     ListMailingsRequest toListRequest(ListTemplatesRequest request);
 
-    default PageResponse<MailingLightResponse> toPageResponse(PaginatedList<Map<String, Object>> source) {
-        return toPageResponse(source, this::toMailingLightResponse);
-    }
-
-    default MailingLightResponse toMailingLightResponse(Map<String, Object> source) {
+    default MailingLightResponse toMailingLightResponse(Map<String, Object> source, boolean isTemplate) {
         return new MailingLightResponse(
                 (Integer) source.get("mailingid"),
                 MailingType.getByCode((Integer) source.get("mailing_type")).name(),
@@ -107,9 +108,9 @@ public interface MailingMcpMapper extends McpMapper {
                 Optional.ofNullable((Timestamp) source.get("senddate"))
                         .map(Timestamp::toInstant)
                         .orElse(null),
-                Optional.ofNullable((Number) source.get("recipientsCount"))
+                isTemplate ? null : Optional.ofNullable((Number) source.get("recipientsCount"))
                         .map(Number::longValue)
-                        .orElse(0L)
+                        .orElse(null)
         );
     }
 
@@ -141,9 +142,9 @@ public interface MailingMcpMapper extends McpMapper {
     @Mapping(target = "useDynamicTemplate", expression = "java(PatchField.absent())")
     @Mapping(target = "referenceContentSettings", expression = "java(PatchField.absent())")
     @Mapping(target = "frequencyCounterDisabled", expression = "java(PatchField.absent())")
-    @Mapping(target = "activeMediatypesOrder", expression = "java(map(request.mediatypes(), this::toMediaTypes))")
-    @Mapping(target = "mediatypes", expression = "java(map(mediatypes))")
-    PatchMailingSettingsCommand toPatchCommand(PatchMailingRequest request, Map<MediaTypes, MediatypePatch> mediatypes);
+    @Mapping(target = "activeMediaTypesOrder", expression = "java(map(request.mediaTypes(), this::toMediaTypes))")
+    @Mapping(target = "mediaTypes", expression = "java(map(mediaTypes))")
+    PatchMailingSettingsCommand toPatchCommand(PatchMailingRequest request, Map<MediaTypes, MediaTypePatch> mediaTypes);
 
     @Mapping(target = "archived", expression = "java(PatchField.absent())")
     @Mapping(target = "planDate", expression = "java(PatchField.absent())")
@@ -151,23 +152,23 @@ public interface MailingMcpMapper extends McpMapper {
     @Mapping(target = "useDynamicTemplate", expression = "java(PatchField.absent())")
     @Mapping(target = "referenceContentSettings", expression = "java(PatchField.absent())")
     @Mapping(target = "frequencyCounterDisabled", expression = "java(PatchField.absent())")
-    @Mapping(target = "activeMediatypesOrder", expression = "java(map(toMediaTypes(request.mediatypes())))")
-    @Mapping(target = "mediatypes", expression = "java(map(mediatypes))")
-    PatchMailingSettingsCommand toPatchCommand(CreateMailingRequest request, Map<MediaTypes, MediatypePatch> mediatypes);
+    @Mapping(target = "activeMediaTypesOrder", expression = "java(map(toMediaTypes(request.mediaTypes())))")
+    @Mapping(target = "mediaTypes", expression = "java(map(mediaTypes))")
+    PatchMailingSettingsCommand toPatchCommand(CreateMailingRequest request, Map<MediaTypes, MediaTypePatch> mediaTypes);
 
     @Mapping(target = "withHtmlTemplate", ignore = true)
     @Mapping(target = "onePixel", expression = "java(map(request.measureOpeningRate(), this::toOnePixelValue))")
     @Mapping(target = "charset", expression = "java(map(request.charset(), this::toCoreCharset))")
     @Mapping(target = "format", expression = "java(map(request.format(), this::toCoreMailType))")
     @Mapping(target = "followupType", expression = "java(map(request.followupType(), this::toCoreFollowUpType))")
-    EmailMediatypePatch toEmailPatch(PatchMailingRequest request);
+    EmailMediaTypePatch toEmailPatch(PatchMailingRequest request);
 
     @Mapping(target = "withHtmlTemplate", ignore = true)
     @Mapping(target = "onePixel", expression = "java(map(toOnePixelValue(request.measureOpeningRate())))")
     @Mapping(target = "charset", expression = "java(map(toCoreCharset(request.charset())))")
     @Mapping(target = "format", expression = "java(map(toCoreMailType(request.format())))")
     @Mapping(target = "followupType", expression = "java(map(toCoreFollowUpType(request.followupType())))")
-    EmailMediatypePatch toEmailPatch(CreateMailingRequest request);
+    EmailMediaTypePatch toEmailPatch(CreateMailingRequest request);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     MailingParameter toMailingParam(CreateMailingParameterRequest request);
@@ -185,12 +186,12 @@ public interface MailingMcpMapper extends McpMapper {
         return map(CollectionUtils.emptyIfNull(value).stream().map(this::toMailingParam).toList());
     }
 
-    default List<MediaTypes> toMediaTypes(List<MailingMediatype> source) {
+    default List<MediaTypes> toMediaTypes(List<MailingMediaType> source) {
         return source.stream().map(this::toMediaType).toList();
     }
 
-    default MediaTypes toMediaType(MailingMediatype mediatype) {
-        return MediaTypes.valueOf(mediatype.name());
+    default MediaTypes toMediaType(MailingMediaType mediaType) {
+        return MediaTypes.valueOf(mediaType.name());
     }
 
     default Charset toCoreCharset(MailingCharset charset) {
@@ -232,9 +233,9 @@ public interface MailingMcpMapper extends McpMapper {
     @Mapping(target = "format", expression = "java(MailFormat.from(mailing.getEmailParam().getMailFormat()))")
     @Mapping(target = "followupForId", expression = "java(NumberUtils.toInt(mailing.getEmailParam().getFollowupFor(), 0))")
     @Mapping(target = "charset", source = "emailParam.charset")
-    @Mapping(target = "mediatypes", expression = "java(toMediatypes(mailing))")
-    @Mapping(target = "htmlTemplate", source = "emailParam.htmlTemplate")
-    @Mapping(target = "textTemplate", source = "emailParam.template")
+    @Mapping(target = "mediaTypes", expression = "java(toMediaTypes(mailing))")
+    @Mapping(target = "htmlTemplate", expression = "java(toHtmlTemplate(mailing))")
+    @Mapping(target = "textTemplate", expression = "java(toTextTemplate(mailing))")
     @Mapping(target = "sendDate", source = "senddate")
     MailingResponse internalToResponse(Mailing mailing);
 
@@ -242,21 +243,31 @@ public interface MailingMcpMapper extends McpMapper {
         return internalToResponse(mailing);
     }
 
-    default List<MailingMediatype> toMediatypes(Mailing mailing) {
+    default String toHtmlTemplate(Mailing mailing) {
+        MailingComponent component = mailing.getHtmlTemplate();
+        return component != null ? component.getEmmBlock() : mailing.getEmailParam().getHtmlTemplate();
+    }
+
+    default String toTextTemplate(Mailing mailing) {
+        MailingComponent component = mailing.getTextTemplate();
+        return component != null ? component.getEmmBlock() : mailing.getEmailParam().getTemplate();
+    }
+
+    default List<MailingMediaType> toMediaTypes(Mailing mailing) {
         return mailing.getMediatypes().values().stream()
                 .filter(Objects::nonNull)
                 .filter(Mediatype::isActive)
                 .sorted(Comparator.comparingInt(Mediatype::getPriority))
                 .map(Mediatype::getMediaType)
                 .map(MediaTypes::name)
-                .map(this::toMailingMediatype)
+                .map(this::toMailingMediaType)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private MailingMediatype toMailingMediatype(String name) {
+    private MailingMediaType toMailingMediaType(String name) {
         try {
-            return MailingMediatype.valueOf(name);
+            return MailingMediaType.valueOf(name);
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -271,4 +282,12 @@ public interface MailingMcpMapper extends McpMapper {
     }
     // endregion
 
+    MailingFullResponse toFullResponse(
+            MailingResponse response,
+            List<TargetGroupResponse> targets,
+            List<ImageResponse> images,
+            List<AttachmentResponse> attachments,
+            List<MailingContentResponse> contentBlocks,
+            List<MailingLinkResponse> links
+    );
 }

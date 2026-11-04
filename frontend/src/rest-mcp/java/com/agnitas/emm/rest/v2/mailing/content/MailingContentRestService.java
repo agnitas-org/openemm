@@ -10,40 +10,72 @@
 
 package com.agnitas.emm.rest.v2.mailing.content;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.mailingcontent.dto.PatchMailingContentCommand;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.service.MailingContentService;
+import com.agnitas.util.LinkUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Service;
 
 @Service
-class MailingContentRestService {
+public class MailingContentRestService {
 
     private final MailingContentService contentService;
     private final MailingContentRestMapper mapper;
     private final ThumbnailService thumbnailService;
+    private final CompanyTokenService companyTokenService;
 
-    public MailingContentRestService(
+    MailingContentRestService(
             MailingContentService contentService,
             MailingContentRestMapper mapper,
-            ThumbnailService thumbnailService
+            ThumbnailService thumbnailService,
+            CompanyTokenService companyTokenService
     ) {
         this.contentService = contentService;
         this.mapper = mapper;
         this.thumbnailService = thumbnailService;
+        this.companyTokenService = companyTokenService;
     }
 
     public List<MailingContentResponse> list(int mailingId, int companyId) {
         List<DynamicTag> dynamicTags = contentService.getDynamicTags(mailingId, companyId);
-        return mapper.toMailingContentResponseList(dynamicTags);
+        putPlaceholders(dynamicTags, companyId);
+        return mapper.toResponse(dynamicTags);
+    }
+
+    public List<MailingContentResponse> getMailingContentBlocks(Mailing mailing) {
+        Collection<DynamicTag> dynamicTags = MapUtils.emptyIfNull(mailing.getDynTags()).values();
+        putPlaceholders(dynamicTags, mailing.getCompanyID());
+        return mapper.toResponse(new ArrayList<>(dynamicTags));
+    }
+
+    private void putPlaceholders(Collection<DynamicTag> tags, int companyId) {
+        tags.forEach(tag -> putPlaceholders(tag, companyId));
+    }
+
+    private void putPlaceholders(DynamicTag tag, int companyId) {
+        String companyToken = companyTokenService.getCompanyToken(companyId).orElse("");
+        MapUtils.emptyIfNull(tag.getDynContent()).values()
+                .forEach(content -> {
+                    String text = LinkUtils.replaceCompanyParamValuesWithPlaceholders(
+                            content.getDynContent(), companyToken, companyId
+                    );
+                    content.setDynContent(text);
+                });
     }
 
     public MailingContentResponse getById(int contentId, int mailingId, int companyId) {
         DynamicTag dynTag = contentService.getDynamicTag(contentId, mailingId, companyId);
-        return mapper.toMailingContentResponse(dynTag);
+        putPlaceholders(dynTag, companyId);
+        return mapper.toResponse(dynTag);
     }
 
     public MailingContentResponse getByName(String contentName, int mailingId, int companyId) {

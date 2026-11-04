@@ -16,7 +16,7 @@ import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public record BulkUpsertBindingCommand(
-        Collection<MediaTypes> mediatypes,
+        Collection<MediaTypes> mediaTypes,
         Collection<Integer> mailinglistIds,
         Collection<Integer> recipientIds,
         UserStatus status,

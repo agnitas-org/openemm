@@ -11,25 +11,29 @@
 package com.agnitas.emm.rest.v2.target;
 
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.target.dto.CreateTargetCommand;
 import com.agnitas.emm.core.target.dto.PatchTargetCommand;
+import com.agnitas.emm.core.target.dto.TargetInclude;
+import com.agnitas.emm.core.target.dto.TargetView;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.rest.v2.infrastructure.exception.HttpStatusException;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import com.agnitas.service.SimpleServiceResult;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
-class TargetRestService {
+public class TargetRestService {
 
     private final TargetRestMapper mapper;
     private final TargetService targetService;
@@ -39,7 +43,7 @@ class TargetRestService {
         this.targetService = targetService;
     }
 
-    public PageResponse<TargetLightResponse> find(Pageable pageable, Admin admin) {
+    public PageResponse<TargetLightResponse> find(Pageable pageable, Set<TargetInclude> include, Admin admin) {
         TargetLightsOptions opts = TargetLightsOptions.builder()
                 .setAdminId(admin.getAdminID())
                 .setCompanyId(admin.getCompanyID())
@@ -50,25 +54,35 @@ class TargetRestService {
                 .setDirection(mapper.toDirection(pageable.getSort()) ? "ASC" : "DESC")
                 .setSorting(mapper.toSortProperty(pageable.getSort()))
                 .build();
-        PaginatedList<TargetLight> targets = targetService.getTargetLightsPaginated(opts, null);
+        PaginatedList<TargetView> targets = targetService.find(opts, include, admin);
         return mapper.toPageResponse(targets, mapper::toLightResponse);
     }
 
-    public TargetResponse find(int targetId, int companyId) {
-        Target target = targetService.getTargetGroup(targetId, companyId);
+    public List<TargetResponse> getMailingTargets(Mailing mailing, Admin admin) {
+        return CollectionUtils.emptyIfNull(mailing.getTargetGroups()).stream()
+                .map(id -> find(id, admin))
+                .toList();
+    }
+
+    public TargetResponse find(int targetId, Admin admin) {
+        return find(targetId, Set.of(), admin);
+    }
+
+    public TargetResponse find(int targetId, Set<TargetInclude> include, Admin admin) {
+        TargetView target = targetService.getTargetGroup(targetId, admin, include);
         return mapper.toResponse(target);
     }
 
-    public TargetResponse create(CreateTargetRequest request, int companyId) {
-        CreateTargetCommand command = mapper.toCommand(request, companyId);
+    public TargetResponse create(CreateTargetRequest request, Admin admin) {
+        CreateTargetCommand command = mapper.toCommand(request, admin.getCompanyID());
         Target target = targetService.create(command);
-        return find(target.getId(), companyId);
+        return find(target.getId(), admin);
     }
 
-    public TargetResponse patch(int id, PatchTargetRequest request, int companyId) {
-        PatchTargetCommand command = mapper.toCommand(request, id, companyId);
+    public TargetResponse patch(int id, PatchTargetRequest request, Admin admin) {
+        PatchTargetCommand command = mapper.toCommand(request, id, admin.getCompanyID());
         targetService.patch(command);
-        return find(id, companyId);
+        return find(id, admin);
     }
 
     public void delete(int id, Admin admin) {

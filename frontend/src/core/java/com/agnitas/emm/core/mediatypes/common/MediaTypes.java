@@ -2,10 +2,12 @@ package com.agnitas.emm.core.mediatypes.common;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.Permission;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Enumeration of all available media types.
@@ -161,15 +163,39 @@ public enum MediaTypes {
 		return this.webhookIdentifier;
 	}
 
-	public static MediaTypes fromAny(String raw) {
-		if (StringUtils.defaultString(raw).matches("\\d+")) {
-			int code = Integer.parseInt(raw);
-			return Arrays.stream(values())
-					.filter(t -> t.code == code)
-					.findFirst()
-					.orElseThrow(() -> new IllegalArgumentException("Invalid value"));
-		}
-		return valueOf(raw.toUpperCase());
+	private static final Map<Integer, MediaTypes> BY_CODE_CACHE = Arrays.stream(values()).collect(Collectors.toMap(
+			t -> t.code,
+			t -> t
+	));
+
+	private static final Map<String, MediaTypes> BY_NAME_CACHE = Arrays.stream(values()).collect(Collectors.toMap(
+			Enum::name,
+			t -> t
+	));
+
+	public static Optional<MediaTypes> findByCode(int code) {
+		return Optional.ofNullable(BY_CODE_CACHE.get(code));
 	}
 
+	public static Optional<MediaTypes> findByName(String name) {
+		return Optional.ofNullable(BY_NAME_CACHE.get(name));
+	}
+
+	public static Optional<MediaTypes> tryParse(String raw) {
+		if (raw == null) {
+			return Optional.empty();
+		}
+		if (raw.matches("\\d+")) {
+			return findByCode(Integer.parseInt(raw));
+		}
+		return findByName(raw);
+	}
+
+	public static MediaTypes parse(String raw) {
+		return tryParse(raw).orElseThrow(() -> new IllegalArgumentException("Invalid value"));
+	}
+
+    public static MediaTypes parseOrNull(String raw) {
+        return tryParse(raw).orElse(null);
+    }
 }

@@ -14,7 +14,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.trackablelinks.dto.PatchLinkCommand;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
@@ -22,6 +24,7 @@ import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.links.MailingLinkResponse;
 import com.agnitas.emm.mcp.v1.mailing.links.dto.PatchMailingLinkRequest;
 import com.agnitas.emm.mcp.v1.mailing.links.mapper.MailingLinkMcpMapper;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,10 +32,16 @@ public class MailingLinkMcpServiceImpl implements MailingLinkMcpService {
 
     private final TrackableLinkService linkService;
     private final MailingLinkMcpMapper mapper;
+    private final CompanyTokenService companyTokenService;
 
-    public MailingLinkMcpServiceImpl(TrackableLinkService linkService, MailingLinkMcpMapper mapper) {
+    public MailingLinkMcpServiceImpl(
+            TrackableLinkService linkService,
+            MailingLinkMcpMapper mapper,
+            CompanyTokenService companyTokenService
+    ) {
         this.linkService = linkService;
         this.mapper = mapper;
+        this.companyTokenService = companyTokenService;
     }
 
     @Override
@@ -43,16 +52,21 @@ public class MailingLinkMcpServiceImpl implements MailingLinkMcpService {
                 .values()
                 .stream()
                 .sorted(Comparator.comparing(TrackableLink::getId))
-                .map(mapper::toResponse)
+                .map(link -> toResponse(link, companyId))
                 .toList();
 
         return PageResponse.of(links, pageable.page(), pageable.size());
     }
 
+    private MailingLinkResponse toResponse(TrackableLink link, int companyId) {
+        String companyToken = companyTokenService.getCompanyToken(companyId).orElse("");
+        return mapper.toResponse(link, companyToken, companyId);
+    }
+
     @Override
     public MailingLinkResponse getById(int linkId, int mailingId, int companyId) {
         TrackableLink link = linkService.getLink(linkId, mailingId, companyId);
-        return mapper.toResponse(link);
+        return toResponse(link, companyId);
     }
 
     @Override
@@ -62,4 +76,10 @@ public class MailingLinkMcpServiceImpl implements MailingLinkMcpService {
         return getById(linkId, mailingId, admin.getCompanyID());
     }
 
+    @Override
+    public List<MailingLinkResponse> getMailingLinks(Mailing mailing) {
+        return MapUtils.emptyIfNull(mailing.getTrackableLinks()).values().stream()
+                .map(link -> toResponse(link, mailing.getCompanyID()))
+                .toList();
+    }
 }

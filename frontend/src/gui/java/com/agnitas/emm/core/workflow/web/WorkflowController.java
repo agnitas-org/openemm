@@ -48,7 +48,6 @@ import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.auto_import.bean.AutoImportLight;
 import com.agnitas.emm.core.auto_import.service.AutoImportService;
@@ -1277,17 +1276,13 @@ public class WorkflowController implements XssCheckAware {
         }
 
         Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
+        DateRange dateRange = workflowStatisticsService.getSelectedDateRange(workflow, form, admin);
 
         model.addAttribute("statWorkflowId", workflowId);
         model.addAttribute("workflowName", workflow.getShortname());
         model.addAttribute("workflowStatMailings", workflowStatisticsService.getStatMailings(workflowId, admin));
-        if (admin.permissionAllowed(Permission.WORKFLOW_STAT_MIGRATION)) {
-            DateRange dateRange = workflowStatisticsService.getSelectedDateRange(workflow, form, admin);
-            model.addAttribute("fromDate", dateRange.getFrom());
-            model.addAttribute("toDate", dateRange.getTo());
-        } else {
-            model.addAttribute("birtUrl", workflowStatisticsService.getWorkflowStatUrl(workflow, admin, session.getId(), form));
-        }
+        model.addAttribute("fromDate", dateRange.getFrom());
+        model.addAttribute("toDate", dateRange.getTo());
         model.addAttribute("monthlist", AgnUtils.getMonthList());
         model.addAttribute("yearlist", AgnUtils.getYearList(workflowStatisticsService.getStartYear(workflowId, admin)));
         model.addAttribute("isWorkflowStatistics", true);

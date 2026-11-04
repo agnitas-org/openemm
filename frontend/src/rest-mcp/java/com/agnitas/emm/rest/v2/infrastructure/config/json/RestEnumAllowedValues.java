@@ -23,12 +23,13 @@ import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.action.bean.EmmActionType;
 import com.agnitas.emm.core.components.form.AttachmentType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.dto.TargetInclude;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.ImportMode;
 import com.agnitas.emm.rest.v2.mailing.dto.FollowupType;
 import com.agnitas.emm.rest.v2.mailing.dto.MailFormat;
 import com.agnitas.emm.rest.v2.mailing.dto.OnePixelPosition;
 import com.agnitas.emm.rest.v2.mailing.dto.RestCharset;
-import com.agnitas.emm.rest.v2.mailing.dto.RestMediatype;
+import com.agnitas.emm.rest.v2.mailing.dto.MailingMediaType;
 import com.agnitas.emm.rest.v2.mailing.links.LinkRetargeting;
 import com.agnitas.emm.rest.v2.mailing.links.LinkTracking;
 import com.agnitas.emm.rest.v2.table.RefTableColumnType;
@@ -37,7 +38,7 @@ import com.agnitas.util.importvalues.Gender;
 public class RestEnumAllowedValues {
 
     public static final String MEDIATYPES = allowedPairs(MediaTypes.values(), MediaTypes::getMediaCode);
-    public static final String REST_MEDIATYPES = allowedValues(RestMediatype.class, RestMediatype::name);
+    public static final String REST_MEDIATYPES = allowedValues(MailingMediaType.class, MailingMediaType::name);
     public static final String USER_STATUSES = allowedPairs(UserStatus.values(), UserStatus::getStatusCode);
     public static final String USER_TYPES = allowedPairs(UserType.values(), UserType::getTypeCode);
     public static final String MAILING_TYPES = allowedPairs(MailingType.values(), MailingType::getCode);
@@ -59,6 +60,7 @@ public class RestEnumAllowedValues {
     public static final String LINK_TRACKINGS = allowedValues(LinkTracking.class, Enum::name);
     public static final String LINK_RETARGETINGS = allowedValues(LinkRetargeting.class, Enum::name);
     public static final String ATTACHMENT_TYPES = allowedValues(AttachmentType.class, Enum::name);
+    public static final String TARGET_INCLUDE_FIELDS = allowedValues(TargetInclude.class, TargetInclude::value);
     public static final String ONE_PIXEL_POSITIONS = allowedPairs(
             OnePixelPosition.values(),
             n -> n.toString().toLowerCase()
@@ -66,7 +68,7 @@ public class RestEnumAllowedValues {
 
     private static final Map<Class<? extends Enum<?>>, String> ALLOWED_VALUES = Map.ofEntries(
             Map.entry(MediaTypes.class, MEDIATYPES),
-            Map.entry(RestMediatype.class, REST_MEDIATYPES),
+            Map.entry(MailingMediaType.class, REST_MEDIATYPES),
             Map.entry(UserStatus.class, USER_STATUSES),
             Map.entry(UserType.class, USER_TYPES),
             Map.entry(MailingType.class, MAILING_TYPES),
@@ -82,6 +84,7 @@ public class RestEnumAllowedValues {
             Map.entry(LinkTracking.class, LINK_TRACKINGS),
             Map.entry(LinkRetargeting.class, LINK_RETARGETINGS),
             Map.entry(AttachmentType.class, ATTACHMENT_TYPES),
+            Map.entry(TargetInclude.class, TARGET_INCLUDE_FIELDS),
             Map.entry(OnePixelPosition.class, ONE_PIXEL_POSITIONS)
     );
 

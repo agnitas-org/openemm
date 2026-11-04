@@ -59,8 +59,8 @@ public class BindingMcpServiceImpl implements BindingMcpService {
     }
 
     @Override
-    public BindingResponse getById(int recipientId, int mailinglistId, MediaTypes mediatype, int companyId) {
-        GetBindingQuery query = new GetBindingQuery(recipientId, mailinglistId, mediatype);
+    public BindingResponse getById(int recipientId, int mailinglistId, MediaTypes mediaType, int companyId) {
+        GetBindingQuery query = new GetBindingQuery(recipientId, mailinglistId, mediaType);
         BindingEntry binding = bindingService.get(query, companyId);
         return mapper.toResponse(binding);
     }
@@ -73,16 +73,16 @@ public class BindingMcpServiceImpl implements BindingMcpService {
     }
 
     @Override
-    public BindingResponse patch(int recipientId, int mailinglistId, MediaTypes mediatype, PatchBindingRequest request, int companyId) {
-        GetBindingQuery query = new GetBindingQuery(recipientId, mailinglistId, mediatype);
+    public BindingResponse patch(int recipientId, int mailinglistId, MediaTypes mediaType, PatchBindingRequest request, int companyId) {
+        GetBindingQuery query = new GetBindingQuery(recipientId, mailinglistId, mediaType);
         PatchBindingCommand command = mapper.toCommand(query, request);
         bindingService.updateBinding(command, companyId);
-        return getById(recipientId, mailinglistId, mediatype, companyId);
+        return getById(recipientId, mailinglistId, mediaType, companyId);
     }
 
     @Override
-    public void delete(int recipientId, int mailinglistId, MediaTypes mediatype, int companyId) {
-        DeleteBindingCommand command = new DeleteBindingCommand(recipientId, mailinglistId, mediatype);
+    public void delete(int recipientId, int mailinglistId, MediaTypes mediaType, int companyId) {
+        DeleteBindingCommand command = new DeleteBindingCommand(recipientId, mailinglistId, mediaType);
         bindingService.deleteBinding(command, companyId);
     }
 

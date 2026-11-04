@@ -28,6 +28,7 @@ import com.agnitas.emm.core.recipient.dto.Subscription;
 import com.agnitas.emm.core.recipient.dto.UpdateRecipientCommand;
 import com.agnitas.emm.core.recipient.exception.RecipientNotExistException;
 import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkDeleteRecipientsRequest;
@@ -67,8 +68,21 @@ public class RecipientMcpServiceImpl implements RecipientMcpService {
     }
 
     @Override
-    public Map<String, Object> getById(int id, Admin admin) {
-        return recipientService.getVisibleFieldValues(id, admin);
+    public List<Integer> listIds(Map<String, String> filters, Admin admin) {
+        Map<String, String> fieldFilters = filters == null ? Map.of() : filters;
+        List<Integer> ids = recipientService.getRecipientIds(fieldFilters, admin);
+        if (ids.size() > 1000) {
+            throw ValidationException.exact("Too many matching recipients found (%d). Add filter.".formatted(ids.size()));
+        }
+        return ids;
+    }
+
+    @Override
+    public Map<String, Object> get(Integer recipientId, String email, Admin admin) {
+        requireExactlyOneIdentifier(recipientId, email);
+        return recipientId != null
+                ? recipientService.getVisibleFieldValues(recipientId, admin)
+                : recipientService.getVisibleFieldValues(email, admin);
     }
 
     @Override
@@ -79,20 +93,29 @@ public class RecipientMcpServiceImpl implements RecipientMcpService {
     }
 
     @Override
-    public Map<String, Object> update(int id, UpdateRecipientRequest request, Admin admin) {
+    public Map<String, Object> update(Integer recipientId, String email, UpdateRecipientRequest request, Admin admin) {
+        requireExactlyOneIdentifier(recipientId, email);
+        if (recipientId == null) {
+            recipientId = recipientService.getRecipientIdByEmail(email, admin);
+        }
         Subscription subscription = toSubscription(request.subscription(), admin);
-        recipientService.updatePartially(new UpdateRecipientCommand(id, request.fields(), admin, subscription));
-        return recipientService.getVisibleFieldValues(id, admin);
+        recipientService.updatePartially(new UpdateRecipientCommand(recipientId, request.fields(), admin, subscription));
+        return recipientService.getVisibleFieldValues(recipientId, admin);
     }
 
     @Override
-    public void delete(int id, Admin admin) {
-        DeleteResult result = recipientService.delete(id, admin);
+    public void delete(Integer recipientId, String email, Admin admin) {
+        requireExactlyOneIdentifier(recipientId, email);
+        DeleteResult result = recipientId != null
+                ? recipientService.delete(recipientId, admin)
+                : recipientService.delete(email, admin);
         if (result.isDeleted()) {
             return;
         }
         if (result.isNotFound()) {
-            throw new RecipientNotExistException(id);
+            throw recipientId != null
+                    ? new RecipientNotExistException(recipientId.longValue())
+                    : new RecipientNotExistException(email, admin.getCompanyID());
         }
         throw new RecipientDeletionException(result.errors());
     }
@@ -168,7 +191,7 @@ public class RecipientMcpServiceImpl implements RecipientMcpService {
         return new Subscription(
                 forAllMailinglists,
                 mailinglistIds,
-                request.mediatype(),
+                request.mediaType(),
                 null,
                 "Set by %s via MCP".formatted(admin.getUsername())
         );
@@ -192,7 +215,7 @@ public class RecipientMcpServiceImpl implements RecipientMcpService {
         return new Subscription(
                 forAllMailinglists,
                 mailinglistIds,
-                request.mediatype(),
+                request.mediaType(),
                 request.status(),
                 "Set by %s via MCP".formatted(admin.getUsername())
         );
@@ -217,4 +240,9 @@ public class RecipientMcpServiceImpl implements RecipientMcpService {
         );
     }
 
+    private void requireExactlyOneIdentifier(Integer recipientId, String email) {
+        if ((recipientId == null) == (email == null)) {
+            throw ValidationException.exact("Exactly one of recipientId or email must be provided");
+        }
+    }
 }

@@ -24,12 +24,12 @@ public record BulkDeleteBindingCommand(
         int companyId,
         List<Integer> recipientIds,
         Set<Integer> mailinglistIds,
-        Set<MediaTypes> mediatypes
+        Set<MediaTypes> mediaTypes
 ) {
     public BulkDeleteBindingCommand {
         recipientIds = List.copyOf(emptyIfNull(recipientIds));
         mailinglistIds = Set.copyOf(emptyIfNull(mailinglistIds));
-        mediatypes = Set.copyOf(emptyIfNull(mediatypes));
+        mediaTypes = Set.copyOf(emptyIfNull(mediaTypes));
 
         if (companyId <= 0) {
             throw ValidationException.invalidPath("companyId");

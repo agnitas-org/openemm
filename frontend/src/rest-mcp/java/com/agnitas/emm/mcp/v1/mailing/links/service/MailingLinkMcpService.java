@@ -10,7 +10,10 @@
 
 package com.agnitas.emm.mcp.v1.mailing.links.service;
 
+import java.util.List;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.links.MailingLinkResponse;
@@ -24,4 +27,5 @@ public interface MailingLinkMcpService {
 
     MailingLinkResponse patch(int linkId, int mailingId, PatchMailingLinkRequest request, Admin admin);
 
+    List<MailingLinkResponse> getMailingLinks(Mailing mailing);
 }

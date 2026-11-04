@@ -13,11 +13,11 @@
     <dependencies>
         <dependency org="org.springframework.boot" name="spring-boot-starter-web" rev="4.1.0" conf="compile->default;sources->sources(*)"/>
 
-        <dependency org="org.springframework.ai" name="spring-ai-starter-mcp-server-webmvc"  rev="2.0.0" conf="compile->default;sources->sources(*)"/>
-        <dependency org="org.springframework.ai" name="spring-ai-model"                      rev="2.0.0" conf="compile->default;sources->sources(*)"/>
-        <dependency org="org.springframework.ai" name="spring-ai-mcp"                        rev="2.0.0" conf="compile->default;sources->sources(*)"/>
-        <dependency org="org.springframework.ai" name="spring-ai-mcp-annotations"            rev="2.0.0" conf="compile->default;sources->sources(*)"/>
-        <dependency org="org.springframework.ai" name="mcp-spring-webmvc"                    rev="2.0.0" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-starter-mcp-server-webmvc"  rev="2.0.1" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-model"                      rev="2.0.1" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-mcp"                        rev="2.0.1" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="spring-ai-mcp-annotations"            rev="2.0.1" conf="compile->default;sources->sources(*)"/>
+        <dependency org="org.springframework.ai" name="mcp-spring-webmvc"                    rev="2.0.1" conf="compile->default;sources->sources(*)"/>
 
         <dependency org="io.modelcontextprotocol.sdk" name="mcp" rev="2.0.0" conf="compile->default;sources->sources(*)"/>
 
@@ -34,7 +34,7 @@
         <dependency org="org.springframework.boot"  name="spring-boot-validation"  rev="4.1.0"       conf="compile->default;sources->sources(*)"/>
         <dependency org="org.hibernate.validator"   name="hibernate-validator"     rev="9.0.1.Final" conf="compile->default;sources->sources(*)"/>
 
-        <!-- JSON Schema generation (victools suite; 5.x required by spring-ai-model 2.0.0) -->
+        <!-- JSON Schema generation (victools suite; 5.x required by spring-ai-model 2.0.1) -->
         <dependency org="com.github.victools" name="jsonschema-generator"        rev="5.0.0" conf="compile->default;sources->sources(*)"/>
         <dependency org="com.github.victools" name="jsonschema-module-jackson"   rev="5.0.0" conf="compile->default;sources->sources(*)"/>
         <dependency org="com.github.victools" name="jsonschema-module-swagger-2" rev="5.0.0" conf="compile->default;sources->sources(*)"/>
@@ -75,7 +75,7 @@
         <override org="org.springframework.security"   rev="7.1.0"/>
         <override org="org.springframework.boot"       rev="4.1.0"/>
         <override org="org.springframework.data"       rev="4.1.0"/>
-        <override org="org.springframework.ai"         rev="2.0.0"/>
+        <override org="org.springframework.ai"         rev="2.0.1"/>
         <override org="io.modelcontextprotocol.sdk"    rev="2.0.0"/>
         <override org="io.swagger.core.v3"    module="swagger-annotations-jakarta" rev="2.2.38"/>
         <override org="com.nimbusds"          module="nimbus-jose-jwt"             rev="10.9"/>

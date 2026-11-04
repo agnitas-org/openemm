@@ -81,7 +81,7 @@
         <aop:scoped-proxy/>
     </bean>
 
-	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+	<bean class="org.springframework.beans.factory.config.MethodInvokingBean">
 		<property name="targetClass" value="org.apache.commons.lang3.ClassUtils"/>
 		<property name="targetMethod" value="getClass"/>
 		<property name="arguments">
@@ -631,6 +631,7 @@
 		<property name="mailingContentService" ref="MailingContentService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="targetMapper" ref="targetMapperImpl" />
+		<property name="recipientService" ref="recipientService" />
 	</bean>
 
 	<bean id="eqlValidatorService" class="com.agnitas.emm.core.target.eql.EqlValidatorServiceImpl">

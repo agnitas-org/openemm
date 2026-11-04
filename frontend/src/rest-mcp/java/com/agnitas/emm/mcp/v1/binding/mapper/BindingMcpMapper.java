@@ -42,7 +42,7 @@ public interface BindingMcpMapper extends McpMapper {
 
     @Mapping(source = "filter.recipientIds", target = "recipientIds")
     @Mapping(source = "filter.mailinglistIds", target = "mailinglistIds")
-    @Mapping(source = "filter.mediatypes", target = "mediatypes")
+    @Mapping(source = "filter.mediaTypes", target = "mediaTypes")
     @Mapping(source = "filter.userStatuses", target = "userStatuses")
     @Mapping(source = "filter.date", target = "date")
     @Mapping(source = "pageable.page", target = "page")
@@ -60,7 +60,7 @@ public interface BindingMcpMapper extends McpMapper {
 
     @Mapping(source = "binding.customerID", target = "recipientId")
     @Mapping(source = "binding.mailinglistID", target = "mailinglistId")
-    @Mapping(target = "mediatype", expression = "java(MediaTypes.getMediaTypeForCode(binding.getMediaType()))")
+    @Mapping(target = "mediaType", expression = "java(MediaTypes.getMediaTypeForCode(binding.getMediaType()))")
     @Mapping(target = "userStatus", expression = "java(UserStatus.getByCode(binding.getUserStatus()))")
     @Mapping(target = "userType", expression = "java(BindingEntry.UserType.getUserTypeByString(binding.getUserType()))")
     @Mapping(source = "binding.userRemark", target = "userRemark")

@@ -32,7 +32,7 @@ public record ListBindingsFilter(
         Set<@Positive Integer> mailinglistIds,
 
         @McpToolParam(description = "Only include bindings with these media types", required = false)
-        Set<@NotNull MediaTypes> mediatypes,
+        Set<@NotNull MediaTypes> mediaTypes,
 
         @McpToolParam(description = "Only include bindings with these subscription statuses", required = false)
         Set<@NotNull UserStatus> userStatuses,

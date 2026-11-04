@@ -33,5 +33,10 @@ For example: "We wish" + (birthday name day)
 The example shown would display all hits that contain the word sequence "We wish" and either birthday or name day. However, the result must contain at least one of the terms in the brackets with a plus sign in between.
 <br><br>
 It is allowed to nest the different possibilities into each other as you like.<br><br>
-For example: "We wish" + ("all the best" "all the love") + (birthday name day)]]></content>
+For example: "We wish" + ("all the best" "all the love") + (birthday name day)
+<br><br>
+<b>Using MariaDB as a database management system</b><br>
+For example: Search for "Birthday"; the mailing "User_Birthday" will not be listed
+<br><br>
+You may notice some irregularities in the mailing search. For mailing names that contain an underscore "_", the underscore is treated as part of a single word rather than as a separator between two words. Consequently, you will not get any results in a full-text search if you search only for the second part of the name. You also cannot manually use quotation marks or asterisks "*", as these are already automatically used in the search.]]></content>
 </HelpBalloon>

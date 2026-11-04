@@ -23,4 +23,8 @@ public class RecipientNotExistException extends EntityNotFoundException {
 	public RecipientNotExistException(long id) {
 		super("Recipient", id);
 	}
+
+	public RecipientNotExistException(String email, int companyId) {
+		super("Recipient", "email = %s, company ID = %d".formatted(email, companyId));
+	}
 }

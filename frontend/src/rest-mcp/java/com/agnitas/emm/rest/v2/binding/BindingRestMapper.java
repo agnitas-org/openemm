@@ -59,7 +59,7 @@ interface BindingRestMapper extends RestMapper {
     @Mapping(source = "binding.mailinglistID", target = "mailinglistId")
     @Mapping(source = "binding.customerID", target = "recipientId")
     @Mapping(source = "binding.userType", target = "userType")
-    @Mapping(target = "mediatype", expression = "java(MediaTypes.getMediaTypeForCode(binding.getMediaType()).name())")
+    @Mapping(target = "mediaType", expression = "java(MediaTypes.getMediaTypeForCode(binding.getMediaType()).name())")
     @Mapping(target = "userStatus", expression = "java(UserStatus.getByCode(binding.getUserStatus()).name())")
     @Mapping(source = "binding.userRemark", target = "userRemark")
     @Mapping(source = "binding.referrer", target = "referrer")

@@ -21,6 +21,8 @@ public record UpdateTargetContentRequest(
         @McpToolParam(description = "Display order, 1-based (must be greater than 0)")
         @Positive Integer order,
 
-        @McpToolParam(description = "HTML or text content")
+        @McpToolParam(description = "HTML or text content. Use agn tags instead of hard-coded values: images as "
+                + "<img src=\"[agnIMAGE name=\"logo.png\"]\"> (never a bare filename), profile field values as "
+                + "[agnDB column=\"firstname\"]. See docs://mailings/agn-tags")
         String text
 ) {}

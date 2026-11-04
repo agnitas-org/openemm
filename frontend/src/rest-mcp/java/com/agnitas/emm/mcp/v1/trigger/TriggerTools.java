@@ -14,14 +14,14 @@ import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
+import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.trigger.dto.CreateTriggerRequest;
+import com.agnitas.emm.mcp.v1.trigger.dto.PatchTriggerRequest;
 import com.agnitas.emm.mcp.v1.trigger.dto.TriggerLightResponse;
 import com.agnitas.emm.mcp.v1.trigger.dto.TriggerResponse;
-import com.agnitas.emm.mcp.v1.trigger.dto.PatchTriggerRequest;
 import com.agnitas.emm.mcp.v1.trigger.service.TriggerMcpService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -48,6 +48,7 @@ public class TriggerTools {
 
     @McpTool(
             name = "get_triggers",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of triggers"
     )
     public PageResponse<TriggerLightResponse> getList(
@@ -60,6 +61,7 @@ public class TriggerTools {
 
     @McpTool(
             name = "get_trigger_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a trigger by its ID, including its operations"
     )
     public TriggerResponse getById(
@@ -72,6 +74,7 @@ public class TriggerTools {
 
     @McpTool(
             name = "create_trigger",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new trigger"
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck", jsonFields = "request.operations")
@@ -85,6 +88,7 @@ public class TriggerTools {
 
     @McpTool(
             name = "update_trigger",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Updates an existing trigger. Fields not passed (absent) are left unchanged."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck", jsonFields = "request.operations")
@@ -113,6 +117,7 @@ public class TriggerTools {
 
     @McpTool(
             name = "delete_trigger",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a trigger by its ID"
     )
     public void delete(

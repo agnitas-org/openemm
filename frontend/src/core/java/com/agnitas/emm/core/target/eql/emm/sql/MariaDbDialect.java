@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.emm.sql;
 
+import java.time.ZoneId;
+
 import com.agnitas.emm.core.target.eql.codegen.CodeFragment;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat;
@@ -100,6 +102,15 @@ public class MariaDbDialect implements SqlDialect {
 	@Override
 	public String dateSubDays(String left, String right) {
 		return "(" + left + ") - INTERVAL (" + right + ") * 86400 SECOND";
+	}
+
+	@Override
+	public String timeOfDay(String code, ZoneId storedZone, ZoneId targetZone) {
+		if (storedZone.equals(targetZone)) {
+			return "TIME(" + code + ")";
+		}
+
+		return "TIME(CONVERT_TZ(" + code + ", '" + storedZone.getId() + "', '" + targetZone.getId() + "'))";
 	}
 
 }

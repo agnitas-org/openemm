@@ -33,5 +33,10 @@ Zum Beispiel: „Wir w&#xFC;nschen“ + (Geburtstag Namenstag)
 Das gezeigte Beispiel w&#xFC;rde alle Treffer anzeigen, die zum einen die Wortfolge „Wir w&#xFC;nschen“ enth&#xE4;lt und zum anderen entweder Geburtstag oder Namenstag. Es muss aber mindestens einer der Begriffe in der Klammer im Ergebnis enthalten sein, da dazwischen ein Pluszeichen steht.
 <br><br>
 Es ist erlaubt, die verschiedenen M&#xF6;glichkeiten beliebig ineinander zu verschachteln.<br><br>
-Zum Beispiel: „Wir w&#xFC;nschen“ + („alles Gute“ „alles Liebe“) + (Geburtstag Namenstag)]]></content>
+Zum Beispiel: „Wir w&#xFC;nschen“ + („alles Gute“ „alles Liebe“) + (Geburtstag Namenstag)
+<br><br>
+<b>Verwendung von MariaDB als Datenbankmanagementsystem</b><br>
+Zum Beispiel: Suche nach „Birthday“, dann wird Mailing „User_Birthday“ nicht angezeigt
+<br><br>
+Es kann zu Auff&#xE4;lligkeiten bei der Mailing-Suche kommen. Bei Mailing-Namen, in denen ein Unterstrich „_“ vorkommt, wird dieser nicht als Separator von zwei W&#xF6;rtern, sondern als Teil eines Wortes gewertet. Dementsprechend erhalten Sie bei der Volltextsuche kein Ergebnis, wenn Sie nur nach dem zweiten Teil des Namens suchen. Auch Anf&#xFC;hrungszeichen und Sternchen „*“ k&#xF6;nnen Sie nicht manuell verwenden, da diese bereits automatisch in der Suche genutzt werden.]]></content>
 </HelpBalloon>

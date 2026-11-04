@@ -10,8 +10,14 @@
 
 package com.agnitas.emm.mcp.v1.target.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public record TargetGroupLightResponse(
         int id,
         String name,
-        String description
-) {}
+        String description,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Integer recipientCount
+) {
+}

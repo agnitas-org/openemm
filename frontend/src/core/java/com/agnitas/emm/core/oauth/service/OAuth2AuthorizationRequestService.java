@@ -25,4 +25,6 @@ public interface OAuth2AuthorizationRequestService {
 
     void deleteExpired();
 
+    void deleteOldClientRegistrations();
+
 }

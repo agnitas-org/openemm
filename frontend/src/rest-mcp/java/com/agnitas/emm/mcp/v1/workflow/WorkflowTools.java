@@ -38,6 +38,7 @@ public class WorkflowTools {
 
     @McpTool(
             name = "get_workflows",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of workflows (campaigns)"
     )
     public PageResponse<WorkflowLightResponse> getList(
@@ -50,6 +51,7 @@ public class WorkflowTools {
 
     @McpTool(
             name = "activate_workflow",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true),
             description = "Activates a workflow (campaign)."
     )
     public WorkflowStatusResponse activate(
@@ -62,6 +64,7 @@ public class WorkflowTools {
 
     @McpTool(
             name = "deactivate_workflow",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deactivates a workflow (campaign)."
     )
     public WorkflowStatusResponse deactivate(
@@ -74,6 +77,7 @@ public class WorkflowTools {
 
     @McpTool(
             name = "pause_workflow",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Pauses an active workflow (campaign)."
     )
     public WorkflowPauseResponse pause(

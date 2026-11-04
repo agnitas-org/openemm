@@ -10,19 +10,14 @@
 <%--@elvariable id="mailinglistDisabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="isStandaloneSmsMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
-<%--@elvariable id="downloadBirtUrl" type="java.lang.String"--%>
 <%--@elvariable id="workflowName" type="java.lang.String"--%>
 <%--@elvariable id="hideStatActions" type="java.lang.Boolean"--%>
+<%--@elvariable id="isEverSent" type="java.lang.Boolean"--%>
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="statWorkflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 
 <c:set var="forCampaign" value="${statWorkflowId > 0}" scope="request"/>
-
-<c:set var="isReportCanBeShown" value="true" scope="request"/>
-<c:if test="${mailingStatisticForm.statisticType eq 'TOP_DOMAINS' && isEverSent eq false}">
-    <c:set var="isReportCanBeShown" value="false" scope="request"/>
-</c:if>
 
 <c:set var="agnTitleKey" 			value="${forCampaign ? 'Workflow' : 'Mailing'}"  scope="request" />
 <c:set var="sidemenu_active" 		value="${forCampaign ? 'Workflow' : 'Mailings'}" scope="request" />
@@ -129,7 +124,7 @@
     </c:choose>
 </emm:instantiate>
 
-<c:if test="${isReportCanBeShown && (not empty downloadBirtUrl or isBenchmarkStat or (isClickPerLinkStat) or isEndDeviceStat) and not hideStatActions}">
+<c:if test="${(!isTopDomainStats or isEverSent) and not hideStatActions and not (forCampaign and mailingId eq null)}">
     <emm:instantiate var="agnMailingExtraOptions" type="java.util.LinkedHashMap" scope="request">
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${agnMailingExtraOptions}" property="0" value="${option}"/>
@@ -168,7 +163,7 @@
                     </c:set>
                     <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
                 </c:when>
-                <c:when test="${isSimpleTrackingPointStat and emm:permissionAllowed('migration.simple.point.stat', pageContext.request)}">
+                <c:when test="${isSimpleTrackingPointStat}">
                     <c:set target="${option}" property="url">
                         <c:url value="/statistics/mailing/${mailingId}/simpleTrackingPoints/csv.action">
                             <c:forEach var="selectedTarget" items="${mailingStatisticForm.selectedTargets}">
@@ -229,10 +224,6 @@
                     </c:set>
                     <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
                 </c:when>
-                <c:otherwise>
-                    <c:set target="${option}" property="url">${downloadBirtUrl}</c:set>
-                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load"/>
-                </c:otherwise>
             </c:choose>
             <c:set target="${option}" property="name"><mvc:message code="export.message.csv"/></c:set>
         </emm:instantiate>

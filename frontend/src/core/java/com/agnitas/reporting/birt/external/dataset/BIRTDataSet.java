@@ -452,17 +452,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 		return select(queryBuilder.toString(), Integer.class, mailingID) > 0;
 	}
-	
-	public boolean isTrackingExistsOfOptimizationMailings(int optimizationId, int companyID) {
-		List<Integer> mailings = getAutoOptimizationMailings(optimizationId, companyID).stream().filter(id -> id != 0).collect(Collectors.toList());
-		for (int mailingId: mailings) {
-			if (!isTrackingExists(mailingId, companyID)) {
-				return false;
-			}
-		}
-		return !CollectionUtils.isEmpty(mailings);
-	}
-	
+
 	public boolean isMailingBouncesExpire(int companyId, int mailingId) {
 		Map<Integer, Boolean> expireMap = getMailingBouncesExpire(companyId, String.valueOf(mailingId));
 		return expireMap.get(mailingId);
@@ -510,26 +500,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		getEmbeddedJdbcTemplate().update(dropTableSQL);
 	}
 	
-	public List<Integer> getAutoOptimizationMailings(int optimizationID, int companyID) {
-        List<Integer> result = new ArrayList<>();
-		String query = "SELECT group1_id, group2_id, group3_id, group4_id, group5_id, final_mailing_id FROM auto_optimization_tbl WHERE optimization_id=? and company_id=?";
-        List<Map<String, Object>> optimizationElements = select(query, optimizationID, companyID);
-        if (!optimizationElements.isEmpty()) {
-        	Map<String, Object> map = optimizationElements.get(0);
-            for (int i = 1; i <= 5; i++ ){
-                int groupId = toInt(map.get("group" + i + "_id"));
-                result.add(groupId);
-            }
-            result.add(map.get("final_mailing_id") == null ? 0 : toInt(map.get("final_mailing_id")));
-        }
-        return result;
-    }
-	
-    public int getAutoOptimizationWinnerId(int optimizationID, int companyID) {
-		String query = "SELECT result_mailing_id FROM auto_optimization_tbl WHERE optimization_id=? and company_id=?";
-        return selectInt(query, optimizationID, companyID);
-    }
-    
     protected List<LightMailingList> getMailingLists(List<Integer> mailingListIds, Integer companyID) {
     	if (mailingListIds != null && !mailingListIds.isEmpty()) {
 			return new LightMailingListDaoImpl(getDataSource()).getMailingLists(mailingListIds, companyID);

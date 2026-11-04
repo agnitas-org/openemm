@@ -46,6 +46,7 @@ public class UiUserTools {
 
     @McpTool(
             name = "get_ui_users",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of EMM UI users (administrators/operators of this EMM instance, not recipients)"
     )
     public PageResponse<UiUserLightResponse> getList(
@@ -58,6 +59,7 @@ public class UiUserTools {
 
     @McpTool(
             name = "get_ui_user",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a single EMM UI user by ID or username"
     )
     public UiUserResponse get(
@@ -71,6 +73,7 @@ public class UiUserTools {
 
     @McpTool(
             name = "create_ui_user",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new EMM UI user"
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -84,6 +87,7 @@ public class UiUserTools {
 
     @McpTool(
             name = "update_ui_user",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true),
             description = "Updates an existing EMM UI user by ID or username. Fields not passed are left unchanged."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -99,6 +103,7 @@ public class UiUserTools {
 
     @McpTool(
             name = "delete_ui_user",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes an EMM UI user by ID or username"
     )
     public void delete(

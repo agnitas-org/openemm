@@ -38,7 +38,7 @@ public record PatchMailingRequest(
         JsonNullable<@Positive Integer> archiveId,
         JsonNullable<@Positive Integer> openTriggerId,
         JsonNullable<@Positive Integer> clickTriggerId,
-        JsonNullable<@NotEmpty List<RestMediatype>> mediatypes, // for active and priority
+        JsonNullable<@NotEmpty List<MailingMediaType>> mediaTypes, // for active and priority
         // endregion
 
         // region Targeting settings
@@ -47,7 +47,7 @@ public record PatchMailingRequest(
         JsonNullable<Boolean> needsTarget,
         // endregion
 
-        // region EMAIL mediatype settings
+        // region EMAIL mediaType settings
         JsonNullable<@Size(min = MailingConstraints.SUBJECT_MIN_LENGTH) String> subject,
         JsonNullable<String> preHeader,
         JsonNullable<@NotNull FollowupType> followupType,
@@ -67,7 +67,7 @@ public record PatchMailingRequest(
         JsonNullable<@Email String> envelopeEmail,
         // endregion
 
-        // region SMS mediatype settings
+        // region SMS mediaType settings
         JsonNullable<String> smsTemplate,
         JsonNullable<
                 @Size(min = MailingConstraints.SMS_ADDRESS_MIN_LENGTH)
@@ -79,7 +79,7 @@ public record PatchMailingRequest(
         JsonNullable<List<@Valid UpdateMailingParameterRequest>> parameters
 ) {
 
-    public boolean hasAnyEmailMediatypeField() {
+    public boolean hasAnyEmailMediaTypeField() {
         return subject.isPresent()
                || preHeader.isPresent()
                || senderAddress.isPresent()
@@ -94,11 +94,11 @@ public record PatchMailingRequest(
                || envelopeEmail.isPresent();
     }
 
-    public boolean hasAnySmsMediatypeField() {
+    public boolean hasAnySmsMediaTypeField() {
         return smsTemplate.isPresent() || smsSenderAddress.isPresent();
     }
 
-    public boolean hasAnyRcsMediatypeField() {
+    public boolean hasAnyRcsMediaTypeField() {
         return rcsTemplate.isPresent();
     }
 

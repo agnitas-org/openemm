@@ -21,6 +21,7 @@ import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.commons.exception.EntityAlreadyExistsException;
 import com.agnitas.emm.core.commons.exception.EntityNotFoundException;
+import com.agnitas.emm.core.commons.exception.EntityNotUniqueException;
 import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.core.validator.ValidationFieldTranslator;
 import com.agnitas.emm.rest.v2.infrastructure.config.json.RestEnumException;
@@ -321,6 +322,15 @@ public class RestV2ExceptionHandler {
     @ExceptionHandler(EntityAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleCoreAlreadyExistsException(EntityAlreadyExistsException ex) {
+        return ErrorResponse.builder()
+                .status(HttpStatus.CONFLICT)
+                .addError(ex.getMessage())
+                .build();
+    }
+
+    @ExceptionHandler(EntityNotUniqueException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleCoreNotUniqueException(EntityNotUniqueException ex) {
         return ErrorResponse.builder()
                 .status(HttpStatus.CONFLICT)
                 .addError(ex.getMessage())

@@ -20,6 +20,7 @@ import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.action.bean.EmmActionType;
 import com.agnitas.emm.core.components.form.AttachmentType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.dto.TargetInclude;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.ImportMode;
 import com.agnitas.emm.rest.v2.infrastructure.config.json.EnumConverterFactory;
 import com.agnitas.emm.rest.v2.infrastructure.config.json.EnumDeserializer;
@@ -30,7 +31,7 @@ import com.agnitas.emm.rest.v2.mailing.dto.FollowupType;
 import com.agnitas.emm.rest.v2.mailing.dto.MailFormat;
 import com.agnitas.emm.rest.v2.mailing.dto.OnePixelPosition;
 import com.agnitas.emm.rest.v2.mailing.dto.RestCharset;
-import com.agnitas.emm.rest.v2.mailing.dto.RestMediatype;
+import com.agnitas.emm.rest.v2.mailing.dto.MailingMediaType;
 import com.agnitas.emm.rest.v2.mailing.links.LinkRetargeting;
 import com.agnitas.emm.rest.v2.mailing.links.LinkTracking;
 import com.agnitas.emm.rest.v2.table.RefTableColumnType;
@@ -79,7 +80,7 @@ import tools.jackson.databind.module.SimpleModule;
 @EnableSpringDataWebSupport
 public class RestConfiguration implements WebMvcConfigurer {
 
-    private static final String API_BASE = "/rest/v2";
+    public static final String API_BASE = "/rest/v2";
 
     private static final String[] PUBLIC_PATHS = {
             API_BASE + "/openapi/**",
@@ -160,9 +161,10 @@ public class RestConfiguration implements WebMvcConfigurer {
                 .addDeserializer(OnePixelPosition.class, new EnumDeserializer<>(OnePixelPosition.class))
                 .addDeserializer(MailFormat.class, new EnumDeserializer<>(MailFormat.class))
                 .addDeserializer(FollowupType.class, new EnumDeserializer<>(FollowupType.class))
-                .addDeserializer(RestMediatype.class, new EnumDeserializer<>(RestMediatype.class))
+                .addDeserializer(MailingMediaType.class, new EnumDeserializer<>(MailingMediaType.class))
                 .addDeserializer(LinkTracking.class, new EnumDeserializer<>(LinkTracking.class))
                 .addDeserializer(AttachmentType.class, new EnumDeserializer<>(AttachmentType.class))
+                .addDeserializer(TargetInclude.class, new EnumDeserializer<>(TargetInclude.class))
                 .addDeserializer(LinkRetargeting.class, new EnumDeserializer<>(LinkRetargeting.class))
                 .addDeserializer(Gender.class, new EnumDeserializer<>(Gender.class));
         builder.withJsonConverter(new JacksonJsonHttpMessageConverter(JsonMapper.builder()

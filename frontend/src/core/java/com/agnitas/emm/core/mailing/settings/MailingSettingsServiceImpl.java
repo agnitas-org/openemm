@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
@@ -71,7 +72,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     private final DynamicTagDao dynamicTagDao;
     private final MailingValidator mailingValidator;
     private final MailingFactory mailingFactory;
-    private final MediatypeFactory mediatypeFactory;
+    private final MediatypeFactory mediaTypeFactory;
 
     public MailingSettingsServiceImpl(
             MailingService mailingService,
@@ -82,7 +83,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             TargetService targetService,
             ConfigService configService,
             MailingFactory mailingFactory,
-            MediatypeFactory mediatypeFactory
+            MediatypeFactory mediaTypeFactory
     ) {
         this.mailingService = mailingService;
         this.mailingBaseService = mailingBaseService;
@@ -92,7 +93,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         this.targetService = targetService;
         this.configService = configService;
         this.mailingFactory = mailingFactory;
-        this.mediatypeFactory = mediatypeFactory;
+        this.mediaTypeFactory = mediaTypeFactory;
     }
 
     @Override
@@ -139,14 +140,6 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     private void validateAllowed(Admin admin, boolean isTemplate) {
         if (mailingService.isSettingsReadonly(admin, isTemplate)) {
             throw new NotAllowedActionException();
-        }
-    }
-
-    private void syncMediatypeTemplates(Mailing mailing) {
-        for (Mediatype mediatype : mailing.getMediatypes().values()) {
-            if (mediatype != null && mediatype.getStatus() == MediaTypeStatus.Active.getCode()) {
-                mediatype.syncTemplate(mailing, applicationContext);
-            }
         }
     }
 
@@ -220,7 +213,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             }
         }
         if (notActiveOrSent) {
-            setMediatypesToMailing(mailing, command, admin);
+            setMediaTypesToMailing(mailing, command, admin);
         }
         if (admin.permissionAllowed(Permission.MAILING_PARAMETER_CHANGE)) {
             command.parameters().ifPresent(params -> mailing.setParameters(collectMailingParams(mailing, params)));
@@ -273,15 +266,16 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         return mailing.hasComplexTargetExpression(); // overridden in extended class
     }
 
-    protected void setMediatypesToMailing(Mailing mailing, PatchMailingSettingsCommand command, Admin admin) {
+    protected void setMediaTypesToMailing(Mailing mailing, PatchMailingSettingsCommand command, Admin admin) {
+        setOriginalTemplateComponentsAsEmailMediatypeFields(mailing);
         int oldMailFormat = mailing.getEmailParam().getMailFormat();
 
         Map<Integer, Mediatype> current = mailing.getMediatypes();
 
-        command.activeMediatypesOrder().ifPresent(order -> applyActiveOrder(current, order));
+        command.activeMediaTypesOrder().ifPresent(order -> applyActiveOrder(current, order));
 
-        command.mediatypes().ifPresent(patches -> patches.forEach((type, patch) -> {
-            Mediatype mt = current.computeIfAbsent(type.getMediaCode(), c -> mediatypeFactory.create(type.getMediaCode()));
+        command.mediaTypes().ifPresent(patches -> patches.forEach((type, patch) -> {
+            Mediatype mt = current.computeIfAbsent(type.getMediaCode(), c -> mediaTypeFactory.create(type.getMediaCode()));
             // When 'mailing.settings.hide' permission is set, text template and HTML template should still be editable
             boolean restrictedToAlwaysAllowed = isMailingWithHiddenSettings(mailing, admin) && Mediatype.isActive(mt);
             if (restrictedToAlwaysAllowed) {
@@ -289,34 +283,49 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             } else {
                 patch.applyTo(mt);
             }
+            if (mt != null && patch.hasTemplateChange() && mt.getStatus() == MediaTypeStatus.Active.getCode()) {
+                mt.syncTemplate(mailing, applicationContext);
+            }
         }));
 
-        MediatypeEmail updatedEmailMediatype = mailing.getEmailParam();
+        MediatypeEmail updatedEmailMediaType = mailing.getEmailParam();
 
         if (mailing.isGridMailing()) {
-            updatedEmailMediatype.setStatus(MediaTypeStatus.Active.getCode());
+            updatedEmailMediaType.setStatus(MediaTypeStatus.Active.getCode());
         }
         if (mailing.getMailingType() != MailingType.DATE_BASED) {
-            updatedEmailMediatype.deleteDateBasedParameters();
+            updatedEmailMediaType.deleteDateBasedParameters();
         }
-        if (StringUtils.isBlank(updatedEmailMediatype.getReplyFullname())) {
-            updatedEmailMediatype.setReplyFullname(updatedEmailMediatype.getFromFullname());
+        if (StringUtils.isBlank(updatedEmailMediaType.getReplyFullname())) {
+            updatedEmailMediaType.setReplyFullname(updatedEmailMediaType.getFromFullname());
         }
-        if (updatedEmailMediatype.getMailFormat() == MailingModel.Format.TEXT.getCode()) {
-            updatedEmailMediatype.setHtmlTemplate("");
-        } else if (Mediatype.isActive(updatedEmailMediatype)
+        if (updatedEmailMediaType.getMailFormat() == MailingModel.Format.TEXT.getCode()) {
+            updatedEmailMediaType.setHtmlTemplate("");
+            updatedEmailMediaType.syncTemplate(mailing, applicationContext);
+        } else if (Mediatype.isActive(updatedEmailMediaType)
                    && oldMailFormat == MailingModel.Format.TEXT.getCode()
-                   && isEmpty(updatedEmailMediatype.getHtmlTemplate())) {
-            updatedEmailMediatype.setHtmlTemplate("[agnDYN name=\"HTML-Version\"/]");
+                   && isEmpty(updatedEmailMediaType.getHtmlTemplate())) {
+            updatedEmailMediaType.setHtmlTemplate("[agnDYN name=\"HTML-Version\"/]");
+            updatedEmailMediaType.syncTemplate(mailing, applicationContext);
         }
-        syncMediatypeTemplates(mailing);
+    }
+
+    private static void setOriginalTemplateComponentsAsEmailMediatypeFields(Mailing mailing) {
+        MailingComponent component = mailing.getTextTemplate();
+        if (component != null) {
+            mailing.getEmailParam().setTemplate(component.getEmmBlock());
+        }
+        component = mailing.getHtmlTemplate();
+        if (component != null) {
+            mailing.getEmailParam().setHtmlTemplate(component.getEmmBlock());
+        }
     }
 
     private void applyActiveOrder(Map<Integer, Mediatype> target, List<MediaTypes> order) {
         target.values().forEach(mt -> mt.setStatus(MediaTypeStatus.Inactive.getCode()));
         for (int i = 0; i < order.size(); i++) {
             MediaTypes type = order.get(i);
-            Mediatype mt = target.computeIfAbsent(type.getMediaCode(), c -> mediatypeFactory.create(type.getMediaCode()));
+            Mediatype mt = target.computeIfAbsent(type.getMediaCode(), c -> mediaTypeFactory.create(type.getMediaCode()));
             mt.setStatus(MediaTypeStatus.Active.getCode());
             mt.setPriority(i);
         }

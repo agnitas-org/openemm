@@ -10,7 +10,13 @@
 
 package com.agnitas.emm.mcp.v1.mailing.images.service.impl;
 
+import java.util.EnumSet;
+import java.util.List;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
@@ -24,6 +30,7 @@ import com.agnitas.emm.mcp.v1.mailing.images.dto.ImageResponse;
 import com.agnitas.emm.mcp.v1.mailing.images.dto.UploadMailingImageRequest;
 import com.agnitas.emm.mcp.v1.mailing.images.mapper.MailingImageMcpMapper;
 import com.agnitas.emm.mcp.v1.mailing.images.service.MailingImageMcpService;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -96,4 +103,16 @@ public class MailingImageMcpServiceImpl implements MailingImageMcpService {
         return toResponse(image, admin);
     }
 
+    @Override
+    public List<ImageResponse> getMailingImages(Mailing mailing, Admin admin) {
+        EnumSet<MailingComponentType> imageTypes = EnumSet.of(
+                MailingComponentType.Image,
+                MailingComponentType.HostedImage
+        );
+        return MapUtils.emptyIfNull(mailing.getComponents()).values().stream()
+                .filter(component -> imageTypes.contains(component.getType()))
+                .map(MailingComponent::getId)
+                .map(id -> getById(id, mailing.getId(), admin))
+                .toList();
+    }
 }

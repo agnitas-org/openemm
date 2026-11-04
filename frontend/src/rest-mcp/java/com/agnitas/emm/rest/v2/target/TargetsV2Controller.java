@@ -10,7 +10,10 @@
 
 package com.agnitas.emm.rest.v2.target;
 
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.target.dto.TargetInclude;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import com.agnitas.emm.rest.v2.infrastructure.security.auth.PermissionAllowed;
 import jakarta.validation.Valid;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,37 +43,45 @@ public class TargetsV2Controller {
 
     @GetMapping
     @PermissionAllowed("targets.show")
-    public PageResponse<TargetLightResponse> paginatedList(Pageable pageable, Admin admin) {
-        return targetService.find(pageable, admin);
+    public PageResponse<TargetLightResponse> paginatedList(
+            Pageable pageable,
+            @RequestParam(defaultValue = "") Set<TargetInclude> include,
+            Admin admin
+    ) {
+        return targetService.find(pageable, include, admin);
     }
 
     @GetMapping("/{id:\\d+}")
     @PermissionAllowed("targets.show")
-    public TargetResponse getById(@PathVariable @Positive int id, Admin admin) {
-        return targetService.find(id, admin.getCompanyID());
+    public TargetResponse getById(
+            @PathVariable @Positive int id,
+            @RequestParam(defaultValue = "") Set<TargetInclude> include,
+            Admin admin
+    ) {
+        return targetService.find(id, include, admin);
     }
 
     @PostMapping
     @PermissionAllowed("targets.change")
     @ResponseStatus(HttpStatus.CREATED)
     public TargetResponse create(@RequestBody @Valid CreateTargetRequest request, Admin admin) {
-        return targetService.create(request, admin.getCompanyID());
+        return targetService.create(request, admin);
     }
 
     @PatchMapping("/{id:\\d+}")
     @PermissionAllowed("targets.change")
     public TargetResponse patch(
-            @PathVariable int id,
+            @PathVariable @Positive int id,
             @Valid @RequestBody PatchTargetRequest request,
             Admin admin
     ) {
-        return targetService.patch(id, request, admin.getCompanyID());
+        return targetService.patch(id, request, admin);
     }
 
     @DeleteMapping("/{id:\\d+}")
     @PermissionAllowed("targets.delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable int id, Admin admin) {
+    public void delete(@PathVariable @Positive int id, Admin admin) {
         targetService.delete(id, admin);
     }
 }

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.codegen.sql;
 
+import java.time.ZoneId;
+
 import com.agnitas.emm.core.target.eql.codegen.CodeFragment;
 import com.agnitas.emm.core.target.eql.codegen.EqlDateFormat;
 
@@ -85,5 +87,17 @@ public interface SqlDialect {
 	 * @return SQL specific expression for date arithmetics
 	 */
 	String dateSubDays(String left, String right);
+
+	/**
+	 * Returns the SQL expression extracting the time part of a date expression as a string in the format {@code HH:mm:ss}.
+	 * The date is converted from the time zone it is stored in to the target one first (if they differ).
+	 *
+	 * @param code date expression
+	 * @param storedZone time zone the date is stored in
+	 * @param targetZone time zone the time part is requested in
+	 *
+	 * @return SQL expression for the time part
+	 */
+	String timeOfDay(String code, ZoneId storedZone, ZoneId targetZone);
 
 }

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.rest.v2.mailing.dto;
 
+import java.time.Instant;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -17,5 +19,6 @@ public record MailingParameterResponse(
         String name,
         String value,
         String description,
-        String creationDate
-) {}
+        Instant creationDate
+) {
+}

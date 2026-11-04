@@ -39,6 +39,7 @@ public class MailingLinkTools {
 
     @McpTool(
             name = "get_mailing_links",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of trackable links of a mailing, ordered by link ID"
     )
     public PageResponse<MailingLinkResponse> getList(
@@ -52,6 +53,7 @@ public class MailingLinkTools {
 
     @McpTool(
             name = "get_mailing_link_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a trackable link of a mailing by its ID"
     )
     public MailingLinkResponse getById(
@@ -65,6 +67,7 @@ public class MailingLinkTools {
 
     @McpTool(
             name = "update_mailing_link",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates a trackable link of a mailing. Fields not passed (null) are left unchanged."
     )
     public MailingLinkResponse patch(

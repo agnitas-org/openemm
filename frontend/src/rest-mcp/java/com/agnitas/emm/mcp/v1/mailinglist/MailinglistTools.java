@@ -44,6 +44,7 @@ public class MailinglistTools {
 
     @McpTool(
             name = "get_mailinglists",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of mailinglists"
     )
     public PageResponse<MailinglistResponse> getList(
@@ -56,6 +57,7 @@ public class MailinglistTools {
 
     @McpTool(
             name = "get_mailinglist_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a mailinglist by its ID"
     )
     public MailinglistResponse getById(
@@ -68,6 +70,7 @@ public class MailinglistTools {
 
     @McpTool(
             name = "create_mailinglist",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new mailinglist"
     )
     public MailinglistResponse create(
@@ -80,6 +83,7 @@ public class MailinglistTools {
 
     @McpTool(
             name = "update_mailinglist",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates an existing mailinglist. Fields not passed (null) are left unchanged."
     )
     public MailinglistResponse patch(
@@ -93,6 +97,7 @@ public class MailinglistTools {
 
     @McpTool(
             name = "delete_mailinglist",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a mailinglist by its ID"
     )
     public void delete(

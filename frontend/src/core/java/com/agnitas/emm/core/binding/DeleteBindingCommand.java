@@ -16,7 +16,7 @@ import com.agnitas.emm.core.validator.ValidationException;
 public record DeleteBindingCommand(
         int recipientId,
         int mailinglistId,
-        MediaTypes mediatype
+        MediaTypes mediaType
 ) {
     public DeleteBindingCommand {
         if (recipientId <= 0) {

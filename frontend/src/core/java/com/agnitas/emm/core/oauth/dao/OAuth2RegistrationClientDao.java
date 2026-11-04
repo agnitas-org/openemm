@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.oauth.dao;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import com.agnitas.emm.core.oauth.model.OAuth2RegistrationClientRecord;
@@ -23,5 +24,7 @@ public interface OAuth2RegistrationClientDao {
     void insert(OAuth2RegistrationClientRecord clientRecord);
 
     void update(OAuth2RegistrationClientRecord clientRecord);
+
+    void deleteIssuedBefore(Instant threshold, String excludedClientId);
 
 }

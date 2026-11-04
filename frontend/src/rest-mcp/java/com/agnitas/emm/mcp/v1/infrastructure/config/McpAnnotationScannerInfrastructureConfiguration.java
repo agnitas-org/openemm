@@ -42,7 +42,7 @@ public class McpAnnotationScannerInfrastructureConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    public McpServerAnnotationScannerAutoConfiguration.ServerMcpAnnotatedBeans serverAnnotatedBeanRegistry() {
+    public static McpServerAnnotationScannerAutoConfiguration.ServerMcpAnnotatedBeans serverAnnotatedBeanRegistry() {
         return new McpServerAnnotationScannerAutoConfiguration.ServerMcpAnnotatedBeans();
     }
 

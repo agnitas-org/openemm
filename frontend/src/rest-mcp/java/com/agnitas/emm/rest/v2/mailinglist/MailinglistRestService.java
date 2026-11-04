@@ -11,18 +11,62 @@
 package com.agnitas.emm.rest.v2.mailinglist;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
+import com.agnitas.emm.core.mailinglist.MailinglistSortCriteria;
+import com.agnitas.emm.core.mailinglist.dto.CreateMailinglistDTO;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.dto.PatchMailinglistCommand;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.rest.v2.infrastructure.exception.BadRequestException;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
+import com.agnitas.service.SimpleServiceResult;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
-public interface MailinglistRestService {
+@Service
+public class MailinglistRestService {
 
-    PageResponse<MailinglistResponse> findAll(Pageable pageForm, int companyId);
+    private final MailinglistService mailinglistService;
+    private final MailinglistRestMapper mailinglistRestMapper;
 
-    MailinglistResponse getById(int mailinglistId, int companyId);
+    public MailinglistRestService(
+            MailinglistService mailinglistService,
+            MailinglistRestMapper mailinglistRestMapper
+    ) {
+        this.mailinglistService = mailinglistService;
+        this.mailinglistRestMapper = mailinglistRestMapper;
+    }
 
-    MailinglistResponse create(CreateMailinglistRequest request, int companyId);
+    public PageResponse<MailinglistResponse> findAll(Pageable pageable, int companyId) {
+        PaginatedFilter<MailinglistSortCriteria> pagination = mailinglistRestMapper.toPaginationFilter(pageable);
+        PaginatedList<Mailinglist> mailinglists = mailinglistService.findAll(pagination, companyId);
+        return mailinglistRestMapper.toPageResponse(mailinglists, mailinglistRestMapper::toResponse);
+    }
 
-    MailinglistResponse updatePartially(int mailinglistId, int companyId, PatchMailinglistRequest updateDto);
+    public MailinglistResponse getById(int mailinglistId, int companyId) {
+        Mailinglist mailinglists = mailinglistService.getMailinglist(mailinglistId, companyId);
+        return mailinglistRestMapper.toResponse(mailinglists);
+    }
 
-    void delete(int mailinglistId, Admin admin);
+    public MailinglistResponse create(CreateMailinglistRequest request, int companyId) {
+        CreateMailinglistDTO createDTO = mailinglistRestMapper.toDto(request);
+        MailinglistDto dto = mailinglistService.create(createDTO, companyId);
+        return mailinglistRestMapper.toResponse(dto);
+    }
+
+    public MailinglistResponse updatePartially(int mailinglistId, int companyId, PatchMailinglistRequest updateDto) {
+        PatchMailinglistCommand patch = mailinglistRestMapper.toPatch(updateDto, mailinglistId, companyId);
+        Mailinglist mailinglist = mailinglistService.update(patch);
+        return mailinglistRestMapper.toResponse(mailinglist);
+    }
+
+    public void delete(int mailinglistId, Admin admin) {
+        SimpleServiceResult canBeDeleted = mailinglistService.checkCanBeDeleted(mailinglistId, admin);
+        if (!canBeDeleted.isSuccess()) {
+            throw new BadRequestException(canBeDeleted.getErrorMessages());
+        }
+        mailinglistService.deleteMailinglist(mailinglistId, admin.getCompanyID());
+    }
 }

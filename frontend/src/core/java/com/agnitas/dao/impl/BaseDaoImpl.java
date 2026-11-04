@@ -34,9 +34,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import javax.sql.DataSource;
 
-import com.agnitas.beans.QueryAndParams;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.dao.impl.mapper.StringRowMapper;
@@ -49,6 +49,7 @@ import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.DbVendor;
 import com.agnitas.util.Tuple;
+import com.agnitas.util.db.QueryAndParams;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -341,11 +342,17 @@ public abstract class BaseDaoImpl {
 	}
 
 	protected <K, V> Map<K, V> selectLinkedMap(String statement, RowMapper<Tuple<K, V>> rowMapper, Object... params) {
+		return selectLinkedMap(statement, rowMapper, (a, b) -> b, params);
+	}
+
+	protected <K, V> Map<K, V> selectLinkedMap(
+			String statement, RowMapper<Tuple<K, V>> rowMapper, BinaryOperator<V> merge, Object... params
+	) {
 		return select(statement, rowMapper, params).stream()
 				.collect(java.util.stream.Collectors.toMap(
 						Tuple::getFirst,
 						Tuple::getSecond,
-						(a, b) -> b,
+						merge,
 						java.util.LinkedHashMap::new
 				));
 	}

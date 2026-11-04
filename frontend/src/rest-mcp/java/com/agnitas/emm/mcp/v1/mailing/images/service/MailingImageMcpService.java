@@ -10,7 +10,10 @@
 
 package com.agnitas.emm.mcp.v1.mailing.images.service;
 
+import java.util.List;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.images.dto.ImageLightResponse;
@@ -31,4 +34,5 @@ public interface MailingImageMcpService {
 
     ImageResponse create(UploadMailingImageRequest request, int mailingId, Admin admin);
 
+    List<ImageResponse> getMailingImages(Mailing mailing, Admin admin);
 }

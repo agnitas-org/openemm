@@ -45,10 +45,12 @@ import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
+import com.agnitas.dao.SeasonKeyDao;
 import com.agnitas.dao.ServerMessageDao;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
+import com.agnitas.dao.impl.SeasonKeyDaoImpl;
 import com.agnitas.dao.impl.ServerMessageDaoImpl;
 import com.agnitas.emm.common.LicenseType;
 import com.agnitas.emm.core.JavaMailService;
@@ -198,7 +200,10 @@ public class ConfigService {
 
 			instance.setLicenseParser(new LicenseParser(licenseDao));
 
-			instance.setLicenseSignatureVerifier(new LicenseSignatureVerifier(licenseDao));
+			SeasonKeyDaoImpl seasonKeyDao = new SeasonKeyDaoImpl();
+			seasonKeyDao.setDataSource(dataSource);
+
+			instance.setLicenseSignatureVerifier(new LicenseSignatureVerifier(licenseDao, seasonKeyDao));
 			
 			CompanyInfoDao companyInfoDao = new CompanyInfoDao();
 			companyInfoDao.setDataSource(dataSource);
@@ -478,12 +483,8 @@ public class ConfigService {
 
 	private void joinConfigValues(Map<String, Map<Integer, String>> basicValues, Map<String, Map<Integer, String>> additionalValues) {
 		for (Entry<String, Map<Integer, String>> configEntry : additionalValues.entrySet()) {
-			Map<Integer, String> configValuesMap = basicValues.get(configEntry.getKey());
-			if (configValuesMap == null) {
-				configValuesMap = new HashMap<>();
-				basicValues.put(configEntry.getKey(), configValuesMap);
-			}
-			for (Entry<Integer, String> companyEntry : configEntry.getValue().entrySet()) {
+            Map<Integer, String> configValuesMap = basicValues.computeIfAbsent(configEntry.getKey(), k -> new HashMap<>());
+            for (Entry<Integer, String> companyEntry : configEntry.getValue().entrySet()) {
 				configValuesMap.put(companyEntry.getKey(), AgnUtils.replaceVersionPlaceholders(AgnUtils.replaceHomeVariables(companyEntry.getValue()), applicationVersion));
 			}
 		}
@@ -495,12 +496,8 @@ public class ConfigService {
 			Properties properties = new Properties();
 			properties.load(resourceAsStream);
 			for (String key : properties.stringPropertyNames()) {
-				Map<Integer, String> configValueMap = emmPropertiesMap.get(key);
-				if (configValueMap == null) {
-					configValueMap = new HashMap<>();
-					emmPropertiesMap.put(key, configValueMap);
-				}
-				configValueMap.put(0, AgnUtils.replaceHomeVariables(properties.getProperty(key)));
+                Map<Integer, String> configValueMap = emmPropertiesMap.computeIfAbsent(key, k -> new HashMap<>());
+                configValueMap.put(0, AgnUtils.replaceHomeVariables(properties.getProperty(key)));
 			}
 			return emmPropertiesMap;
 		} catch (Exception e) {
@@ -508,7 +505,10 @@ public class ConfigService {
 			return new HashMap<>();
 		}
 	}
-	
+	/*private Map<String, Map<Integer, String>> readNewLicense() throws Exception {
+
+	}*/
+
 	private Map<String, Map<Integer, String>> readLicenseData() throws Exception {
 		ClassLoader classLoader = ConfigService.class.getClassLoader();
 		URL licenseURL = classLoader.getResource("emm.license.xml");
@@ -536,7 +536,6 @@ public class ConfigService {
 			} catch(Exception e) {
 				licenseSignatureDataArray = null;
 			}
-
 			// OpenEMM has no license signature
 			if (licenseSignatureDataArray == null || licenseSignatureVerifier.verify(licenseDataArray, licenseSignatureDataArray)) {
 				licenseDao.storeLicense(licenseDataArray, licenseSignatureDataArray, licenseDate);
@@ -554,7 +553,7 @@ public class ConfigService {
 					companyDao.deactivateExtendedCompanies();
 				}
 			} else {
-				licenseSignatureVerifier.verify();
+				licenseSignatureVerifier.verify(licenseData.get(ConfigValue.System_License_MaximumVersion.toString()).get(0));
 			}
 			
 			return licenseData;

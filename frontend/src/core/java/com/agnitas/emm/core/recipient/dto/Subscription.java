@@ -18,7 +18,7 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 public record Subscription(
         boolean forAllMailinglists,
         List<Integer> mailinglistIds,
-        MediaTypes mediatype,
+        MediaTypes mediaType,
         UserStatus status,
         String remark
 ) {

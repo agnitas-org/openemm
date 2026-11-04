@@ -20,7 +20,7 @@ public record CreateBindingRequest(
         @NotNull @Positive Integer mailinglistId,
         @NotNull @Positive Integer recipientId,
         @NotNull UserStatus userStatus,
-        @NotNull MediaTypes mediatype,
+        @NotNull MediaTypes mediaType,
 
         UserType userType,
         String userRemark,

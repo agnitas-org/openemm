@@ -10,35 +10,125 @@
 
 package com.agnitas.emm.rest.v2.mailing.dto;
 
+import java.time.Instant;
 import java.util.List;
 
+import com.agnitas.beans.MailingContentType;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.rest.v2.mailing.attachments.AttachmentResponse;
 import com.agnitas.emm.rest.v2.mailing.content.MailingContentResponse;
+import com.agnitas.emm.rest.v2.mailing.images.ImageResponse;
+import com.agnitas.emm.rest.v2.mailing.links.LinkResponse;
+import com.agnitas.emm.rest.v2.target.TargetResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.annotation.JsonNaming;
+import tools.jackson.databind.annotation.JsonSerialize;
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record MailingFullResponse(
-        String version,
-        int companyId,
+        // region General settings
         int id,
-        String shortname,
-        String description,
-        int mailinglistId,
-        String mailinglist_shortname,
-        String mailinglist_description,
-        String mailingtype,
-        String targetExpression,
+
+        String name,
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
-        Boolean is_template,
-        String mailing_content_type,
-        String creationDate,
-        Integer open_action_id,
-        Integer click_action_id,
-        List<MediatypeResponse> mediatypes,
+        String description,
+
+        MailingContentType contentType,
+
+        MailingType mailingType,
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        int archiveId,
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        int openTriggerId,
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        int clickTriggerId,
+
+        List<MailingMediaType> mediaTypes,
+        // endregion
+
+        // region Targeting settings
+        int mailinglistId,
+
+        String targetExpression,
+
+        boolean needsTarget,
+        // endregion
+
+        // region EMAIL media type settings
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String subject,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String preHeader,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        FollowupType followupType,
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        int followupForId,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String senderAddress,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String senderName,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String replyAddress,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String replyName,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String textTemplate,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String htmlTemplate,
+
+        @JsonSerialize(using = RestCharset.RestCharsetSerializer.class)
+        RestCharset charset,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        MailFormat format,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        OnePixelPosition measureOpeningRate,
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        String envelopeEmail,
+        // endregion
+
+        // region SMS media type settings
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String smsTemplate,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String smsSenderAddress,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        String rcsTemplate,
+        // endregion
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Instant sendDate,
+
+        // region dependencies
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
         List<MailingParameterResponse> parameters,
-        List<MailingComponentResponse> components,
-        List<MailingContentResponse> contents,
-        List<TrackableLinkFullResponse> links,
-        List<MailingTargetResponse> targets
-) {}
+
+        List<MailingContentResponse> contentBlocks,
+
+        List<LinkResponse> links,
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        List<ImageResponse> images,
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        List<AttachmentResponse> attachments,
+
+        List<TargetResponse> targets
+        // endregion
+) {
+}

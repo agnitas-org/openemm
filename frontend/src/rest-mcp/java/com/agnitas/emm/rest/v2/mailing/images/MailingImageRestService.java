@@ -11,11 +11,15 @@
 package com.agnitas.emm.rest.v2.mailing.images;
 
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
@@ -26,6 +30,7 @@ import com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplier;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
@@ -36,7 +41,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
-class MailingImageRestService {
+public class MailingImageRestService {
 
     private static final Set<String> INLINE_SAFE_TYPES = Set.of(
             "image/png",
@@ -72,6 +77,18 @@ class MailingImageRestService {
         return mapper.toPageResponse(images, mapper::toResponse);
     }
 
+    public List<ImageResponse> getMailingImages(Mailing mailing, Admin admin) {
+        EnumSet<MailingComponentType> imageTypes = EnumSet.of(
+                MailingComponentType.Image,
+                MailingComponentType.HostedImage
+        );
+        return MapUtils.emptyIfNull(mailing.getComponents()).values().stream()
+                .filter(component -> imageTypes.contains(component.getType()))
+                .map(MailingComponent::getId)
+                .map(id -> find(id, mailing.getId(), admin))
+                .toList();
+    }
+
     public ImageResponse find(int imageId, int mailingId, Admin admin) {
         MailingImageDto image = componentsService.getImage(imageId, mailingId, admin.getCompanyID());
         return mapper.toResponse(image);
@@ -82,7 +99,7 @@ class MailingImageRestService {
         return mapper.toResponse(image);
     }
 
-    public ImageResponse create(UploadMailingImageRequest request, int mailingId, Admin admin) {
+    ImageResponse create(UploadMailingImageRequest request, int mailingId, Admin admin) {
         UploadMailingImageDto dto = mapper.toDto(request);
         MailingImageDto image = componentsService.uploadImage(dto, mailingId, admin);
         return mapper.toResponse(image);

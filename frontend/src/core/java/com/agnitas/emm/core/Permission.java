@@ -47,9 +47,9 @@ public class Permission {
 	public static final Permission RESTFULUSER_NEW = new Permission("restfulUser.new", true, PermissionType.System);
 	public static final Permission RESTFULUSER_SHOW = new Permission("restfulUser.show", true, PermissionType.System);
 
-	public static final Permission REST_API_SPRING = new Permission("restful.api.spring", false, PermissionType.Standard);
-	public static final Permission REST_API_LEGACY = new Permission("restful.api.legacy", false, PermissionType.Premium);
-	public static final Permission MCP_ENABLE = new Permission("restful.mcp.enable", false, PermissionType.Standard);
+	public static final Permission REST_API_SPRING = new Permission("restful.api.spring", true, PermissionType.Standard);
+	public static final Permission REST_API_LEGACY = new Permission("restful.api.legacy", true, PermissionType.Standard);
+	public static final Permission MCP_ENABLE = new Permission("restful.mcp.enable", true, PermissionType.Standard);
 
 	public static final Permission ALWAYS_ALLOWED = new Permission("always.allowed", false, PermissionType.Standard);
 	public static final Permission ALWAYS_DISALLOWED = new Permission("always.disallowed", false, PermissionType.Standard);
@@ -262,8 +262,6 @@ public class Permission {
 
 	// Special migration and rollback permissions
     public static final Permission DASHBOARD_ADD_ONS_TILE = new Permission("dashboard.add-ons.tile", false, PermissionType.Migration);
-    public static final Permission SIMPLE_TRACKING_POINTS_STAT_MIGRATION = new Permission("migration.simple.point.stat", false, PermissionType.Migration);
-    public static final Permission WORKFLOW_STAT_MIGRATION = new Permission("migration.campaigns.stat", false, PermissionType.Migration);
 
 	private final String tokenString;
 	private final boolean visible;

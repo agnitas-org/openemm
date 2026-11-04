@@ -10,12 +10,14 @@
 
 package com.agnitas.emm.mcp.v1.mailing.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 public record MailingTargetResponse(
         int id,
         String name,
         String description,
         String sql,
         String eql,
-        Boolean access_limiting
+        @JsonAlias("access_limiting") Boolean isAccessLimiting
 ) {
 }

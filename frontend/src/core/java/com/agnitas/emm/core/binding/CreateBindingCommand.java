@@ -19,7 +19,7 @@ import com.agnitas.emm.core.validator.ValidationException;
 public record CreateBindingCommand(
         int mailinglistId,
         int recipientId,
-        MediaTypes mediatype,
+        MediaTypes mediaType,
         UserStatus userStatus,
         BindingEntry.UserType userType,
         String userRemark,
@@ -39,8 +39,8 @@ public record CreateBindingCommand(
         if (userStatus == null) {
             throw ValidationException.exact(BindingValidationField.USER_STATUS, "Missing userStatus value");
         }
-        if (mediatype == null) {
-            mediatype = MediaTypes.EMAIL;
+        if (mediaType == null) {
+            mediaType = MediaTypes.EMAIL;
         }
         if (userType == null) {
             userType = BindingEntry.UserType.World;
@@ -54,7 +54,7 @@ public record CreateBindingCommand(
     public static final class Builder {
         private int mailinglistId;
         private int recipientId;
-        private MediaTypes mediatype;
+        private MediaTypes mediaType;
         private UserStatus userStatus;
         private BindingEntry.UserType userType;
         private String userRemark;
@@ -77,8 +77,8 @@ public record CreateBindingCommand(
             return this;
         }
 
-        public Builder mediatype(MediaTypes mediatype) {
-            this.mediatype = mediatype;
+        public Builder mediaType(MediaTypes mediatype) {
+            this.mediaType = mediatype;
             return this;
         }
 
@@ -126,7 +126,7 @@ public record CreateBindingCommand(
             return new CreateBindingCommand(
                     mailinglistId,
                     recipientId,
-                    mediatype,
+                    mediaType,
                     userStatus,
                     userType,
                     userRemark,

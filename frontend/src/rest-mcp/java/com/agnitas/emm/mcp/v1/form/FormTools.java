@@ -46,6 +46,7 @@ public class FormTools {
 
     @McpTool(
             name = "get_forms",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of user forms"
     )
     public PageResponse<FormLightResponse> getList(
@@ -58,6 +59,7 @@ public class FormTools {
 
     @McpTool(
             name = "get_form_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a user form by its ID"
     )
     public FormResponse getById(
@@ -70,6 +72,7 @@ public class FormTools {
 
     @McpTool(
             name = "create_form",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new user form"
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -83,6 +86,7 @@ public class FormTools {
 
     @McpTool(
             name = "update_form",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates an existing user form. Fields not passed are left unchanged."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -97,6 +101,7 @@ public class FormTools {
 
     @McpTool(
             name = "delete_form",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a user form by its ID"
     )
     public void delete(

@@ -18,7 +18,7 @@ public enum UserActivityLogActions {
     VIEW("default.View", "view"),
     DO("UserActivitylog.Action.Do", "do"),
     UPLOAD_DOWNLOAD("UserActivitylog.Action.UploadDownload", "download", "upload"),
-    SEND("UserActivitylog.Action.Send", "send"),
+    SEND("UserActivitylog.Action.Send", "send", "do schedule", "do cancel", "do resume", "do activate"),
     BLACKLIST("UserActivitylog.Action.Blacklist", "blacklist"),
     LOGIN_LOGOUT("UserActivitylog.login.logout", "login_logout"),
     ANY_WITHOUT_LOGIN("UserActivitylog.Any_Action_without_login", "all"),

@@ -1,0 +1,172 @@
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
+plugins {
+    id "com.epages.restdocs-api-spec" version "0.19.4"
+}
+
+tasks.register('check') {
+    doLast {
+        println 'No checks, just needed for plugin'
+    }
+}
+
+openapi3 {
+    // server = '/rest/v2' set in OpenApiRestV2Controller
+    title = 'EMM REST API V2'
+    version = '1.0.0'
+    format = 'json'
+    snippetsDirectory = file('generated-snippets')
+    outputDirectory = file('openapi')
+}
+
+// restdocs-api-spec can infer ONLY ONE security scheme per operation,
+// based on the Authorization header present in the documenting test.
+// But EMM rest endpoint supports BOTH Basic Auth and JWT.
+//
+// OpenAPI requires multiple entries in the `security` array to express
+// OR semantics (Basic OR Bearer). Since restdocs-api-spec cannot model
+// this, we fix it here by post-processing the generated spec and
+// explicitly allowing both authentication methods for every operation.
+
+// restdocs-api-spec treats every .optional() field as "nullable": true,
+// assuming optional Java fields may be null.
+// In OpenAPI, optional (may be absent) ≠ nullable (may be null).
+// normalize() remove all "nullable": true flags to keep this distinction.
+tasks.register('postProcessOpenApi3') {
+    dependsOn 'openapi3'
+    doLast {
+        def openapiFile = file("${openapi3.outputDirectory}/openapi3.json")
+        if (!openapiFile.exists()) return
+
+        def json = new JsonSlurper().parseText(openapiFile.text)
+
+        // 1. Define Security Schemes
+        if (!json.components) json.components = [:]
+        json.components.securitySchemes = [
+            basicAuth: [ type: "http", scheme: "basic" ],
+            bearerAuth: [ type: "http", scheme: "bearer", bearerFormat: "JWT" ]
+        ]
+
+        // 2. Define Global Security (Root level)
+        json.security = [
+            [ basicAuth: [] ],
+            [ bearerAuth: [] ]
+        ]
+
+        json.paths.each { path, methods ->
+            methods.each { methodName, operation ->
+                operation.security = [
+                    [ basicAuth: [] ],
+                    [ bearerAuth: [] ]
+                ]
+
+                // see RestDocsTestSupport.document and `ExtendedScopeBadgePlugin` in swagger-initializer.js
+                def emmMarker = " [EMM_ONLY]"
+                if (operation.summary && operation.summary.contains(emmMarker)) {
+                    operation.summary = operation.summary.replace(emmMarker, "")
+                    operation.description = operation.description.replace(emmMarker, "")
+                    operation["x-extended-scope"] = true
+                }
+
+                // strip the multipart-files marker (it can be in either field)
+                [operation, [field: "summary"], [field: "description"]].findAll { it instanceof Map && it.field }
+            }
+        }
+
+        fileTree(dir: openapi3.snippetsDirectory, include: '**/resource.json').each { resourceFile ->
+            def resource = new JsonSlurper().parseText(resourceFile.text)
+            def opId = resource.operationId
+            def formParams = resource.request?.formParameters ?: []
+
+            if (!formParams) return
+
+            json.paths?.each { path, methods ->
+                methods.each { methodName, operation ->
+                    if (operation.operationId != opId || operation.requestBody) return
+
+                    def properties = [:]
+                    def required = []
+
+                    formParams.each { p ->
+                        def attrs = p.attributes ?: [:]
+
+                        properties[p.name] = attrs.format == 'binary'
+                                ? [type: 'string', format: 'binary', description: p.description]
+                                : [type: p.type == 'NUMBER' ? 'number' : 'string', description: p.description]
+
+                        if (attrs.notBlank)  properties[p.name].minLength = 1
+                        if (attrs.positive)  properties[p.name].exclusiveMinimum = 0
+                        if (!p.optional || attrs.multipartRequired) required << p.name
+                    }
+
+                    operation.requestBody = [
+                        content: [
+                            'multipart/form-data': [
+                                schema: [type: 'object', properties: properties, required: required]
+                            ]
+                        ]
+                    ]
+                }
+            }
+        }
+
+        def nonBlankableFields = new TreeSet()
+        json.paths?.each { path, methods ->
+            methods.each { methodName, operation ->
+                def schema = operation.requestBody?.content?.'multipart/form-data'?.schema
+                if (!schema?.properties) return
+                def requiredSet = (schema.required ?: []) as Set
+                schema.properties.each { name, prop ->
+                    if (requiredSet.contains(name)) return
+                    if (prop.format == 'binary' || (prop.type && prop.type != 'string') || (prop.minLength ?: 0) >= 1) {
+                        nonBlankableFields << "${operation.operationId}::${name}"
+                    }
+                }
+            }
+        }
+
+        def jsFile = file("./swagger-ui/non-blankable-form-fields.js")
+        jsFile.text = "window.__NON_BLANKABLE_FIELDS__ = ${JsonOutput.toJson(nonBlankableFields as List)};\n"
+
+        def normalize
+        normalize = { node ->
+            if (node instanceof Map) {
+                node.remove('nullable')
+                node.each { k, v ->
+                    normalize(v)
+                }
+            } else if (node instanceof List) {
+                node.each { item ->
+                    normalize(item)
+                }
+            }
+        }
+
+        normalize(json)
+
+        // Extract all unique tags and sort them alphabetically
+        def uniqueTags = new TreeSet()
+        json.paths?.each { path, methods ->
+            methods.each { methodName, operation ->
+                if (operation.tags) {
+                    uniqueTags.addAll(operation.tags)
+                }
+            }
+        }
+        json.tags = uniqueTags.collect { [name: it] }
+
+        // Sort the Schemas alphabetically
+        if (json.components?.schemas) {
+            json.components.schemas = new TreeMap(json.components.schemas)
+        }
+
+        // Sort Paths alphabetically
+        if (json.paths) {
+            json.paths = new TreeMap(json.paths)
+        }
+
+        openapiFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(json))
+        println "Post processed openapi3.json"
+    }
+}

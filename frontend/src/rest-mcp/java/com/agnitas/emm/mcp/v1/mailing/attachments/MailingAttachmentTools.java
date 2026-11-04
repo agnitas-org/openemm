@@ -48,6 +48,7 @@ public class MailingAttachmentTools {
 
     @McpTool(
             name = "get_mailing_attachments",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of mailing attachments"
     )
     public PageResponse<AttachmentLightResponse> getList(
@@ -61,6 +62,7 @@ public class MailingAttachmentTools {
 
     @McpTool(
             name = "get_mailing_attachment",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns an attachment of a mailing by its ID or filename, including a signed URL to "
                     + "download its binary content. Provide either attachmentId or filename."
     )
@@ -82,6 +84,7 @@ public class MailingAttachmentTools {
 
     @McpTool(
             name = "create_mailing_attachment",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true),
             description = "Creates a new attachment"
     )
     public AttachmentResponse create(
@@ -95,6 +98,7 @@ public class MailingAttachmentTools {
 
     @McpTool(
             name = "delete_mailing_attachment",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes an attachment by its ID or filename. Provide either attachmentId or filename."
     )
     public void delete(

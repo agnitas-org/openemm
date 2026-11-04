@@ -34,7 +34,6 @@ public class RefreshUserLastLoginJobWorker extends JobWorkerBase {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
 		refreshGuiAndRestfulUserLastLogin(jdbcTemplate);
-		/*** refreshSupervisorLastLogin(jdbcTemplate); ***/
 		refreshWsUserLastLogin(jdbcTemplate);
 		
 		return "OK";
@@ -49,35 +48,6 @@ public class RefreshUserLastLoginJobWorker extends JobWorkerBase {
 				+ " WHERE username IN (SELECT DISTINCT username FROM login_track_tbl WHERE creation_date >= ?)", previousJobStart);
 		}
 	}
-
-	/***
-	private void refreshSupervisorLastLogin(JdbcTemplate jdbcTemplate) {
-		if (previousJobStart == null) {
-			jdbcTemplate.update(
-					"UPDATE supervisor_tbl SET last_login_date = " +
-							"(SELECT MAX(creation_date) FROM login_track_tbl " +
-							"WHERE login_status = 10 " +
-							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))" +
-							" WHERE EXISTS " +
-							"(SELECT 1 FROM login_track_tbl " +
-							"WHERE login_status = 10 " +
-							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))"
-			);
-		} else {
-			jdbcTemplate.update(
-					"UPDATE supervisor_tbl SET last_login_date = " +
-							"(SELECT MAX(creation_date) FROM login_track_tbl " +
-							"WHERE login_status = 10 " +
-							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))" +
-							" WHERE EXISTS " +
-							"(SELECT 1 FROM login_track_tbl " +
-							"WHERE login_status = 10 AND creation_date >= ? " +
-							"AND login_track_tbl.username LIKE CONCAT('%/', supervisor_tbl.supervisor_name))",
-					previousJobStart
-			);
-		}
-	}
-	***/
 
 	private void refreshWsUserLastLogin(JdbcTemplate jdbcTemplate) {
 		if (previousJobStart == null) {

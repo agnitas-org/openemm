@@ -474,8 +474,8 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 		if (isNotEmpty(filter.mailinglistIds())) {
 			sql.append(andClause(makeBulkInClauseForInteger("mailinglist_id", filter.mailinglistIds())));
 		}
-		if (isNotEmpty(filter.mediatypes())) {
-			List<Integer> mediatypes = filter.mediatypes().stream().map(MediaTypes::getMediaCode).toList();
+		if (isNotEmpty(filter.mediaTypes())) {
+			List<Integer> mediatypes = filter.mediaTypes().stream().map(MediaTypes::getMediaCode).toList();
 			sql.append(andClause(makeBulkInClauseForInteger("mediatype", mediatypes)));
 		}
 		if (isNotEmpty(filter.userStatuses())) {
@@ -724,8 +724,8 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 		if (isNotEmpty(filter.mailinglistIds())) {
 			filters.add(makeBulkInClauseForInteger("mailinglist_id", filter.mailinglistIds()));
 		}
-		if (isNotEmpty(filter.mediatypes())) {
-			List<Integer> mediatypeIds = filter.mediatypes().stream().map(MediaTypes::getMediaCode).toList();
+		if (isNotEmpty(filter.mediaTypes())) {
+			List<Integer> mediatypeIds = filter.mediaTypes().stream().map(MediaTypes::getMediaCode).toList();
 			filters.add(makeBulkInClauseForInteger("mediatype", mediatypeIds));
 		}
 
@@ -781,7 +781,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 				.map(cmd -> new Object[]{
 						cmd.recipientId(),
 						cmd.mailinglistId(),
-						cmd.mediatype().getMediaCode(),
+						cmd.mediaType().getMediaCode(),
 						cmd.userType().getTypeCode(),
 						cmd.userStatus().getStatusCode(),
 						cmd.userRemark()
@@ -805,7 +805,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 				companyId,
 				cmd.recipientId(),
 				cmd.mailinglistId(),
-				cmd.mediatype(),
+				cmd.mediaType(),
 				cmd.userStatus()
 		));
 	}
@@ -821,7 +821,7 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 						cmd.userRemark(),
 						cmd.mailinglistId(),
 						cmd.recipientId(),
-						cmd.mediatype().getMediaCode(),
+						cmd.mediaType().getMediaCode(),
 				})
 				.toList();
 		batchupdate("""
@@ -839,14 +839,14 @@ public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements Binding
 				companyId,
 				cmd.recipientId(),
 				cmd.mailinglistId(),
-				cmd.mediatype(),
+				cmd.mediaType(),
 				cmd.userStatus()
 		));
 	}
 
 	@Override
 	public Map<BindingIdentifier, UserStatus> getExistingState(ListBindingsFilter filter, int companyId) {
-		List<Integer> mediatypeCodes = filter.mediatypes().stream().map(MediaTypes::getMediaCode).toList();
+		List<Integer> mediatypeCodes = filter.mediaTypes().stream().map(MediaTypes::getMediaCode).toList();
 		return selectMap("""
 						SELECT
 						  mailinglist_id,

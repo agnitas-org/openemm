@@ -33,6 +33,8 @@ import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.dto.CreateTargetCommand;
 import com.agnitas.emm.core.target.dto.PatchTargetCommand;
+import com.agnitas.emm.core.target.dto.TargetInclude;
+import com.agnitas.emm.core.target.dto.TargetView;
 import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
@@ -121,6 +123,8 @@ public interface TargetService {
 	 */
 	Target getTargetGroup(int targetId, int companyId);
 
+	TargetView getTargetGroup(int targetId, Admin admin, Set<TargetInclude> include);
+
 	Target getTargetGroup(int targetId, int companyId, int adminId);
 
 	Optional<Integer> getNumberOfRecipients(int targetId, int companyId);
@@ -161,6 +165,8 @@ public interface TargetService {
 	List<TargetLight> getTargetLights(Admin admin, boolean content, TargetGroupDeliveryOption delivery);
 
 	PaginatedList<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexityGrade);
+
+	PaginatedList<TargetView> find(TargetLightsOptions options, Set<TargetInclude> include, Admin admin);
 
     int getTargetListSplitId(String splitBase, String splitPart, boolean isWmSplit);
     

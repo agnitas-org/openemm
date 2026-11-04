@@ -27,7 +27,9 @@ public interface MailingMcpService {
 
     MailingResponse getById(int id, int companyId);
 
-    MailingFullResponse getFull(int id, int companyId);
+    MailingFullResponse getMailingFullById(int mailingId, Admin admin);
+
+    MailingFullResponse getTemplateFullById(int templateId, Admin admin);
 
     MailingResponse create(CreateMailingRequest request, Admin admin);
 
@@ -42,8 +44,6 @@ public interface MailingMcpService {
     PageResponse<MailingLightResponse> listTemplates(ListTemplatesRequest query, McpPageable pageable, Admin admin);
 
     MailingResponse getTemplate(int id, int companyId);
-
-    MailingFullResponse getFullTemplate(int id, int companyId);
 
     MailingResponse createTemplate(CreateMailingRequest request, Admin admin);
 

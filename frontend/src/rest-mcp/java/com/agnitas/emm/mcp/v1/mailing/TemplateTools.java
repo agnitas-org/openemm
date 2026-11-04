@@ -48,6 +48,7 @@ public class TemplateTools {
 
     @McpTool(
             name = "get_templates",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of standard templates"
     )
     public PageResponse<MailingLightResponse> getList(
@@ -63,6 +64,7 @@ public class TemplateTools {
 
     @McpTool(
             name = "get_template_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns template settings by its ID"
     )
     public MailingResponse getById(
@@ -75,6 +77,7 @@ public class TemplateTools {
 
     @McpTool(
             name = "get_full_template_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a full template data (settings, content blocks, components, links and targets) by its ID"
     )
     public MailingFullResponse getFullById(
@@ -82,12 +85,15 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_SHOW);
-        return mailingMcpService.getFullTemplate(id, admin.getCompanyID());
+        return mailingMcpService.getTemplateFullById(id, admin);
     }
 
     @McpTool(
             name = "create_template",
-            description = "Creates a new standard template"
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
+            description = "Creates a new standard template. To add a new content block (dyn tag), put a reference such as "
+                    + "[agnDYN name=\"my_block\" /] into htmlTemplate, textTemplate, smsTemplate or rcsTemplate, then fill "
+                    + "it with update_mailing_content using the template ID as mailingId (there is no separate tool to create content blocks)."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
     public MailingResponse create(
@@ -100,6 +106,7 @@ public class TemplateTools {
 
     @McpTool(
             name = "copy_template",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Copies a template"
     )
     public MailingLightResponse copyById(
@@ -112,7 +119,12 @@ public class TemplateTools {
 
     @McpTool(
             name = "update_template",
-            description = "Updates an existing template. Fields not passed (null) are left unchanged."
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
+            description = "Updates an existing template. Fields not passed (null) are left unchanged. "
+                    + "To add a new content block (dyn tag), add a reference such as [agnDYN name=\"my_block\" /] to the "
+                    + "relevant template field (htmlTemplate, textTemplate, smsTemplate or rcsTemplate) and then fill it with "
+                    + "update_mailing_content using the template ID as mailingId. Content blocks no longer referenced in any "
+                    + "template field are removed on save."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
     public MailingResponse patch(
@@ -126,6 +138,7 @@ public class TemplateTools {
 
     @McpTool(
             name = "delete_template",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a template by its ID"
     )
     public void delete(

@@ -50,8 +50,8 @@ public record PatchMailingRequest(
         @McpToolParam(description = "Trigger ID to execute on link click. Use null to clear.", required = false)
         JsonNullable<@Positive Integer> clickTriggerId,
 
-        @McpToolParam(description = "Active mediatypes in priority order. RCS can only be used together with SMS. When EMAIL is activated, subject, senderAddress and replyAddress must be set; for SMS, smsSenderAddress", required = false)
-        JsonNullable<@NotEmpty List<MailingMediatype>> mediatypes,
+        @McpToolParam(description = "Active media types in priority order. RCS can only be used together with SMS. When EMAIL is activated, subject, senderAddress and replyAddress must be set; for SMS, smsSenderAddress", required = false)
+        JsonNullable<@NotEmpty List<MailingMediaType>> mediaTypes,
         // endregion
 
         // region Targeting settings
@@ -66,7 +66,7 @@ public record PatchMailingRequest(
         JsonNullable<Boolean> needsTarget,
         // endregion
 
-        // region EMAIL mediatype settings
+        // region EMAIL media type settings
         @McpToolParam(description = "Subject line", required = false)
         JsonNullable<@Size(min = MailingConstraints.SUBJECT_MIN_LENGTH) String> subject,
 
@@ -91,10 +91,10 @@ public record PatchMailingRequest(
         @McpToolParam(description = "Reply-to name", required = false)
         JsonNullable<@Size(max = MailingConstraints.REPLY_FULL_NAME_MAX_LENGTH) String> replyName,
 
-        @McpToolParam(description = "Text version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"Text\" /] to fill later with update_mailing_content", required = false)
+        @McpToolParam(description = "Text version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"Text\" /] to fill later with update_mailing_content. See docs://mailings/agn-tags", required = false)
         JsonNullable<String> textTemplate,
 
-        @McpToolParam(description = "HTML version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"HTML-Version\" /] to fill later with update_mailing_content", required = false)
+        @McpToolParam(description = "HTML version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"HTML-Version\" /] to fill later with update_mailing_content. See docs://mailings/agn-tags", required = false)
         JsonNullable<String> htmlTemplate,
 
         @McpToolParam(description = "Charset of the email", required = false)
@@ -110,7 +110,7 @@ public record PatchMailingRequest(
         JsonNullable<@Email String> envelopeEmail,
         // endregion
 
-        // region SMS mediatype settings
+        // region SMS media type settings
         @McpToolParam(description = "SMS version of the mailing: the content itself or a dyn tag such as [agnDYN name=\"SMS-Version\" /] to fill later with update_mailing_content", required = false)
         JsonNullable<String> smsTemplate,
 
@@ -128,7 +128,7 @@ public record PatchMailingRequest(
         JsonNullable<List<@Valid UpdateMailingParameterRequest>> parameters
 ) {
 
-    public boolean hasAnyEmailMediatypeField() {
+    public boolean hasAnyEmailMediaTypeField() {
         return isPresent(subject)
                || isPresent(preHeader)
                || isPresent(followupType)
@@ -145,11 +145,11 @@ public record PatchMailingRequest(
                || isPresent(envelopeEmail);
     }
 
-    public boolean hasAnySmsMediatypeField() {
+    public boolean hasAnySmsMediaTypeField() {
         return isPresent(smsTemplate) || isPresent(smsSenderAddress);
     }
 
-    public boolean hasAnyRcsMediatypeField() {
+    public boolean hasAnyRcsMediaTypeField() {
         return isPresent(rcsTemplate);
     }
 

@@ -11,9 +11,11 @@
 package com.agnitas.emm.core.target.mapper;
 
 import com.agnitas.beans.Target;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.impl.TargetImpl;
 import com.agnitas.emm.core.target.dto.CreateTargetCommand;
 import com.agnitas.emm.core.target.dto.TargetExportDto;
+import com.agnitas.emm.core.target.dto.TargetView;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -29,7 +31,6 @@ public interface TargetMapper {
     @Mapping(source = "EQL", target = "eql")
     TargetExportDto toExportDto(Target target);
 
-
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(source = "companyId", target = "companyID")
     @Mapping(source = "name", target = "targetName")
@@ -44,4 +45,18 @@ public interface TargetMapper {
     @Mapping(source = "description", target = "targetDescription")
     @Mapping(source = "eql", target = "EQL")
     TargetImpl toTarget(CreateTargetCommand command);
+
+    @Mapping(target = "sql", source = "target.targetSQL")
+    @Mapping(target = "name", source = "target.targetName")
+    @Mapping(target = "eql", source = "target.EQL")
+    @Mapping(target = "description", source = "target.targetDescription")
+    @Mapping(target = "isAccessLimiting", source = "target.accessLimitation")
+    TargetView toViewDto(Target target, Integer recipientCount);
+
+    @Mapping(target = "description", source = "target.targetDescription")
+    @Mapping(target = "name", source = "target.targetName")
+    @Mapping(target = "eql", ignore = true)
+    @Mapping(target = "sql", ignore = true)
+    @Mapping(target = "isAccessLimiting", ignore = true)
+    TargetView toViewDto(TargetLight target, Integer recipientCount);
 }

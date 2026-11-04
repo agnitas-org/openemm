@@ -82,6 +82,9 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT 
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'report.birt.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'report.birt.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'report.birt.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'restful.api.legacy' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'restful.api.spring' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'restful.mcp.enable' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'restfulUser.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'restfulUser.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) SELECT admin_group_id, 'restfulUser.new' FROM admin_group_tbl WHERE shortname = 'OpenEMM';
@@ -205,6 +208,9 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restful
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.new');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.show');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restful.api.legacy');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restful.api.spring');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restful.mcp.enable');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'role.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'role.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'role.show');

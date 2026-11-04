@@ -10,26 +10,84 @@
 
 package com.agnitas.emm.rest.v2.binding;
 
-import com.agnitas.emm.core.binding.BindingIdentifier;
+import java.util.List;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.binding.BindingIdentifier;
+import com.agnitas.emm.core.binding.BulkDeleteBindingCommand;
+import com.agnitas.emm.core.binding.BulkUpsertBindingCommand;
+import com.agnitas.emm.core.binding.CreateBindingCommand;
+import com.agnitas.emm.core.binding.DeleteBindingCommand;
+import com.agnitas.emm.core.binding.GetBindingQuery;
+import com.agnitas.emm.core.binding.ListBindingsQuery;
+import com.agnitas.emm.core.binding.PatchBindingCommand;
+import com.agnitas.emm.core.binding.UpsertBindingResult;
+import com.agnitas.emm.core.binding.service.BindingCreateResult;
+import com.agnitas.emm.core.binding.service.BindingService;
+import com.agnitas.emm.core.commons.validation.DeleteResult;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.BulkDeleteResult;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.BulkOperationResponse;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
-public interface BindingRestService {
+@Service
+class BindingRestService {
 
-    PageResponse<BindingResponse> find(ListBindingsRequest request, Pageable pageable, int companyId);
+    private final BindingRestMapper bindingRestMapper;
+    private final BindingService bindingService;
 
-    BindingResponse find(BindingIdentifier request, int companyId);
+    BindingRestService(
+            BindingRestMapper bindingRestMapper,
+            BindingService bindingService
+    ) {
+        this.bindingRestMapper = bindingRestMapper;
+        this.bindingService = bindingService;
+    }
 
-    BindingResponse create(CreateBindingRequest request, int companyId);
+    public PageResponse<BindingResponse> find(ListBindingsRequest request, Pageable pageable, int companyId) {
+        ListBindingsQuery query = bindingRestMapper.toQuery(request, pageable);
+        PaginatedList<BindingEntry> bindings = bindingService.find(query, companyId);
+        return bindingRestMapper.toPageResponse(bindings, bindingRestMapper::toResponse);
+    }
 
-    void delete(BindingIdentifier identifier, int companyId);
+    public BindingResponse find(BindingIdentifier request, int companyId) {
+        GetBindingQuery query = bindingRestMapper.toQuery(request);
+        BindingEntry binding = bindingService.get(query, companyId);
+        return bindingRestMapper.toResponse(binding);
+    }
 
-    BulkOperationResponse<BulkDeleteResult> delete(BulkDeleteBindingRequest request, int companyId);
+    public BindingResponse create(CreateBindingRequest request, int companyId) {
+        CreateBindingCommand command = bindingRestMapper.toCommand(request);
+        BindingCreateResult result = bindingService.create(command, companyId);
+        return bindingRestMapper.toResponse(result.binding(), result.actionExecutionInfo());
+    }
 
-    BindingResponse update(BindingIdentifier identifier, PatchBindingRequest request, int companyId);
+    public void delete(BindingIdentifier identifier, int companyId) {
+        DeleteBindingCommand command = bindingRestMapper.toDeleteCommand(identifier);
+        bindingService.deleteBinding(command, companyId);
+    }
 
-    BulkUpsertBindingResponse upsert(BulkUpsertBindingRequest request, Admin admin);
+    public BulkOperationResponse<BulkDeleteResult> delete(BulkDeleteBindingRequest request, int companyId) {
+        BulkDeleteBindingCommand command = bindingRestMapper.toCommand(request, companyId);
+        List<DeleteResult> results = bindingService.bulkDelete(command);
+        return BulkOperationResponse.fromDeleteResult(results);
+    }
+
+    public BindingResponse update(BindingIdentifier identifier, PatchBindingRequest request, int companyId) {
+        PatchBindingCommand command = bindingRestMapper.toCommand(identifier, request);
+        bindingService.updateBinding(command, companyId);
+        return find(identifier, companyId);
+    }
+
+    public BulkUpsertBindingResponse upsert(BulkUpsertBindingRequest request, Admin admin) {
+        BulkUpsertBindingCommand command = bindingRestMapper.toCommand(
+                request,
+                "%s by Admin via Restful API".formatted(request.status())
+        );
+        List<UpsertBindingResult> result = bindingService.upsert(command, admin.getCompanyID());
+        return BulkUpsertBindingResponse.from(result);
+    }
 }

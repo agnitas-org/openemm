@@ -32,13 +32,13 @@ public interface MailingSettingsMapper {
     @Mapping(target = "archiveId", source = "campaignID")
     @Mapping(target = "contentType", source = "mailingContentType")
     @Mapping(target = "archived", expression = "java(mailing.getArchived() == 1)")
-    @Mapping(target = "mediatypes", expression = "java(mapMediatypes(mailing.getMediatypes()))")
+    @Mapping(target = "mediaTypes", expression = "java(mapMediaTypes(mailing.getMediatypes()))")
     MailingSettingsDto toSettingsDto(Mailing mailing);
 
     @SuppressWarnings("unused")
-    default EnumMap<MediaTypes, Mediatype> mapMediatypes(Map<Integer, Mediatype> mediatypes) {
+    default EnumMap<MediaTypes, Mediatype> mapMediaTypes(Map<Integer, Mediatype> mediaTypes) {
         EnumMap<MediaTypes, Mediatype> result = new EnumMap<>(MediaTypes.class);
-        for (Map.Entry<Integer, Mediatype> entry : mediatypes.entrySet()) {
+        for (Map.Entry<Integer, Mediatype> entry : mediaTypes.entrySet()) {
             MediaTypes key = MediaTypes.getMediaTypeForCode(entry.getKey());
             if (key != null) {
                 result.put(key, entry.getValue());

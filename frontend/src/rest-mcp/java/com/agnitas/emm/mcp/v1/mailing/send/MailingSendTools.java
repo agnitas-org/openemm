@@ -39,6 +39,7 @@ public class MailingSendTools {
 
     @McpTool(
             name = "send_mailing",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false),
             description = "Starts delivery of a mailing to its recipients. Sends regular/follow-up mailings " +
                     "to their recipients, or activates action-based, date-based and interval " +
                     "mailings - whichever applies to the given mailing."
@@ -53,6 +54,7 @@ public class MailingSendTools {
 
     @McpTool(
             name = "send_admin_mailing",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false),
             description = "Sends the mailing to its admin recipients."
     )
     public MailingStartResponse sendAdmin(
@@ -65,6 +67,7 @@ public class MailingSendTools {
 
     @McpTool(
             name = "send_test_mailing",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false),
             description = "Sends the mailing to its test recipients."
     )
     public MailingStartResponse sendTest(
@@ -77,6 +80,7 @@ public class MailingSendTools {
 
     @McpTool(
             name = "stop_mailing",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Stops an active or already-sent mailing. Cancels regular/follow-up mailings, " +
                     "or deactivates action-based, date-based and interval mailings - whichever applies to the given mailing."
     )

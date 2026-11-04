@@ -16,7 +16,7 @@ import com.agnitas.emm.core.validator.ValidationException;
 public record GetBindingQuery(
         int recipientId,
         int mailinglistId,
-        MediaTypes mediatype
+        MediaTypes mediaType
 ) {
     public GetBindingQuery {
         if (recipientId <= 0) {
@@ -25,7 +25,7 @@ public record GetBindingQuery(
         if (mailinglistId <= 0) {
             throw ValidationException.invalidPath("mailinglistId");
         }
-        if (mediatype == null) {
+        if (mediaType == null) {
             throw ValidationException.invalidPath("mediatype. Can't be null");
         }
     }

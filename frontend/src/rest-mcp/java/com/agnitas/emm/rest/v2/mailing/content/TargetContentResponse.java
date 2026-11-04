@@ -10,12 +10,11 @@
 
 package com.agnitas.emm.rest.v2.mailing.content;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record TargetContentResponse(
         int id,
-        Integer targetId,
+        @JsonAlias("target_id") Integer targetId,
         int order,
         String text
 ) {

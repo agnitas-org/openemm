@@ -129902,7 +129902,14 @@ $(document).ready(function() {
     });
     function clearAllInputs($container) {
         $container.find(":input, select").val("").trigger("change");
-        $container.find(":checkbox, :radio").prop("checked", false);
+        $container.find(":checkbox").prop("checked", false);
+        $container.find(":radio").each(function() {
+            const restored = this.checked !== this.defaultChecked;
+            this.checked = this.defaultChecked;
+            if (restored && this.checked) {
+                $(this).trigger("change");
+            }
+        });
         AGN.Lib.CoreInitializer.run("select", $container);
     }
     Action.new({
@@ -149069,6 +149076,151 @@ AGN.Lib.Controller.new("recipient-view", function() {
                 }
             }
         }
+    }
+});
+
+AGN.Lib.Controller.new("ref-table-rows-overview", function() {
+    const FILTER_FIELD_ATTR = "data-filter-field";
+    const EMPTY_OPERATOR = "";
+    const OPERATOR_EQUALS = "EQUALS";
+    const OPERATOR_GREATER_THAN_OR_EQUAL = "GREATER_THAN_OR_EQUAL";
+    const OPERATOR_LESS_THAN = "LESS_THAN";
+    this.addDomInitializer("ref-table-rows-overview", function() {
+        const form = AGN.Lib.Form.get(this.el);
+        form.get$().on("form:submit", () => applyFilters(form));
+    });
+    this.addAction({
+        change: "change-filter-operator"
+    }, function() {
+        const field = CSS.escape(this.el.attr("data-filter-operators"));
+        const $filter = this.el.closest("form").find(`[${FILTER_FIELD_ATTR}="${field}"]`);
+        $filter.toggleClass("hidden", getOperator($filter) !== EMPTY_OPERATOR);
+    });
+    AGN.Lib.Validator.new("ref-table-rows-overview", {
+        valid: function(form, options) {
+            return !this.errors(form, options).length;
+        },
+        errors: function(form) {
+            const errors = [];
+            readFilters(form).filter(f => !!f.from).forEach(filter => {
+                const {from: from, to: to} = filter;
+                const invalidDates = [ from, to ].filter(dt => dt.date && !parseDate(dt.date).isValid());
+                if (invalidDates.length) {
+                    invalidDates.forEach(dt => errors.push({
+                        field: dt.$field,
+                        msg: t("fields.dateTime.errors.incompleteDate")
+                    }));
+                } else if (from.date && to.date && !toMoment(from).isBefore(toMoment(to, true))) {
+                    errors.push({
+                        field: to.$field,
+                        msg: t("referenceTables.filter.error.rangeInvalid")
+                    });
+                } else if (!from.date && !to.date && from.time && to.time && from.time >= to.time) {
+                    errors.push({
+                        field: to.$field,
+                        msg: t("referenceTables.filter.error.rangeInvalid")
+                    });
+                }
+            });
+            return errors;
+        }
+    });
+    function applyFilters(form) {
+        toRequestFilters(readFilters(form)).forEach((filter, idx) => Object.entries(filter).forEach(([propertyName, propertyValue]) => form.setValueOnce(`filters[${idx}].${propertyName}`, propertyValue)));
+    }
+    function readFilters(form) {
+        return form.get$().find(`[${FILTER_FIELD_ATTR}]`).map((i, el) => readFilter($(el))).get();
+    }
+    function readFilter($el) {
+        const filter = {
+            field: $el.attr(FILTER_FIELD_ATTR),
+            operator: getOperator($el)
+        };
+        if (filter.operator !== EMPTY_OPERATOR) {
+            return filter;
+        }
+        if ($el.is("input")) {
+            return {
+                ...filter,
+                $input: $el,
+                value: $el.val()
+            };
+        }
+        return {
+            ...filter,
+            from: readDateTime($el.find("[data-filter-from]")),
+            to: readDateTime($el.find("[data-filter-to]"))
+        };
+    }
+    function readDateTime($container) {
+        const $date = $container.find(".js-datepicker");
+        const $time = $container.find(".js-timepicker");
+        const date = ($date.val() || "").trim();
+        let time = ($time.val() || "").trim().replace(/[_hm]/g, "0");
+        if (!/^\d{2}:\d{2}$/.test(time)) {
+            time = "";
+        }
+        return {
+            $field: $container.children().first(),
+            date: date,
+            time: time,
+            dateOnly: !$time.exists()
+        };
+    }
+    function getOperator($filter) {
+        const field = CSS.escape($filter.attr(FILTER_FIELD_ATTR));
+        return $filter.closest("form").find(`[data-filter-operators="${field}"]`).find("input:checked").data("operator") || EMPTY_OPERATOR;
+    }
+    function toRequestFilters(filters) {
+        return filters.flatMap(({field: field, operator: operator, value: value, from: from, to: to}) => {
+            if (operator !== EMPTY_OPERATOR) {
+                return [ {
+                    field: field,
+                    operator: operator,
+                    value: ""
+                } ];
+            }
+            if (from) {
+                return [ {
+                    field: field,
+                    operator: OPERATOR_GREATER_THAN_OR_EQUAL,
+                    value: toRequestValue(from)
+                }, {
+                    field: field,
+                    operator: OPERATOR_LESS_THAN,
+                    value: toRequestValue(to, true)
+                } ].filter(f => f.value);
+            }
+            return value ? [ {
+                field: field,
+                operator: OPERATOR_EQUALS,
+                value: value
+            } ] : [];
+        });
+    }
+    function toRequestValue(dt, isRangeEnd = false) {
+        if (dt.date) {
+            const date = parseDate(dt.date);
+            if (!date.isValid()) {
+                return null;
+            }
+            if (dt.dateOnly) {
+                return date.add(isRangeEnd ? 1 : 0, "days").format("YYYY-MM-DD");
+            }
+            return toMoment(dt, isRangeEnd).toISOString();
+        }
+        return dt.time || null;
+    }
+    function parseDate(date) {
+        const format = window.adminDateFormat.toLowerCase().replace(/d+/g, "DD").replace(/m+/g, "MM").replace(/y+/g, "YYYY");
+        return moment(date, format, true);
+    }
+    function toMoment({date: date, time: time}, isRangeEnd = false) {
+        const result = moment.tz(`${parseDate(date).format("YYYY-MM-DD")}T${time || "00:00"}`, window.agnTimeZoneId);
+        if (isRangeEnd && !time) {
+            result.add(1, "days");
+        }
+        return result;
     }
 });
 

@@ -55,32 +55,32 @@ public class BindingsV2Controller {
         return bindingRestService.create(request, admin.getCompanyID());
     }
 
-    @GetMapping("/{recipientId:\\d+}/{mailinglistId:\\d+}/{mediatype}")
+    @GetMapping("/{recipientId:\\d+}/{mailinglistId:\\d+}/{mediaType}")
     @PermissionAllowed("recipient.show")
     public BindingResponse get(
             @PathVariable @Positive int recipientId,
             @PathVariable @Positive int mailinglistId,
-            @PathVariable @NotNull MediaTypes mediatype,
+            @PathVariable @NotNull MediaTypes mediaType,
             Admin admin
     ) {
         return bindingRestService.find(new BindingIdentifier(
                 recipientId,
                 mailinglistId,
-                mediatype
+                mediaType
         ), admin.getCompanyID());
     }
 
-    @PatchMapping("/{recipientId:\\d+}/{mailinglistId:\\d+}/{mediatype}")
+    @PatchMapping("/{recipientId:\\d+}/{mailinglistId:\\d+}/{mediaType}")
     @PermissionAllowed("recipient.change")
     public BindingResponse updatePartially(
             @PathVariable @Positive int recipientId,
             @PathVariable @Positive int mailinglistId,
-            @PathVariable @NotNull MediaTypes mediatype,
+            @PathVariable @NotNull MediaTypes mediaType,
             @RequestBody @Valid PatchBindingRequest request,
             Admin admin
     ) {
         return bindingRestService.update(
-                new BindingIdentifier(recipientId, mailinglistId, mediatype),
+                new BindingIdentifier(recipientId, mailinglistId, mediaType),
                 request,
                 admin.getCompanyID()
         );
@@ -94,20 +94,20 @@ public class BindingsV2Controller {
 
     @DeleteMapping({
             "/{recipientId:\\d+}/{mailinglistId:\\d+}",
-            "/{recipientId:\\d+}/{mailinglistId:\\d+}/{mediatype}"
+            "/{recipientId:\\d+}/{mailinglistId:\\d+}/{mediaType}"
     })
     @PermissionAllowed("recipient.change")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
             @PathVariable @Positive int recipientId,
             @PathVariable @Positive int mailinglistId,
-            @PathVariable(required = false) MediaTypes mediatype,
+            @PathVariable(required = false) MediaTypes mediaType,
             Admin admin
     ) {
         bindingRestService.delete(new BindingIdentifier(
                 recipientId,
                 mailinglistId,
-                mediatype
+                mediaType
         ), admin.getCompanyID());
     }
 

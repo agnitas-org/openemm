@@ -14,7 +14,7 @@ import com.agnitas.emm.common.UpsertResult;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public record UpsertBindingResult(
-        MediaTypes mediatype,
+        MediaTypes mediaType,
         Integer mailinglistId,
         Integer recipientId,
         UpsertResult result

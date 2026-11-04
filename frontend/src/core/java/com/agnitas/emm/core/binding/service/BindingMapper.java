@@ -48,7 +48,6 @@ public interface BindingMapper {
     @Mapping(target = "bindingEntryDao", ignore = true)
     @Mapping(source = "mailinglistId", target = "mailinglistID")
     @Mapping(source = "recipientId", target = "customerID")
-    @Mapping(source = "mediatype", target = "mediaType")
     @Mapping(source = "userStatus", target = "userStatus")
     @Mapping(source = "userType", target = "userType")
     @Mapping(source = "entryMailingId", target = "entryMailingID")

@@ -33,7 +33,7 @@ public record BulkUpsertBindingsRequest(
         @NotNull
         @Size(min = 1, max = 1000)
         @McpToolParam(description = "Media types to create or update bindings for")
-        SequencedSet<MediaTypes> mediatypes,
+        SequencedSet<MediaTypes> mediaTypes,
 
         @NotNull
         @McpToolParam(description = "Subscription status to set for every combination of recipient, mailinglist and media type")

@@ -10,8 +10,6 @@
 
 package com.agnitas.spring.security.config;
 
-import java.time.Duration;
-
 import org.jspecify.annotations.NonNull;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -26,7 +24,6 @@ import org.springframework.security.oauth2.server.authorization.oidc.authenticat
 import org.springframework.security.oauth2.server.authorization.oidc.converter.OidcClientRegistrationRegisteredClientConverter;
 import org.springframework.security.oauth2.server.authorization.oidc.converter.RegisteredClientOidcClientRegistrationConverter;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 
 // Allows any client to register dynamically without a prior access token.
 // Required by the MCP Authorization spec (2025-11-05) for OAuth2 clients like Claude Code.
@@ -67,19 +64,6 @@ class OpenDynamicClientRegistrationProvider implements AuthenticationProvider {
                     .scope(OidcScopes.OPENID)
                     .build();
         }
-
-        // Spring's OAuth2RefreshTokenGenerator never issues a refresh token to a public
-        // (ClientAuthenticationMethod.NONE) client, regardless of granted authorization
-        // grant types - a deliberate default, not something to override for an openly
-        // self-registerable client. So the access token's default 5-minute lifetime is the
-        // client's *entire* session length before it must fall back to a full interactive
-        // re-authorization. Extend it well beyond the default to make that a rare event
-        // instead of a routine one.
-        registeredClient = RegisteredClient.from(registeredClient)
-                .tokenSettings(TokenSettings.withSettings(registeredClient.getTokenSettings().getSettings())
-                        .accessTokenTimeToLive(Duration.ofHours(12))
-                        .build())
-                .build();
 
         registeredClientRepository.save(registeredClient);
         OidcClientRegistration response = toClientRegistration.convert(registeredClient);

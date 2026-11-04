@@ -44,7 +44,7 @@ public record CreateMailingRequest(
         Integer archiveId,
 
         @NotEmpty
-        List<RestMediatype> mediatypes,
+        List<@NotNull MailingMediaType> mediaTypes,
 
         @Positive
         Integer openTriggerId,
@@ -63,7 +63,7 @@ public record CreateMailingRequest(
         Boolean needsTarget,
         // endregion
 
-        // region EMAIL mediatype settings
+        // region EMAIL mediaType settings
         @Size(min = MailingConstraints.SUBJECT_MIN_LENGTH)
         String subject,
         String preHeader,
@@ -91,7 +91,7 @@ public record CreateMailingRequest(
         @Email String envelopeEmail,
         // endregion
 
-        // region SMS mediatype settings
+        // region SMS mediaType settings
         String smsTemplate,
 
         @Size(min = MailingConstraints.SMS_ADDRESS_MIN_LENGTH)
@@ -102,6 +102,12 @@ public record CreateMailingRequest(
 
         List<@Valid CreateMailingParameterRequest> parameters
 ) {
+    public CreateMailingRequest {
+        if (mediaTypes == null) {
+            mediaTypes = List.of(MailingMediaType.EMAIL);
+        }
+    }
+
     @SuppressWarnings("unused")
     @AssertTrue(message = MailingConstraints.FOLLOWUP_TYPE_REQUIRED_FOR_FOLLOWUP_MSG)
     public boolean isFollowupTypePresentForFollowUp() {

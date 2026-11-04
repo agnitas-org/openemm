@@ -18,7 +18,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,10 +43,18 @@ import tools.jackson.databind.ObjectMapper;
 class OAuth2RegisteredClientRepository implements RegisteredClientRepository {
 
     private final OAuth2RegistrationClientDao dao;
+    private final Supplier<Duration> dynamicClientAccessTokenTimeToLive;
+    private final String configuredClientId;
     private final ObjectMapper objectMapper;
 
-    OAuth2RegisteredClientRepository(OAuth2RegistrationClientDao dao) {
+    OAuth2RegisteredClientRepository(
+            OAuth2RegistrationClientDao dao,
+            Supplier<Duration> dynamicClientAccessTokenTimeToLive,
+            String configuredClientId
+    ) {
         this.dao = dao;
+        this.dynamicClientAccessTokenTimeToLive = dynamicClientAccessTokenTimeToLive;
+        this.configuredClientId = configuredClientId;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -86,7 +96,7 @@ class OAuth2RegisteredClientRepository implements RegisteredClientRepository {
                 toDelimited(client.getPostLogoutRedirectUris()),
                 StringUtils.defaultString(toDelimited(client.getScopes())),
                 serializeClientSettings(client.getClientSettings()),
-                serializeTokenSettings(client.getTokenSettings())
+                serializeTokenSettings(client.getClientId(), client.getTokenSettings())
         );
     }
 
@@ -119,9 +129,27 @@ class OAuth2RegisteredClientRepository implements RegisteredClientRepository {
         split(clientRecord.scopes()).forEach(builder::scope);
 
         builder.clientSettings(deserializeClientSettings(clientRecord.clientSettings()));
-        builder.tokenSettings(deserializeTokenSettings(clientRecord.tokenSettings()));
+        builder.tokenSettings(applyAccessTokenTimeToLive(clientRecord.clientId(), deserializeTokenSettings(clientRecord.tokenSettings())));
 
         return builder.build();
+    }
+
+    // Spring's OAuth2RefreshTokenGenerator never issues a refresh token to a public
+    // (ClientAuthenticationMethod.NONE) client, regardless of granted authorization
+    // grant types - a deliberate default, not something to override for an openly
+    // self-registerable client. So the access token's default 5-minute lifetime is the
+    // client's *entire* session length before it must fall back to a full interactive
+    // re-authorization. Extend it well beyond the default to make that a rare event
+    // instead of a routine one. Applied on read (not stored at registration), so a
+    // changed config value also takes effect for already registered clients.
+    private TokenSettings applyAccessTokenTimeToLive(String clientId, TokenSettings settings) {
+        if (!isDynamicClient(clientId)) {
+            return settings;
+        }
+
+        return TokenSettings.withSettings(settings.getSettings())
+                .accessTokenTimeToLive(dynamicClientAccessTokenTimeToLive.get())
+                .build();
     }
 
     private String serializeClientSettings(ClientSettings settings) {
@@ -139,13 +167,19 @@ class OAuth2RegisteredClientRepository implements RegisteredClientRepository {
                 .build();
     }
 
-    private String serializeTokenSettings(TokenSettings settings) {
+    private boolean isDynamicClient(String clientId) {
+        return !Objects.equals(clientId, configuredClientId);
+    }
+
+    private String serializeTokenSettings(String clientId, TokenSettings settings) {
         Map<String, Object> map = new HashMap<>();
         map.put("reuseRefreshTokens", settings.isReuseRefreshTokens());
         map.put("accessTokenFormat", settings.getAccessTokenFormat().getValue());
         map.put("idTokenSignatureAlgorithm", settings.getIdTokenSignatureAlgorithm().getName());
         map.put("authCodeTtlSeconds", settings.getAuthorizationCodeTimeToLive().getSeconds());
-        map.put("accessTokenTtlSeconds", settings.getAccessTokenTimeToLive().getSeconds());
+        if (!isDynamicClient(clientId)) {
+            map.put("accessTokenTtlSeconds", settings.getAccessTokenTimeToLive().getSeconds());
+        }
         map.put("refreshTokenTtlSeconds", settings.getRefreshTokenTimeToLive().getSeconds());
         map.put("deviceCodeTtlSeconds", settings.getDeviceCodeTimeToLive().getSeconds());
         return toJson(map);

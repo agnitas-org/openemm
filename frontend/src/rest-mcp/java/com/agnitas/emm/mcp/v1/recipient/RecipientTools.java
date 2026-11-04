@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.mcp.v1.recipient;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,9 +18,9 @@ import java.util.regex.Pattern;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
-import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
+import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkDeleteRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkDeleteRecipientsResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkRecipientsRequest;
@@ -28,6 +29,7 @@ import com.agnitas.emm.mcp.v1.recipient.dto.CreateRecipientRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.UpdateRecipientRequest;
 import com.agnitas.emm.mcp.v1.recipient.service.RecipientMcpService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
@@ -41,6 +43,9 @@ public class RecipientTools {
 
     // e.g. request.fields.email or request.recipients[0].email
     private static final Pattern RECIPIENT_FIELD_PATH = Pattern.compile("request\\.(?:fields|recipients\\[\\d+])\\.([^.\\[]+)");
+    private static final String ID_DESCRIPTION = "Recipient ID. Provide exactly one of recipientId or email.";
+    private static final String EMAIL_DESCRIPTION = "Recipient email. Provide exactly one of recipientId or email.";
+    private static final String LIST_FILTER_DESCRIPTION = "Filters recipients by exact field value, e.g. {\"email\": \"foo@example.com\"}";
 
     private final RecipientMcpService recipientMcpService;
     private final McpAdminProvider adminProvider;
@@ -55,10 +60,11 @@ public class RecipientTools {
 
     @McpTool(
             name = "get_recipients",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of recipients. Supports filtering by exact field values (e.g. email)."
     )
     public PageResponse<Map<String, Object>> getList(
-            @McpToolParam(description = "Filters recipients by exact field value, e.g. {\"email\": \"foo@example.com\"}", required = false)
+            @McpToolParam(description = LIST_FILTER_DESCRIPTION, required = false)
             Map<String, String> filters,
 
             @Valid McpPageable pageable,
@@ -69,19 +75,36 @@ public class RecipientTools {
     }
 
     @McpTool(
-            name = "get_recipient_by_id",
-            description = "Returns a recipient by its ID"
+            name = "get_recipient_ids",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
+            description = "Returns an array of recipient IDs. Supports filtering by exact field values (e.g. email)."
     )
-    public Map<String, Object> getById(
-            @Positive int id,
+    public List<Integer> getIdsList(
+            @McpToolParam(description = LIST_FILTER_DESCRIPTION, required = false)
+            Map<String, String> filters,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
-        return recipientMcpService.getById(id, admin);
+        return recipientMcpService.listIds(filters, admin);
+    }
+
+    @McpTool(
+            name = "get_recipient",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
+            description = "Returns a recipient by its ID or email"
+    )
+    public Map<String, Object> get(
+            @McpToolParam(description = ID_DESCRIPTION, required = false) @Positive Integer recipientId,
+            @McpToolParam(description = EMAIL_DESCRIPTION, required = false) @Email String email,
+            @SuppressWarnings("unused") McpSyncRequestContext requestContext
+    ) {
+        Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
+        return recipientMcpService.get(recipientId, email, admin);
     }
 
     @McpTool(
             name = "create_recipient",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new recipient"
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -95,32 +118,37 @@ public class RecipientTools {
 
     @McpTool(
             name = "update_recipient",
-            description = "Updates an existing recipient. Fields not passed are left unchanged."
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
+            description = "Updates an existing recipient by its ID or email. Fields not passed are left unchanged."
     )
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
     public Map<String, Object> update(
-            @McpToolParam(description = "Recipient ID") @Positive int id,
+            @McpToolParam(description = ID_DESCRIPTION, required = false) @Positive Integer recipientId,
+            @McpToolParam(description = EMAIL_DESCRIPTION, required = false) @Email String email,
             @Valid UpdateRecipientRequest request,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
-        return recipientMcpService.update(id, request, admin);
+        return recipientMcpService.update(recipientId, email, request, admin);
     }
 
     @McpTool(
             name = "delete_recipient",
-            description = "Deletes a recipient by its ID"
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
+            description = "Deletes a recipient by its ID or email"
     )
     public void delete(
-            @Positive int id,
+            @McpToolParam(description = ID_DESCRIPTION, required = false) @Positive Integer recipientId,
+            @McpToolParam(description = EMAIL_DESCRIPTION, required = false) @Email String email,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_DELETE);
-        recipientMcpService.delete(id, admin);
+        recipientMcpService.delete(recipientId, email, admin);
     }
 
     @McpTool(
             name = "create_recipients",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates multiple recipients in bulk (insert only). Recipients that already exist are reported as errors; "
                     + "use add_or_update_recipients to also update existing ones."
     )
@@ -135,6 +163,7 @@ public class RecipientTools {
 
     @McpTool(
             name = "add_or_update_recipients",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Creates or updates multiple recipients in bulk. Recipients matched by email are updated, others are created. "
                     + "Unlike update_recipient, this runs as an import: fields left out of a recipient's entry are cleared to null on "
                     + "an existing recipient, not left unchanged. Always pass every field that recipient should keep."
@@ -150,6 +179,7 @@ public class RecipientTools {
 
     @McpTool(
             name = "delete_recipients",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes multiple recipients by ID in bulk"
     )
     public BulkDeleteRecipientsResponse deleteBulk(

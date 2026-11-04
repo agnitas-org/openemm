@@ -62,7 +62,7 @@ public class StandardTemplatesV2Controller {
     @PermissionAllowed("mailing.show")
     @GetMapping(value = "/{id:\\d+}", params = "view=full")
     public MailingFullResponse findFull(@PathVariable @Positive int id, Admin admin) {
-        return mailingRestService.findTemplateFull(id, admin.getCompanyID());
+        return mailingRestService.findTemplateFull(id, admin);
     }
 
     @PermissionAllowed("mailing.show")

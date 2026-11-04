@@ -10,27 +10,19 @@
 
 package com.agnitas.emm.rest.v2.target;
 
-import com.agnitas.beans.Target;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.target.dto.CreateTargetCommand;
 import com.agnitas.emm.core.target.dto.PatchTargetCommand;
+import com.agnitas.emm.core.target.dto.TargetView;
 import com.agnitas.emm.rest.v2.infrastructure.mapper.RestMapper;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 interface TargetRestMapper extends RestMapper {
 
-    @Mapping(target = "sql", source = "EQL")
-    @Mapping(target = "name", source = "targetName")
-    @Mapping(target = "eql", source = "EQL")
-    @Mapping(target = "description", source = "targetDescription")
-    TargetResponse toResponse(Target target);
+    TargetResponse toResponse(TargetView target);
 
-    @Mapping(source = "targetName", target = "name")
-    @Mapping(source = "targetDescription", target = "description")
-    TargetLightResponse toLightResponse(TargetLight target);
+    TargetLightResponse toLightResponse(TargetView target);
 
     CreateTargetCommand toCommand(CreateTargetRequest request, int companyId);
 

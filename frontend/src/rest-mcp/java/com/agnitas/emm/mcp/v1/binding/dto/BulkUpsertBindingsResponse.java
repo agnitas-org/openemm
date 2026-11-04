@@ -39,7 +39,7 @@ public record BulkUpsertBindingsResponse(
             }
         }
         Map<String, Map<Integer, Map<Integer, String>>> nestedResults = results.stream().collect(Collectors.groupingBy(
-                r -> r.mediatype().name(),
+                r -> r.mediaType().name(),
                 Collectors.groupingBy(
                         UpsertBindingResult::mailinglistId,
                         Collectors.toMap(

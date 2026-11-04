@@ -82,6 +82,7 @@ public class MailingBounceStatsDaoImpl extends BaseDaoImpl implements MailingBou
                         getBounceFromRemark(rs.getString("detail")),
                         rs.getInt("amount")
                 ),
+                Integer::sum,
                 filter.mailingId(),
                 UserStatus.Bounce.getStatusCode()
         );

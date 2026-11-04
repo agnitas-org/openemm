@@ -15,6 +15,6 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 public record BindingIdentifier(
         int recipientId,
         int mailinglistId,
-        MediaTypes mediatype
+        MediaTypes mediaType
 ) {
 }

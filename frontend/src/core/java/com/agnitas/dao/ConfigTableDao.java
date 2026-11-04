@@ -29,6 +29,8 @@ public interface ConfigTableDao {
 	@DaoUpdateReturnValueCheck
 	void storeEntry(String classString, String name, String hostName, String value, String description);
 
+	String getValueEntry(String classString, String nameString, String hostName);
+
     void deleteEntry(String classString, String name);
 
 	int getJobqueueHostStatus(String hostName);

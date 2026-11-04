@@ -24,9 +24,7 @@ import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
 import com.agnitas.emm.core.birtreport.dto.BirtReportStatisticDto;
 import com.agnitas.emm.core.birtreport.dto.StatisticsReportRequest;
 import com.agnitas.emm.core.birtstatistics.DateMode;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.commons.dto.DateTimeRange;
-import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.logging.log4j.Logger;
@@ -42,19 +40,10 @@ public interface BirtStatisticsService {
 
 	StatisticsReportRequest getReportRequest(BirtReport report, BirtReportSettings settings, Admin admin);
 
-	// TODO: GWUA-7000: Remove when removing old code (if possible)
-    String getMailingStatisticUrl(Admin admin, String sessionId, MailingStatisticDto mailingStatistic);
-
 	DateTimeRange getDateTimeRestrictions(DateTimeRange selectedDate, DateMode dateMode, LocalDateTime mailingStart, int year, Month month);
-
-	// TODO: GWUA-7000: Remove when removing old code (if possible)
-    String changeFormat(String inputUrl, String newFormat);
 
 	// TODO: GWUA-7067: Remove after migration
 	File getReportTmpFile(int birtReportId, String birtUrl, CloseableHttpClient httpClient, Logger logger);
-
-	// TODO: GWUA-7000: Remove when removing old code
-	String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto);
 
     boolean isWorldMailing(Mailing mailing);
 

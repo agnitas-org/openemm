@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 
-import com.agnitas.beans.QueryAndParams;
 import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.birtstatistics.dao.MonthlyStatisticsDao;
@@ -26,6 +25,7 @@ import com.agnitas.emm.core.birtstatistics.monthly.MonthlyStatType;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.db.QueryAndParams;
 import com.agnitas.util.importvalues.MailType;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;

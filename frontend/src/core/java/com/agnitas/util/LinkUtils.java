@@ -157,8 +157,19 @@ public class LinkUtils {
 
 		return directLink;
 	}
-	
-    public static String getFullUrlWithDtoExtensions(String linkString, List<ExtensionProperty> extensions) {
+
+	public static String replaceCompanyParamValuesWithPlaceholders(String text, String companyToken, int companyId) {
+		if (text == null) {
+			return null;
+		}
+		if (StringUtils.isNotBlank(companyToken)) {
+			text = text.replace("agnCTOKEN=" + companyToken, "agnCTOKEN=[CTOKEN]");
+		}
+		return text.replace("agnCI=" + companyId, "agnCI=[COMPANY_ID]");
+	}
+
+
+	public static String getFullUrlWithDtoExtensions(String linkString, List<ExtensionProperty> extensions) {
   		String directLink = linkString;
 
 		for (ExtensionProperty extension : extensions) {

@@ -85,24 +85,6 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	}
 
 	@Override
-	public byte[] exportMailingToByteArray(int mailingId, int companyId) {
-		mailingService.validateMailingExists(mailingId, companyId);
-		return asByteArray(mailingId, companyId);
-	}
-
-	@Override
-	public byte[] exportTemplateToByteArray(int mailingId, int companyId) {
-		mailingService.validateTemplateExists(mailingId, companyId);
-		return asByteArray(mailingId, companyId);
-	}
-
-	private byte[] asByteArray(int mailingId, int companyId) {
-		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		exportMailingToJson(companyId, mailingId, buffer, false, false);
-		return buffer.toByteArray();
-	}
-
-	@Override
 	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages, boolean isForCopying) {
 		Mailing mailing = mailingService.getMailing(companyID, mailingID);
 

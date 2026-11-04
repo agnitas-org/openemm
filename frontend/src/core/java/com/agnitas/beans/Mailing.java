@@ -241,7 +241,7 @@ public interface Mailing extends MailingBase {
 
     boolean isWorkflowDriven();
 
-    long getSentEmails();
+    Long getSentEmails();
 
-    void setSentEmails(long sentEmails);
+    void setSentEmails(Long sentEmails);
 }

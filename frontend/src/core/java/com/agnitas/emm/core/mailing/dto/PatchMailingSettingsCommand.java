@@ -23,8 +23,8 @@ import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.commons.dto.PatchField;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
-import com.agnitas.emm.core.mailing.settings.EmailMediatypePatch;
-import com.agnitas.emm.core.mailing.settings.MediatypePatch;
+import com.agnitas.emm.core.mailing.settings.EmailMediaTypePatch;
+import com.agnitas.emm.core.mailing.settings.MediaTypePatch;
 import com.agnitas.emm.core.mailing.validation.MailingConstraints;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.validator.MailingValidationField;
@@ -44,8 +44,8 @@ public record PatchMailingSettingsCommand(
         PatchField<Integer> clickTriggerId,
         PatchField<Integer> archiveId,
         PatchField<Boolean> archived,
-        PatchField<List<MediaTypes>> activeMediatypesOrder,
-        PatchField<Map<MediaTypes, MediatypePatch>> mediatypes,
+        PatchField<List<MediaTypes>> activeMediaTypesOrder,
+        PatchField<Map<MediaTypes, MediaTypePatch>> mediaTypes,
         PatchField<List<MailingParameter>> parameters,
         PatchField<Boolean> frequencyCounterDisabled, // extended scope
         PatchField<ReferenceContentSettings> referenceContentSettings // extended scope
@@ -73,12 +73,12 @@ public record PatchMailingSettingsCommand(
 //        replyAddress.check(v -> v == null || AgnUtils.isEmailValid(v), "replyAddress");
     }
 
-    public Optional<EmailMediatypePatch> getEmailPatch() {
-        if (!mediatypes.present()) {
+    public Optional<EmailMediaTypePatch> getEmailPatch() {
+        if (!mediaTypes.present()) {
             return Optional.empty();
         }
-        MediatypePatch patch = mediatypes.value().get(MediaTypes.EMAIL);
-        return patch instanceof EmailMediatypePatch emailPatch
+        MediaTypePatch patch = mediaTypes.value().get(MediaTypes.EMAIL);
+        return patch instanceof EmailMediaTypePatch emailPatch
                 ? Optional.of(emailPatch)
                 : Optional.empty();
     }

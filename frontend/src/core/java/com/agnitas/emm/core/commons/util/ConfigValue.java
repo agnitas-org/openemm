@@ -857,6 +857,10 @@ public class ConfigValue {
 	public static final ConfigValue OAuth2Issuer = new ConfigValue("oauth2.issuer");
 	public static final ConfigValue OAuth2ServerClientId = new ConfigValue("oauth2.server.client.id", "emm");
 	public static final ConfigValue OAuth2InternalAuthServer = new ConfigValue("oauth2.server.internal", "true");
+	/**
+	 * Access token lifetime for dynamically registered OAuth2 clients, in minutes
+	 */
+	public static final ConfigValue OAuth2AccessTokenValidityMinutes = new ConfigValue("oauth2.access_token.validity.minutes", "600");
 
 	/**
 	 * Enable TOTP for login.

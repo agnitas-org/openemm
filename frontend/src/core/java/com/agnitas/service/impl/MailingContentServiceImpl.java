@@ -881,12 +881,24 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         DynamicTag dynTag = getDynamicTag(contentId, mailingId, admin.getCompanyID());
 
         command.disableLinkExtension().ifPresent(disable -> dynTag.setDisableLinkExtension(disable != null && disable));
-        command.content().ifPresent(contents -> dynTag.setDynContent(contents == null ? Map.of() : contents.stream()
+        command.content().ifPresent(contents -> dynTag.setDynContent(contentAsMap(dynTag, contents)));
+
+        updateDynTag(dynTag, mailingId, admin.getCompanyID());
+    }
+
+    private static Map<Integer, DynamicTagContent> contentAsMap(DynamicTag dynTag, List<DynamicTagContent> contents) {
+        return emptyIfNull(contents).stream()
+                .map(newContent -> { // set ID of existing content block for this target if present
+                    dynTag.getDynContent().values().stream()
+                            .filter(oldContent -> oldContent.getTargetID() == newContent.getTargetID())
+                            .findFirst()
+                            .ifPresent(currentContent -> newContent.setId(currentContent.getId()));
+                    return newContent;
+                })
                 .collect(Collectors.toMap(
                         DynamicTagContent::getDynOrder,
                         content -> content
-                ))));
-        updateDynTag(dynTag, mailingId, admin.getCompanyID());
+                ));
     }
 
     private void updateDynTag(DynamicTag dynTag, int mailingId, int companyId) {

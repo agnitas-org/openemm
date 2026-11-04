@@ -11,39 +11,30 @@
 package com.agnitas.emm.mcp.v1.target.mapper;
 
 import com.agnitas.beans.PaginatedList;
-import com.agnitas.beans.Target;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.target.dto.CreateTargetCommand;
 import com.agnitas.emm.core.target.dto.PatchTargetCommand;
+import com.agnitas.emm.core.target.dto.TargetView;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.common.mapper.McpMapper;
 import com.agnitas.emm.mcp.v1.target.dto.CreateTargetGroupRequest;
+import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupLightResponse;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupResponse;
-import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface TargetGroupMcpMapper extends McpMapper {
 
-    @Mapping(target = "name", source = "targetName")
-    @Mapping(target = "description", source = "targetDescription")
-    @Mapping(target = "eql", source = "EQL")
-    @Mapping(target = "sql", source = "EQL")
-    TargetGroupResponse toResponse(Target target);
+    TargetGroupResponse toResponse(TargetView target);
+
+    TargetGroupLightResponse toLightResponse(TargetView target);
 
     CreateTargetCommand toCommand(CreateTargetGroupRequest request, int companyId);
 
     PatchTargetCommand toCommand(PatchTargetGroupRequest request, int id, int companyId);
 
-    @Mapping(target = "name", source = "targetName")
-    @Mapping(target = "description", source = "targetDescription")
-    TargetGroupLightResponse toLightResponse(TargetLight target);
-
-    default PageResponse<TargetGroupLightResponse> toPageResponse(PaginatedList<TargetLight> source) {
+    default PageResponse<TargetGroupLightResponse> toPageResponse(PaginatedList<TargetView> source) {
         return toPageResponse(source, this::toLightResponse);
     }
-
 }

@@ -10,12 +10,15 @@
 
 package com.agnitas.emm.mcp.v1.mailing.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 public record TrackableLinkFullResponse(
         int id,
         String name,
         String url,
-        Integer action_id,
-        Integer deep_tracking,
-        Integer usage,
+        @JsonAlias("action_id") Integer triggerId,
+        @JsonAlias("deep_tracking") Integer retargeting,
+        @JsonAlias("usage") Integer tracking,
         Boolean administrative
-) {}
+) {
+}

@@ -36,7 +36,7 @@ public record MailingSettingsDto(
         MailingType mailingType,
         MailingContentType contentType,
         List<MailingParameter> parameters,
-        EnumMap<MediaTypes, Mediatype> mediatypes,
+        EnumMap<MediaTypes, Mediatype> mediaTypes,
         int splitId,
         int openActionId,
         int clickActionId,
@@ -49,10 +49,10 @@ public record MailingSettingsDto(
         }
     }
 
-    public MediatypeEmail getEmailMediatype() {
-        if (!mediatypes.containsKey(MediaTypes.EMAIL)) {
+    public MediatypeEmail getEmailMediaType() {
+        if (!mediaTypes.containsKey(MediaTypes.EMAIL)) {
             return new MediatypeEmailImpl();
         }
-        return (MediatypeEmail) mediatypes.get(MediaTypes.EMAIL);
+        return (MediatypeEmail) mediaTypes.get(MediaTypes.EMAIL);
     }
 }

@@ -14,6 +14,7 @@ import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -47,16 +48,24 @@ public class N8nController {
     private final EmmActionService actionService;
     private final MailingContentService mailingContentService;
     private final MailingService mailingService;
+    private final CampaignService archiveService;
 
-    public N8nController(LogonService logonService, RecipientFieldService fieldService,
-                         MailinglistApprovalService mailinglistApprovalService, EmmActionService actionService,
-                         MailingContentService mailingContentService, MailingService mailingService) {
+    public N8nController(
+            LogonService logonService,
+            RecipientFieldService fieldService,
+            MailinglistApprovalService mailinglistApprovalService,
+            EmmActionService actionService,
+            MailingContentService mailingContentService,
+            MailingService mailingService,
+            CampaignService archiveService
+    ) {
         this.logonService = logonService;
         this.fieldService = fieldService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.actionService = actionService;
         this.mailingContentService = mailingContentService;
         this.mailingService = mailingService;
+        this.archiveService = archiveService;
     }
 
     @ExceptionHandler(RestfulAuthentificationException.class)
@@ -113,6 +122,11 @@ public class N8nController {
     @GetMapping("/mailings/names.action")
     public Map<Integer, String> getMailingNames(HttpServletRequest req) {
         return mailingService.getMailingNames(tryGetAdmin(req));
+    }
+
+    @GetMapping("/archive/names.action")
+    public Map<Integer, String> getArchiveNames(HttpServletRequest req) {
+        return archiveService.getArchiveNames(tryGetAdmin(req));
     }
 
     @GetMapping("/templates.action")

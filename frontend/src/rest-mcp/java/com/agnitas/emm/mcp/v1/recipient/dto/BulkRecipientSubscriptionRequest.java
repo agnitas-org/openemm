@@ -25,6 +25,6 @@ public record BulkRecipientSubscriptionRequest(
 
         @NotNull
         @McpToolParam(description = "Media type for the mailinglist subscription (e.g. EMAIL)")
-        MediaTypes mediatype
+        MediaTypes mediaType
 ) {
 }

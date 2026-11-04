@@ -29,7 +29,7 @@ public record BulkUpsertBindingRequest(
 
         @NotNull
         @Size(min = 1, max = 1000)
-        SequencedSet<MediaTypes> mediatypes,
+        SequencedSet<MediaTypes> mediaTypes,
 
         @NotNull
         UserStatus status

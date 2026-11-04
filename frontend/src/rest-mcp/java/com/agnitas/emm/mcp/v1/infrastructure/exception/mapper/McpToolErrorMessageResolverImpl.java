@@ -23,6 +23,7 @@ import com.agnitas.emm.core.binding.exception.BindingNotExistException;
 import com.agnitas.emm.core.blacklist.exception.BlocklistEntryNotFoundException;
 import com.agnitas.emm.core.commons.exception.EntityAlreadyExistsException;
 import com.agnitas.emm.core.commons.exception.EntityNotFoundException;
+import com.agnitas.emm.core.commons.exception.EntityNotUniqueException;
 import com.agnitas.emm.core.mailing.exception.MailingCopyException;
 import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailingcontent.exception.MailingContentNotFoundException;
@@ -166,6 +167,11 @@ public class McpToolErrorMessageResolverImpl implements McpToolErrorMessageResol
 
         if (ex instanceof EntityAlreadyExistsException) {
             logger.warn("Entity already exists: {}", ex.getMessage());
+            return ex.getMessage();
+        }
+
+        if (ex instanceof EntityNotUniqueException) {
+            logger.warn("Entity not unique: {}", ex.getMessage());
             return ex.getMessage();
         }
 

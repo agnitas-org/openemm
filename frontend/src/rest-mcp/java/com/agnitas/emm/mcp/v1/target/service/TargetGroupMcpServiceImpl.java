@@ -10,23 +10,29 @@
 
 package com.agnitas.emm.mcp.v1.target.service;
 
+import java.util.List;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.target.dto.PatchTargetCommand;
+import com.agnitas.emm.core.target.dto.TargetInclude;
+import com.agnitas.emm.core.target.dto.TargetView;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
-import com.agnitas.emm.core.target.dto.PatchTargetCommand;
 import com.agnitas.emm.mcp.v1.target.dto.CreateTargetGroupRequest;
+import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupLightResponse;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupResponse;
-import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import com.agnitas.emm.mcp.v1.target.exception.TargetGroupDeletionException;
 import com.agnitas.emm.mcp.v1.target.mapper.TargetGroupMcpMapper;
 import com.agnitas.service.SimpleServiceResult;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -41,7 +47,7 @@ public class TargetGroupMcpServiceImpl implements TargetGroupMcpService {
     }
 
     @Override
-    public PageResponse<TargetGroupLightResponse> list(McpPageable pageable, Admin admin) {
+    public PageResponse<TargetGroupLightResponse> list(McpPageable pageable, Set<TargetInclude> include, Admin admin) {
         TargetLightsOptions opts = TargetLightsOptions.builder()
                 .setAdminId(admin.getAdminID())
                 .setCompanyId(admin.getCompanyID())
@@ -52,28 +58,31 @@ public class TargetGroupMcpServiceImpl implements TargetGroupMcpService {
                 .setDirection(Boolean.TRUE.equals(pageable.ascending()) ? "ASC" : "DESC")
                 .setSorting(pageable.sortBy())
                 .build();
+        PaginatedList<TargetView> targets = targetService.find(opts, include, admin);
+        return mapper.toPageResponse(targets, mapper::toLightResponse);
+    }
 
-        PaginatedList<TargetLight> targets = targetService.getTargetLightsPaginated(opts, null);
-        return mapper.toPageResponse(targets);
+    private TargetGroupResponse getById(int id, Admin admin) {
+        return getById(id, Set.of(), admin);
     }
 
     @Override
-    public TargetGroupResponse getById(int id, int companyId) {
-        Target target = targetService.getTargetGroup(id, companyId);
+    public TargetGroupResponse getById(int targetId, Set<TargetInclude> include, Admin admin) {
+        TargetView target = targetService.getTargetGroup(targetId, admin, include);
         return mapper.toResponse(target);
     }
 
     @Override
-    public TargetGroupResponse create(CreateTargetGroupRequest request, int companyId) {
-        Target target = targetService.create(mapper.toCommand(request, companyId));
-        return getById(target.getId(), companyId);
+    public TargetGroupResponse create(CreateTargetGroupRequest request, Admin admin) {
+        Target target = targetService.create(mapper.toCommand(request, admin.getCompanyID()));
+        return getById(target.getId(), admin);
     }
 
     @Override
-    public TargetGroupResponse patch(int id, PatchTargetGroupRequest request, int companyId) {
-        PatchTargetCommand command = mapper.toCommand(request, id, companyId);
+    public TargetGroupResponse patch(int id, PatchTargetGroupRequest request, Admin admin) {
+        PatchTargetCommand command = mapper.toCommand(request, id, admin.getCompanyID());
         targetService.patch(command);
-        return getById(id, companyId);
+        return getById(id, admin);
     }
 
     @Override
@@ -84,4 +93,10 @@ public class TargetGroupMcpServiceImpl implements TargetGroupMcpService {
         }
     }
 
+    @Override
+    public List<TargetGroupResponse> getMailingTargets(Mailing mailing, Admin admin) {
+        return CollectionUtils.emptyIfNull(mailing.getTargetGroups()).stream()
+                .map(id -> getById(id, admin))
+                .toList();
+    }
 }

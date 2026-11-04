@@ -16,10 +16,5 @@ public interface MailingExporter {
 
 	byte[] exportAsJson(int mailingId, int companyId, boolean exportUnusedImages, boolean isForCopying);
 
-    byte[] exportMailingToByteArray(int mailingId, int companyId);
-
-    byte[] exportTemplateToByteArray(int mailingId, int companyId);
-
     void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages, boolean isForCopying);
-
 }

@@ -57,6 +57,15 @@
 			<else><property name="libs.dir" value="libs"/></else>
 		</if>
 
+		<if>
+			<not>
+				<isset property="basecss" />
+			</not>
+			<then>
+				<property name="basecss" value="${basedir}" />
+			</then>
+		</if>
+
 		<propertyregex property="deploydir" input="${deploydir}" regexp="~" replace="${user.home}" global="true" override="true" />
 
 		<if>
@@ -329,7 +338,9 @@
 		<loadfile property="gradle.properties.content" srcFile="${basecss}/docs/rest/v2/gradle.properties"/>
 		<echo message="Content of gradle.properties:" />
 		<echo message="${gradle.properties.content}"/>
-		<exec executable="./gradlew" dir="${basecss}/docs/rest/v2" failonerror="true">
+
+		<exec executable="sh" dir="${basecss}/docs/rest/v2" failonerror="true">
+			<arg value="gradlew" />
 			<arg value="postProcessOpenApi3" />
 			<arg value="--no-daemon" />
 		</exec>

@@ -48,6 +48,7 @@ public class MailingTools {
 
     @McpTool(
             name = "get_mailings",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of mailings"
     )
     public PageResponse<MailingLightResponse> getList(
@@ -63,6 +64,7 @@ public class MailingTools {
 
     @McpTool(
             name = "get_mailing_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns mailing settings by its ID"
     )
     public MailingResponse getById(
@@ -75,6 +77,7 @@ public class MailingTools {
 
     @McpTool(
             name = "get_full_mailing_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a full mailing data (settings, content blocks, components, links and targets) by its ID"
     )
     public MailingFullResponse getFullById(
@@ -82,12 +85,15 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_SHOW);
-        return mailingMcpService.getFull(id, admin.getCompanyID());
+        return mailingMcpService.getMailingFullById(id, admin);
     }
 
     @McpTool(
             name = "create_mailing",
-            description = "Creates a new mailing"
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
+            description = "Creates a new mailing. To add a new content block (dyn tag), put a reference such as "
+                    + "[agnDYN name=\"my_block\" /] into htmlTemplate, textTemplate, smsTemplate or rcsTemplate, then fill "
+                    + "it with update_mailing_content (there is no separate tool to create content blocks)."
     )
     @Validated(MailingGroup.class)
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -101,6 +107,7 @@ public class MailingTools {
 
     @McpTool(
             name = "create_mailing_from_template",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new mailing based on template"
     )
     public MailingLightResponse createFromTemplate(
@@ -113,6 +120,7 @@ public class MailingTools {
 
     @McpTool(
             name = "copy_mailing",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Copies a mailing"
     )
     public MailingLightResponse copyById(
@@ -125,7 +133,11 @@ public class MailingTools {
 
     @McpTool(
             name = "update_mailing",
-            description = "Updates an existing mailing. Fields not passed (null) are left unchanged."
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
+            description = "Updates an existing mailing. Fields not passed (null) are left unchanged. "
+                    + "To add a new content block (dyn tag), add a reference such as [agnDYN name=\"my_block\" /] to the "
+                    + "relevant template field (htmlTemplate, textTemplate, smsTemplate or rcsTemplate) and then fill it with "
+                    + "update_mailing_content. Content blocks no longer referenced in any template are removed on save."
     )
     @Validated(MailingGroup.class)
     @McpXssExclude(checkMethod = "isExcludedFromXssCheck")
@@ -140,6 +152,7 @@ public class MailingTools {
 
     @McpTool(
             name = "delete_mailing",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a mailing by its ID"
     )
     public void delete(

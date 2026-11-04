@@ -45,9 +45,7 @@ public class LicenseParser {
         Document licenseDocument = XmlUtilities.parseXMLDataAndXSDVerifyByDOM(licenseDataArray, "UTF-8", null);
         Element root = (Element) licenseDocument.getElementsByTagName("emm.license").item(0);
 
-        Map<String, Map<Integer, String>> result = new LinkedHashMap<>();
-
-        result.putAll(parseConfigElement(0, root));
+        Map<String, Map<Integer, String>> result = new LinkedHashMap<>(parseConfigElement(0, root));
 
         NodeList companies = root.getElementsByTagName("company");
         for (int i=0; i<companies.getLength();i++) {

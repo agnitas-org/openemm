@@ -23,6 +23,6 @@ public record MailingLightResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL)
         Instant sendDate,
 
-        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-        long sentEmails
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Long sentEmails
 ) {}

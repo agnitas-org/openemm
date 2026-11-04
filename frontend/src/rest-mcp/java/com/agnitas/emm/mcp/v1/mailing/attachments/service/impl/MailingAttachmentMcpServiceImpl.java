@@ -10,7 +10,13 @@
 
 package com.agnitas.emm.mcp.v1.mailing.attachments.service.impl;
 
+import java.util.EnumSet;
+import java.util.List;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
@@ -24,6 +30,7 @@ import com.agnitas.emm.mcp.v1.mailing.attachments.dto.UploadAttachmentRequest;
 import com.agnitas.emm.mcp.v1.mailing.attachments.mapper.MailingAttachmentMcpMapper;
 import com.agnitas.emm.mcp.v1.mailing.attachments.service.MailingAttachmentMcpService;
 import com.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -96,4 +103,16 @@ public class MailingAttachmentMcpServiceImpl implements MailingAttachmentMcpServ
         return getByFilename(dto.getName(), mailingId, admin);
     }
 
+    @Override
+    public List<AttachmentResponse> getAttachments(Mailing mailing, Admin admin) {
+        EnumSet<MailingComponentType> attachmentTypes = EnumSet.of(
+                MailingComponentType.Attachment,
+                MailingComponentType.PersonalizedAttachment
+        );
+        return MapUtils.emptyIfNull(mailing.getComponents()).values().stream()
+                .filter(component -> attachmentTypes.contains(component.getType()))
+                .map(MailingComponent::getId)
+                .map(id -> getById(id, mailing.getId(), admin))
+                .toList();
+    }
 }

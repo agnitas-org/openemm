@@ -225,4 +225,6 @@ public interface TargetDao {
     List<Integer> getMarkedAsDeletedBefore(Date date, int companyID);
 
     boolean exist(int targetId, int companyId);
+
+    Map<Integer, Integer> recipientCountForTargets(List<Integer> targetIds, int adminId, int companyId);
 }

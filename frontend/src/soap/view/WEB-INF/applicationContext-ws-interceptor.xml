@@ -46,6 +46,7 @@
     <bean id="wsSecurityInterceptor" class="com.agnitas.emm.springws.security.LoginTrackingXwsSecurityInterceptor">
         <property name="validationActions" value="UsernameToken" />
         <property name="validationCallbackHandler" ref="springSecurityHandler"/>
+        <property name="bspCompliant" value="false" />
 
         <property name="loginTrackService" ref="WsLoginTrackService" />
         <property name="configService" ref="ConfigService" />

@@ -21,10 +21,12 @@ import com.agnitas.emm.core.mailing.dto.PatchMailingSettingsCommand;
 import com.agnitas.emm.core.mailing.service.CopyMailingService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.settings.MailingSettingsService;
-import com.agnitas.emm.core.mailing.settings.MediatypePatch;
+import com.agnitas.emm.core.mailing.settings.MediaTypePatch;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
+import com.agnitas.emm.rest.v2.mailing.attachments.MailingAttachmentRestService;
+import com.agnitas.emm.rest.v2.mailing.content.MailingContentRestService;
 import com.agnitas.emm.rest.v2.mailing.dto.CreateMailingRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.ListMailingsRequest;
 import com.agnitas.emm.rest.v2.mailing.dto.ListTemplatesRequest;
@@ -32,41 +34,49 @@ import com.agnitas.emm.rest.v2.mailing.dto.MailingFullResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.MailingLightResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.MailingResponse;
 import com.agnitas.emm.rest.v2.mailing.dto.PatchMailingRequest;
-import com.agnitas.service.MailingExporter;
+import com.agnitas.emm.rest.v2.mailing.images.MailingImageRestService;
+import com.agnitas.emm.rest.v2.mailing.links.MailingLinkRestService;
+import com.agnitas.emm.rest.v2.target.TargetRestService;
 import com.agnitas.service.ServiceResult;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.json.JsonMapper;
 
 @Service
 class MailingRestService {
 
-    private static final JsonMapper JSON_MAPPER = JsonMapper.builder()
-            .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
-            .build();
-
-    protected final MailingRestMapper mapper;
+    protected final MailingRestMapper mailingMapper;
     protected final MailingService mailingService;
-    private final MailingExporter mailingExporter;
     private final CopyMailingService copyMailingService;
     private final ThumbnailService thumbnailService;
     private final MailingSettingsService mailingSettingsService;
+    private final TargetRestService targetService;
+    private final MailingImageRestService mailingImageService;
+    private final MailingAttachmentRestService attachmentService;
+    private final MailingContentRestService contentService;
+    private final MailingLinkRestService linkService;
 
     public MailingRestService(
-            MailingExporter mailingExporter,
             MailingService mailingService,
-            MailingRestMapper mapper,
+            MailingRestMapper mailingMapper,
             CopyMailingService copyMailingService,
             ThumbnailService thumbnailService,
-            MailingSettingsService mailingSettingsService
+            MailingSettingsService mailingSettingsService,
+            TargetRestService targetService,
+            MailingImageRestService mailingImageService,
+            MailingAttachmentRestService attachmentService,
+            MailingContentRestService contentService,
+            MailingLinkRestService linkService
     ) {
-        this.mailingExporter = mailingExporter;
         this.mailingService = mailingService;
-        this.mapper = mapper;
+        this.mailingMapper = mailingMapper;
         this.copyMailingService = copyMailingService;
         this.thumbnailService = thumbnailService;
         this.mailingSettingsService = mailingSettingsService;
+        this.targetService = targetService;
+        this.mailingImageService = mailingImageService;
+        this.attachmentService = attachmentService;
+        this.contentService = contentService;
+        this.linkService = linkService;
     }
 
     public PageResponse<MailingLightResponse> listMailings(
@@ -74,8 +84,7 @@ class MailingRestService {
             Pageable pageable,
             Admin admin
     ) {
-        MailingsListProperties listProps = mapper.toListProperties(request, pageable);
-        return list(listProps, admin);
+        return list(request, pageable, admin, false);
     }
 
     public PageResponse<MailingLightResponse> listTemplates(
@@ -83,14 +92,19 @@ class MailingRestService {
             Pageable pageable,
             Admin admin
     ) {
-        MailingsListProperties listProps = mapper.toListProperties(mapper.toListRequest(request), pageable);
-        listProps.setTemplate(true);
-        return list(listProps, admin);
+        return list(mailingMapper.toListRequest(request), pageable, admin, true);
     }
 
-    private PageResponse<MailingLightResponse> list(MailingsListProperties listProps, Admin admin) {
+    private PageResponse<MailingLightResponse> list(
+            ListMailingsRequest request,
+            Pageable pageable,
+            Admin admin,
+            boolean isTemplate
+    ) {
+        MailingsListProperties listProps = mailingMapper.toListProperties(request, pageable);
+        listProps.setTemplate(isTemplate);
         PaginatedList<Map<String, Object>> overview = mailingService.getOverview(admin, listProps);
-        return mapper.toPageResponse(overview, mapper::toMailingLightResponse);
+        return mailingMapper.toPageResponse(overview, m -> mailingMapper.toMailingLightResponse(m, isTemplate));
     }
 
     public void deleteMailing(int id, Admin admin) {
@@ -114,7 +128,7 @@ class MailingRestService {
     }
 
     public MailingResponse create(CreateMailingRequest request, Admin admin, boolean isTemplate) {
-        PatchMailingSettingsCommand command = mapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMapper.toPatchCommand(request, buildMediaTypePatches(request));
         ServiceResult<Integer> result = isTemplate
                 ? mailingSettingsService.createStandardTemplate(command, admin)
                 : mailingSettingsService.createMailing(command, admin);
@@ -146,50 +160,61 @@ class MailingRestService {
     }
 
     public MailingResponse patchMailing(int mailingId, PatchMailingRequest request, Admin admin) {
-        PatchMailingSettingsCommand command = mapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMapper.toPatchCommand(request, buildMediaTypePatches(request));
         mailingSettingsService.updateSettings(mailingId, command, admin);
         return findMailing(mailingId, admin.getCompanyID());
     }
 
     public MailingResponse patchTemplate(int mailingId, PatchMailingRequest request, Admin admin) {
-        PatchMailingSettingsCommand command = mapper.toPatchCommand(request, buildMediatypePatches(request));
+        PatchMailingSettingsCommand command = mailingMapper.toPatchCommand(request, buildMediaTypePatches(request));
         mailingSettingsService.updateSettings(mailingId, command, admin);
         return findTemplate(mailingId, admin.getCompanyID());
     }
 
     // overridden in extended class
-    protected Map<MediaTypes, MediatypePatch> buildMediatypePatches(PatchMailingRequest request) {
-        Map<MediaTypes, MediatypePatch> patches = new EnumMap<>(MediaTypes.class);
-        if (request.hasAnyEmailMediatypeField()) {
-            patches.put(MediaTypes.EMAIL, mapper.toEmailPatch(request));
+    protected Map<MediaTypes, MediaTypePatch> buildMediaTypePatches(PatchMailingRequest request) {
+        Map<MediaTypes, MediaTypePatch> patches = new EnumMap<>(MediaTypes.class);
+        if (request.hasAnyEmailMediaTypeField()) {
+            patches.put(MediaTypes.EMAIL, mailingMapper.toEmailPatch(request));
         }
         return patches;
     }
 
-    protected Map<MediaTypes, MediatypePatch> buildMediatypePatches(CreateMailingRequest request) {
-        Map<MediaTypes, MediatypePatch> patches = new EnumMap<>(MediaTypes.class);
-        patches.put(MediaTypes.EMAIL, mapper.toEmailPatch(request));
+    protected Map<MediaTypes, MediaTypePatch> buildMediaTypePatches(CreateMailingRequest request) {
+        Map<MediaTypes, MediaTypePatch> patches = new EnumMap<>(MediaTypes.class);
+        patches.put(MediaTypes.EMAIL, mailingMapper.toEmailPatch(request));
         return patches;
     }
 
-    public MailingFullResponse findMailingFull(int mailingId, int companyId) {
-        byte[] bytes = mailingExporter.exportMailingToByteArray(mailingId, companyId);
-        return JSON_MAPPER.readValue(bytes, MailingFullResponse.class);
+    public MailingFullResponse findMailingFull(int mailingId, Admin admin) {
+        Mailing mailing = mailingService.getMailingOnly(mailingId, admin.getCompanyID());
+        return getMailingFullResponse(mailing, admin);
     }
 
-    public MailingFullResponse findTemplateFull(int templateId, int companyId) {
-        byte[] bytes = mailingExporter.exportTemplateToByteArray(templateId, companyId);
-        return JSON_MAPPER.readValue(bytes, MailingFullResponse.class);
+    public MailingFullResponse findTemplateFull(int templateId, Admin admin) {
+        Mailing template = mailingService.getTemplate(templateId, admin.getCompanyID());
+        return getMailingFullResponse(template, admin);
+    }
+
+    private MailingFullResponse getMailingFullResponse(Mailing mailing, Admin admin) {
+        return mailingMapper.toFullResponse(
+                mailingMapper.toResponse(mailing),
+                targetService.getMailingTargets(mailing, admin),
+                mailingImageService.getMailingImages(mailing, admin),
+                attachmentService.getAttachments(mailing),
+                contentService.getMailingContentBlocks(mailing),
+                linkService.getMailingLinks(mailing)
+        );
     }
 
     public MailingLightResponse findMailingLight(int mailingId, int companyId) {
         Mailing mailing = mailingService.getMailingOnly(mailingId, companyId);
-        return mapper.toLightResponse(mailing);
+        return mailingMapper.toLightResponse(mailing);
     }
 
     public MailingLightResponse findTemplateLight(int templateId, int companyId) {
         Mailing template = mailingService.getTemplate(templateId, companyId);
-        return mapper.toLightResponse(template);
+        return mailingMapper.toLightResponse(template);
     }
 
     public MailingResponse findMailing(int mailingId, int companyId) {
@@ -204,6 +229,6 @@ class MailingRestService {
         Mailing mailing = isTemplate
                 ? mailingService.getTemplate(mailingId, companyId)
                 : mailingService.getMailingOnly(mailingId, companyId);
-        return mapper.toResponse(mailing);
+        return mailingMapper.toResponse(mailing);
     }
 }

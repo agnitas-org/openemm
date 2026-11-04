@@ -24,6 +24,7 @@ import com.agnitas.emm.mcp.v1.mailing.links.dto.LinkTracking;
 import com.agnitas.emm.mcp.v1.mailing.links.dto.PatchMailingLinkRequest;
 import com.agnitas.util.LinkUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -34,12 +35,12 @@ public interface MailingLinkMcpMapper extends McpMapper {
     @Mapping(target = "extensions", source = "properties")
     @Mapping(target = "retargeting", source = "deepTracking")
     @Mapping(target = "tracking", source = "usage")
-    @Mapping(target = "url", expression = "java(toFullUrl(link))")
+    @Mapping(target = "url", expression = "java(toFullUrl(link, companyToken, companyId))")
     @Mapping(target = "staticLink", source = "staticValue")
     @Mapping(target = "triggerId", source = "actionID")
     @Mapping(target = "description", source = "shortname")
     @Mapping(target = "administrative", source = "adminLink")
-    MailingLinkResponse toResponse(TrackableLink link);
+    MailingLinkResponse toResponse(TrackableLink link, @Context String companyToken, @Context int companyId);
 
     @Mapping(target = "value", source = "propertyValue")
     @Mapping(target = "name", source = "propertyName")
@@ -50,8 +51,9 @@ public interface MailingLinkMcpMapper extends McpMapper {
     @Mapping(target = "extensions", expression = "java(map(request.extensions(), this::toProperties))")
     PatchLinkCommand toCommand(PatchMailingLinkRequest request);
 
-    default String toFullUrl(TrackableLink link) {
-        return LinkUtils.getPlainFullUrlWithExtensions(link.getFullUrl(), link.getProperties());
+    default String toFullUrl(TrackableLink link, String companyToken, int companyId) {
+        String url = LinkUtils.getPlainFullUrlWithExtensions(link.getFullUrl(), link.getProperties());
+        return LinkUtils.replaceCompanyParamValuesWithPlaceholders(url, companyToken, companyId);
     }
 
     default LinkTracking toLinkTracking(int code) {

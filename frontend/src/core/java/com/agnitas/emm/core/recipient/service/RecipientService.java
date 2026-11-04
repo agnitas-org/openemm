@@ -209,7 +209,9 @@ public interface RecipientService {
 
 	List<DeleteResult> delete(SequencedSet<Integer> ids, Admin admin);
 
-	DeleteResult delete(int id, Admin admin);
+	DeleteResult delete(String email, Admin admin);
+
+    DeleteResult delete(int id, Admin admin);
 
 	void updateEmail(String newEmail, int id, int companyId);
 
@@ -225,7 +227,13 @@ public interface RecipientService {
 
 	List<Map<String, Object>> list(Map<String, String> fieldFilters, Admin admin);
 
-	Map<String, Object> getVisibleFieldValues(int recipientId, Admin admin);
+	List<Integer> getRecipientIds(Map<String, String> fieldFilters, Admin admin);
+
+    Map<String, Object> getVisibleFieldValues(String email, Admin admin);
+
+    int getRecipientIdByEmail(String email, Admin admin);
+
+    Map<String, Object> getVisibleFieldValues(int recipientId, Admin admin);
 
 	Recipient create(CreateRecipientCommand command);
 

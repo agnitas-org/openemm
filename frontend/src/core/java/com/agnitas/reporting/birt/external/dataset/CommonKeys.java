@@ -139,9 +139,6 @@ public interface CommonKeys {
 	String ALL_MAILINGLISTS = "statistic.All_Mailinglists";
 
     List<DeviceClass> AVAILABLE_DEVICECLASSES = Arrays.asList(DeviceClass.DESKTOP, DeviceClass.MOBILE, DeviceClass.TABLET, DeviceClass.SMARTTV);
-    
-    int OPTIMIZATION_SUMMARY_GROUP_ID = -1; // TODO: GWUA-7000: Remove after migration
-    int OPTIMIZATION_WINNER_GROUP_ID = 0; // TODO: GWUA-7000: Remove after migration
 
 	static String tokenByIndex(int index) {
 		return switch(index) {

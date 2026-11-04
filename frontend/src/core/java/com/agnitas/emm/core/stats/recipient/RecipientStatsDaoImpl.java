@@ -69,7 +69,7 @@ class RecipientStatsDaoImpl extends BaseDaoImpl implements RecipientStatsDao {
             sql.append(" JOIN customer_%d_tbl cust ON bind.customer_id = cust.customer_id".formatted(filter.companyId()));
         }
 
-        sql.append(" WHERE ").append(getDateRangeFilter("bind.timestamp", filter.period(), params).orElse(""));
+        sql.append(" WHERE ").append(getRangeFilter("bind.timestamp", filter.period(), params).orElse("1 = 1"));
         sql.append(andClause(filter.targetSql()));
 
         // bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries

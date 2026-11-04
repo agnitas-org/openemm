@@ -1,0 +1,15 @@
+# Path to local java installation
+JAVA_HOME=/opt/agnitas.com/software/java
+
+# Path to local tomcat installation
+CATALINA_HOME=/opt/agnitas.com/software/tomcat
+
+# Main directory, to put webapplications in, mostly "/home/<username>/webapps"
+deploydir=${user.home}/webapps
+
+# Buildname example: openemm-rest-mcp-26.11.123
+appname=/rest-mcp
+
+# Deploytarget
+#deploytarget=openemm.rest-mcp
+

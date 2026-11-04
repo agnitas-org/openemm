@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.mailing.content.service;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.emm.mcp.v1.mailing.content.MailingContentResponse;
 import com.agnitas.emm.mcp.v1.mailing.content.dto.PatchMailingContentRequest;
 
@@ -32,4 +33,5 @@ public interface MailingContentMcpService {
 
     void delete(String name, int mailingId, int companyId);
 
+    List<MailingContentResponse> getMailingContentBlocks(Mailing mailing);
 }

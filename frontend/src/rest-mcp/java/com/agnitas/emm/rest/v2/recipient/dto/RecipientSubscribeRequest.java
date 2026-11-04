@@ -19,7 +19,7 @@ public record RecipientSubscribeRequest(
 
         @Pattern(regexp = "\\*|[1-9]\\d*", message = "mailinglist must be '*' or ID")
         String mailinglist,
-        MediaTypes mediatype,
+        MediaTypes mediaType,
 
         @Null(
                 groups = Groups.Bulk.class,

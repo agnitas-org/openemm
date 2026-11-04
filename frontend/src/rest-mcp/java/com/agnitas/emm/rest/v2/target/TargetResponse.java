@@ -17,12 +17,20 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public record TargetResponse(
         int id,
         String name,
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
         String description,
+
         String sql,
         String eql,
         boolean valid,
         Instant creationDate,
-        Instant changeDate
+        Instant changeDate,
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        boolean isAccessLimiting,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Integer recipientCount
 ) {
 }

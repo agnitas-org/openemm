@@ -26,7 +26,7 @@ public record RecipientSubscriptionRequest(
 
         @NotNull
         @McpToolParam(description = "Media type for the mailinglist subscription (e.g. EMAIL)")
-        MediaTypes mediatype,
+        MediaTypes mediaType,
 
         @NotNull
         @McpToolParam(description = "Subscription status to set for the recipient")

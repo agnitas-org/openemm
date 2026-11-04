@@ -19,7 +19,7 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 public record BindingResponse(
         int recipientId,
         int mailinglistId,
-        MediaTypes mediatype,
+        MediaTypes mediaType,
         UserStatus userStatus,
         UserType userType,
         String userRemark,

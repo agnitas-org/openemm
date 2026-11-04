@@ -50,6 +50,7 @@ public class BindingTools {
 
     @McpTool(
             name = "get_bindings",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of mailinglist bindings (recipient subscriptions), optionally filtered"
     )
     public PageResponse<BindingResponse> getList(
@@ -63,16 +64,17 @@ public class BindingTools {
 
     @McpTool(
             name = "get_binding",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a mailinglist binding identified by recipient ID, mailinglist ID and media type"
     )
     public BindingResponse getById(
             @McpToolParam(description = "Recipient ID") @Positive int recipientId,
             @McpToolParam(description = "Mailinglist ID") @Positive int mailinglistId,
-            @McpToolParam(description = "Media type of the binding, e.g. EMAIL") MediaTypes mediatype,
+            @McpToolParam(description = "Media type of the binding, e.g. EMAIL") MediaTypes mediaType,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
-        return bindingMcpService.getById(recipientId, mailinglistId, mediatype, admin.getCompanyID());
+        return bindingMcpService.getById(recipientId, mailinglistId, mediaType, admin.getCompanyID());
     }
 
     @McpTool(
@@ -89,35 +91,38 @@ public class BindingTools {
 
     @McpTool(
             name = "update_binding",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates an existing mailinglist binding. Fields not passed (absent) are left unchanged."
     )
     public BindingResponse patch(
             @McpToolParam(description = "Recipient ID") @Positive int recipientId,
             @McpToolParam(description = "Mailinglist ID") @Positive int mailinglistId,
-            @McpToolParam(description = "Media type of the binding, e.g. EMAIL") MediaTypes mediatype,
+            @McpToolParam(description = "Media type of the binding, e.g. EMAIL") MediaTypes mediaType,
             @Valid PatchBindingRequest request,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
-        return bindingMcpService.patch(recipientId, mailinglistId, mediatype, request, admin.getCompanyID());
+        return bindingMcpService.patch(recipientId, mailinglistId, mediaType, request, admin.getCompanyID());
     }
 
     @McpTool(
             name = "delete_binding",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a mailinglist binding identified by recipient ID, mailinglist ID and media type"
     )
     public void delete(
             @McpToolParam(description = "Recipient ID") @Positive int recipientId,
             @McpToolParam(description = "Mailinglist ID") @Positive int mailinglistId,
-            @McpToolParam(description = "Media type of the binding, e.g. EMAIL") MediaTypes mediatype,
+            @McpToolParam(description = "Media type of the binding, e.g. EMAIL") MediaTypes mediaType,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
-        bindingMcpService.delete(recipientId, mailinglistId, mediatype, admin.getCompanyID());
+        bindingMcpService.delete(recipientId, mailinglistId, mediaType, admin.getCompanyID());
     }
 
     @McpTool(
             name = "delete_bindings",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes mailinglist bindings in bulk for combinations of the given recipients and mailinglists"
     )
     public BulkDeleteBindingsResponse deleteBulk(
@@ -130,6 +135,7 @@ public class BindingTools {
 
     @McpTool(
             name = "upsert_bindings",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Creates or updates mailinglist bindings in bulk for every combination of the given recipients, "
                     + "mailinglists and media types, setting the given subscription status"
     )

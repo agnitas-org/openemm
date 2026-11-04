@@ -2577,7 +2577,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             if (resultsetHasColumn(resultSet, "senddate")) {
                 mailing.setSenddate(resultSet.getTimestamp("senddate"));
             }
-            if (resultsetHasColumn(resultSet, DELIVERED_COL)) {
+            if (!mailing.isIsTemplate() && resultsetHasColumn(resultSet, DELIVERED_COL)) {
                 mailing.setSentEmails(resultSet.getLong(DELIVERED_COL));
             }
             return mailing;

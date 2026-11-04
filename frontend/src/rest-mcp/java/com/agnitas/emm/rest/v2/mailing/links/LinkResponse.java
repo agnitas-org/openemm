@@ -30,7 +30,5 @@ public record LinkResponse(
 
         boolean administrative,
 
-//        createSubstituteForAgnDynMulti todo ?
-
         List<LinkExtensionResponse> extensions
 ) {}

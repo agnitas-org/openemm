@@ -10,15 +10,19 @@
 
 package com.agnitas.emm.mcp.v1.target;
 
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.target.dto.TargetInclude;
+import com.agnitas.emm.core.target.validation.TargetGroupConstraints;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.target.dto.CreateTargetGroupRequest;
+import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupLightResponse;
 import com.agnitas.emm.mcp.v1.target.dto.TargetGroupResponse;
-import com.agnitas.emm.mcp.v1.target.dto.PatchTargetGroupRequest;
 import com.agnitas.emm.mcp.v1.target.service.TargetGroupMcpService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -45,30 +49,49 @@ public class TargetGroupTools {
 
     @McpTool(
             name = "get_target_groups",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a paginated list of target groups"
     )
     public PageResponse<TargetGroupLightResponse> getList(
             @Valid McpPageable pageable,
+            @McpToolParam(
+                    description = "Optional extra fields to include in each target. "
+                            + "Allowed values: recipientCount (number of recipients; expensive to calculate, "
+                            + "so only allowed when page size is "
+                            + TargetGroupConstraints.MAX_PAGE_SIZE_WITH_RECIPIENT_COUNT
+                            + " or less).",
+                    required = false
+            ) Set<TargetInclude> include,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_SHOW);
-        return targetGroupMcpService.list(pageable, admin);
+        return targetGroupMcpService.list(pageable, include, admin);
     }
 
     @McpTool(
             name = "get_target_group_by_id",
+            annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Returns a target group by its ID"
     )
     public TargetGroupResponse getById(
             @Positive int id,
+            @McpToolParam(
+                    description = """
+                                  Optional extra fields to include in each target.
+                                  Allowed values: recipientCount.
+                                  recipientCount is expensive to calculate, so request it only when needed.
+                                  """,
+                    required = false
+            ) Set<TargetInclude> include,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_SHOW);
-        return targetGroupMcpService.getById(id, admin.getCompanyID());
+        return targetGroupMcpService.getById(id, include, admin);
     }
 
     @McpTool(
             name = "create_target_group",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, openWorldHint = false),
             description = "Creates a new target group"
     )
     public TargetGroupResponse create(
@@ -76,11 +99,12 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_CHANGE);
-        return targetGroupMcpService.create(request, admin.getCompanyID());
+        return targetGroupMcpService.create(request, admin);
     }
 
     @McpTool(
             name = "update_target_group",
+            annotations = @McpTool.McpAnnotations(destructiveHint = false, idempotentHint = true, openWorldHint = false),
             description = "Updates an existing target group. Fields not passed (null) are left unchanged."
     )
     public TargetGroupResponse patch(
@@ -89,11 +113,12 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_CHANGE);
-        return targetGroupMcpService.patch(id, request, admin.getCompanyID());
+        return targetGroupMcpService.patch(id, request, admin);
     }
 
     @McpTool(
             name = "delete_target_group",
+            annotations = @McpTool.McpAnnotations(idempotentHint = true, openWorldHint = false),
             description = "Deletes a target group by its ID"
     )
     public void deleteById(

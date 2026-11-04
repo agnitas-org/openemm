@@ -20,10 +20,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.Month;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +36,6 @@ import java.util.stream.Collectors;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.ReportGenerationHeaders;
 import com.agnitas.emm.core.birtreport.ReportGenerationTokenService;
@@ -49,25 +46,17 @@ import com.agnitas.emm.core.birtreport.dto.BirtReportStatisticDto;
 import com.agnitas.emm.core.birtreport.dto.StatisticsReportRequest;
 import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
-import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.commons.dto.DateTimeRange;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
-import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
-import com.agnitas.reporting.birt.external.dataset.CommonKeys;
-import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet;
 import com.agnitas.reporting.birt.external.dataset.RecipientStatDataSet;
 import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
 import com.agnitas.util.FileDownload;
-import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -91,8 +80,6 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	public static final String IS_TOP_LEVEL_DOMAIN = "topLevelDomain";
 	private static final String COMPANY_ID = "companyID";
 	private static final String FORMAT = "__format";
-	private static final String START_DATE = "startDate";
-	private static final String STOP_DATE = "stopDate";
 	private static final String REPORT_ID = "reportId";
 	private static final String DARKMODE = "darkmode";
 	private static final String HIDDEN_TARGET_ID = "hiddenTargetId";
@@ -102,26 +89,9 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	protected static final String IS_SVG = "__svg";
 	protected static final String TARGET_ID = "targetID";
 	protected static final String SECURITY_TOKEN = "sec";
-	protected static final String EMM_SESSION = "emmsession";
-	protected static final String TARGET_BASE_URL = "targetBaseUrl";
-	protected static final String HOUR_SCALE = "hourScale";
 	protected static final String ACCOUNT_ID = "accountId";
 	protected static final String MAILING_ID = "mailingID";
 	protected static final String WORKFLOW_ID = "workflowId";
-	protected static final String TRACKING_ALLOWED = "trackingAllowed";
-	private static final String IS_ALOWED_DEEP_TRACKING = "isAlowedDeeptracking";
-	private static final String SHORTNAME = "shortname";
-	protected static final String SELECTED_TARGETS = "selectedTargets";
-	private static final String DESCRIPTION = "description";
-	protected static final String RECIPIENT_TYPE = "recipientType";
-	private static final String BOUNCETYPE = "bouncetype";
-	private static final String VIEW_CHART = "viewChart";
-	private static final String SHOW_NET = "showNet";
-	private static final String SHOW_GROSS = "showGross";
-	private static final String HIDE_SENT_STATS = "hideSentStats";
-	private static final String OPTIMIZATION_ID = "optimizationID";
-	private static final String URL_ID = "urlID";
-	protected static final String SHOW_SOFT_BOUNCES = "showSoftbounces";
 
 	private static final String BIRT_REPORT_TEMP_DIR = AgnUtils.getTempDir() + File.separator + "BirtReport";
 	private static final String BIRT_REPORT_TEMP_FILE_PATTERN = "birt-report-%d-body";
@@ -308,161 +278,6 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 		return new DateTimeRange(startDate, endDate);
 	}
 
-	@Override
-	public String getMailingStatisticUrl(Admin admin, String sessionId, MailingStatisticDto mailingStatistic) {
-		final String reportName = getReportName(mailingStatistic);
-		final Map<String, Object> params = new HashMap<>();
-
-		params.put(REPORT_NAME, reportName);
-		params.put(FORMAT, "html");
-		params.put(COMPANY_ID, admin.getCompanyID());
-		params.put(EMM_SESSION, sessionId);
-		params.put(TARGET_BASE_URL.toLowerCase(), generateTargetBaseUrl());
-
-        params.putAll(collectParametersAccordingToDateMode(
-                mailingStatistic.getDateMode(),
-				mailingStatistic.getDateTimeRange(),
-				mailingStatistic.isHourScale()
-		));
-
-		collectParametersAccordingToType(mailingStatistic.getType(), admin, mailingStatistic, params);
-
-		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
-				.setInternalAccess(false)
-				.setParameters(params)
-				.setAdmin(admin).build();
-
-		return generateUrlWithParams(options, admin.getCompanyID());
-	}
-
-	private Map<String, Object> collectParametersAccordingToDateMode(DateMode dateMode, DateTimeRange dateRange, boolean isHourScale) {
-		if (DateMode.NONE.equals(dateMode)) {
-			return Collections.emptyMap();
-		}
-
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(new SimpleDateFormat(BIRTDataSet.DATE_PARAMETER_FORMAT_WITH_HOUR2).toPattern());
-		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(new SimpleDateFormat(DateUtilities.YYYY_MM_DD).toPattern());
-
-		final Tuple<LocalDateTime, LocalDateTime> dateRestrictions =
-				computeMailingSummaryDateRestrictions(dateRange.getFrom(), dateRange.getTo(), dateMode);
-
-		String startDateStr;
-		String endDateStr;
-		if (dateMode == DateMode.LAST_TENHOURS || dateMode == DateMode.SELECT_DAY) {
-			startDateStr = dateRestrictions.getFirst().format(dateTimeFormatter);
-			endDateStr = dateRestrictions.getSecond().format(dateTimeFormatter);
-		} else {
-			startDateStr = dateRestrictions.getFirst().toLocalDate().format(dateFormatter);
-			endDateStr = dateRestrictions.getSecond().toLocalDate().format(dateFormatter);
-		}
-
-		return Map.of(
-				START_DATE, startDateStr,
-				STOP_DATE, endDateStr,
-				HOUR_SCALE, isHourScale
-		);
-	}
-
-	private Tuple<LocalDateTime, LocalDateTime> computeMailingSummaryDateRestrictions(LocalDateTime startDate, LocalDateTime endDate, DateMode dateMode) {
-		if (dateMode == DateMode.SELECT_DAY) {
-			if (startDate == null) {
-				startDate = LocalDateTime.now();
-			}
-
-			return new Tuple<>(startDate.withHour(0), startDate.plusDays(1).withHour(0));
-		}
-
-		if (endDate == null) {
-			endDate = LocalDateTime.now();
-		}
-
-		if (startDate == null) {
-			if (dateMode == DateMode.LAST_TENHOURS) {
-				startDate = endDate.minusHours(10);
-			} else if (dateMode == DateMode.LAST_DAY) {
-				startDate = endDate.minusDays(1);
-			} else if (dateMode == DateMode.LAST_FORTNIGHT) {
-				startDate = endDate.minusDays(14);
-			} else if (dateMode == DateMode.LAST_MONTH) {
-				startDate = endDate.minusMonths(1);
-			} else if (dateMode == DateMode.LAST_WEEK) {
-				startDate = endDate.minusWeeks(1);
-			} else if (dateMode == DateMode.SELECT_MONTH) {
-				startDate = endDate.minusMonths(1);
-			} else {
-				startDate = endDate.minusDays(1);
-			}
-		}
-
-		return new Tuple<>(startDate, endDate);
-	}
-
-	private String getReportName(MailingStatisticDto statistic) {
-    	if (statistic.getType() == null) {
-    		return "";
-		}
-
-        switch (statistic.getType()) {
-			case SUMMARY_AUTO_OPT:
-				// TODO: GWUA-7000: Remove after migration
-				return "mailing_summary_autoopt.rptdesign";
-            case SIMPLE_TRACKING_POINT:
-				// TODO: GWUA-7117: Remove after migration
-                return "mailing_simple_tracking_point.rptdesign";
-            default:
-                //Do nothing
-        }
-        return "";
-    }
-
-	private void collectParametersAccordingToType(StatisticType type, Admin admin, MailingStatisticDto mailingStatistic, Map<String, Object> params) {
-    	if (type == StatisticType.SUMMARY_AUTO_OPT) {
-			params.put(TRACKING_ALLOWED, AgnUtils.isMailTrackingAvailable(admin));
-			params.put(OPTIMIZATION_ID, mailingStatistic.getOptimizationId());
-			params.put(SHOW_SOFT_BOUNCES, admin.permissionAllowed(Permission.STATISTIC_SOFTBOUNCES_SHOW));
-			boolean showNetto = mailingStatistic.isShowNetto();
-			params.put(SHOW_NET, showNetto);
-			params.put(SHOW_GROSS, !showNetto);
-			params.put(SELECTED_TARGETS, StringUtils.defaultString(StringUtils.join(mailingStatistic.getSelectedTargets(), ",")));
-			return;
-		}
-
-		params.put(MAILING_ID, mailingStatistic.getMailingId());
-		params.put(SHORTNAME, StringUtils.trimToEmpty(mailingStatistic.getShortname()));
-		params.put(DESCRIPTION, StringUtils.trimToEmpty(mailingStatistic.getDescription()));
-		params.put(SELECTED_TARGETS, StringUtils.defaultString(StringUtils.join(mailingStatistic.getSelectedTargets(), ",")));
-		params.put(RECIPIENT_TYPE, CommonKeys.TYPE_ALL_SUBSCRIBERS);
-
-    	if(type == StatisticType.BOUNCES) {
-			params.put(BOUNCETYPE, MailingBouncesDataSet.BounceType.BOTH.name());
-		}
-		if(type == StatisticType.PROGRESS_OF_SINGLE_LINK_CLICKS) {
-    		params.put(VIEW_CHART, true);
-    		params.put(URL_ID, mailingStatistic.getLinkId());
-		}
-		if(type == StatisticType.SUMMARY) {
-			params.put(TRACKING_ALLOWED, AgnUtils.isMailTrackingAvailable(admin));
-			params.put(IS_ALOWED_DEEP_TRACKING, admin.permissionAllowed(Permission.DEEPTRACKING));
-			params.put(SHOW_SOFT_BOUNCES, admin.permissionAllowed(Permission.STATISTIC_SOFTBOUNCES_SHOW));
-			boolean showNetto = mailingStatistic.isShowNetto();
-			params.put(SHOW_NET, showNetto);
-			params.put(SHOW_GROSS, !showNetto);
-		}
-		if(type == StatisticType.TOP_DOMAINS) {
-			params.put(HIDE_SENT_STATS, !mailingStatistic.isMailtrackingActive() || !mailingStatistic.isMailtrackingExpired());
-			params.put(IS_TOP_LEVEL_DOMAIN, mailingStatistic.isTopLevelDomain());
-			params.put(MAX_DOMAINS, mailingStatistic.getMaxDomains());
-		}
-	}
-
-	@Override
-	public String changeFormat(String inputUrl, String newFormat) {
-		if(StringUtils.isBlank(inputUrl)){
-			return inputUrl;
-		}
-		return inputUrl.replaceAll("([&?]" + FORMAT + "=)\\w*(&+)", "$1" + newFormat + "$2");
-	}
-
     @Override
 	@Deprecated
 	public File getReportTmpFile(int birtReportId, String birtUrl, CloseableHttpClient httpClient, Logger loggerForErrors) {
@@ -499,32 +314,6 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 
 		return maildropStatus.stream()
 				.noneMatch(status -> invalidStatuses.contains(status.getStatus()));
-	}
-
-	@Override
-	public String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto) {
-		Map<String, Object> map = new HashMap<>();
-		map.put(REPORT_NAME, workflowStatisticDto.getReportName());
-		map.put(FORMAT, workflowStatisticDto.getFormat());
-		map.put(WORKFLOW_ID, workflowStatisticDto.getWorkflowId());
-		map.put(COMPANY_ID, workflowStatisticDto.getCompanyId());
-
-		map.put(TRACKING_ALLOWED, AgnUtils.isMailTrackingAvailable(admin));
-		map.put(SHOW_SOFT_BOUNCES, admin.permissionAllowed(Permission.STATISTIC_SOFTBOUNCES_SHOW));
-
-		map.putAll(collectParametersAccordingToDateMode(
-				workflowStatisticDto.getDateMode(),
-				workflowStatisticDto.getDateRange(),
-				workflowStatisticDto.getDateMode() == DateMode.SELECT_DAY
-		));
-
-		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
-				.setParameters(map)
-				.setAdmin(admin)
-				.setInternalAccess(false)
-				.build();
-
-		return generateUrlWithParams(options, admin.getCompanyID());
 	}
 
 	@Override
@@ -598,10 +387,6 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 		}
 
 		return generateReportFile(birtDownload.getReportId(), companyId, birtDownload.getReportRequest());
-	}
-
-	protected String generateTargetBaseUrl() {
-		return configService.getValue(ConfigValue.SystemUrl);
 	}
 
 	public void setConfigService(ConfigService configService) {

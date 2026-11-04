@@ -15,6 +15,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
 import java.util.UUID;
 
 import com.agnitas.emm.core.commons.util.ConfigService;
@@ -28,6 +29,8 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -55,6 +58,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 public class AuthorizationServerConfiguration {
+
+    private static final Logger LOGGER = LogManager.getLogger(AuthorizationServerConfiguration.class);
 
     private final ConfigService configService;
     private final LogonService logonService;
@@ -122,13 +127,34 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
-        OAuth2RegisteredClientRepository repo = new OAuth2RegisteredClientRepository(oauth2RegistrationClientDao);
+        boolean hasConfiguredClient = !configService.isInternalOAuthServer() && configService.isOAuthConfigured();
+        OAuth2RegisteredClientRepository repo = new OAuth2RegisteredClientRepository(
+                oauth2RegistrationClientDao,
+                this::dynamicClientAccessTokenTimeToLive,
+                hasConfiguredClient ? configService.getValue(ConfigValue.OAuth2ServerClientId) : null
+        );
 
-        if (!configService.isInternalOAuthServer() && configService.isOAuthConfigured()) {
+        if (hasConfiguredClient) {
             registerConfiguredClient(repo);
         }
 
         return repo;
+    }
+
+    private Duration dynamicClientAccessTokenTimeToLive() {
+        ConfigValue configValue = ConfigValue.OAuth2AccessTokenValidityMinutes;
+        String value = configService.getValue(configValue);
+        try {
+            long minutes = Long.parseLong(StringUtils.trimToEmpty(value));
+            if (minutes > 0) {
+                return Duration.ofMinutes(minutes);
+            }
+        } catch (NumberFormatException e) {
+            // handled below
+        }
+
+        LOGGER.warn("Invalid value '{}' for config value '{}', using default '{}'", value, configValue, configValue.getDefaultValue());
+        return Duration.ofMinutes(Long.parseLong(configValue.getDefaultValue()));
     }
 
     private void registerConfiguredClient(RegisteredClientRepository repo) {

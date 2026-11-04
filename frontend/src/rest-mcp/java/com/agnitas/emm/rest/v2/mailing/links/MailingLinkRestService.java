@@ -14,25 +14,31 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.trackablelinks.dto.PatchLinkCommand;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
-class MailingLinkRestService {
+public class MailingLinkRestService {
 
     private final MailingLinkRestMapper mapper;
     private final TrackableLinkService linkService;
+    private final CompanyTokenService companyTokenService;
 
     MailingLinkRestService(
             MailingLinkRestMapper mapper,
-            TrackableLinkService linkService
+            TrackableLinkService linkService,
+            CompanyTokenService companyTokenService
     ) {
         this.mapper = mapper;
         this.linkService = linkService;
+        this.companyTokenService = companyTokenService;
     }
 
     public PageResponse<LinkResponse> list(int mailingId, Pageable pageable, Admin admin) {
@@ -40,19 +46,30 @@ class MailingLinkRestService {
                 .getMailingForLinksOverview(mailingId, admin.getCompanyID(), false)
                 .getTrackableLinks().values().stream()
                 .sorted(Comparator.comparing(TrackableLink::getId))
-                .map(mapper::toResponse)
+                .map(link -> toResponse(link, admin.getCompanyID()))
                 .toList();
         return PageResponse.of(links, pageable.getPageNumber(), pageable.getPageSize());
     }
 
     public LinkResponse find(int linkId, int mailingId, Admin admin) {
         TrackableLink link = linkService.getLink(linkId, mailingId, admin.getCompanyID());
-        return mapper.toResponse(link);
+        return toResponse(link, admin.getCompanyID());
     }
 
-    public LinkResponse patch(int linkId, int mailingId, PatchLinkRequest request, Admin admin) {
+    private LinkResponse toResponse(TrackableLink link, int companyId) {
+        String companyToken = companyTokenService.getCompanyToken(companyId).orElse("");
+        return mapper.toResponse(link, companyToken, companyId);
+    }
+
+    LinkResponse patch(int linkId, int mailingId, PatchLinkRequest request, Admin admin) {
         PatchLinkCommand command = mapper.toCommand(request);
         linkService.patch(linkId, mailingId, command, admin);
         return find(linkId, mailingId, admin);
+    }
+
+    public List<LinkResponse> getMailingLinks(Mailing mailing) {
+        return MapUtils.emptyIfNull(mailing.getTrackableLinks()).values().stream()
+                .map(link -> toResponse(link, mailing.getCompanyID()))
+                .toList();
     }
 }

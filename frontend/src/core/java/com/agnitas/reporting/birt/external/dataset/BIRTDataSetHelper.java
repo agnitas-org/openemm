@@ -17,6 +17,7 @@ import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.JavaMailServiceImpl;
+import com.agnitas.dao.impl.SeasonKeyDaoImpl;
 
 /**
  * Open Emm implemntation of BIRTDataSetHelper for {@link BIRTDataSet }
@@ -53,7 +54,7 @@ public class BIRTDataSetHelper {
         ((LicenseDaoImpl) licenseDao).setJavaMailService(javaMailservice);
         newConfigService.setLicenseDao(licenseDao);
 
-        newConfigService.setLicenseSignatureVerifier(new LicenseSignatureVerifier(licenseDao));
+        newConfigService.setLicenseSignatureVerifier(new LicenseSignatureVerifier(licenseDao, new SeasonKeyDaoImpl()));
         
         AdminDao adminDao = new AdminDaoImpl();
         ((AdminDaoImpl) adminDao).setDataSource(dataSource);

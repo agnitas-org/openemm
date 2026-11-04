@@ -27,13 +27,13 @@ public interface BindingMcpService {
 
     PageResponse<BindingResponse> list(ListBindingsFilter filter, McpPageable pageable, int companyId);
 
-    BindingResponse getById(int recipientId, int mailinglistId, MediaTypes mediatype, int companyId);
+    BindingResponse getById(int recipientId, int mailinglistId, MediaTypes mediaType, int companyId);
 
     BindingResponse create(CreateBindingRequest request, int companyId);
 
-    BindingResponse patch(int recipientId, int mailinglistId, MediaTypes mediatype, PatchBindingRequest request, int companyId);
+    BindingResponse patch(int recipientId, int mailinglistId, MediaTypes mediaType, PatchBindingRequest request, int companyId);
 
-    void delete(int recipientId, int mailinglistId, MediaTypes mediatype, int companyId);
+    void delete(int recipientId, int mailinglistId, MediaTypes mediaType, int companyId);
 
     BulkDeleteBindingsResponse deleteBulk(BulkDeleteBindingsRequest request, int companyId);
 

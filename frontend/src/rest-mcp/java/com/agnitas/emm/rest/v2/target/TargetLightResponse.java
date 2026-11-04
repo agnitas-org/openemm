@@ -15,7 +15,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public record TargetLightResponse(
         int id,
         String name,
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
-        String description
+        String description,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        Integer recipientCount
 ) {
 }

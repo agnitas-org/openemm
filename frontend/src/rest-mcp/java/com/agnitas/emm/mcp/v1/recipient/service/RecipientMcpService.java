@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.mcp.v1.recipient.service;
 
+import java.util.List;
 import java.util.Map;
 
 import com.agnitas.beans.Admin;
@@ -26,13 +27,13 @@ public interface RecipientMcpService {
 
     PageResponse<Map<String, Object>> list(Map<String, String> filters, McpPageable pageable, Admin admin);
 
-    Map<String, Object> getById(int id, Admin admin);
+    Map<String, Object> get(Integer recipientId, String email, Admin admin);
 
     Map<String, Object> create(CreateRecipientRequest request, Admin admin);
 
-    Map<String, Object> update(int id, UpdateRecipientRequest request, Admin admin);
+    Map<String, Object> update(Integer recipientId, String email, UpdateRecipientRequest request, Admin admin);
 
-    void delete(int id, Admin admin);
+    void delete(Integer recipientId, String email, Admin admin);
 
     BulkUpsertRecipientsResponse createBulk(BulkRecipientsRequest request, Admin admin);
 
@@ -42,4 +43,5 @@ public interface RecipientMcpService {
 
     boolean isAllowedToUseHtml(String columnName, Admin admin);
 
+    List<Integer> listIds(Map<String, String> filters, Admin admin);
 }

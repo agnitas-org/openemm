@@ -19,7 +19,7 @@ public record BindingResponse(
         int mailinglistId,
         int recipientId,
         String userType,
-        String mediatype,
+        String mediaType,
         String userStatus,
         String userRemark,
         String referrer,

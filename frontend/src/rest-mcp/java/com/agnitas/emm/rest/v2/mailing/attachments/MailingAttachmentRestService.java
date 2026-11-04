@@ -12,14 +12,19 @@ package com.agnitas.emm.rest.v2.mailing.attachments;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import com.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
@@ -29,7 +34,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
-class MailingAttachmentRestService {
+public class MailingAttachmentRestService {
 
     private final MailingAttachmentRestMapper mapper;
     protected final MailingComponentsService componentsService;
@@ -92,7 +97,7 @@ class MailingAttachmentRestService {
                 .body(new InputStreamResource(in));
     }
 
-    public AttachmentResponse create(UploadAttachmentRequest request, int mailingId, Admin admin) {
+    AttachmentResponse create(UploadAttachmentRequest request, int mailingId, Admin admin) {
         UploadMailingAttachmentDto dto = mapper.toDto(request);
         componentsService.uploadAttachment(mailingId, admin, dto);
         return find(dto.getName(), mailingId, admin);
@@ -104,5 +109,16 @@ class MailingAttachmentRestService {
 
     public void delete(String filename, int mailingId, Admin admin) {
         componentsService.deleteAttachment(filename, mailingId, admin);
+    }
+
+    public List<AttachmentResponse> getAttachments(Mailing mailing) {
+        EnumSet<MailingComponentType> attachmentTypes = EnumSet.of(
+                MailingComponentType.Attachment,
+                MailingComponentType.PersonalizedAttachment
+        );
+        return MapUtils.emptyIfNull(mailing.getComponents()).values().stream()
+                .filter(component -> attachmentTypes.contains(component.getType()))
+                .map(mapper::toResponse)
+                .toList();
     }
 }

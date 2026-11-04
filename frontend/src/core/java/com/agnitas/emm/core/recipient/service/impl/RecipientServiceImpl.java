@@ -85,6 +85,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.core.binding.service.BindingUtils;
+import com.agnitas.emm.core.commons.exception.EntityNotUniqueException;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
@@ -2341,6 +2342,12 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
+	public DeleteResult delete(String email, Admin admin) {
+		int recipientId = getRecipientIdByEmail(email, admin);
+		return delete(recipientId, admin);
+	}
+
+	@Override
 	public DeleteResult delete(int id, Admin admin) {
 		DeleteCheck check = canBeDeleted(id, admin);
 		if (!check.isAllowed()) {
@@ -2382,9 +2389,7 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public List<Map<String, Object>> list(Map<String, String> fieldFilters, Admin admin) {
 		int companyId = admin.getCompanyID();
-		CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields = fieldService.getVisibleFields(admin);
-		validateFieldFilter(fieldFilters, visibleFields);
-		List<Integer> recipientIds = recipientDao.getFilteredRecipientIDs(companyId, visibleFields, fieldFilters);
+		List<Integer> recipientIds = getRecipientIds(fieldFilters, admin);
 		if (recipientIds.isEmpty()) {
 			return emptyList();
 		}
@@ -2392,6 +2397,13 @@ public class RecipientServiceImpl implements RecipientService {
 				.stream()
 				.map(fields -> getFormattedFieldsMap(admin, fields))
 				.toList();
+	}
+
+	@Override
+	public List<Integer> getRecipientIds(Map<String, String> fieldFilters, Admin admin) {
+		CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields = fieldService.getVisibleFields(admin);
+		validateFieldFilter(fieldFilters, visibleFields);
+        return recipientDao.getFilteredRecipientIDs(admin.getCompanyID(), visibleFields, fieldFilters);
 	}
 
 	private void validateFieldFilter(
@@ -2406,6 +2418,26 @@ public class RecipientServiceImpl implements RecipientService {
 			throw ValidationException.exact("Invalid recipient filter by unknown recipient profile fields: %s"
 					.formatted(unknownFields.stream().collect(Collectors.joining(", ", "[", "]"))));
 		}
+	}
+
+	@Override
+	public Map<String, Object> getVisibleFieldValues(String email, Admin admin) {
+		int recipientId = getRecipientIdByEmail(email, admin);
+		return getVisibleFieldValues(recipientId, admin);
+	}
+
+	@Override
+	public int getRecipientIdByEmail(String email, Admin admin) {
+		List<Integer> recipientIds = findIdsByEmail(email, admin.getCompanyID());
+		if (recipientIds.isEmpty()) {
+			throw new RecipientNotExistException(email, admin.getCompanyID());
+		}
+		if (recipientIds.size() > 1) {
+			throw new EntityNotUniqueException(
+					"Multiple recipients found for this email address. Use ID to get the wanted recipient."
+			);
+		}
+		return recipientIds.getFirst();
 	}
 
 	@Override
@@ -2458,7 +2490,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return recipientImportService.add(
 				command.recipients(),
 				command.subscription().mailinglistIds(),
-				command.subscription().mediatype(),
+				command.subscription().mediaType(),
 				command.admin()
 		);
 	}
@@ -2489,7 +2521,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return recipientImportService.addAndUpdate(
 				command.recipients(),
 				command.subscription().mailinglistIds(),
-				command.subscription().mediatype(),
+				command.subscription().mediaType(),
 				command.admin()
 		);
 	}
@@ -2555,7 +2587,7 @@ public class RecipientServiceImpl implements RecipientService {
 		bindingEntry.setMailinglistID(mailinglistId);
 		bindingEntry.setUserStatus(requireNonNullElse(subscription.status(), UserStatus.Active).getStatusCode());
 		bindingEntry.setUserType(BindingEntry.UserType.World.getTypeCode());
-		bindingEntry.setMediaType(requireNonNullElse(subscription.mediatype(), MediaTypes.EMAIL).getMediaCode());
+		bindingEntry.setMediaType(requireNonNullElse(subscription.mediaType(), MediaTypes.EMAIL).getMediaCode());
 		bindingEntry.setUserRemark(subscription.remark());
 		return bindingEntry;
 	}
