@@ -20,15 +20,17 @@ OpenEMM is available in **English** and **German** language. The current version
 
 ## :fire: Latest News
 
-Version 26.11 of OpenEMM will provide lots of exciting new features:
+Version 26.11 of OpenEMM provides lots of exciting new features:
 
 - a brand new **REST API** based on **OpenAPI 3** with **swagger user interface** for documentation and testing
 - an **MCP API** to use OpenEMM as **MCP server** with your own AI chat or AI agent (including OAuth2 autentification)
-- verified connectors for **n8n** and **Make**
+- verified connectors for **[n8n](https://n8n.io/integrations/openemm)** and **[Make](https://www.make.com/integrations/openemm)**
 - all **visual statistics redesigned** and improved
 - support of **PostgreSQL** DBMS
 
-The source code of OpenEMM 26.11.026 is the first beta version and publication of the first release for general availability is planned for November 2026.
+The source code of OpenEMM 26.11 is in beta right now and publication of the first release for general availability is planned for the middle of November 2026.
+
+For instructions on how to upgrade OpenEMM to version 26.11, have a look at [section 11.8 of the OpenEMM Install & Admin Guide](https://docs.agnitas.de/openemm-install-admin-guide/2611/updates/#98-special-advice-for-upgrades-to-version-2611).
 
 ## :dizzy: Features
 
@@ -62,13 +64,13 @@ OpenEMM offers tons of features for professional marketing users, among them:
 
 If you want to read more about OpenEMM, make sure to look at:  
 
-🗣️ our [website](https://www.agnitas.de/en/e-marketing_manager/email-marketing-software-variants/openemm/) for **marketing information**   
+🗣️ our [website](https://www.agnitas.de/en/e-marketing_manager/email-marketing-software-variants/openemm/) with **marketing information**   
 
-🧑‍💻 our [wiki](https://wiki-iframe.agnitas.de/doku.php?id=start) for all **technical information**  
+🧑‍💻 our [wiki](https://wiki-iframe.agnitas.de/doku.php?id=start) with all **technical information**  
 
-📑 the [OpenEMM manual](https://www.agnitas.de/en/openemm-downloads/#1714398725552-fc64ae33-7263), which can be downloaded on our website  
+🌟 our [OpenEMM Install & Admin Guide](https://docs.agnitas.de) to learn how to **install, upgrade and maintain OpenEMM**
 
-🌟 our [OpenEMM factsheet](https://wiki-iframe.agnitas.de/doku.php?id=start#openemm_downloads) to learn about all the **highlights of version 26.05**. 
+📑 our [OpenEMM manual](https://docs.agnitas.de/openemm-en/) with **extensive information for OpenEMM users**
 
 ##  🤝 Supported environments
 
@@ -150,7 +152,7 @@ To update the database schema, run the shell script that executes any missing da
 
 `$ /home/openemm/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh dbcfg`
 
-Finally, exceute
+Finally, execute
 
 `$ /home/openemm/webapps/emm/WEB-INF/npm install`
 
