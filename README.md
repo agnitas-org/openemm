@@ -6,7 +6,7 @@ OpenEMM is an **open source software** for **email automation and marketing** li
 
 OpenEMM is developed and maintained by AGNITAS AG in Munich, Germany. It is the **free version** of our commercial software E-Marketing Manager (EMM) and offers you full **digital sovereignty**, because you decide where and how to operate it.
 
-OpenEMM is available in **English** and **German** language. The current version of OpenEMM is **26.05**. 
+OpenEMM is available in **English** and **German** language. The current version of OpenEMM is **26.11**. 
 
 **Experience OpenEMM yourself with our interactive demo tours:**    
 
@@ -22,11 +22,11 @@ OpenEMM is available in **English** and **German** language. The current version
 
 Version 26.11 of OpenEMM provides lots of exciting new features:
 
-- a brand new **REST API** based on **OpenAPI 3** with **swagger user interface** for documentation and testing
+- a brand new **REST API** based on **OpenAPI 3** specisifcation with **swagger user interface** for documentation and testing
 - an **MCP API** to use OpenEMM as **MCP server** with your own AI chat or AI agent (including OAuth2 autentification)
 - verified connectors for **[n8n](https://n8n.io/integrations/openemm)** and **[Make](https://www.make.com/integrations/openemm)**
 - all **visual statistics redesigned** and improved
-- support of **PostgreSQL** DBMS
+- support for **PostgreSQL** DBMS
 
 For instructions on how to upgrade OpenEMM to version 26.11, have a look at [section 11.8 of the OpenEMM Install & Admin Guide](https://docs.agnitas.de/openemm-install-admin-guide/2611/updates/#98-special-advice-for-upgrades-to-version-2611).
 
@@ -53,8 +53,9 @@ OpenEMM offers tons of features for professional marketing users, among them:
 |- Sophisticated management of users, user roles and user rights |
 | - An audit-proof searchable and exportable user activity log |
 | - A system status menu with helpful info and configuration options for OpenEMM administrators <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/systemstatus_openemm.png" width="80%" alt="System status menu"> |
+| - A feature-rich, OpenAPI 3.0 based **REST API v2** with a browser-based interactive documentation and test mode, including methods for bulk operations |
+| - An **MCP API** to operate OpenEMM externally as MCP server via an AI chat or AI agent (including audit-proof activity log) |
 | - An extensive set of **SOAP webservices** to manage OpenEMM from remote |
-| - A feature-rich **RESTful API** to manage OpenEMM from remote |
 | - A callback API to register **webhooks** for notifications of 3rd party systems about various mailing and recipient events |
 | - **Connectors for integration plaforms** Make and N8N |
 
