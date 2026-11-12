@@ -11,9 +11,15 @@
 package com.agnitas.emm.util.html;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.agnitas.emm.util.html.xssprevention.ForbiddenTagAttributeError;
+import com.agnitas.emm.util.html.xssprevention.ForbiddenTagError;
+import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
+import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
 import com.agnitas.exception.BadRequestException;
 import net.htmlparser.jericho.Attribute;
 import net.htmlparser.jericho.Attributes;
@@ -77,13 +83,17 @@ public final class HtmlChecker {
 		if (StringUtils.isNotBlank(text)) {
 			final Source source = new Source(text);
 			final Set<HtmlCheckerError> errors = new HashSet<>();
-			
-			for (final Tag tag : source.getAllTags()) {
+			List<Tag> tags = source.getAllTags();
+
+			for (final Tag tag : tags) {
 				if (tag instanceof StartTag) {
 					checkStartTag(allowSafeHtmlTags, tag, errors);
 				}
 			}
-	
+			// Jericho can miss tags that browsers still execute (e.g. "<Body/XSS onload=...>").
+			// Tags it did see are handled above; anything else the sanitizer finds is an error.
+//			errors.addAll(findTagsMissedByJericho(text, tags, ALWAYS_ALLOWED_HTML_TAGS));
+
 			if (!errors.isEmpty()) {
 				throw new HtmlCheckerException(errors);
 			}
@@ -94,17 +104,38 @@ public final class HtmlChecker {
 		if (StringUtils.isNotBlank(text)) {
 			final Source source = new Source(text);
 			final Set<HtmlCheckerError> errors = new HashSet<>();
-			
-			for (final Tag tag : source.getAllTags()) {
-				if (tag instanceof StartTag) {
-					errors.add(new HtmlCheckerForbiddenTagError(tag.getName()));
-				}
-			}
+			final List<Tag> tags = source.getAllTags();
+
+			tags.stream()
+					.filter(StartTag.class::isInstance)
+					.map(Tag::getName)
+					.map(HtmlCheckerForbiddenTagError::new)
+					.forEach(errors::add);
+
+//			errors.addAll(findTagsMissedByJericho(text, tags, new String[0]));
 	
 			if (!errors.isEmpty()) {
 				throw new HtmlCheckerException(errors);
 			}
 		}
+	}
+
+	private static Set<HtmlCheckerError> findTagsMissedByJericho(String text, List<Tag> jerichoTags, String[] whitelist) {
+		Set<String> seenNames = jerichoTags.stream()
+				.map(tag -> tag.getName().toLowerCase())
+				.collect(Collectors.toSet());
+
+		final Set<HtmlCheckerError> result = new HashSet<>();
+		for (final HtmlCheckError error : HtmlXSSPreventer.findSanitizerErrors(text, whitelist)) {
+			if (error instanceof ForbiddenTagError tagError
+					&& !seenNames.contains(tagError.getTagName().toLowerCase())) {
+				result.add(new HtmlCheckerForbiddenTagError(tagError.getTagName()));
+			} else if (error instanceof ForbiddenTagAttributeError attrError
+					&& !seenNames.contains(attrError.getTagName().toLowerCase())) {
+				result.add(new HtmlCheckerForbiddenTagAttributeError(attrError.getTagName(), attrError.getAttributeName()));
+			}
+		}
+		return result;
 	}
 
 	private static void checkStartTag(boolean allowSafeHtmlTags, final Tag tag, final Set<HtmlCheckerError> errors) {

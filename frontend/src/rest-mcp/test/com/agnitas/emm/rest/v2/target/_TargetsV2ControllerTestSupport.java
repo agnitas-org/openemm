@@ -39,7 +39,7 @@ public abstract class _TargetsV2ControllerTestSupport extends RestDocsTestSuppor
     public static final FieldDescriptor[] TARGET_RESPONSE_FIELDS = fields(
             TARGET_LIGHT_RESPONSE_FIELDS,
             requiredField("sql", "Definition of target in SQL syntax"),
-            requiredField("eql", "Definition of target in SQL syntax"),
+            requiredField("eql", "Definition of target in EQL syntax"),
             requiredField("valid", "Whether target is valid"),
             requiredField("creationDate", "Target creation date"),
             requiredField("changeDate", "Target change date"),
@@ -49,13 +49,13 @@ public abstract class _TargetsV2ControllerTestSupport extends RestDocsTestSuppor
     private static final FieldDescriptor[] CREATE_REQUEST_FIELDS = {
             requiredField(CREATE_CONSTRAINTS, "name", "Name of target group"),
             optionalField(CREATE_CONSTRAINTS, "description", "Description of target group"),
-            requiredField(CREATE_CONSTRAINTS, "eql", "Definition of target in SQL syntax"),
+            requiredField(CREATE_CONSTRAINTS, "eql", "Definition of target in EQL syntax"),
     };
 
     private static final FieldDescriptor[] PATCH_REQUEST_FIELDS = {
             requiredField(PATCH_CONSTRAINTS, "name", "Name of target group"),
             optionalField(PATCH_CONSTRAINTS, "description", "Description of target group"),
-            requiredField(PATCH_CONSTRAINTS, "eql", "Definition of target in SQL syntax"),
+            requiredField(PATCH_CONSTRAINTS, "eql", "Definition of target in EQL syntax"),
     };
 
     private final Schema responseSchema = schema("Response");

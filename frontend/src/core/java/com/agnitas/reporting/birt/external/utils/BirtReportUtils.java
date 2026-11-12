@@ -128,7 +128,6 @@ public class BirtReportUtils {
 	public static List<BirtReportFigure> unpackFigures(String packedFigures) {
 		ArrayList<BirtReportFigure> resultList = new ArrayList<>();
 		String[] figuresArray = StringUtils.split(packedFigures, FIGURE_SEPARATOR);
-		
 		for (BirtReportFigure reportFigure : BirtReportFigure.values()) {
 			if (BooleanUtils.toBoolean(figuresArray[reportFigure.ordinal()])) {
 				resultList.add(reportFigure);

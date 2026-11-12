@@ -10,11 +10,14 @@
 
 package com.agnitas.service.job;
 
+import java.sql.Timestamp;
+import java.util.List;
 import javax.sql.DataSource;
 
 import com.agnitas.service.JobWorkerBase;
 import com.agnitas.util.quartz.JobWorker;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * This JobWorker
@@ -28,34 +31,46 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @JobWorker("RefreshUserLastLogin")
 public class RefreshUserLastLoginJobWorker extends JobWorkerBase {
+
+	private record LastLogin(String username, Timestamp loginDate) {
+	}
+
 	@Override
 	public String runJob() {
 		DataSource dataSource = daoLookupFactory.getBeanDataSource();
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-		refreshGuiAndRestfulUserLastLogin(jdbcTemplate);
-		refreshWsUserLastLogin(jdbcTemplate);
-		
+		refreshLastLogin(jdbcTemplate, "login_track_tbl", "admin_tbl");
+		refreshLastLogin(jdbcTemplate, "ws_login_track_tbl", "webservice_user_tbl");
+
 		return "OK";
 	}
 
-	private void refreshGuiAndRestfulUserLastLogin(JdbcTemplate jdbcTemplate) {
-		if (previousJobStart == null) {
-			jdbcTemplate.update("UPDATE admin_tbl SET last_login_date = (SELECT MAX(creation_date) FROM login_track_tbl WHERE login_track_tbl.username = admin_tbl.username)"
-				+ " WHERE username IN (SELECT DISTINCT username FROM login_track_tbl)");
-		} else {
-			jdbcTemplate.update("UPDATE admin_tbl SET last_login_date = (SELECT MAX(creation_date) FROM login_track_tbl WHERE login_track_tbl.username = admin_tbl.username)"
-				+ " WHERE username IN (SELECT DISTINCT username FROM login_track_tbl WHERE creation_date >= ?)", previousJobStart);
+	private void refreshLastLogin(JdbcTemplate jdbcTemplate, String loginTrackTable, String userTable) {
+		List<LastLogin> lastLogins = findLastLogins(jdbcTemplate, loginTrackTable);
+		if (lastLogins.isEmpty()) {
+			return;
 		}
+
+		jdbcTemplate.batchUpdate("UPDATE " + userTable + " SET last_login_date = ? WHERE username = ?", lastLogins, 100,
+			(ps, lastLogin) -> {
+				ps.setTimestamp(1, lastLogin.loginDate());
+				ps.setString(2, lastLogin.username());
+			});
 	}
 
-	private void refreshWsUserLastLogin(JdbcTemplate jdbcTemplate) {
+	private List<LastLogin> findLastLogins(JdbcTemplate jdbcTemplate, String loginTrackTable) {
+		RowMapper<LastLogin> rowMapper = (rs, i) -> new LastLogin(
+				rs.getString("username"),
+				rs.getTimestamp("last_login")
+		);
+
+		String sql = "SELECT username, MAX(creation_date) AS last_login FROM " + loginTrackTable + " WHERE username IS NOT NULL";
+
 		if (previousJobStart == null) {
-			jdbcTemplate.update("UPDATE webservice_user_tbl SET last_login_date = (SELECT MAX(creation_date) FROM ws_login_track_tbl WHERE ws_login_track_tbl.username = webservice_user_tbl.username)"
-				+ " WHERE username IN (SELECT DISTINCT username FROM ws_login_track_tbl)");
-		} else {
-			jdbcTemplate.update("UPDATE webservice_user_tbl SET last_login_date = (SELECT MAX(creation_date) FROM ws_login_track_tbl WHERE ws_login_track_tbl.username = webservice_user_tbl.username)"
-				+ " WHERE username IN (SELECT DISTINCT username FROM ws_login_track_tbl WHERE creation_date >= ?)", previousJobStart);
+			return jdbcTemplate.query(sql + " GROUP BY username", rowMapper);
 		}
+
+		return jdbcTemplate.query(sql + " AND creation_date >= ? GROUP BY username", rowMapper, new Timestamp(previousJobStart.getTime()));
 	}
 }

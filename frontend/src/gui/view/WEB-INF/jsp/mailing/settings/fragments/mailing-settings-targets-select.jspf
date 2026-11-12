@@ -72,9 +72,9 @@
 <script id="target-group-select-item" type="text/x-mustache-template">
     <div class="d-flex gap-1">
         {{ if(element.dataset.url && element.dataset.url.length) { }}
-            <a href="{{= element.dataset.url }}">{{-text }}</a>
+            <a href="{{= element.dataset.url }}" class="text-truncate">{{-text }}</a>
         {{ } else { }}
-            <span>{{-text }}</span>
+            <span class="text-truncate">{{-text }}</span>
         {{ } }}
         {{ if (element.getAttribute('data-complexity') == '${COMPLEXITY_RED}') { }}
             <span class="status-badge complexity.status.red" data-tooltip="<mvc:message code="warning.target.group.performance.red"/>"></span>

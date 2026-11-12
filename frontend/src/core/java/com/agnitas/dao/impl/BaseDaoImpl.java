@@ -965,25 +965,18 @@ public abstract class BaseDaoImpl {
 		}
 	}
 
-	protected boolean checkIndicesAvailable(String... indicesToCheck) {
+	protected boolean checkAllIndicesAvailable(String... indicesToCheck) {
 		if (indicesToCheck == null || indicesToCheck.length == 0) {
 			return false;
-		} else {
-			String sqlCheckIndices;
-
-			if (isOracleDB()) {
-				sqlCheckIndices = "SELECT COUNT(*) FROM user_indexes WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "')";
-			} else if (isPostgreSQL()) {
-				sqlCheckIndices = "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public' AND LOWER(indexname) IN ('%s')".formatted(StringUtils.join(indicesToCheck, "','"));
-			} else {
-				sqlCheckIndices = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "') AND table_schema = (SELECT DATABASE())";
-			}
-
-			int existingIndicesCount = selectInt(sqlCheckIndices);
-
-			// All indices are required
-			return existingIndicesCount == indicesToCheck.length;
 		}
+
+		String sql = switch (getDBVendor()) {
+			case ORACLE -> "SELECT COUNT(*) FROM user_indexes WHERE LOWER(index_name) IN (%s)".formatted(AgnUtils.csvQMark(indicesToCheck.length));
+			case POSTGRES -> "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = CURRENT_SCHEMA() AND LOWER(indexname) IN (%s)".formatted(AgnUtils.csvQMark(indicesToCheck.length));
+			case MARIADB -> "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE LOWER(index_name) IN (%s) AND table_schema = (SELECT DATABASE())".formatted(AgnUtils.csvQMark(indicesToCheck.length));
+		};
+
+		return selectInt(sql, (Object[]) indicesToCheck) == indicesToCheck.length;
 	}
 
 	protected String makeBulkInClause(String columnName, int count) {

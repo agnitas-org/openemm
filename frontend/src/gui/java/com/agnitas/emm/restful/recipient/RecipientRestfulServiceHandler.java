@@ -195,9 +195,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 			writeActivityLog(recipientFilters.toString(), request, admin);
 			
-			int recipentsCount = recipientDao.countFilteredRecipientIDs(admin.getCompanyID(), visibleRecipientFieldsMap, recipientFilters);
-			if (recipentsCount > 1000) {
-				throw new RestfulClientException("Too many matching recipients found: " + recipentsCount + ". Please use export");
+			int recipientsCount = recipientDao.countFilteredRecipientIDs(admin.getCompanyID(), visibleRecipientFieldsMap, recipientFilters);
+			if (recipientsCount > 1000) {
+				throw new RestfulClientException("Too many matching recipients found: " + recipientsCount + ". Please use export");
 			}
 			
 			List<Integer> customerIDs = recipientDao.getFilteredRecipientIDs(admin.getCompanyID(), visibleRecipientFieldsMap, recipientFilters);

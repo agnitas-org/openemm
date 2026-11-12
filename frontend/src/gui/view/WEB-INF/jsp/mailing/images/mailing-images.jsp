@@ -170,11 +170,11 @@
 
                                 <c:if test="${isChangeAllowed and image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE}">
                                     <c:choose>
-                                        <c:when test="${fn:contains(['gif', 'svg', 'webp'], fn:toLowerCase(image.fileExtension))}">
+                                        <c:when test="${fn:contains(['gif', 'svg', 'webp', 'ico'], fn:toLowerCase(image.fileExtension))}">
                                             <a href="#" data-modal="image-view-modal" data-modal-set='name: ${image.name}, src: ${sourceSrc}' data-view-row></a>
                                         </c:when>
                                         <c:otherwise>
-                                            <a href="#" data-modal="image-editor-modal" data-modal-set='id: ${image.id}, name: ${image.name}, link: ${image.link}, src: ${sourceSrc}' data-view-row></a>
+                                            <a href="#" data-modal="image-editor-modal" data-modal-set='id: ${image.id}, name: ${image.name}, link: ${image.link}, src: ${sourceSrc}, mimeType: ${image.mimeType}' data-view-row></a>
                                         </c:otherwise>
                                     </c:choose>
                                 </c:if>

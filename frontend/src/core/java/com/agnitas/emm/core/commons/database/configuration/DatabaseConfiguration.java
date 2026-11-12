@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.commons.database.configuration;
 
+import com.agnitas.util.DbVendor;
+
 public interface DatabaseConfiguration {
 
-    String getVendor();
-
-    boolean isOracle();
+    DbVendor getDbVendor();
 }

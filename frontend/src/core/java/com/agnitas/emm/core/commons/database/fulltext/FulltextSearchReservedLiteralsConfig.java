@@ -44,4 +44,30 @@ public interface FulltextSearchReservedLiteralsConfig {
 
     void validateTokens(String[] tokens);
 
+    /**
+     * Query to use when the search query cannot be transformed: unmatched quotes or parenthesis,
+     * or (if {@link #isOperatorRequiredBetweenOperands()}) an operator without operand, e.g. "(a +)".
+     */
+    default String getFallbackQuery(String searchQuery) {
+        return searchQuery;
+    }
+
+    /**
+     * Whether operands written without operator in between (e.g. "word(suffix)") have to be connected by an operator.
+     * Otherwise they are joined without any separator, in reverse order (e.g. "(suffix)word").
+     */
+    default boolean isOperatorRequiredBetweenOperands() {
+        return false;
+    }
+
+    /**
+     * Validates the generated query, e.g. that it is not empty for not empty search query.
+     *
+     * @param searchQuery search query after sanitizing and escaping (not the raw user input)
+     * @param generatedQuery query generated from the search query
+     */
+    default void validateGeneratedQuery(String searchQuery, String generatedQuery) {
+        // nothing to validate by default
+    }
+
 }

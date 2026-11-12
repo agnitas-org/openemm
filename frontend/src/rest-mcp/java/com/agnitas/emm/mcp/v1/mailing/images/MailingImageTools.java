@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.images.dto.ImageLightResponse;
@@ -54,11 +55,14 @@ public class MailingImageTools {
     )
     public PageResponse<ImageLightResponse> getList(
             @McpToolParam(description = "Mailing ID") @Positive int mailingId,
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
-        return mailingImageMcpService.list(mailingId, pageable, admin);
+        McpActivityContext.current().setObjectId(mailingId);
+        return mailingImageMcpService.list(mailingId, McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
@@ -74,6 +78,7 @@ public class MailingImageTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "imageId", imageId, "filename", filename);
         if (imageId != null) {
             return mailingImageMcpService.getById(imageId, mailingId, admin);
         }
@@ -94,7 +99,9 @@ public class MailingImageTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_COMPONENTS_CHANGE);
-        return mailingImageMcpService.create(request, mailingId, admin);
+        ImageResponse response = mailingImageMcpService.create(request, mailingId, admin);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "imageId", response.id());
+        return response;
     }
 
     @McpTool(
@@ -109,6 +116,7 @@ public class MailingImageTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_COMPONENTS_CHANGE);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "imageId", imageId, "filename", filename);
         if (imageId != null) {
             mailingImageMcpService.deleteById(imageId, mailingId, admin);
             return;

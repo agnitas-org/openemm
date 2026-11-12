@@ -57,7 +57,10 @@ public class DevicesStatDataSet extends BIRTDataSet {
 		if (StringUtils.isNotBlank(selectedTargets)) {
 			targets.addAll(getTargets(selectedTargets, companyId));
 		}
-
+		logger.error("DEBUG: figures options: {}", figures);
+		for (BirtReportUtils.BirtReportFigure c :BirtReportUtils.BirtReportFigure.values()) {
+			logger.error("DEBUG: birtreport enum value: {}={}", c.name(),c.getValue());
+		}
 		List<DeviceClass> deviceClasses = Arrays.asList(DeviceClass.DESKTOP, DeviceClass.TABLET, DeviceClass.MOBILE, DeviceClass.SMARTTV);
 		if (figures.contains(OPENERS_DEVICES)) {
 			List<MailingDevicesStatRow> openerDevices = collectDevicesStatistic(mailingIds, deviceClasses, targets, hiddenTargetIdStr, OPENERS_INDEX, OPENERS, companyId, devicesMax, language);

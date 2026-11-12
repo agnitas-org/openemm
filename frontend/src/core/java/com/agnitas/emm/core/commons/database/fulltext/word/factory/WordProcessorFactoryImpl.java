@@ -10,22 +10,41 @@
 
 package com.agnitas.emm.core.commons.database.fulltext.word.factory;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
+import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.word.WordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.mariadb.MariaDBAtSignWordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.mariadb.MariaDBSingleWildcardWordProcessor;
 import com.agnitas.emm.core.commons.database.fulltext.word.impl.mariadb.MariaDBWildcardWordProcessor;
+import com.agnitas.emm.core.commons.database.fulltext.word.impl.postgresql.PostgreSQLWordProcessor;
+import org.springframework.stereotype.Component;
 
+@Component("wordProcessorFactory")
 public class WordProcessorFactoryImpl implements WordProcessorFactory {
+
+    private final DatabaseConfiguration databaseConfiguration;
+
+    public WordProcessorFactoryImpl(DatabaseConfiguration databaseConfiguration) {
+        this.databaseConfiguration = databaseConfiguration;
+    }
 
     @Override
     public Set<WordProcessor> createWordProcessors() {
-        Set<WordProcessor> wordProcessors = new HashSet<>();
-        wordProcessors.add(new MariaDBSingleWildcardWordProcessor());
-        wordProcessors.add(new MariaDBWildcardWordProcessor());
-        wordProcessors.add(new MariaDBAtSignWordProcessor());
-        return wordProcessors;
+        return switch (databaseConfiguration.getDbVendor()) {
+            case MARIADB -> new LinkedHashSet<>(List.of(
+                    new MariaDBSingleWildcardWordProcessor(),
+                    new MariaDBWildcardWordProcessor(),
+                    new MariaDBAtSignWordProcessor()
+            ));
+            case POSTGRES -> Set.of(new PostgreSQLWordProcessor());
+            case ORACLE -> createOracleWordProcessors();
+        };
+    }
+
+    protected Set<WordProcessor> createOracleWordProcessors() {
+        throw new UnsupportedOperationException("Oracle is not supported");
     }
 }

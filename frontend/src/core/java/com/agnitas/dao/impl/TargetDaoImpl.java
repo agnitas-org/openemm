@@ -743,7 +743,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 
     @Override
     public boolean isBasicFullTextSearchSupported() {
-        return checkIndicesAvailable("dyntg$sname$idx", "dyntg$descr$idx");
+        return checkAllIndicesAvailable("dyntg$sname$idx", "dyntg$descr$idx");
     }
 
     @Override

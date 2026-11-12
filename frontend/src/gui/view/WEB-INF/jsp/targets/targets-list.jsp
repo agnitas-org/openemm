@@ -7,7 +7,7 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="isSearchEnabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="isFullTextSearchEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="targetForm" type="com.agnitas.emm.core.target.form.TargetForm"--%>
 <%--@elvariable id="targetComplexities" type="java.util.Map<java.lang.Integer, com.agnitas.emm.core.target.beans.TargetComplexityGrade>"--%>
@@ -195,7 +195,7 @@
         </div>
 
         <div class="tile-body vstack gap-3 js-scrollable">
-            <c:if test="${isSearchEnabled}">
+            <c:if test="${isFullTextSearchEnabled}">
                 <div>
                     <mvc:message var="nameMsg" code="Name"/>
                     <label class="form-label" for="name-filter">${nameMsg}</label>
@@ -207,50 +207,50 @@
                     <label class="form-label" for="description-filter">${descriptionMsg}</label>
                     <mvc:text id="description-filter" path="searchDescription" cssClass="form-control" placeholder="${descriptionMsg}"/>
                 </div>
-
-                <div>
-                    <label for="filter-complexity" class="form-label"><mvc:message code="target.group.complexity" /></label>
-
-                    <mvc:select id="filter-complexity" path="searchComplexity" cssClass="form-control" data-result-template="select2-badge-option" data-selection-template="select2-badge-option">
-                        <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
-
-                        <c:forEach var="complexity" items="${TargetComplexityGrade.values()}">
-                            <mvc:option value="${complexity}" data-badge-class="complexity.status.${fn:toLowerCase(complexity)}">
-                                ${complexity}
-                            </mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
-
-                <div>
-                    <label for="filter-delivery" class="form-label"><mvc:message code="Delivery" /></label>
-
-                    <mvc:select id="filter-delivery" path="searchDeliveryOption" cssClass="form-control">
-                        <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
-
-                        <c:forEach var="delivery" items="${TargetGroupDeliveryOption.values()}">
-                            <mvc:option value="${delivery}"><mvc:message code="${delivery.messageKey}" /></mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
-
-                <div>
-                    <label class="form-label" for="filter-creationDate-from"><mvc:message code="default.creationDate" /></label>
-                    <mvc:dateRange id="filter-creationDate" path="searchCreationDate" inline="true" options="maxDate: 0" />
-                </div>
-
-                <div>
-                    <label class="form-label" for="filter-changeDate-from"><mvc:message code="default.changeDate" /></label>
-                    <mvc:dateRange id="filter-changeDate" path="searchChangeDate" inline="true" options="maxDate: 0" />
-                </div>
-
-                <div class="form-check form-switch">
-                    <mvc:checkbox id="filter-show-deleted" path="showDeleted" cssClass="form-check-input" role="switch"/>
-                    <label class="form-label form-check-label" for="filter-show-deleted">
-                        <mvc:message code="default.list.deleted.show"/>
-                    </label>
-                </div>
             </c:if>
+
+            <div>
+                <label for="filter-complexity" class="form-label"><mvc:message code="target.group.complexity" /></label>
+
+                <mvc:select id="filter-complexity" path="searchComplexity" cssClass="form-control" data-result-template="select2-badge-option" data-selection-template="select2-badge-option">
+                    <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+
+                    <c:forEach var="complexity" items="${TargetComplexityGrade.values()}">
+                        <mvc:option value="${complexity}" data-badge-class="complexity.status.${fn:toLowerCase(complexity)}">
+                            ${complexity}
+                        </mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+
+            <div>
+                <label for="filter-delivery" class="form-label"><mvc:message code="Delivery" /></label>
+
+                <mvc:select id="filter-delivery" path="searchDeliveryOption" cssClass="form-control">
+                    <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+
+                    <c:forEach var="delivery" items="${TargetGroupDeliveryOption.values()}">
+                        <mvc:option value="${delivery}"><mvc:message code="${delivery.messageKey}" /></mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+
+            <div>
+                <label class="form-label" for="filter-creationDate-from"><mvc:message code="default.creationDate" /></label>
+                <mvc:dateRange id="filter-creationDate" path="searchCreationDate" inline="true" options="maxDate: 0" />
+            </div>
+
+            <div>
+                <label class="form-label" for="filter-changeDate-from"><mvc:message code="default.changeDate" /></label>
+                <mvc:dateRange id="filter-changeDate" path="searchChangeDate" inline="true" options="maxDate: 0" />
+            </div>
+
+            <div class="form-check form-switch">
+                <mvc:checkbox id="filter-show-deleted" path="showDeleted" cssClass="form-check-input" role="switch"/>
+                <label class="form-label form-check-label" for="filter-show-deleted">
+                    <mvc:message code="default.list.deleted.show"/>
+                </label>
+            </div>
         </div>
     </mvc:form>
 </div>

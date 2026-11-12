@@ -102238,23 +102238,6 @@ AGN.runAll = function($scope) {
     $.expr[":"].truncated = function(el) {
         return el.scrollWidth - el.clientWidth > 1 || el.scrollHeight - el.clientHeight > 2;
     };
-    $.expr[":"].truncatedAlt = function(el) {
-        const temp = el.cloneNode(true);
-        temp.style.width = "auto";
-        temp.style.height = "auto";
-        temp.style.position = "fixed";
-        temp.style.overflow = "visible";
-        temp.style.whiteSpace = "nowrap";
-        temp.style.visibility = "hidden";
-        el.parentElement.appendChild(temp);
-        try {
-            const fullWidth = temp.getBoundingClientRect().width;
-            const displayWidth = el.getBoundingClientRect().width;
-            return fullWidth > displayWidth;
-        } finally {
-            temp.remove();
-        }
-    };
 })(jQuery);
 
 (function($) {
@@ -107237,6 +107220,9 @@ if (window.agnTimeZoneId) {
             $field.data("agn:field", field);
             return field;
         }
+        static get($field) {
+            return $field.data("agn:field");
+        }
     }
     AGN.Lib.Field = Field;
 })();
@@ -107258,7 +107244,11 @@ if (window.agnTimeZoneId) {
             return this.$hiddenInput.val();
         }
         get $hiddenInput() {
-            return this.el.find(`[name="${this._propertyName}"]`);
+            const $input = this.el.find(`[name="${this._propertyName}"]`);
+            if ($input.exists()) {
+                return $input;
+            }
+            return this.el.find(`input[type="hidden"]`);
         }
         setDateTimeFieldValue() {
             this.$hiddenInput.val(this.#prepareDateTimeValue());
@@ -129156,11 +129146,11 @@ AGN.Lib.CoreInitializer.new("truncated-text-popover", function($scope = $(docume
     }
     function containsTruncatedElement(el) {
         let $el = $(el);
-        if ($el.is(".text-truncate-alt")) {
-            return $el.is(":truncatedAlt");
-        }
         if ($el.is(".ag-header-cell")) {
             $el = $el.find(".ag-header-cell-text");
+        }
+        if ($el.is(".select2-selection__rendered")) {
+            $el = $($el.find(".select2-selection__choice__display")[0] || $el[0]);
         }
         return $el.is(":truncated") || $el.is("td") && Helpers.containsTruncatedElements(el);
     }
@@ -141392,22 +141382,29 @@ AGN.Lib.Controller.new("img-editor", function() {
     let image;
     let canvas;
     let context;
-    let saveUrl;
     let originalImageData;
     let originalFormData;
+    let mimeType;
     this.addDomInitializer("img-editor", function() {
-        saveUrl = this.el.data().saveUrl;
         canvas = document.getElementById("editor-canvas");
         context = canvas.getContext("2d");
+        originalImageSrc = getImage$().attr("src");
         loadImage(() => {
             originalImageData = canvas.toDataURL();
             originalFormData = getForm().$form.serializeArray();
         });
+        mimeType = normalizeMimeType(this.el.data("mimetype"));
     });
+    function normalizeMimeType(mimeType) {
+        if (!mimeType) {
+            return "image/png";
+        }
+        return mimeType.toLowerCase() === "image/jpg" ? "image/jpeg" : mimeType.toLowerCase();
+    }
     function loadImage(callback) {
         let src = getImage$().attr("src");
         if (!src.startsWith("data:")) {
-            src += `&t=${(new Date).getTime()}`;
+            src += `&t=${Date.now()}`;
         }
         image = new Image;
         image.src = src;
@@ -141698,17 +141695,29 @@ AGN.Lib.Controller.new("img-editor", function() {
         $wrapper.css("height", canvas.height);
         updateSizeInputs();
     }
-    function saveBlob(blob) {
-        const form = getForm();
+    function addFileToForm(blob, form) {
         const $fileInput = $("<input/>").attr({
             type: "file",
             name: "image"
         }).css("display", "none");
         const container = new DataTransfer;
-        container.items.add(new File([ blob ], $("#filename")));
+        container.items.add(new File([ blob ], $("#filename").val()));
         $fileInput[0].files = container.files;
         form.get$().append($fileInput);
+    }
+    function saveBlob(blob) {
+        const form = getForm();
+        if (imageChanged()) {
+            if (blob.type !== mimeType) {
+                AGN.Lib.Messages.alert("error.imageEditor.formatNotSupported", mimeType);
+                return;
+            }
+            addFileToForm(blob, form);
+        }
         form.submit();
+    }
+    function imageChanged() {
+        return originalImageData !== canvas.toDataURL();
     }
     this.addAction({
         click: "save"
@@ -141721,14 +141730,14 @@ AGN.Lib.Controller.new("img-editor", function() {
             AGN.Lib.Messages.defaultSaved();
             return;
         }
-        canvas.toBlob(saveBlob);
+        canvas.toBlob(saveBlob, mimeType);
     });
     function getForm() {
         return AGN.Lib.Form.get(getImage$());
     }
     function notChanged() {
         const currentFormData = getForm().$form.serializeArray();
-        return _.isEqual(originalFormData, currentFormData) && originalImageData === canvas.toDataURL();
+        return _.isEqual(originalFormData, currentFormData) && !imageChanged();
     }
     this.addAction({
         "upload:add": "replace"
@@ -146412,20 +146421,84 @@ AGN.Lib.Controller.new("reference-table-import", function() {
     }
 });
 
-AGN.Lib.Controller.new("manage-tables-viewfield", function() {
-    var previousValueNullableField = "true";
-    this.addAction({
-        change: "typeFieldChangeAction"
-    }, function() {
-        var $nullableEl = $("#nullable");
-        if (this.el.val() === "DATE" || this.el.val() === "DATETIME") {
-            previousValueNullableField = $nullableEl.val();
-            $nullableEl.val("true");
+class RefTableFieldController extends AGN.Lib.Controller {
+    constructor() {
+        super();
+        this.previousValueNullableField = "true";
+        this.addAction({
+            change: "typeFieldChangeAction"
+        }, () => this.changeType());
+        this.addAction({
+            click: "save"
+        }, () => this.save());
+    }
+    get $defaultValue() {
+        return $('[name="defaultValue"]');
+    }
+    get defaultValue() {
+        return this.$defaultValue.val();
+    }
+    get $type() {
+        return $("#type");
+    }
+    get $now() {
+        return $("#now-checkbox");
+    }
+    get isNow() {
+        return this.$now.is(":checked");
+    }
+    get $nullable() {
+        return $("#nullable");
+    }
+    get isRequired() {
+        return !this.$nullable.is(":checked");
+    }
+    get type() {
+        return this.$type.val();
+    }
+    get isDateTypeSelected() {
+        return this.type === "DATE";
+    }
+    get isDateTimeTypeSelected() {
+        return this.type === "DATETIME";
+    }
+    get isDateOrDatetimeTypeSelected() {
+        return this.isDateTypeSelected || this.isDateTimeTypeSelected;
+    }
+    changeType() {
+        if (this.isDateOrDatetimeTypeSelected) {
+            this.previousValueNullableField = this.$nullable.val();
+            this.$nullable.val("true");
         } else {
-            $nullableEl.val(previousValueNullableField);
+            this.$nullable.val(this.previousValueNullableField);
         }
-    });
-});
+    }
+    getDefaultValueFromDates() {
+        if (this.isNow) {
+            return "NOW";
+        }
+        if (this.isDateTypeSelected) {
+            return $("#default-date input").val();
+        }
+        if (this.isDateTimeTypeSelected) {
+            return AGN.Lib.Field.get($("#default-datetime")).strValue;
+        }
+        return "";
+    }
+    save() {
+        if (this.isDateOrDatetimeTypeSelected) {
+            this.$defaultValue.val(this.getDefaultValueFromDates());
+        }
+        const form = AGN.Lib.Form.get(this.$type);
+        if (this.isRequired && !this.defaultValue) {
+            form.showFieldError("defaultValue", t("fields.required.errors.missing"));
+            return;
+        }
+        form.submit();
+    }
+}
+
+AGN.Lib.Controller.new("manage-tables-viewfield", RefTableFieldController);
 
 AGN.Lib.Controller.new("mediapool-overview", function() {
     this.addDomInitializer("mediapool-edit", function() {

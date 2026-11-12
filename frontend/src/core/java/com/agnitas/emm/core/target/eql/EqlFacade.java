@@ -14,9 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.beans.Target;
 import com.agnitas.emm.core.target.eql.ast.BooleanExpressionTargetRuleEqlNode;
 import com.agnitas.emm.core.target.eql.ast.analysis.RequireMailtrackingSyntaxTreeAnalyzer;
@@ -36,6 +33,8 @@ import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollector;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Facade encapsulating EQL conversion logic.
@@ -44,21 +43,19 @@ public class EqlFacade {
 
 	private static final Logger LOGGER = LogManager.getLogger(EqlFacade.class);
 
-	/** Parser for EQL code. */
 	private final EqlParser eqlParser;
-	
-	/** Code generator. */
 	private final CodeGenerator codeGenerator;
-
 	private final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory;
 	
 	@Deprecated
 	private final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory;
 		
-	/**
-	 * Creates a new EQL facade instance.
-	 */
-	public EqlFacade(final EqlParser eqlParser, final CodeGenerator codeGenerator, final SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory, final BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory) {
+	public EqlFacade(
+			EqlParser eqlParser,
+			CodeGenerator codeGenerator,
+			SqlCodeGeneratorCallbackFactory sqlCodeGeneratorCallbackFactory,
+			BeanShellCodeGeneratorCallbackFactory beanShellCodeGeneratorCallbackFactory
+	) {
 		this.eqlParser = Objects.requireNonNull(eqlParser, "EqlParser is null");
 		this.codeGenerator = Objects.requireNonNull(codeGenerator, "Code generator is null");
 		this.sqlCodeGeneratorCallbackFactory = Objects.requireNonNull(sqlCodeGeneratorCallbackFactory, "SQL code generator callback factory is null");
@@ -79,7 +76,10 @@ public class EqlFacade {
 	 * @throws ReferenceTableResolveException on errors resolving reference tables
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
-	public SqlCode convertEqlToSql(final String eql, final int companyId) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+	public SqlCode convertEqlToSql(
+			String eql,
+			int companyId
+	) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
 		return convertEqlToSql(eql, companyId, CodeGenerationFlags.DEFAULT_FLAGS);
 	}
 	
@@ -97,9 +97,12 @@ public class EqlFacade {
 	 * @throws ReferenceTableResolveException on errors resolving reference tables
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
-	public SqlCode convertEqlToSql(final String eql, final int companyId, final CodeGenerationFlags flags) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+	public SqlCode convertEqlToSql(
+			String eql,
+			int companyId,
+			CodeGenerationFlags flags
+	) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
 		SimpleReferenceCollector referencedItems = new SimpleReferenceCollector();
-		
 		return convertEqlToSql(eql, companyId, referencedItems, flags);
 	}
 	
@@ -117,7 +120,11 @@ public class EqlFacade {
 	 * @throws ReferenceTableResolveException on errors resolving reference tables
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
-	public final SqlCode convertEqlToSql(final String eql, final int companyId, final ReferenceCollector referenceCollector) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+	public SqlCode convertEqlToSql(
+			String eql,
+			int companyId,
+			ReferenceCollector referenceCollector
+	) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
 		return convertEqlToSql(eql, companyId, referenceCollector, CodeGenerationFlags.DEFAULT_FLAGS);
 	}
 		
@@ -136,7 +143,12 @@ public class EqlFacade {
 	 * @throws ReferenceTableResolveException on errors resolving reference tables
 	 * @throws ProfileFieldResolveException on errors resolving profile fields
 	 */
-	public final SqlCode convertEqlToSql(final String eql, final int companyId, final ReferenceCollector referenceCollector, final CodeGenerationFlags flags) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
+	public SqlCode convertEqlToSql(
+			String eql,
+			int companyId,
+			ReferenceCollector referenceCollector,
+			CodeGenerationFlags flags
+	) throws EqlParserException, CodeGeneratorException, ReferenceTableResolveException, ProfileFieldResolveException {
 		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);
 		
 		node.collectReferencedItems(referenceCollector);

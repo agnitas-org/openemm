@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.mailing;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
@@ -53,13 +54,15 @@ public class TemplateTools {
     )
     public PageResponse<MailingLightResponse> getList(
             @Valid
-            @McpToolParam(description = "Search filters for templates. All fields are optional and used only to narrow down results.")
+            @McpToolParam(description = "Search filters for templates. All fields are optional and used only to narrow down results.", required = false)
             ListTemplatesRequest query,
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_SHOW);
-        return mailingMcpService.listTemplates(query, pageable, admin);
+        return mailingMcpService.listTemplates(query, McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
@@ -72,6 +75,7 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return mailingMcpService.getTemplate(id, admin.getCompanyID());
     }
 
@@ -85,6 +89,7 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return mailingMcpService.getTemplateFullById(id, admin);
     }
 
@@ -101,7 +106,9 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_CHANGE);
-        return mailingMcpService.createTemplate(request, admin);
+        MailingResponse response = mailingMcpService.createTemplate(request, admin);
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -114,7 +121,9 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_CHANGE);
-        return mailingMcpService.copyTemplate(sourceId, admin.getCompanyID());
+        MailingLightResponse response = mailingMcpService.copyTemplate(sourceId, admin.getCompanyID());
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -133,6 +142,7 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_CHANGE);
+        McpActivityContext.current().setObjectId(id);
         return mailingMcpService.patchTemplate(id, request, admin);
     }
 
@@ -146,6 +156,7 @@ public class TemplateTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TEMPLATE_DELETE);
+        McpActivityContext.current().setObjectId(id);
         mailingMcpService.deleteTemplate(id, admin);
     }
 

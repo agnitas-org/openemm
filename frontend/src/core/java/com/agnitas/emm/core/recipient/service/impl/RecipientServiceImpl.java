@@ -18,7 +18,7 @@ import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.join;
 
 import java.io.File;
@@ -86,6 +86,7 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.core.binding.service.BindingUtils;
 import com.agnitas.emm.core.commons.exception.EntityNotUniqueException;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
@@ -100,7 +101,6 @@ import com.agnitas.emm.core.imports.service.RecipientImportService;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -143,6 +143,8 @@ import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveExcep
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
+import com.agnitas.emm.core.target.eql.parser.EqlSyntaxErrorException;
+import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollector;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.validator.ValidationException;
@@ -155,6 +157,8 @@ import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ImportException;
+import com.agnitas.service.GenericExportWorker;
+import com.agnitas.service.ImportException;
 import com.agnitas.service.RecipientDuplicateSqlOptions;
 import com.agnitas.service.RecipientQueryBuilder;
 import com.agnitas.service.RecipientSqlOptions;
@@ -162,6 +166,7 @@ import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.service.UserMessageException;
 import com.agnitas.util.AgnUtils;
+import com.agnitas.util.CaseInsensitiveSet;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbUtilities;
@@ -210,7 +215,6 @@ public class RecipientServiceImpl implements RecipientService {
 	protected EqlFacade eqlFacade;
 	private CompanyDao companyDao;
 	private ExtensibleUIDService uidService;
-	private MailinglistDao mailinglistDao;
 	private RecipientFactory recipientFactory;
 	private SendActionbasedMailingService sendActionbasedMailingService;
 	private ProfileFieldDao profileFieldDao;
@@ -1849,7 +1853,7 @@ public class RecipientServiceImpl implements RecipientService {
 	public ServiceResult<List<BindingAction>> saveRecipientBindings(Admin admin, int recipientId, RecipientBindingsDto bindings, UserStatus newStatusForUnsubscribing) {
 		int companyId = admin.getCompanyID();
 		Map<Integer, Map<Integer, BindingEntry>> mailinglistBindings = getMailinglistBindings(companyId, recipientId);
-		List<Integer> existingMailinglistIds = mailinglistDao.getMailinglistIds(companyId);
+		List<Integer> existingMailinglistIds = mailinglistService.getMailinglistIds(companyId);
 		List<BindingAction> bindingActions = new ArrayList<>();
 		boolean oldEmailBlacklisted = bindings.isOldBlacklistedEmail();
         boolean newEmailBlacklisted = bindings.isNewBlacklistedEmail();
@@ -2387,37 +2391,122 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public List<Map<String, Object>> list(Map<String, String> fieldFilters, Admin admin) {
-		int companyId = admin.getCompanyID();
-		List<Integer> recipientIds = getRecipientIds(fieldFilters, admin);
-		if (recipientIds.isEmpty()) {
-			return emptyList();
-		}
-		return getFields(recipientIds, companyId)
+	public PaginatedList<RecipientDto> list(
+			RecipientSearchParamsDto searchParams,
+			PaginatedFilter<String> pagination,
+			Admin admin
+	) {
+		Map<String, String> fields = fieldService.getVisibleFields(admin)
+				.entrySet()
 				.stream()
-				.map(fields -> getFormattedFieldsMap(admin, fields))
+				.collect(Collectors.toMap(
+						Entry::getKey,
+						e -> e.getValue().getShortName()
+				));
+		validateSearch(searchParams, pagination, fields, admin);
+		PaginatedList<RecipientDto> list = tryGetPaginatedList(searchParams, pagination, admin, fields);
+		list.getList().forEach(r -> r.setParameters(getFormattedFieldsMap(admin, r.getParameters())));
+		return list;
+    }
+
+	private void validateSearch(
+			RecipientSearchParamsDto searchParams,
+			PaginatedFilter<String> pagination,
+			Map<String, String> fields,
+			Admin admin
+	) {
+		if (isNotBlank(pagination.sort()) && !fields.containsKey(pagination.sort().toLowerCase())) {
+			throw ValidationException.exact("Invalid sort value: %s. Use column name.".formatted(pagination.sort()));
+		}
+		if (searchParams.getMailingListId() > 0) {
+			mailinglistService.validateExistsAndEnabled(searchParams.getMailingListId(), admin);
+		}
+		if (searchParams.getTargetGroupId() > 0) {
+			targetService.validateExistsAndEnabled(searchParams.getTargetGroupId(), admin);
+		}
+		if (isNotBlank(searchParams.getEql())) {
+			validateEql(searchParams.getEql(), admin);
+		}
+	}
+
+	private void validateEql(String eql, Admin admin) {
+		SimpleReferenceCollector referenceCollector = new SimpleReferenceCollector();
+		try {
+			eqlFacade.convertEqlToSql(eql, admin.getCompanyID(), referenceCollector);
+		} catch (EqlSyntaxErrorException e) {
+			throw ValidationException.exact(
+					"Invalid EQL filter, syntax errors: %s".formatted(
+							e.getErrors().stream().map(Object::toString).collect(Collectors.joining(", "))
+					)
+			);
+		} catch (EqlParserException | CodeGeneratorException | ReferenceTableResolveException | ProfileFieldResolveException e) {
+			logger.info("Invalid EQL filter (eql={})", eql, e);
+			throw ValidationException.exact(
+					"Invalid EQL filter: %s".formatted(
+							StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName())
+					)
+			);
+		}
+
+		validateEqlFields(referenceCollector.getReferencedProfileFields(), fieldService.getVisibleFields(admin));
+	}
+
+	private void validateEqlFields(
+			Set<String> referencedFields,
+			CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields
+	) {
+		Set<String> visibleShortNames = visibleFields.values()
+				.stream()
+				.map(RecipientFieldDescription::getShortName)
+				.collect(Collectors.toCollection(CaseInsensitiveSet::new));
+
+		List<String> unknownFields = referencedFields.stream()
+				.filter(field -> !visibleShortNames.contains(field))
 				.toList();
+
+		if (!unknownFields.isEmpty()) {
+			throw ValidationException.exact("Invalid EQL filter by unknown recipient profile fields: %s"
+					.formatted(unknownFields.stream().collect(Collectors.joining(", ", "[", "]"))));
+		}
+	}
+
+	private PaginatedList<RecipientDto> tryGetPaginatedList(
+			RecipientSearchParamsDto searchParams,
+			PaginatedFilter<String> pagination,
+			Admin admin,
+			Map<String, String> fields
+	) {
+		try {
+			return getPaginatedRecipientList(
+					admin,
+					searchParams,
+					StringUtils.defaultString(pagination.sort()).toLowerCase(),
+					pagination.order(),
+					pagination.page(),
+					pagination.size(),
+					fields
+			);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
-	public List<Integer> getRecipientIds(Map<String, String> fieldFilters, Admin admin) {
-		CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields = fieldService.getVisibleFields(admin);
-		validateFieldFilter(fieldFilters, visibleFields);
-        return recipientDao.getFilteredRecipientIDs(admin.getCompanyID(), visibleFields, fieldFilters);
-	}
-
-	private void validateFieldFilter(
-			Map<String, String> fieldFilters,
-			CaseInsensitiveMap<String, RecipientFieldDescription> visibleFields
-	) {
-		List<String> unknownFields = fieldFilters.keySet()
-				.stream()
-				.filter(field -> !visibleFields.containsKey(field))
-				.toList();
-		if (isNotEmpty(unknownFields)) {
-			throw ValidationException.exact("Invalid recipient filter by unknown recipient profile fields: %s"
-					.formatted(unknownFields.stream().collect(Collectors.joining(", ", "[", "]"))));
+	public List<Integer> listIds(RecipientSearchParamsDto searchParams, Admin admin) {
+		PaginatedFilter<String> pagination = new PaginatedFilter<>("customer_id", true, 1, 1000);
+		Map<String, String> fields = Map.of("customer_id", "");
+		validateSearch(searchParams, pagination, fields, admin);
+		PaginatedList<RecipientDto> list = tryGetPaginatedList(searchParams, pagination, admin, fields);
+		if (list.getFullListSize() > 1000) {
+			throw ValidationException.exact(
+                    """
+                    Too many matching recipients found (%d). \
+                    The maximum is 1,000. \
+                    Add filters to narrow the list.
+                    """.formatted(list.getFullListSize())
+			);
 		}
+		return list.getList().stream().map(RecipientDto::getId).toList();
 	}
 
 	@Override
@@ -2675,10 +2764,6 @@ public class RecipientServiceImpl implements RecipientService {
 		} catch (HtmlCheckerException e) {
 			throw ValidationException.exact("Invalid recipient data containing HTML for field: %s".formatted(field));
 		}
-	}
-
-	public void setMailinglistDao(MailinglistDao mailinglistDao) {
-		this.mailinglistDao = mailinglistDao;
 	}
 
 	public void setColumnInfoService(ColumnInfoService columnInfoService) {

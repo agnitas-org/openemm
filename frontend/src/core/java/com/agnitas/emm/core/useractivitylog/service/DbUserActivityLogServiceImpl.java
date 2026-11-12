@@ -241,7 +241,7 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	@Async
 	@Override
 	public void writeMcpUserActivityLog(McpToolAction action, Admin admin) {
-		mcpUserActivityLogDao.writeUserActivityLog(action.toolName(), action.source(), admin);
+		mcpUserActivityLogDao.writeUserActivityLog(action, admin);
 	}
 
 	@Override

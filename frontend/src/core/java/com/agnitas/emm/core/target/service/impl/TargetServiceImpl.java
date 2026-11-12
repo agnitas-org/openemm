@@ -1119,6 +1119,14 @@ public class TargetServiceImpl implements TargetService {
 		return targetDao.exist(targetId, companyId);
 	}
 
+
+	@Override
+	public void validateExistsAndEnabled(int targetId, Admin admin){
+		if (!exist(targetId, admin.getCompanyID())) {
+			throw new TargetGroupNotFoundException(targetId);
+		}
+	}
+
 	@Override
 	public boolean isEqlContainsInvisibleFields(String eql, int companyId, int adminId) {
 		try {

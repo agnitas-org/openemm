@@ -43,7 +43,11 @@
 	</bean>
 		  	
 <!-- ============================================================================================================================== EQL -->
-	<bean id="EqlSqlDialect" class="com.agnitas.emm.core.target.eql.emm.sql.MariaDbDialect" />
+	<bean id="EqlSqlDialectFactory" class="com.agnitas.emm.core.target.eql.emm.sql.SqlDialectFactory">
+		<constructor-arg ref="dataSource" />
+	</bean>
+
+	<bean id="EqlSqlDialect" factory-bean="EqlSqlDialectFactory" factory-method="databaseDependentInstance" />
 
 	<bean id="EqlCodeGenerator" class="com.agnitas.emm.core.target.eql.codegen.CodeGenerator" />
 

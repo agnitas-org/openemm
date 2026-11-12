@@ -11,8 +11,9 @@
 package com.agnitas.emm.core.birtreport.dto;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public enum ReportSettingsType {
 
@@ -20,7 +21,7 @@ public enum ReportSettingsType {
     MAILING(2, "mailing.statistics", false, false),
     RECIPIENT(3, "statistic.Recipient", false, true),
     TOP_DOMAIN(4, "statistic.TopDomains", true, true);
-    
+
     private final int key;
     private final String typeMsgKey;
     private final boolean mailTrackingRequired;
@@ -49,17 +50,19 @@ public enum ReportSettingsType {
     }
     
     public static ReportSettingsType getTypeByCode(int code) {
-        for(ReportSettingsType settingsType: ReportSettingsType.values()) {
-            if(settingsType.getKey() == code) {
-                return settingsType;
-            }
-        }
-        return COMPARISON;
+        return findByCode(code)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown report settings type: " + code));
     }
 
-    public static Collection<Integer> keys() {
+    public static Optional<ReportSettingsType> findByCode(int code) {
+        return Stream.of(values())
+                .filter(t -> t.getKey() == code)
+                .findFirst();
+    }
+
+    public static List<Integer> keys() {
         return Arrays.stream(ReportSettingsType.values())
                 .map(ReportSettingsType::getKey)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

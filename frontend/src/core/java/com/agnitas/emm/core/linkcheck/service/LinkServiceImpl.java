@@ -676,7 +676,7 @@ public class LinkServiceImpl implements LinkService {
 	 * 
 	 */
 	private String resolveAgnTags(String text, int mailingID, int mailinglistID, int companyID) {
-		text = StringEscapeUtils.unescapeHtml4(text);
+		text = unescapeHtmlInAgnTags(text);
 
 		for (AgnTag agnTag : List.of(AgnTag.PROFILE, AgnTag.UNSUBSCRIBE, AgnTag.FULLVIEW, AgnTag.WEBVIEW)) {
 			String tagName = agnTag.getName();
@@ -752,6 +752,11 @@ public class LinkServiceImpl implements LinkService {
 		}
 
 		return text;
+	}
+
+	private static String unescapeHtmlInAgnTags(String text) {
+		return AGNTAG_PATTERN.matcher(text)
+				.replaceAll(match -> Matcher.quoteReplacement(StringEscapeUtils.unescapeHtml4(match.group())));
 	}
 
 	/**

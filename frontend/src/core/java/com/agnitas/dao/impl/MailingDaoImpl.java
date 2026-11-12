@@ -1256,31 +1256,20 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         if (StringUtils.isNotBlank(contentFullTextSearchClause)) {
             // Subquery to search within static text and html blocks
-            selectSql.append(" LEFT JOIN (SELECT mailing_id, MAX(")
-                    .append(isPostgreSQL() ? "(" : "")
-                    .append(DbUtilities.getFullTextSearchPart("emmblock", dataSource))
-                    .append(isPostgreSQL() ? ")::int" : "")
-                    .append(") AS relevance");
+            selectSql.append(" LEFT JOIN (SELECT DISTINCT mailing_id, 1 AS relevance FROM component_tbl")
+                    .append(" WHERE company_id = ? AND mtype IN ('text/plain', 'text/html') AND ")
+                    .append(getFullTextSearchMatchFilter("emmblock"))
+                    .append(") comp ON a.mailing_id = comp.mailing_id");
+            selectParameters.add(companyID);
             selectParameters.add(contentFullTextSearchClause);
 
-            selectSql.append(" FROM component_tbl WHERE company_id = ? AND mtype IN ('text/plain', 'text/html')");
+            selectSql.append(" LEFT JOIN (SELECT DISTINCT cont.mailing_id, 1 AS relevance")
+                    .append(" FROM dyn_name_tbl nm JOIN dyn_content_tbl cont ON nm.dyn_name_id = cont.dyn_name_id")
+                    .append(" WHERE cont.company_id = ? AND ")
+                    .append(getFullTextSearchMatchFilter("cont.dyn_content"))
+                    .append(") cont ON a.mailing_id = cont.mailing_id");
             selectParameters.add(companyID);
-
-            selectSql.append(" GROUP BY mailing_id) comp ON a.mailing_id = comp.mailing_id");
-
-            // Subquery to search within dynamic (included into static with agn tags) text and html blocks
-            selectSql.append(" LEFT JOIN (SELECT cont.mailing_id, MAX(")
-                    .append(isPostgreSQL() ? "(" : "")
-                    .append(DbUtilities.getFullTextSearchPart("cont.dyn_content", dataSource))
-                    .append(isPostgreSQL() ? ")::int" : "")
-                    .append(") AS relevance");
             selectParameters.add(contentFullTextSearchClause);
-
-            selectSql.append(" FROM dyn_name_tbl nm JOIN dyn_content_tbl cont ON nm.dyn_name_id = cont.dyn_name_id")
-                    .append(" WHERE cont.company_id = ?");
-            selectParameters.add(companyID);
-
-            selectSql.append(" GROUP BY cont.mailing_id) cont ON a.mailing_id = cont.mailing_id");
         }
 
         selectSql.append(" WHERE a.company_id = ?");
@@ -2944,7 +2933,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     @Override
     public boolean isBasicFullTextSearchSupported() {
         if (BASICFULLTEXTSEARCHSUPPORTED_CACHE == null) {
-        	BASICFULLTEXTSEARCHSUPPORTED_CACHE = checkIndicesAvailable("mailing$sname$idx", "mailing$descr$idx");
+        	BASICFULLTEXTSEARCHSUPPORTED_CACHE = checkAllIndicesAvailable("mailing$sname$idx", "mailing$descr$idx");
     	}
     	return BASICFULLTEXTSEARCHSUPPORTED_CACHE;
     }
@@ -2952,7 +2941,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     @Override
     public boolean isContentFullTextSearchSupported() {
     	if (FULLTEXTSEARCHSUPPORTED_CACHE == null) {
-    		FULLTEXTSEARCHSUPPORTED_CACHE = checkIndicesAvailable("component$emmblock$idx", "dyncontent$content$idx");
+    		FULLTEXTSEARCHSUPPORTED_CACHE = checkAllIndicesAvailable("component$emmblock$idx", "dyncontent$content$idx");
     	}
     	return FULLTEXTSEARCHSUPPORTED_CACHE;
     }

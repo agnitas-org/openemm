@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.attachments.dto.AttachmentLightResponse;
@@ -53,11 +54,14 @@ public class MailingAttachmentTools {
     )
     public PageResponse<AttachmentLightResponse> getList(
             @McpToolParam(description = "Mailing ID") @Positive int mailingId,
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_ATTACHMENTS_SHOW);
-        return mailingAttachmentMcpService.list(mailingId, pageable, admin);
+        McpActivityContext.current().setObjectId(mailingId);
+        return mailingAttachmentMcpService.list(mailingId, McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
@@ -73,6 +77,7 @@ public class MailingAttachmentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_ATTACHMENTS_SHOW);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "attachmentId", attachmentId, "filename", filename);
         if (attachmentId != null) {
             return mailingAttachmentMcpService.getById(attachmentId, mailingId, admin);
         }
@@ -93,7 +98,9 @@ public class MailingAttachmentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_ATTACHMENTS_SHOW);
-        return mailingAttachmentMcpService.create(request, mailingId, admin);
+        AttachmentResponse response = mailingAttachmentMcpService.create(request, mailingId, admin);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "attachmentId", response.id());
+        return response;
     }
 
     @McpTool(
@@ -108,6 +115,7 @@ public class MailingAttachmentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_ATTACHMENTS_SHOW);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "attachmentId", attachmentId, "filename", filename);
         if (attachmentId != null) {
             mailingAttachmentMcpService.deleteById(attachmentId, mailingId, admin);
             return;

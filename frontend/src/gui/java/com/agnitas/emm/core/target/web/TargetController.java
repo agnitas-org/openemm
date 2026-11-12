@@ -102,7 +102,7 @@ public class TargetController implements XssCheckAware {
     protected void addListModelAttrs(TargetForm targetForm, Admin admin, Model model) { // overridden in extended class
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 
-        model.addAttribute("isSearchEnabled", targetService.isBasicFullTextSearchSupported());
+        model.addAttribute("isFullTextSearchEnabled", targetService.isBasicFullTextSearchSupported());
         model.addAttribute("targetComplexities", targetService.getTargetComplexities(admin.getCompanyID()));
         model.addAttribute("targetEntries", getPaginatedTargetGroupsOverview(targetForm, admin));
     }

@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.birtreport.bean.ReportFormat;
 
@@ -83,19 +82,9 @@ public class BirtReportDto {
     }
     
     public Map<ReportSettingsType, Map<String, Object>> getSettings() {
-        return getSettings(true);
+        return settings;
     }
-    
-    public Map<ReportSettingsType, Map<String, Object>> getSettings(boolean isMailTrackingEnabled) {
-        if (isMailTrackingEnabled) {
-            return settings;
-        }
-    
-        return settings.entrySet().stream()
-                .filter(typeEntry -> !typeEntry.getKey().isMailTrackingRequired())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-    
+
     public void setSettings(Map<ReportSettingsType, Map<String, Object>> settings) {
         this.settings = settings;
     }

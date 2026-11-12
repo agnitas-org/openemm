@@ -8,16 +8,9 @@
 
 */
 
-package com.agnitas.emm.rest.v2.recipient.dto;
+package com.agnitas.emm.rest.v2.recipient;
 
-import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-public record BulkUpsertResponse(
-    int total,
-    int succeeded,
-    int failed,
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    Map<String, Integer> errors
-) {}
+public interface Groups {
+    interface Single {}
+    interface Bulk {}
+}

@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.blocklist;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.blocklist.dto.BlocklistEntryResponse;
 import com.agnitas.emm.mcp.v1.blocklist.dto.CreateBlocklistEntryRequest;
 import com.agnitas.emm.mcp.v1.blocklist.dto.PatchBlocklistEntryRequest;
@@ -48,11 +49,13 @@ public class BlocklistTools {
             description = "Returns a paginated list of blocklisted email addresses"
     )
     public PageResponse<BlocklistEntryResponse> getList(
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.BLACKLIST);
-        return blocklistMcpService.list(pageable, admin.getCompanyID());
+        return blocklistMcpService.list(McpPageable.orDefault(pageable), admin.getCompanyID());
     }
 
     @McpTool(
@@ -65,6 +68,7 @@ public class BlocklistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.BLACKLIST);
+        McpActivityContext.current().setObjectId(email);
         return blocklistMcpService.getByEmail(email, admin.getCompanyID());
     }
 
@@ -78,7 +82,9 @@ public class BlocklistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.BLACKLIST);
-        return blocklistMcpService.create(request, admin);
+        BlocklistEntryResponse response = blocklistMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(response.email());
+        return response;
     }
 
     @McpTool(
@@ -92,6 +98,7 @@ public class BlocklistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.BLACKLIST);
+        McpActivityContext.current().setObjectId(email);
         return blocklistMcpService.patch(email, request, admin.getCompanyID());
     }
 
@@ -105,6 +112,7 @@ public class BlocklistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_DELETE);
+        McpActivityContext.current().setObjectId(email);
         blocklistMcpService.delete(email, admin.getCompanyID());
     }
 

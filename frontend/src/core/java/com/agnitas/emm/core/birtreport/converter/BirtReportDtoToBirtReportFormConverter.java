@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,7 +55,7 @@ public class BirtReportDtoToBirtReportFormConverter implements Converter<BirtRep
         
         reportForm.setFormat(source.getFormat());
     
-        reportForm.setActiveTab(source.getActiveTab());
+        reportForm.setActiveTab(ReportSettingsType.findByCode(source.getActiveTab()).orElse(ReportSettingsType.COMPARISON).getKey());
         reportForm.setSettings(source.getSettings());
 
         return reportForm;

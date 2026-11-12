@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.rest.v2.recipient;
 
+import static com.agnitas.beans.BindingEntry.UserType;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -33,16 +34,16 @@ import com.agnitas.emm.rest.v2.infrastructure.bulk.BulkOperationResponse;
 import com.agnitas.emm.rest.v2.infrastructure.config.json.RestEnumAllowedValues;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse.PageMeta;
-import com.agnitas.emm.rest.v2.recipient.dto.BulkUpsertResponse;
-import com.agnitas.emm.rest.v2.recipient.dto.RecipientSubscribeRequest;
 import com.agnitas.messages.Message;
 import com.agnitas.testsupport.annotation.MockBean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
 
@@ -57,25 +58,32 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class PaginatedList {
         @Test
-        void shouldReturn200() throws Exception {
+        void returns200() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(true);
-
-            Map<String, String> fieldFilter = Map.of("title", "Professor");
-            expect(recipientServiceMock.list(PageRequest.of(3, 2), fieldFilter, adminMock))
+            PageRequest pagination = PageRequest.of(3, 2, Sort.by(Sort.Direction.DESC, "customer_id"));
+            var request = new ListRecipientsRequest(
+                    5,
+                    12,
+                    UserStatus.AdminOut,
+                    List.of(UserType.Admin, UserType.TestUser),
+                    "`title` = 'Professor'"
+            );
+            expect(recipientServiceMock.list(request, pagination, adminMock))
                     .andReturn(new PageResponse<>(
                             List.of(
+                                    Map.of(
+                                            "customer_id", 12,
+                                            "firstname", "Max",
+                                            "lastname", "Planck",
+                                            "email", "planck@agnitas.com",
+                                            "title", "Professor",
+                                            "custom_profile_field", "filter_value"
+                                    ),
                                     Map.of(
                                             "customer_id", 11,
                                             "firstname", "Albert",
                                             "lastname", "Einstein",
                                             "email", "einstein@agnitas.com",
-                                            "title", "Professor",
-                                            "custom_profile_field", "filter_value"
-                                    ), Map.of(
-                                            "customer_id", 12,
-                                            "firstname", "Max",
-                                            "lastname", "Planck",
-                                            "email", "planck@agnitas.com",
                                             "title", "Professor",
                                             "custom_profile_field", "filter_value"
                                     )
@@ -85,44 +93,75 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
             Map<String, Object> params = Map.of(
                     "page", "3",
                     "size", "2",
-                    "title", "Professor"
+                    "mailinglistId", 5,
+                    "targetId", 12,
+                    "userTypes", List.of(UserType.Admin, UserType.TestUser),
+                    "userStatus", UserStatus.AdminOut,
+                    "eql", "`title` = 'Professor'",
+                    "sort", "customer_id,desc"
             );
-            authenticated(params(get("/recipients"), params)).andExpectAll(
-                    status().isOk(),
+            authenticated(params(get("/recipients"), params))
+                    .andExpectAll(
+                            status().isOk(),
+                            content().json(
+                                    """
+                                    {
+                                        "page": {
+                                          "number": 3,
+                                          "size": 2,
+                                          "totalCount": 1200
+                                        },
+                                        "list": [
+                                            {
+                                              "customer_id": 12,
+                                              "firstname": "Max",
+                                              "lastname": "Planck",
+                                              "email": "planck@agnitas.com",
+                                              "title": "Professor",
+                                              "custom_profile_field": "filter_value"
+                                            },
+                                            {
+                                              "customer_id": 11,
+                                              "firstname": "Albert",
+                                              "lastname": "Einstein",
+                                              "email": "einstein@agnitas.com",
+                                              "title": "Professor",
+                                              "custom_profile_field": "filter_value"
+                                            },
+                                        ]
+                                    }
+                                    """
+                            )
+                    )
+                    .andDo(documentList());
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "mailinglistId, 0, must be greater than 0",
+                "targetId, 0, must be greater than 0",
+        })
+        void returns400(String paramName, String paramValue, String error) throws Exception {
+            authenticated(get("/recipients").param(paramName, paramValue)).andExpectAll(
+                    status().isBadRequest(),
                     content().json(
                             """
                             {
-                                "page": {
-                                  "number": 3,
-                                  "size": 2,
-                                  "totalCount": 1200
-                                },
-                                "list": [
+                                "status": 400,
+                                "errors": [
                                     {
-                                      "customer_id": 11,
-                                      "firstname": "Albert",
-                                      "lastname": "Einstein",
-                                      "email": "einstein@agnitas.com",
-                                      "title": "Professor",
-                                      "custom_profile_field": "filter_value"
-                                    },
-                                    {
-                                      "customer_id": 12,
-                                      "firstname": "Max",
-                                      "lastname": "Planck",
-                                      "email": "planck@agnitas.com",
-                                      "title": "Professor",
-                                      "custom_profile_field": "filter_value"
+                                        "field": %s,
+                                        "message": %s
                                     }
                                 ]
                             }
-                            """
+                            """.formatted(paramName, error)
                     )
-            ).andDo(documentList());
+            );
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(false);
             assertNotAuthorized(get("/recipients"));
         }
@@ -131,12 +170,25 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class ListIds {
         @Test
-        void shouldReturn200() throws Exception {
+        void returns200() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(true);
-            Map<String, String> fieldFilter = Map.of("title", "Professor");
-            expect(recipientServiceMock.listIds(fieldFilter, adminMock)).andReturn(List.of(123, 124, 1234));
+            var request = new ListRecipientsRequest(
+                    5,
+                    12,
+                    UserStatus.AdminOut,
+                    List.of(UserType.Admin, UserType.TestUser),
+                    "`title` = 'Professor'"
+            );
+            expect(recipientServiceMock.listIds(request, adminMock)).andReturn(List.of(123, 124, 1234));
 
-            authenticated(get("/recipients/ids").param("title", "Professor"))
+            Map<String, Object> params = Map.of(
+                    "mailinglistId", 5,
+                    "targetId", 12,
+                    "userTypes", List.of(UserType.Admin, UserType.TestUser),
+                    "userStatus", UserStatus.AdminOut,
+                    "eql", "`title` = 'Professor'"
+            );
+            authenticated(params(get("/recipients/ids"), params))
                     .andExpectAll(
                             status().isOk(),
                             content().json("[123, 124, 1234]")
@@ -144,8 +196,32 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
                     .andDo(documentListIds());
         }
 
+        @ParameterizedTest
+        @CsvSource({
+                "mailinglistId, 0, must be greater than 0",
+                "targetId, 0, must be greater than 0",
+        })
+        void returns400(String paramName, String paramValue, String error) throws Exception {
+            authenticated(get("/recipients/ids").param(paramName, paramValue)).andExpectAll(
+                    status().isBadRequest(),
+                    content().json(
+                            """
+                            {
+                                "status": 400,
+                                "errors": [
+                                    {
+                                        "field": %s,
+                                        "message": %s
+                                    }
+                                ]
+                            }
+                            """.formatted(paramName, error)
+                    )
+            );
+        }
+
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(false);
             assertNotAuthorized(get("/recipients/ids"));
         }
@@ -154,7 +230,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class ReadById {
         @Test
-        void shouldReturn200() throws Exception {
+        void returns200() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(true);
             expect(recipientServiceMock.find(1, adminMock)).andReturn(Map.of(
                     "customer_id", 1,
@@ -183,7 +259,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(false);
             assertNotAuthorized(get("/recipients/{id}", 1));
         }
@@ -192,7 +268,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class ReadByEmail {
         @Test
-        void shouldReturn200() throws Exception {
+        void returns200() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(true);
             expect(recipientServiceMock.find("email@example.com", adminMock)).andReturn(Map.of(
                     "customer_id", 1,
@@ -223,7 +299,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_SHOW)).andReturn(false);
             assertNotAuthorized(get("/recipients/by-email/{email}", "email@example.com"));
         }
@@ -265,7 +341,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn201() throws Exception {
+        void returns201() throws Exception {
             RecipientSubscribeRequest subscribeRequest = new RecipientSubscribeRequest(
                     "3",
                     MediaTypes.EMAIL,
@@ -323,7 +399,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
 
         @ParameterizedTest
         @ValueSource(strings = {"-1", "0", "*1", "a", ""})
-        void shouldReturn400_whenMailinglistToSubscribeIsInvalid(String mailinglistParam) throws Exception {
+        void returns400_whenMailinglistToSubscribeIsInvalid(String mailinglistParam) throws Exception {
             authenticated(post("/recipients")
                     .param("mailinglist", mailinglistParam)
                     .content(
@@ -353,7 +429,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
 
         @ParameterizedTest
         @ValueSource(strings = {"Active1", "-1", "0", "8", "a"})
-        void shouldReturn400_whenSubscribeUserStatusIsInvalid(String status) throws Exception {
+        void returns400_whenSubscribeUserStatusIsInvalid(String status) throws Exception {
             authenticated(post("/recipients")
                     .param("mailinglist", "123")
                     .param("status", status)
@@ -385,7 +461,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
 
         @ParameterizedTest
         @ValueSource(strings = {"FAX", "-1", "1", "3", "9", "a"})
-        void shouldReturn400_whenSubscribeMediatypeIsInvalid(String mediaType) throws Exception {
+        void returns400_whenSubscribeMediatypeIsInvalid(String mediaType) throws Exception {
             authenticated(post("/recipients")
                     .param("mailinglist", "123")
                     .param("mediaType", mediaType)
@@ -416,7 +492,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn200_whenRecipientBulkCreateHasMixedResults() throws Exception {
+        void returns200_whenRecipientBulkCreateHasMixedResults() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_CREATE, Permission.IMPORT_MODE_ADD)).andReturn(true);
             RecipientSubscribeRequest subscribeRequest = new RecipientSubscribeRequest("3", MediaTypes.EMAIL, null);
 
@@ -492,7 +568,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn200_whenAllEntriesSuccessfullyCreated() throws Exception {
+        void returns200_whenAllEntriesSuccessfullyCreated() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_CREATE, Permission.IMPORT_MODE_ADD)).andReturn(true);
             expect(recipientServiceMock.create(
                     List.of(
@@ -527,7 +603,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn400_whenStatusParameterUsed() throws Exception {
+        void returns400_whenStatusParameterUsed() throws Exception {
             authenticated(post("/recipients/bulk")
                     .param("status", "Active")
                     .content(
@@ -561,7 +637,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_CREATE)).andReturn(false);
             assertNotAuthorized(post("/recipients").content("{}"));
         }
@@ -570,7 +646,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class PatchByEmail {
         @Test
-        void shouldReturn200() throws Exception {
+        void returns200() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_CHANGE)).andReturn(true);
             var request = new RecipientSubscribeRequest("123", MediaTypes.EMAIL, UserStatus.Active);
             Map<String, Object> fields = Map.of("firstname", "New");
@@ -615,7 +691,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_CHANGE)).andReturn(false);
             assertNotAuthorized(patch("/recipients/by-email/{email}", "email@example.com").content("{}"));
         }
@@ -624,7 +700,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class PatchById {
         @Test
-        void shouldReturn200() throws Exception {
+        void returns200() throws Exception {
             var request = new RecipientSubscribeRequest("123", MediaTypes.EMAIL, UserStatus.Active);
             expect(adminMock.allowedAll(Permission.RECIPIENT_CHANGE)).andReturn(true);
             Map<String, Object> fields = Map.of("firstname", "New");
@@ -669,7 +745,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_CHANGE)).andReturn(false);
             assertNotAuthorized(patch("/recipients/{id}", 1).content("{}"));
         }
@@ -678,7 +754,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class DeleteByEmail {
         @Test
-        void shouldReturn204() throws Exception {
+        void returns204() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_DELETE)).andReturn(true);
             recipientServiceMock.delete("email@example.com", adminMock);
             expectLastCall();
@@ -689,7 +765,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_DELETE)).andReturn(false);
             assertNotAuthorized(delete("/recipients/by-email/{email}", "email@example.com"));
         }
@@ -698,7 +774,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class DeleteById {
         @Test
-        void shouldReturn204() throws Exception {
+        void returns204() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_DELETE)).andReturn(true);
             recipientServiceMock.delete(2, adminMock);
             expectLastCall();
@@ -709,7 +785,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn200_whenBulkDeleteHasMixedResults() throws Exception {
+        void returns200_whenBulkDeleteHasMixedResults() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_DELETE)).andReturn(true);
             expect(recipientServiceMock.delete(List.of(101, 102, 103), adminMock)).andReturn(BulkOperationResponse.from(
                     List.of(
@@ -753,7 +829,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn400_whenNegativeIdIsPassedOnBulkDelete() throws Exception {
+        void returns400_whenNegativeIdIsPassedOnBulkDelete() throws Exception {
             authenticated(delete("/recipients/bulk").content(
                     """
                     {
@@ -780,7 +856,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(Permission.RECIPIENT_DELETE)).andReturn(false);
             assertNotAuthorized(delete("/recipients/{id}", 2));
         }
@@ -789,7 +865,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
     @Nested
     class BulkUpsert {
         @Test
-        void shouldReturn200_whenAllEntriesSuccessfullyUpserted() throws Exception {
+        void returns200_whenAllEntriesSuccessfullyUpserted() throws Exception {
             expect(adminMock.allowedAll(
                     Permission.RECIPIENT_CHANGE,
                     Permission.IMPORT_MODE_ADD_UPDATE
@@ -829,7 +905,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn200_whenBulkUpdateHasMixedResults() throws Exception {
+        void returns200_whenBulkUpdateHasMixedResults() throws Exception {
             expect(adminMock.allowedAll(
                     Permission.RECIPIENT_CHANGE,
                     Permission.IMPORT_MODE_ADD_UPDATE
@@ -902,7 +978,7 @@ class _RecipientsV2ControllerTest extends _RecipientsV2ControllerTestSupport {
         }
 
         @Test
-        void shouldReturn403() throws Exception {
+        void returns403() throws Exception {
             expect(adminMock.allowedAll(
                     Permission.RECIPIENT_CHANGE,
                     Permission.IMPORT_MODE_ADD_UPDATE

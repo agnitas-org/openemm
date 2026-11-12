@@ -16,4 +16,8 @@ public record PaginatedFilter<S>(
         int page,
         int size
 ) {
+
+    public String order() {
+        return ascending ? "ASC" : "DESC";
+    }
 }

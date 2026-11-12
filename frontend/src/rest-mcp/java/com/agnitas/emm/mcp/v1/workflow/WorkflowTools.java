@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.workflow;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.workflow.service.WorkflowMcpService;
@@ -42,11 +43,13 @@ public class WorkflowTools {
             description = "Returns a paginated list of workflows (campaigns)"
     )
     public PageResponse<WorkflowLightResponse> getList(
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.WORKFLOW_SHOW);
-        return workflowMcpService.list(pageable, admin);
+        return workflowMcpService.list(McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
@@ -59,6 +62,7 @@ public class WorkflowTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.WORKFLOW_ACTIVATE);
+        McpActivityContext.current().setObjectId(workflowId);
         return workflowMcpService.activate(workflowId, admin.getCompanyID());
     }
 
@@ -72,6 +76,7 @@ public class WorkflowTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.WORKFLOW_ACTIVATE);
+        McpActivityContext.current().setObjectId(workflowId);
         return workflowMcpService.deactivate(workflowId, admin.getCompanyID());
     }
 
@@ -85,6 +90,7 @@ public class WorkflowTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.WORKFLOW_ACTIVATE);
+        McpActivityContext.current().setObjectId(workflowId);
         return workflowMcpService.pause(workflowId, admin.getCompanyID());
     }
 

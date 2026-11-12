@@ -42,12 +42,13 @@ AGN.Lib.CoreInitializer.new('truncated-text-popover', function ($scope = $(docum
 
   function containsTruncatedElement(el) {
     let $el = $(el);
-    if ($el.is('.text-truncate-alt')) {
-      return $el.is(':truncatedAlt') // see jquery-dom.js
-    }
 
     if ($el.is('.ag-header-cell')) {
       $el = $el.find('.ag-header-cell-text');
+    }
+
+    if ($el.is('.select2-selection__rendered')) {
+      $el = $($el.find('.select2-selection__choice__display')[0] || $el[0]);
     }
 
     return $el.is(':truncated')

@@ -15,6 +15,7 @@ import java.util.List;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.useractivitylog.bean.McpToolAction;
 import com.agnitas.emm.core.useractivitylog.bean.McpUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.dao.McpUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.forms.McpUserActivityLogFilter;
@@ -30,6 +31,7 @@ public class McpUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
                     rs.getString("username"),
                     rs.getString("source"),
                     rs.getString("tool_name"),
+                    rs.getString("object_id"),
                     rs.getTimestamp("timestamp")
             );
 
@@ -54,7 +56,7 @@ public class McpUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
     }
 
     private List<Object> buildOverviewSelectQuery(StringBuilder query, McpUserActivityLogFilter filter) {
-        query.append("SELECT timestamp, username, tool_name, source FROM mcp_usage_log_tbl");
+        query.append("SELECT timestamp, username, tool_name, object_id, source FROM mcp_usage_log_tbl");
         return applyFilter(filter, query);
     }
 
@@ -76,6 +78,11 @@ public class McpUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
         if (StringUtils.isNotBlank(filter.getToolName())) {
             query.append(getPartialSearchFilterWithAnd("tool_name"));
             params.add(filter.getToolName());
+        }
+
+        if (StringUtils.isNotBlank(filter.getObjectId())) {
+            query.append(getPartialSearchFilterWithAnd("object_id"));
+            params.add(filter.getObjectId());
         }
 
         return params;
@@ -116,13 +123,13 @@ public class McpUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implem
     }
 
     @Override
-    public void writeUserActivityLog(String toolName, String source, Admin admin) {
+    public void writeUserActivityLog(McpToolAction action, Admin admin) {
         if (admin == null) {
             return;
         }
 
-        String sql = "INSERT INTO mcp_usage_log_tbl (timestamp, tool_name, source, company_id, username) VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?)";
-        update(sql, toolName, source, admin.getCompanyID(), admin.getUsername());
+        String sql = "INSERT INTO mcp_usage_log_tbl (timestamp, tool_name, source, object_id, company_id, username) VALUES (?, ?, ?, ?, ?, ?)";
+        update(sql, action.timestamp(), action.toolName(), action.source(), action.objectId(), admin.getCompanyID(), admin.getUsername());
     }
 
     @Override

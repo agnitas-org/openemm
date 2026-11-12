@@ -48,7 +48,7 @@ abstract class _MailingsV2ControllerTestSupport extends _MailingsV2TestSupportBa
     protected ParameterDescriptorWithType[] getListQueryParams() {
         return ArrayUtils.add(
                 super.getListQueryParams(),
-                optionalParam("statuses", "CSV.%s".formatted(RestEnumAllowedValues.MAILING_STATUSES))
+                optionalParam("statuses", "Comma-Separated Values. %s".formatted(RestEnumAllowedValues.MAILING_STATUSES))
         );
     }
 

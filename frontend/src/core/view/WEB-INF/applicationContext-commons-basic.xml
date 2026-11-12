@@ -570,28 +570,6 @@ Euer freundlicher EMM
 		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
 	</bean>
 
-    <bean id="fulltextSearchReservedLiteralsFactory" class="com.agnitas.emm.core.commons.database.fulltext.impl.factory.FulltextSearchReservedLiteralsFactoryImpl"/>
-
-	<bean id="databaseConfiguration" class="com.agnitas.emm.core.commons.database.configuration.DatabaseConfigurationImpl">
-		<constructor-arg ref="dataSource"/>
-	</bean>
-
-	<bean id="operatorFactory" class="com.agnitas.emm.core.commons.database.fulltext.operator.factory.OperatorFactoryImpl"/>
-
-	<bean id="fulltextReservedLiterals" factory-bean="fulltextSearchReservedLiteralsFactory" factory-method="createdReservedLiteralsConfig"/>
-
-	<bean id="fulltextSearchOperators" factory-bean="operatorFactory" factory-method="createOperators"/>
-
-	<bean id="wordProcessorFactory" class="com.agnitas.emm.core.commons.database.fulltext.word.factory.WordProcessorFactoryImpl"/>
-
-	<bean id="fulltextWordProcessors" factory-bean="wordProcessorFactory" factory-method="createWordProcessors"/>
-
-	<bean id="fulltextSearchQueryGenerator" class="com.agnitas.emm.core.commons.database.fulltext.impl.FulltextSearchQueryGeneratorImpl">
-		<property name="operators" ref="fulltextSearchOperators"/>
-		<property name="wordProcessors" ref="fulltextWordProcessors"/>
-		<property name="reservedLiteralsConfig" ref="fulltextReservedLiterals"/>
-	</bean>
-
 	<!--  =================================================================================
 			 TXT REPORT
 		  ================================================================================= -->

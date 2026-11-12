@@ -134,6 +134,16 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
+    public void validateExistsAndEnabled(int mailinglistId, Admin admin){
+        if (!exist(mailinglistId, admin.getCompanyID())) {
+            throw new MailinglistNotExistException(mailinglistId, admin.getCompanyID());
+        }
+        if (!mailinglistApprovalDao.isAdminHaveAccess(admin.getCompanyID(), admin.getAdminID(), mailinglistId)) {
+            throw new ForbiddenException(Message.exact("You cannot access this mailing list"));
+        }
+    }
+
+    @Override
     public Mailinglist getOrNull(int id, int companyId) {
         return mailinglistDao.getMailinglist(id, companyId);
     }

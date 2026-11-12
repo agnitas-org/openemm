@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.mailing.send;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.mailing.send.dto.SendAdminMailingRequest;
 import com.agnitas.emm.mcp.v1.mailing.send.dto.SendTestMailingRequest;
 import com.agnitas.emm.mcp.v1.mailing.send.dto.StartSendMailingRequest;
@@ -49,6 +50,7 @@ public class MailingSendTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_SEND_WORLD);
+        McpActivityContext.current().setObjectId(request.mailingId());
         return mailingSendMcpService.send(request, admin);
     }
 
@@ -62,6 +64,7 @@ public class MailingSendTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin();
+        McpActivityContext.current().setObjectId(request.mailingId());
         return mailingSendMcpService.sendAdmin(request, admin);
     }
 
@@ -75,6 +78,7 @@ public class MailingSendTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin();
+        McpActivityContext.current().setObjectId(request.mailingId());
         return mailingSendMcpService.sendTest(request, admin);
     }
 
@@ -89,6 +93,7 @@ public class MailingSendTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_SEND_WORLD);
+        McpActivityContext.current().setObjectId(mailingId);
         return mailingSendMcpService.stop(mailingId, admin.getCompanyID());
     }
 

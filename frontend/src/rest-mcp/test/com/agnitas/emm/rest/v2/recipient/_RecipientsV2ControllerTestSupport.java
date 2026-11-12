@@ -18,8 +18,6 @@ import java.util.stream.Stream;
 import com.agnitas.emm.rest.v2.ConstrainedParams;
 import com.agnitas.emm.rest.v2.RestDocsTestSupport;
 import com.agnitas.emm.rest.v2.infrastructure.config.json.RestEnumAllowedValues;
-import com.agnitas.emm.rest.v2.recipient.dto.Groups;
-import com.agnitas.emm.rest.v2.recipient.dto.RecipientSubscribeRequest;
 import com.epages.restdocs.apispec.ParameterDescriptorWithType;
 import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
@@ -34,32 +32,25 @@ abstract class _RecipientsV2ControllerTestSupport extends RestDocsTestSupport {
 
     private static final ConstrainedParams CONSTRAINED_PARAMS = new ConstrainedParams(RecipientSubscribeRequest.class);
 
-    private static final String FILTER_DESCRIPTION =
-            """
-            **Filtering**
-            
-            The result can be filtered by any visible standard or custom recipient profile field. \
-            Add the field name and the desired value as a query parameter, for example:
-            
-            `GET /recipients?firstname=Albert`
-            
-            Multiple filters can be combined and are applied together:
-            
-            `GET /recipients?firstname=Albert&custom_profile_field=profile_field_value`
-            
-            Frequently used fields (\
-            `email`, \
-            `title`, \
-            `firstname`, \
-            `lastname`\
-            ) are available as separate parameters below.
-            """;
-
-    private static final ParameterDescriptorWithType[] FILTER_PARAMS = {
-            recipientFieldFilterParam("email"),
-            recipientFieldFilterParam("title"),
-            recipientFieldFilterParam("firstname"),
-            recipientFieldFilterParam("lastname")
+    private static final ParameterDescriptorWithType[] LIST_FILTER_PARAMS = {
+            optionalParam("userTypes", "Comma-Separated Values. %s".formatted(RestEnumAllowedValues.USER_TYPES)),
+            optionalParam("userStatus", RestEnumAllowedValues.USER_STATUSES),
+            optionalParam("mailinglistId", "ID of the assigned mailinglist"),
+            optionalParam("targetId", "ID of the related target group"),
+            optionalParam(
+                    "eql",
+                    """
+                    Filter expression in EQL syntax.
+                    
+                    Use single or double quotes for string values, e.g. `firstname = 'Emma'`.
+                  
+                    Field names can be backtick-quoted, e.g. `` `email` LIKE '%example.com' ``.
+                    
+                    Names that match EQL keywords \
+                    (e.g. `email`, `status`, `type`, `test`, `on`, `by`, `active`, `admin`) \
+                    must be backtick-quoted.
+                    """
+            ),
     };
 
     private static final FieldDescriptor[] RECIPIENT_RESPONSE_FIELDS = {
@@ -127,23 +118,22 @@ abstract class _RecipientsV2ControllerTestSupport extends RestDocsTestSupport {
 
     ResultHandler documentList() {
         return documentPagination(
-                FILTER_DESCRIPTION,
                 RECIPIENT_RESPONSE_FIELDS,
-                ArrayUtils.add(FILTER_PARAMS, recipientFieldFilterParam("customer_id"))
+                ArrayUtils.add(
+                        LIST_FILTER_PARAMS,
+                        optionalParam(
+                                "sort",
+                                "Sort as `column,asc|desc` (default direction: asc) e.g. `?sort=lastname,desc`"
+                        )
+                )
         );
     }
 
     ResultHandler documentListIds() {
         return document("list-ids", builder()
                 .summary("Get array of recipient IDs")
-                .description(
-                        """
-                        Returns IDs of all recipients matching the filters, without pagination.
-                        
-                        %s
-                        """.formatted(FILTER_DESCRIPTION)
-                )
-                .queryParameters(FILTER_PARAMS)
+                .description("Returns IDs of all recipients matching the filters, without pagination.")
+                .queryParameters(LIST_FILTER_PARAMS)
                 .responseSchema(schema("RecipientIdsResponse"))
                 .responseFields(
                         fieldWithPath("[]").type(JsonFieldType.ARRAY).description("IDs of all matching recipients")
@@ -257,9 +247,5 @@ abstract class _RecipientsV2ControllerTestSupport extends RestDocsTestSupport {
                 .responseSchema(BULK_DELETE_RESPONSE_SCHEMA)
                 .responseFields(BULK_DELETE_RESULT_FIELDS)
         );
-    }
-
-    private static ParameterDescriptorWithType recipientFieldFilterParam(String field) {
-        return optionalParam(field, "Filter by `%s` recipient profile field.".formatted(field));
     }
 }

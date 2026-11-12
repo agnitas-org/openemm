@@ -107,6 +107,7 @@ import com.agnitas.util.DbUtilities;
 import com.agnitas.util.NumericUtil;
 import com.agnitas.util.ParameterParser;
 import com.agnitas.util.SafeString;
+import com.agnitas.util.db.SqlCondition;
 import com.agnitas.util.SqlPreparedInsertStatementManager;
 import com.agnitas.util.SqlPreparedStatementManager;
 import com.agnitas.util.SqlPreparedUpdateStatementManager;
@@ -3262,59 +3263,57 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	}
 
 	@Override
-	public List<Integer> getFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters) {
-		String sql = "SELECT customer_id FROM customer_" + companyID + "_tbl"
-			+ " WHERE " + RecipientStandardField.Bounceload.getColumnName() + " = 0";
-		List<Object> parameters = new ArrayList<>();
-		for (Entry<String, String> parameter : recipientFilters.entrySet()) {
-			if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.Date) {
-				if (isOracleDB() || isPostgreSQL()) {
-					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD') LIKE ?";
-				} else {
-					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", '%Y-%m-%d') LIKE ?";
-				}
-				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
-			} else if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.DateTime) {
-				if (isOracleDB() || isPostgreSQL()) {
-					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD HH24:MI:SS') LIKE ?";
-				} else {
-					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", '%Y-%m-%d %H:%i:%s') LIKE ?";
-				}
-				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
-			} else {
-				sql += " AND " + SafeString.getSafeDbColumnName(parameter.getKey()) + " LIKE ?";
-				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_"));
-			}
-		}
-		return select(sql, IntegerRowMapper.INSTANCE, parameters.toArray(new Object[0]));
+	public List<Integer> getFilteredRecipientIDs(
+			int companyID,
+			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
+			Map<String, String> recipientFilters
+	) {
+		SqlCondition condition = createFilteredRecipientsCondition(recipientFieldsMap, recipientFilters);
+		String sql = "SELECT cust.customer_id FROM customer_" + companyID + "_tbl cust WHERE " + condition.sql();
+		return select(sql, IntegerRowMapper.INSTANCE, condition.params().toArray());
 	}
 
 	@Override
-	public int countFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters) {
-		String sql = "SELECT COUNT(*) FROM customer_" + companyID + "_tbl"
-			+ " WHERE " + RecipientStandardField.Bounceload.getColumnName() + " = 0";
+	public int countFilteredRecipientIDs(
+			int companyID,
+			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
+			Map<String, String> recipientFilters
+	) {
+		SqlCondition condition = createFilteredRecipientsCondition(recipientFieldsMap, recipientFilters);
+		String sql = "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE " + condition.sql();
+		return selectInt(sql, condition.params().toArray());
+	}
+
+	private SqlCondition createFilteredRecipientsCondition(
+			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
+			Map<String, String> recipientFilters
+	) {
 		List<Object> parameters = new ArrayList<>();
+		StringBuilder sql = new StringBuilder("cust." + RecipientStandardField.Bounceload.getColumnName() + " = 0");
 		for (Entry<String, String> parameter : recipientFilters.entrySet()) {
-			if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.Date) {
+			String columnName = "cust." + SafeString.getSafeDbColumnName(parameter.getKey());
+			SimpleDataType dataType = recipientFieldsMap.get(parameter.getKey()).getSimpleDataType();
+			if (dataType == SimpleDataType.Date) {
 				if (isOracleDB() || isPostgreSQL()) {
-					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD') LIKE ?";
+					sql.append(" AND TO_CHAR(").append(columnName).append(", 'YYYY-MM-DD') LIKE ?");
 				} else {
-					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", '%Y-%m-%d') LIKE ?";
+					sql.append(" AND DATE_FORMAT(").append(columnName).append(", '%Y-%m-%d') LIKE ?");
 				}
 				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
-			} else if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.DateTime) {
+			} else if (dataType == SimpleDataType.DateTime) {
 				if (isOracleDB() || isPostgreSQL()) {
-					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD HH24:MI:SS') LIKE ?";
+					sql.append(" AND TO_CHAR(").append(columnName).append(", 'YYYY-MM-DD HH24:MI:SS') LIKE ?");
 				} else {
-					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", '%Y-%m-%d %H:%i:%s') LIKE ?";
+					sql.append(" AND DATE_FORMAT(").append(columnName).append(", '%Y-%m-%d %H:%i:%s') LIKE ?");
 				}
 				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
 			} else {
-				sql += " AND " + SafeString.getSafeDbColumnName(parameter.getKey()) + " LIKE ?";
+				sql.append(" AND ").append(columnName).append(" LIKE ?");
 				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_"));
 			}
 		}
-		return selectInt(sql, parameters.toArray(new Object[0]));
+
+		return new SqlCondition(sql.toString(), parameters);
 	}
 
 	@Override

@@ -15,6 +15,7 @@ import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.useractivitylog.bean.McpToolAction;
 import com.agnitas.emm.core.useractivitylog.bean.McpUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.forms.McpUserActivityLogFilter;
 import com.agnitas.util.SqlPreparedStatementManager;
@@ -25,7 +26,7 @@ public interface McpUserActivityLogDao {
 
     SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(McpUserActivityLogFilter filter);
 
-    void writeUserActivityLog(String toolName, String source, Admin admin);
+    void writeUserActivityLog(McpToolAction action, Admin admin);
 
     void deleteByUsernames(Set<String> usernames, int companyID);
 

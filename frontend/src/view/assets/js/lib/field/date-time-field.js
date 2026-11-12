@@ -56,7 +56,11 @@ Option                     |Description                                         
     }
 
     get $hiddenInput() {
-      return this.el.find(`[name="${this._propertyName}"]`);
+      const $input = this.el.find(`[name="${this._propertyName}"]`);
+      if ($input.exists()) {
+        return $input;
+      }
+      return this.el.find(`input[type="hidden"]`);
     }
 
     setDateTimeFieldValue() {

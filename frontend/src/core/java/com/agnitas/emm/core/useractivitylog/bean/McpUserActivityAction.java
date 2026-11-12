@@ -16,6 +16,7 @@ public record McpUserActivityAction(
         String username,
         String source,
         String toolName,
+        String objectId,
         Date timestamp
 ) {
 

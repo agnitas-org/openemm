@@ -13,8 +13,6 @@ package com.agnitas.emm.core.commons.database.fulltext.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -24,15 +22,20 @@ import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
+import com.agnitas.emm.core.commons.database.fulltext.impl.factory.FulltextSearchReservedLiteralsFactory;
 import com.agnitas.emm.core.commons.database.fulltext.operator.Operator;
+import com.agnitas.emm.core.commons.database.fulltext.operator.factory.OperatorFactory;
 import com.agnitas.emm.core.commons.database.fulltext.word.WordProcessor;
+import com.agnitas.emm.core.commons.database.fulltext.word.factory.WordProcessorFactory;
 import com.agnitas.messages.Message;
 import com.agnitas.util.FulltextSearchInvalidQueryException;
 import com.agnitas.util.FulltextSearchQueryException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
 
+@Component("fulltextSearchQueryGenerator")
 public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGenerator {
 
     private static final Logger logger = LogManager.getLogger(FulltextSearchQueryGeneratorImpl.class);
@@ -59,11 +62,19 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
 
     private static final String[] FORBIDDEN_OPERATORS_AT_START = {"+"};
 
-    private Map<String, Operator> operators = new HashMap<>();
+    private final Map<String, Operator> operators;
+    private final Set<WordProcessor> wordProcessors;
+    private final FulltextSearchReservedLiteralsConfig reservedLiteralsConfig;
 
-    private Set<WordProcessor> wordProcessors = new HashSet<>();
-
-    private FulltextSearchReservedLiteralsConfig reservedLiteralsConfig;
+    public FulltextSearchQueryGeneratorImpl(
+            OperatorFactory operatorFactory,
+            WordProcessorFactory wordProcessorFactory,
+            FulltextSearchReservedLiteralsFactory reservedLiteralsFactory
+    ) {
+        this.operators = operatorFactory.createOperators();
+        this.wordProcessors = wordProcessorFactory.createWordProcessors();
+        this.reservedLiteralsConfig = reservedLiteralsFactory.createdReservedLiteralsConfig();
+    }
 
     @Override
     public String tryGenerateSpecificQuery(String searchQuery) {
@@ -71,7 +82,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             return generateSpecificQuery(searchQuery);
         } catch (FulltextSearchQueryException e) {
             logger.error("Cannot transform full text search query: {}", searchQuery);
-            return searchQuery;
+            return reservedLiteralsConfig.getFallbackQuery(searchQuery);
         }
     }
 
@@ -80,7 +91,9 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         searchQuery = sanitize(searchQuery);
         searchQuery = escapeDatabaseSpecificSymbols(searchQuery);
         String[] tokens = getCorrectedTokens(searchQuery);
-        return generateSpecificQuery(tokens);
+        String generatedQuery = generateSpecificQuery(tokens);
+        reservedLiteralsConfig.validateGeneratedQuery(searchQuery, generatedQuery);
+        return generatedQuery;
     }
 
     private String[] getCorrectedTokens(String searchQuery) {
@@ -151,9 +164,26 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         LinkedList<String> operandStack = new LinkedList<>();
         LinkedList<Operator> operatorStack = new LinkedList<>();
         int matchingIndex;
+        boolean previousIsOperand = false;
 
         for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i];
+            if (operators.containsKey(token)) {
+                if (WHITESPACE.equals(token) &&
+                        ((i == 0 || operators.containsKey(tokens[i - 1])) ||
+                                (i == tokens.length - 1 || operators.containsKey(tokens[i + 1])))) {
+                    continue;
+                }
+                operatorStack.push(operators.get(token));
+                previousIsOperand = false;
+                continue;
+            }
+
+            // Operands written without operator in between (e.g. "word(suffix)") are joined without separator by default
+            if (previousIsOperand && reservedLiteralsConfig.isOperatorRequiredBetweenOperands()) {
+                operatorStack.push(operators.get(WHITESPACE));
+            }
+
             if (token.equals(OP_PAR)) {
                 matchingIndex = getMatchingIndex(tokens, i, CL_PAR);
                 checkMatchingIndex(i, matchingIndex, PAR_ERROR);
@@ -166,13 +196,6 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
                 token = String.join("", Arrays.copyOfRange(tokens, i + 1, matchingIndex));
                 operandStack.push(DOUBLE_QUOTES + reservedLiteralsConfig.escapeWord(token) + DOUBLE_QUOTES);
                 i = matchingIndex;
-            } else if (operators.containsKey(token)) {
-                if (WHITESPACE.equals(token) &&
-                        ((i == 0 || operators.containsKey(tokens[i - 1])) ||
-                                (i == tokens.length - 1 || operators.containsKey(tokens[i + 1])))) {
-                    continue;
-                }
-                operatorStack.push(operators.get(token));
             } else {
                 token = reservedLiteralsConfig.isReservedWord(token)
                         ? reservedLiteralsConfig.escapeWord(token)
@@ -180,6 +203,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
 
                 operandStack.push(token);
             }
+            previousIsOperand = true;
         }
 
         return applyDatabaseSpecificOperators(operandStack, operatorStack);
@@ -189,6 +213,12 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         operandStack = operandStack.stream()
                 .map(this::applyWordProcessors)
                 .collect(Collectors.toCollection(LinkedList::new));
+
+        // With operators between all operands, a missing operand means an operator without operand (e.g. "(a(b)+)")
+        if (reservedLiteralsConfig.isOperatorRequiredBetweenOperands() && !operatorStack.isEmpty()
+                && getRequiredOperandsCount(operatorStack) != operandStack.size()) {
+            throw new FulltextSearchQueryException("Operator without operand");
+        }
 
         List<String> operands = new ArrayList<>();
         while (!operatorStack.isEmpty()) {
@@ -201,6 +231,14 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             operands.clear();
         }
         return StringUtils.join(operandStack, "");
+    }
+
+    private static int getRequiredOperandsCount(List<Operator> operators) {
+        int count = 1;
+        for (Operator operator : operators) {
+            count += operator.getOperandsCount() - 1;
+        }
+        return count;
     }
 
     private String applyWordProcessors(String word) {
@@ -251,17 +289,5 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             }
         }
         return escapedQuery.toString();
-    }
-
-    public void setOperators(Map<String, Operator> operators) {
-        this.operators = operators;
-    }
-
-    public void setWordProcessors(Set<WordProcessor> wordProcessors) {
-        this.wordProcessors = wordProcessors;
-    }
-
-    public void setReservedLiteralsConfig(FulltextSearchReservedLiteralsConfig reservedLiteralsConfig) {
-        this.reservedLiteralsConfig = reservedLiteralsConfig;
     }
 }

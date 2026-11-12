@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.commons.database.fulltext.word.impl.mariadb;
 
 import com.agnitas.emm.core.commons.database.fulltext.word.WordProcessor;
+import com.agnitas.emm.core.commons.database.fulltext.word.impl.WordProcessUtils;
 
 public class MariaDBWildcardWordProcessor implements WordProcessor {
 

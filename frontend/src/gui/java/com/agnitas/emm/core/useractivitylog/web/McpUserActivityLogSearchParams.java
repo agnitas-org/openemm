@@ -17,6 +17,7 @@ public class McpUserActivityLogSearchParams extends UserActivityLogSearchParamsB
 
     private String source;
     private String toolName;
+    private String objectId;
 
     public McpUserActivityLogSearchParams(DateRange timestamp) {
         super(timestamp);
@@ -27,6 +28,7 @@ public class McpUserActivityLogSearchParams extends UserActivityLogSearchParamsB
         super.storeParams(filter);
         this.source = filter.getSource();
         this.toolName = filter.getToolName();
+        this.objectId = filter.getObjectId();
     }
 
     @Override
@@ -34,6 +36,7 @@ public class McpUserActivityLogSearchParams extends UserActivityLogSearchParamsB
         super.restoreParams(filter);
         filter.setSource(this.source);
         filter.setToolName(this.toolName);
+        filter.setObjectId(this.objectId);
     }
 
 }

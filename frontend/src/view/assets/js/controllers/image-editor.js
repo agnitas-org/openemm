@@ -6,24 +6,36 @@ AGN.Lib.Controller.new('img-editor', function() {
   let image;
   let canvas;
   let context;
-  let saveUrl;
   let originalImageData;
   let originalFormData;
+  let mimeType;
 
   this.addDomInitializer('img-editor', function() {
-    saveUrl = this.el.data().saveUrl;
     canvas = document.getElementById('editor-canvas');
     context = canvas.getContext('2d');
+    originalImageSrc = getImage$().attr('src');
     loadImage(() => {
       originalImageData = canvas.toDataURL();
       originalFormData = getForm().$form.serializeArray();
     });
+    mimeType = normalizeMimeType(this.el.data('mimetype'));
   });
+
+  function normalizeMimeType(mimeType) {
+    if (!mimeType) {
+      return 'image/png';
+    }
+
+    // 'image/jpg' is non-standard and not recognized by canvas.toBlob(), which would silently fall back to PNG
+    return mimeType.toLowerCase() === 'image/jpg'
+      ? 'image/jpeg'
+      : mimeType.toLowerCase();
+  }
 
   function loadImage(callback) {
     let src = getImage$().attr('src');
     if (!src.startsWith('data:')) {
-      src += `&t=${new Date().getTime()}`; // cache killer
+      src += `&t=${Date.now()}`; // cache killer
     }
 
     image = new Image();
@@ -351,19 +363,33 @@ AGN.Lib.Controller.new('img-editor', function() {
     updateSizeInputs();
   }
 
-  function saveBlob(blob) {
-    const form = getForm();
-
+  function addFileToForm(blob, form) {
     const $fileInput = $('<input/>').attr({
       type: 'file',
       name: 'image'
     }).css('display', 'none');
 
     const container = new DataTransfer();
-    container.items.add(new File([blob], $('#filename')));
+    container.items.add(new File([blob], $('#filename').val()));
     $fileInput[0].files = container.files;
     form.get$().append($fileInput);
+  }
+
+  function saveBlob(blob) {
+    const form = getForm();
+    if (imageChanged()) {
+      // canvas.toBlob() silently falls back to PNG for formats the browser can't encode
+      if (blob.type !== mimeType) {
+        AGN.Lib.Messages.alert('error.imageEditor.formatNotSupported', mimeType);
+        return;
+      }
+      addFileToForm(blob, form);
+    }
     form.submit();
+  }
+
+  function imageChanged() {
+    return originalImageData !== canvas.toDataURL();
   }
 
   this.addAction({'click': 'save'}, async function() {
@@ -377,7 +403,7 @@ AGN.Lib.Controller.new('img-editor', function() {
       return;
     }
 
-    canvas.toBlob(saveBlob);
+    canvas.toBlob(saveBlob, mimeType);
   });
 
   function getForm() {
@@ -386,8 +412,7 @@ AGN.Lib.Controller.new('img-editor', function() {
 
   function notChanged() {
     const currentFormData = getForm().$form.serializeArray();
-    return _.isEqual(originalFormData, currentFormData)
-      && originalImageData === canvas.toDataURL();
+    return _.isEqual(originalFormData, currentFormData) && !imageChanged();
   }
 
   this.addAction({'upload:add': 'replace'}, function() {

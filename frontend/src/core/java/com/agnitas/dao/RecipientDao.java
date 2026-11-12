@@ -397,9 +397,17 @@ public interface RecipientDao {
 
     int getOrCreateRecipientOfAdmin(Admin admin);
 
-	List<Integer> getFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
+	List<Integer> getFilteredRecipientIDs(
+            int companyID,
+            CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
+            Map<String, String> recipientFilters
+    );
 
-	int countFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
+	int countFilteredRecipientIDs(
+            int companyID,
+            CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap,
+            Map<String, String> recipientFilters
+    );
 
     List<String> getReadableNames(Set<Integer> ids, int companyID);
 

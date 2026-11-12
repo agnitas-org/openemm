@@ -2956,7 +2956,7 @@ public class DbUtilities {
 			return "CONTAINS(%s, ?)".formatted(column);
 		}
 		if (checkDbVendorIsPostgreSQL(dataSource)) {
-			return "to_tsvector(%s) @@ to_tsquery(?)".formatted(column);
+			return "to_tsvector('simple', %s) @@ to_tsquery('simple', ?)".formatted(column);
 		}
 		return "MATCH(%s) AGAINST(? IN BOOLEAN MODE)".formatted(column);
 	}

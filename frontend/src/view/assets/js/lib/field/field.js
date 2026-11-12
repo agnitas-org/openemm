@@ -53,6 +53,10 @@ Fields are small extensions of functionality for a form. They can be added via t
       $field.data('agn:field', field);
       return field;
     }
+
+    static get($field) {
+      return $field.data('agn:field');
+    }
   }
 
   AGN.Lib.Field = Field;

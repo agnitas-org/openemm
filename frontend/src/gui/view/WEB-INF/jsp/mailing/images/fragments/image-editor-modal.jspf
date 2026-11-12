@@ -7,7 +7,8 @@
 
         <%--  !!!WARN!!! : NOT CHANGE TO <mvc:form> cuz it cause an error with url build --%>
         <s:form cssClass="modal-content" action="{{- action}}" enctype="multipart/form-data"
-                data-form="static" data-controller="img-editor" data-initializer="img-editor" data-disable-controls="save">
+                data-form="static" data-controller="img-editor" data-initializer="img-editor"
+                data-disable-controls="save" data-mimetype="{{- mimeType }}">
 
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="grid.mediapool.images.edit"/></h1>

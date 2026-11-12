@@ -28,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * Class for BirtReports. Allows managing BirtReports with an easy interface.
  */
 public class BirtReportImpl implements BirtReport {
+
+    private final Map<ReportSettingsType, BirtReportSettings> settings;
 	
 	@Autowired
 	private BirtReportFactory factory;
@@ -50,11 +52,8 @@ public class BirtReportImpl implements BirtReport {
     private String intervalpattern;
     private Date nextStart;
     private String lastresult;
-
     private String language;
 
-    private Map<ReportSettingsType, BirtReportSettings> settings;
-    
     /**
      * To proper initializing BirtReportImpl use {@link BirtReportFactory#createReport()}
      */

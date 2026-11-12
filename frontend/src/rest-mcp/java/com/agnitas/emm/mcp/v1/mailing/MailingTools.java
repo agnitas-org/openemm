@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.dto.CreateMailingRequest;
@@ -53,13 +54,15 @@ public class MailingTools {
     )
     public PageResponse<MailingLightResponse> getList(
             @Valid
-            @McpToolParam(description = "Search filters for mailings. All fields are optional and used only to narrow down results.")
+            @McpToolParam(description = "Search filters for mailings. All fields are optional and used only to narrow down results.", required = false)
             ListMailingsRequest query,
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_SHOW);
-        return mailingMcpService.list(query, pageable, admin);
+        return mailingMcpService.list(query, McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
@@ -72,6 +75,7 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return mailingMcpService.getById(id, admin.getCompanyID());
     }
 
@@ -85,6 +89,7 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return mailingMcpService.getMailingFullById(id, admin);
     }
 
@@ -102,7 +107,9 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CHANGE);
-        return mailingMcpService.create(request, admin);
+        MailingResponse response = mailingMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -115,7 +122,9 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CHANGE);
-        return mailingMcpService.createFromTemplate(templateId, admin.getCompanyID());
+        MailingLightResponse response = mailingMcpService.createFromTemplate(templateId, admin.getCompanyID());
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -128,7 +137,9 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CHANGE);
-        return mailingMcpService.copy(sourceId, admin.getCompanyID());
+        MailingLightResponse response = mailingMcpService.copy(sourceId, admin.getCompanyID());
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -147,6 +158,7 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CHANGE);
+        McpActivityContext.current().setObjectId(id);
         return mailingMcpService.patch(id, request, admin);
     }
 
@@ -160,6 +172,7 @@ public class MailingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_DELETE);
+        McpActivityContext.current().setObjectId(id);
         mailingMcpService.delete(id, admin);
     }
 

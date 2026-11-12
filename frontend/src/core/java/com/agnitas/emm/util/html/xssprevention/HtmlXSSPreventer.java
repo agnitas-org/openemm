@@ -10,10 +10,13 @@
 
 package com.agnitas.emm.util.html.xssprevention;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.regex.Pattern;
 
 import net.htmlparser.jericho.Attribute;
 import net.htmlparser.jericho.Attributes;
@@ -23,6 +26,10 @@ import net.htmlparser.jericho.Source;
 import net.htmlparser.jericho.StartTag;
 import net.htmlparser.jericho.Tag;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.owasp.html.HtmlChangeListener;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 /**
  * Code to check a String for forbidden tags and attributes and unclosed / unopened tags.
@@ -37,10 +44,10 @@ public final class HtmlXSSPreventer {
 	/*
 	 * IMPORTANT: Keep this class stateless!!!
 	 */
-	
     private static final String[] ALLOWED_HTML_TAGS = { "u", "i", "b", "sup", "sub", "strong", "em" };
-    
 	private static final Set<String> END_TAG_REQUIRED_ELEMENTS = HTMLElements.getEndTagRequiredElementNames();
+	private static final Pattern TAG_START = Pattern.compile("<[a-zA-Z/!?]");
+	private static final PolicyFactory DEFAULT_POLICY = buildPolicy(ALLOWED_HTML_TAGS);
 
     public static void checkString(final String string) throws XSSHtmlException {
 		checkString(string, ALLOWED_HTML_TAGS);
@@ -50,11 +57,9 @@ public final class HtmlXSSPreventer {
     	if (whitelist == null) {
     		whitelist = ALLOWED_HTML_TAGS;
 		}
-		
 		final Source source = new Source(string);
 		final Stack<String> openedTags = new Stack<>();
 		final Set<HtmlCheckError> errors = new HashSet<>();
-
 		final List<Tag> tags = source.getAllTags();
 
 		// Perform checks on each tag
@@ -67,13 +72,58 @@ public final class HtmlXSSPreventer {
 		}
 		
 		checkUnclosedTags(openedTags, errors);
-		
+
+		// GWUA-7164
+		// Jericho's Source may miss tags that browsers still execute. For example, HTML5
+		// treats '/' after a tag name as whitespace, so <Body/XSS onload=...> is parsed
+		// as <body onload=...>. A second allowlist-based parser catches such discrepancies.
+//		errors.addAll(findSanitizerErrors(string, whitelist));
+
 		// Found at least one error? Throw an exception
 		if(!errors.isEmpty()) {
 			throw new XSSHtmlException(errors);
 		}
 	}
-	
+
+	/**
+	 * Runs the input through the OWASP sanitizer (allowing only the whitelisted tags, no attributes)
+	 * and reports whatever it discards.
+	 */
+	public static Set<HtmlCheckError> findSanitizerErrors(String input, String[] whitelist) {
+		if (!TAG_START.matcher(StringUtils.defaultString(input)).find()) {
+			return Collections.emptySet();
+		}
+		Set<HtmlCheckError> errors = new HashSet<>();
+
+		String sanitized = policyFor(whitelist).sanitize(input, new HtmlChangeListener<>() {
+            @Override
+            public void discardedTag(Set<HtmlCheckError> ctx, String elementName) {
+                ctx.add(new ForbiddenTagError(elementName));
+            }
+            @Override
+            public void discardedAttributes(Set<HtmlCheckError> ctx, String tagName, String... attributeNames) {
+                Arrays.stream(attributeNames)
+                        .forEach(attributeName -> ctx.add(new ForbiddenTagAttributeError(tagName, attributeName)));
+            }
+        }, errors);
+
+		// Regex saw a tag start, sanitizer reported nothing and kept no real tag
+		if (errors.isEmpty() && !TAG_START.matcher(sanitized).find()) {
+			errors.add(new ForbiddenTagError(sanitized));
+		}
+		return errors;
+	}
+
+	private static PolicyFactory policyFor(String[] whitelist) {
+		return whitelist == ALLOWED_HTML_TAGS ? DEFAULT_POLICY : buildPolicy(whitelist);
+	}
+
+	private static PolicyFactory buildPolicy(String[] whitelist) {
+		return new HtmlPolicyBuilder()
+				.allowElements(Arrays.stream(whitelist).map(String::toLowerCase).toArray(String[]::new))
+				.toFactory();
+	}
+
 	// -------------------------------------------------------------------------------------------------------- Start tag related tests
 	private static void checkStartTag(final Tag tag, String[] whitelist, final Stack<String> openedTags, final Set<HtmlCheckError> errors) {
 		openedTags.push(tag.getName());

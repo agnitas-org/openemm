@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.binding.dto.BindingResponse;
 import com.agnitas.emm.mcp.v1.binding.dto.BulkDeleteBindingsRequest;
 import com.agnitas.emm.mcp.v1.binding.dto.BulkDeleteBindingsResponse;
@@ -54,12 +55,16 @@ public class BindingTools {
             description = "Returns a paginated list of mailinglist bindings (recipient subscriptions), optionally filtered"
     )
     public PageResponse<BindingResponse> getList(
-            @Valid ListBindingsFilter filter,
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = "Search filters for bindings. All fields are optional and used only to narrow down results.", required = false)
+            ListBindingsFilter filter,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
-        return bindingMcpService.list(filter, pageable, admin.getCompanyID());
+        return bindingMcpService.list(filter, McpPageable.orDefault(pageable), admin.getCompanyID());
     }
 
     @McpTool(
@@ -74,6 +79,7 @@ public class BindingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
+        McpActivityContext.current().setObjectIdParts("recipientId", recipientId, "mailinglistId", mailinglistId, "mediaType", mediaType);
         return bindingMcpService.getById(recipientId, mailinglistId, mediaType, admin.getCompanyID());
     }
 
@@ -86,7 +92,9 @@ public class BindingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
-        return bindingMcpService.create(request, admin.getCompanyID());
+        BindingResponse response = bindingMcpService.create(request, admin.getCompanyID());
+        McpActivityContext.current().setObjectIdParts("recipientId", response.recipientId(), "mailinglistId", response.mailinglistId(), "mediaType", response.mediaType());
+        return response;
     }
 
     @McpTool(
@@ -102,6 +110,7 @@ public class BindingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
+        McpActivityContext.current().setObjectIdParts("recipientId", recipientId, "mailinglistId", mailinglistId, "mediaType", mediaType);
         return bindingMcpService.patch(recipientId, mailinglistId, mediaType, request, admin.getCompanyID());
     }
 
@@ -117,6 +126,7 @@ public class BindingTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
+        McpActivityContext.current().setObjectIdParts("recipientId", recipientId, "mailinglistId", mailinglistId, "mediaType", mediaType);
         bindingMcpService.delete(recipientId, mailinglistId, mediaType, admin.getCompanyID());
     }
 

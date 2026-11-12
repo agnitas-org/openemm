@@ -194,7 +194,7 @@
                 <div class="tile-header">
                     <h1 class="tile-title text-truncate"><mvc:message code="mailing.settings.target"/></h1>
                 </div>
-                <div class="tile-body js-scrollable grid" style="--bs-columns: 1">
+                <div class="tile-body js-scrollable d-flex flex-column gap-3">
                     <jsp:include page="mailing-targeting-settings.jsp">
                         <jsp:param name="isTabsView" value="${isTabsView}"/>
                     </jsp:include>

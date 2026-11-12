@@ -36,13 +36,13 @@ public record PatchMailingContentCommand(
         );
         content.check(
                 PatchMailingContentCommand::isTargetIdsPositive,
-                DynTagValidationField.CONTENT,
+                DynTagValidationField.TARGET,
                 Message.exact("Invalid negative target ID.")
         );
         content.check(
                 PatchMailingContentCommand::isValidTargetIds,
-                DynTagValidationField.CONTENT,
-                Message.exact("Duplicate target ID. Each block must have a unique target ID. 0 - All recipients.")
+                DynTagValidationField.TARGET,
+                "error.mailing.content.target.duplicated"
         );
     }
 

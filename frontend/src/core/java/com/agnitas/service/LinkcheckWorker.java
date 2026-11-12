@@ -28,7 +28,6 @@ import javax.net.ssl.SSLContext;
 
 import com.agnitas.emm.core.linkcheck.beans.LinkReachability;
 import com.agnitas.util.NetworkUtil;
-import com.agnitas.util.OneOf;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
@@ -134,7 +133,7 @@ public class LinkcheckWorker implements Runnable {
 				try(final CloseableHttpResponse response = httpClient.execute(request)) {
 					final int statusCode = response.getCode();
 					
-					if (OneOf.oneIntOf(statusCode, HttpURLConnection.HTTP_NOT_FOUND, HttpURLConnection.HTTP_GONE))  {
+					if (statusCode == HttpURLConnection.HTTP_NOT_FOUND || statusCode == HttpURLConnection.HTTP_GONE)  {
 						return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
 					}			
 					

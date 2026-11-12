@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.form.dto.CreateFormRequest;
@@ -50,11 +51,13 @@ public class FormTools {
             description = "Returns a paginated list of user forms"
     )
     public PageResponse<FormLightResponse> getList(
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.FORMS_SHOW);
-        return formMcpService.list(pageable, admin.getCompanyID());
+        return formMcpService.list(McpPageable.orDefault(pageable), admin.getCompanyID());
     }
 
     @McpTool(
@@ -67,6 +70,7 @@ public class FormTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.FORMS_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return formMcpService.getById(id, admin.getCompanyID());
     }
 
@@ -81,7 +85,9 @@ public class FormTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.FORMS_CHANGE);
-        return formMcpService.create(request, admin);
+        FormResponse response = formMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -96,6 +102,7 @@ public class FormTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.FORMS_CHANGE);
+        McpActivityContext.current().setObjectId(id);
         return formMcpService.patch(id, request, admin);
     }
 
@@ -109,6 +116,7 @@ public class FormTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.FORMS_DELETE);
+        McpActivityContext.current().setObjectId(id);
         formMcpService.delete(id, admin.getCompanyID());
     }
 

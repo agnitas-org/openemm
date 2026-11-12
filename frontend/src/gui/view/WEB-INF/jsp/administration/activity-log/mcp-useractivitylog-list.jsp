@@ -38,6 +38,7 @@
                         <emm:column titleKey="recipient.Timestamp" property="timestamp" sortable="true" headerClass="fit-content" />
                         <emm:column property="username" titleKey="logon.username" sortable="true" />
                         <emm:column property="toolName" sortProperty="tool_name" titleKey="GWUA.mcpTool" sortable="true" />
+                        <emm:column property="objectId" sortProperty="object_id" titleKey="GWUA.mcpObjectId" sortable="true" />
                         <emm:column property="source" titleKey="GWUA.mcpSource" sortable="true" />
                     </emm:table>
                 </div>
@@ -79,6 +80,12 @@
                 <mvc:message var="mcpTool" code="GWUA.mcpTool" />
                 <label class="form-label" for="filter-tool-name">${mcpTool}</label>
                 <mvc:text id="filter-tool-name" path="toolName" placeholder="${mcpTool}" cssClass="form-control"/>
+            </div>
+
+            <div>
+                <mvc:message var="mcpObjectId" code="GWUA.mcpObjectId" />
+                <label class="form-label" for="filter-object-id">${mcpObjectId}</label>
+                <mvc:text id="filter-object-id" path="objectId" placeholder="${mcpObjectId}" cssClass="form-control"/>
             </div>
 
             <div>

@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-@Order(1)
+@Order(2)
 public class McpXssAspect {
 
     private final McpXssPreventerHelper xssPreventerHelper;

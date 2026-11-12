@@ -8,23 +8,16 @@
 
 */
 
-package com.agnitas.emm.core.commons.database.fulltext.word.impl.mariadb;
+package com.agnitas.emm.rest.v2.recipient;
 
-import org.apache.commons.lang3.Strings;
+import java.util.Map;
 
-public class WordProcessUtils {
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-    private WordProcessUtils() {
-
-    }
-
-    public static boolean isDoubleQuotesEnclosed(String word) {
-        return Strings.CS.startsWith(word, "\"") &&
-                Strings.CS.endsWith(word, "\"");
-    }
-
-    public static boolean isBracketTerms(String word) {
-        return Strings.CS.startsWith(word, "(") &&
-                Strings.CS.endsWith(word, ")");
-    }
-}
+public record BulkUpsertResponse(
+    int total,
+    int succeeded,
+    int failed,
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    Map<String, Integer> errors
+) {}

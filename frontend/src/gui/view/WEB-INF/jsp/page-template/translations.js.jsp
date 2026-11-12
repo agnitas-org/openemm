@@ -3,6 +3,9 @@
 
 window.I18n = {
     error: {
+      imageEditor: {
+        formatNotSupported: '<mvc:message javaScriptEscape="true" code="GWUA.error.imageEditor.formatNotSupported" arguments="%s"/>'
+      },
       workflow: {
         saveActivatedWorkflow: '<mvc:message javaScriptEscape="true" code="error.workflow.SaveActivatedWorkflow"/>',
         wrongMaxRecipientsFormat: '<mvc:message javaScriptEscape="true" code="error.workflow.wrongMaxRecipientsFormat"/>',

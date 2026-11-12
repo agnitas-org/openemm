@@ -12,20 +12,21 @@ package com.agnitas.service;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.agnitas.beans.BaseTrackableLink;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.linkcheck.beans.LinkReachability;
+import com.agnitas.messages.Message;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.Mailing;
-import com.agnitas.messages.Message;
 
 /**
  * Checks availability of links.
@@ -34,80 +35,48 @@ public class LinkcheckService {
 	
 	private static final Logger logger = LogManager.getLogger(LinkcheckService.class);
 	
-	private ConfigService configService;
-	
-	/**
-	 * Checks all links but returns all links, that have not been found. (not reachable or timed out).
-	 * 
-	 * @param linkList list of {@link TrackableLink}s to check
-	 *
-	 * @return list of check results of invalid links
-	 */
-	public List<LinkReachability> checkLinkReachability(Collection<TrackableLink> linkList) {
-		// Check all links...
-		Collection<LinkReachability> checkResults = checkReachability(linkList);
-		
-		// .. and remove links that have been found.
-		List<LinkReachability> filteredResults = new Vector<>();
-		checkResults.stream()
+	private final ConfigService configService;
+
+	public LinkcheckService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	private List<LinkReachability> checkLinkReachability(Collection<TrackableLink> links) {
+		List<String> urls = links.stream()
+				.map(BaseTrackableLink::getFullUrl)
+				.toList();
+
+		return checkReachability(urls)
+				.stream()
 				.filter(result -> result.getReachability() != LinkReachability.Reachability.OK)
-				.forEach(filteredResults::add);
-
-		return filteredResults;
+				.toList();
 	}
-	
-	/**
-	 * This method checks the availability of given list of {@link TrackableLink}s.
-	 * 
-	 * @param linkList of {@link TrackableLink}s to check
-	 *
-	 * @return list of check results
-	 */
-	public Collection<LinkReachability> checkReachability(Collection<TrackableLink> linkList) {
-		// create usual <String> List
-		List<String> checkList = new Vector<>();
 
-		// Convert list of TrackableLinks to list of URLs
-		linkList.forEach(link -> checkList.add(link.getFullUrl()));
+	private List<LinkReachability> checkReachability(List<String> urls) {
+		List<LinkReachability> resultList = Collections.synchronizedList(new ArrayList<>());
+		int linkTimeout = configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout);
+		String userAgent = configService.getValue(ConfigValue.LinkChecker_UserAgent);
 
-		return checkRechability(checkList);
-	}
-	
-	/**	 
-	 * Checks the availability of a list of URLs.
-	 * 
-	 * @param linkList list of URLs to check
-	 * 
-	 * @return list of check results
-	 */
-	public List<LinkReachability> checkRechability(List<String> linkList) {
-		// create Pool
-		ExecutorService linkCheckExecutor = null;
-		List<LinkReachability> resultList = new ArrayList<>();
+		ExecutorService linkCheckExecutor = Executors.newFixedThreadPool(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount));
 		try {
-			linkCheckExecutor = Executors.newFixedThreadPool(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount));
-			
-			final String userAgent = configService.getValue(ConfigValue.LinkChecker_UserAgent);
-			
-			// Execute link checks
-			for (String url : linkList) {
-				linkCheckExecutor.execute(new LinkcheckWorker(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout), url, resultList, userAgent));
+			for (String url : urls) {
+				linkCheckExecutor.execute(new LinkcheckWorker(linkTimeout, url, resultList, userAgent));
 			}
 		} finally {
-			if (linkCheckExecutor != null) {
-				linkCheckExecutor.shutdown();	// no new task are scheduled
-			}
+			linkCheckExecutor.shutdown(); // no new tasks are accepted, already submitted ones keep running
 		}
 
-		if (linkCheckExecutor != null) {
-			try {
-				linkCheckExecutor.awaitTermination((configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout) + 1000), TimeUnit.MILLISECONDS );
-			} catch (InterruptedException e) {
-				logger.error("Error occured: {}", e.getMessage(), e);
-			}
+		try {
+			linkCheckExecutor.awaitTermination(linkTimeout + 1000L, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			logger.warn("Link checking was interrupted", e);
 		}
-		
-		return resultList;
+
+		// Workers that did not finish in time may still add results, so return a snapshot
+		synchronized (resultList) {
+			return new ArrayList<>(resultList);
+		}
 	}
 
 	public SimpleServiceResult checkForUnreachableLinks(Mailing mailing) {
@@ -115,9 +84,8 @@ public class LinkcheckService {
 
 		try {
 			Collection<TrackableLink> links = mailing.getTrackableLinks().values();
-			List<LinkReachability> resultList = checkLinkReachability(links);
 
-			for (LinkReachability availability : resultList) {
+			for (LinkReachability availability : checkLinkReachability(links)) {
 				String argument = availability.getUrl() + " <br>";
 
 				switch (availability.getReachability()) {
@@ -140,12 +108,4 @@ public class LinkcheckService {
 		return new SimpleServiceResult(errors.isEmpty(), errors);
 	}
 
-	/**
-	 * Sets ConfigService for link checker.
-	 * 
-	 * @param configService DAO for link checker
-	 */
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
 }

@@ -10,41 +10,23 @@
 
 package com.agnitas.emm.core.commons.database.configuration;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-
 import javax.sql.DataSource;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.agnitas.util.DbVendor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
+@Component("databaseConfiguration")
 public class DatabaseConfigurationImpl implements DatabaseConfiguration {
 
-    private static final Logger logger = LogManager.getLogger(DatabaseConfigurationImpl.class);
+    private final DbVendor dbVendor;
 
-    private static final String ORACLE = "oracle";
-
-    private String vendor;
-
-    public DatabaseConfigurationImpl(DataSource dataSource) {
-        try(Connection connection = dataSource.getConnection()) {
-            if (connection != null) {
-                DatabaseMetaData metaData = connection.getMetaData();
-                vendor = metaData.getDatabaseProductName();
-            }
-        } catch (SQLException e) {
-            logger.error("Unable to obtain database connection.");
-        }
+    public DatabaseConfigurationImpl(@Qualifier("dataSource") DataSource dataSource) {
+        this.dbVendor = DbVendor.getDbVendor(dataSource);
     }
 
     @Override
-    public String getVendor() {
-        return vendor;
-    }
-
-    @Override
-    public boolean isOracle() {
-        return ORACLE.equalsIgnoreCase(vendor);
+    public DbVendor getDbVendor() {
+        return dbVendor;
     }
 }

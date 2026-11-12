@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.mailing.links;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailing.links.dto.PatchMailingLinkRequest;
@@ -44,11 +45,14 @@ public class MailingLinkTools {
     )
     public PageResponse<MailingLinkResponse> getList(
             @McpToolParam(description = "Mailing ID") @Positive int mailingId,
-            @Valid McpPageable request,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable request,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
-        return linkService.list(mailingId, request, admin.getCompanyID());
+        McpActivityContext.current().setObjectId(mailingId);
+        return linkService.list(mailingId, McpPageable.orDefault(request), admin.getCompanyID());
     }
 
     @McpTool(
@@ -62,6 +66,7 @@ public class MailingLinkTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "linkId", linkId);
         return linkService.getById(linkId, mailingId, admin.getCompanyID());
     }
 
@@ -77,6 +82,7 @@ public class MailingLinkTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "linkId", linkId);
         return linkService.patch(linkId, mailingId, request, admin);
     }
 

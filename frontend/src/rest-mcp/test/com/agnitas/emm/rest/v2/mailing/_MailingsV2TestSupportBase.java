@@ -262,7 +262,7 @@ public abstract class _MailingsV2TestSupportBase extends RestDocsTestSupport {
                 optionalParam("sort", "Supported %s".formatted(SortEnum.allowedValues(MailingSortKey.class))),
                 optionalParam("name", "Filter name"),
                 optionalParam("mailinglistIds", "Filter Mailinglist IDs"),
-                optionalParam("types", "CSV. %s".formatted(RestEnumAllowedValues.MAILING_TYPES))};
+                optionalParam("types", "Comma-Separated Values. %s".formatted(RestEnumAllowedValues.MAILING_TYPES))};
     }
 
     ResultHandler documentFind() {

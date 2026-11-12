@@ -37,6 +37,8 @@ public interface MailinglistService {
 
     Mailinglist getMailinglist(int id, int companyId);
 
+    void validateExistsAndEnabled(int mailinglistId, Admin admin);
+
     Mailinglist getOrNull(int id, int companyId);
 
 	boolean exist(int mailinglistId, int companyId);

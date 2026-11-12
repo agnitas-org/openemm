@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.mailinglist;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.mailinglist.dto.CreateMailinglistRequest;
@@ -48,11 +49,13 @@ public class MailinglistTools {
             description = "Returns a paginated list of mailinglists"
     )
     public PageResponse<MailinglistResponse> getList(
-            @Valid McpPageable request,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable request,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILINGLIST_SHOW);
-        return mailinglistMcpService.list(request, admin.getCompanyID());
+        return mailinglistMcpService.list(McpPageable.orDefault(request), admin.getCompanyID());
     }
 
     @McpTool(
@@ -65,6 +68,7 @@ public class MailinglistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILINGLIST_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return mailinglistMcpService.getById(id, admin.getCompanyID());
     }
 
@@ -78,7 +82,9 @@ public class MailinglistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILINGLIST_CHANGE);
-        return mailinglistMcpService.create(request, admin.getCompanyID());
+        MailinglistResponse response = mailinglistMcpService.create(request, admin.getCompanyID());
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -92,6 +98,7 @@ public class MailinglistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILINGLIST_CHANGE);
+        McpActivityContext.current().setObjectId(id);
         return mailinglistMcpService.patch(id, request, admin.getCompanyID());
     }
 
@@ -105,6 +112,7 @@ public class MailinglistTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILINGLIST_DELETE);
+        McpActivityContext.current().setObjectId(id);
         mailinglistMcpService.delete(id, admin);
     }
 

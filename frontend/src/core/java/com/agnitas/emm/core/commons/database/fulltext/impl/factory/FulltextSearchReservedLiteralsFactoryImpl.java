@@ -10,13 +10,31 @@
 
 package com.agnitas.emm.core.commons.database.fulltext.impl.factory;
 
+import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
 import com.agnitas.emm.core.commons.database.fulltext.impl.MariaDBFulltextSearchReservedLiteralsConfig;
+import com.agnitas.emm.core.commons.database.fulltext.impl.PostgreSQLFulltextSearchReservedLiteralsConfig;
+import org.springframework.stereotype.Component;
 
+@Component("fulltextSearchReservedLiteralsFactory")
 public class FulltextSearchReservedLiteralsFactoryImpl implements FulltextSearchReservedLiteralsFactory {
+
+    private final DatabaseConfiguration databaseConfiguration;
+
+    public FulltextSearchReservedLiteralsFactoryImpl(DatabaseConfiguration databaseConfiguration) {
+        this.databaseConfiguration = databaseConfiguration;
+    }
 
     @Override
     public FulltextSearchReservedLiteralsConfig createdReservedLiteralsConfig() {
-        return new MariaDBFulltextSearchReservedLiteralsConfig();
+        return switch (databaseConfiguration.getDbVendor()) {
+            case MARIADB -> new MariaDBFulltextSearchReservedLiteralsConfig();
+            case POSTGRES -> new PostgreSQLFulltextSearchReservedLiteralsConfig();
+            case ORACLE -> createOracleReservedLiteralsConfig();
+        };
+    }
+
+    protected FulltextSearchReservedLiteralsConfig createOracleReservedLiteralsConfig() {
+        throw new UnsupportedOperationException("Oracle is not supported");
     }
 }

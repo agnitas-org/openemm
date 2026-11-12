@@ -17,6 +17,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.target.dto.TargetInclude;
 import com.agnitas.emm.core.target.validation.TargetGroupConstraints;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.target.dto.CreateTargetGroupRequest;
@@ -53,7 +54,9 @@ public class TargetGroupTools {
             description = "Returns a paginated list of target groups"
     )
     public PageResponse<TargetGroupLightResponse> getList(
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @McpToolParam(
                     description = "Optional extra fields to include in each target. "
                             + "Allowed values: recipientCount (number of recipients; expensive to calculate, "
@@ -65,7 +68,7 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_SHOW);
-        return targetGroupMcpService.list(pageable, include, admin);
+        return targetGroupMcpService.list(McpPageable.orDefault(pageable), include, admin);
     }
 
     @McpTool(
@@ -86,6 +89,7 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return targetGroupMcpService.getById(id, include, admin);
     }
 
@@ -99,7 +103,9 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_CHANGE);
-        return targetGroupMcpService.create(request, admin);
+        TargetGroupResponse response = targetGroupMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -113,6 +119,7 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_CHANGE);
+        McpActivityContext.current().setObjectId(id);
         return targetGroupMcpService.patch(id, request, admin);
     }
 
@@ -126,6 +133,7 @@ public class TargetGroupTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.TARGETS_DELETE);
+        McpActivityContext.current().setObjectId(id);
         targetGroupMcpService.delete(id, admin);
     }
 

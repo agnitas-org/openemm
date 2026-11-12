@@ -10,7 +10,11 @@
 
 package com.agnitas.emm.core.useractivitylog.bean;
 
+import java.util.Date;
+
 public record McpToolAction(
     String toolName,
-    String source
+    String source,
+    String objectId,
+    Date timestamp
 ) {}

@@ -15,6 +15,7 @@ import java.util.Map;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
@@ -52,11 +53,13 @@ public class TriggerTools {
             description = "Returns a paginated list of triggers"
     )
     public PageResponse<TriggerLightResponse> getList(
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ACTIONS_SHOW);
-        return triggerMcpService.list(pageable, admin.getCompanyID());
+        return triggerMcpService.list(McpPageable.orDefault(pageable), admin.getCompanyID());
     }
 
     @McpTool(
@@ -69,6 +72,7 @@ public class TriggerTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ACTIONS_SHOW);
+        McpActivityContext.current().setObjectId(id);
         return triggerMcpService.getById(id, admin);
     }
 
@@ -83,7 +87,9 @@ public class TriggerTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ACTIONS_CHANGE);
-        return triggerMcpService.create(request, admin);
+        TriggerResponse response = triggerMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -98,6 +104,7 @@ public class TriggerTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ACTIONS_CHANGE);
+        McpActivityContext.current().setObjectId(id);
         return triggerMcpService.patch(id, request, admin);
     }
 
@@ -112,6 +119,7 @@ public class TriggerTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ACTIONS_SHOW);
+        McpActivityContext.current().setObjectId(id);
         triggerMcpService.execute(id, admin.getCompanyID(), fields);
     }
 
@@ -125,6 +133,7 @@ public class TriggerTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ACTIONS_DELETE);
+        McpActivityContext.current().setObjectId(id);
         triggerMcpService.delete(id, admin.getCompanyID());
     }
 

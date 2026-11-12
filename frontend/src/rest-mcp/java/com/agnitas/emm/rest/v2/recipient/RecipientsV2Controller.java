@@ -11,11 +11,8 @@
 package com.agnitas.emm.rest.v2.recipient;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.BulkDeleteRequest;
@@ -25,9 +22,6 @@ import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
 import com.agnitas.emm.rest.v2.infrastructure.security.auth.PermissionAllowed;
 import com.agnitas.emm.rest.v2.infrastructure.security.xss.XssCheckLocation;
 import com.agnitas.emm.rest.v2.infrastructure.security.xss.XssExclude;
-import com.agnitas.emm.rest.v2.recipient.dto.BulkUpsertResponse;
-import com.agnitas.emm.rest.v2.recipient.dto.Groups;
-import com.agnitas.emm.rest.v2.recipient.dto.RecipientSubscribeRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Positive;
@@ -41,15 +35,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/recipients")
 public class RecipientsV2Controller {
-
-    private static final Set<String> PAGINATION_PARAMS = Set.of("page", "size", "sort");
 
     private final RecipientRestService recipientRestService;
 
@@ -61,24 +52,16 @@ public class RecipientsV2Controller {
     @PermissionAllowed("recipient.show")
     public PageResponse<Map<String, Object>> list(
             Pageable pageable,
-            @RequestParam Map<String, String> allParams,
+            @Valid ListRecipientsRequest request,
             Admin admin
     ) {
-        Map<String, String> fieldFilters = allParams.entrySet().stream()
-                .filter(entry -> !PAGINATION_PARAMS.contains(entry.getKey()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (oldValue, newValue) -> newValue,
-                        LinkedHashMap::new
-                ));
-        return recipientRestService.list(pageable, fieldFilters, admin);
+        return recipientRestService.list(request, pageable, admin);
     }
 
     @GetMapping("/ids")
     @PermissionAllowed("recipient.show")
-    public List<Integer> listIds(Admin admin, @RequestParam Map<String, String> filters) {
-        return recipientRestService.listIds(filters, admin);
+    public List<Integer> listIds(@Valid ListRecipientsRequest request, Admin admin) {
+        return recipientRestService.listIds(request, admin);
     }
 
     @GetMapping("/{id:\\d+}")

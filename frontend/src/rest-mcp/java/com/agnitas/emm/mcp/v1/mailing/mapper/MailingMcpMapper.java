@@ -81,8 +81,8 @@ public interface MailingMcpMapper extends McpMapper {
     MailingLightResponse toLightResponse(Mailing mailing);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-    @Mapping(target = "statuses", expression = "java(mapStatuses(query.statuses()))")
-    @Mapping(target = "types", expression = "java(mapTypes(query.types()))")
+    @Mapping(target = "statuses", expression = "java(mapStatuses(query == null ? null : query.statuses()))")
+    @Mapping(target = "types", expression = "java(mapTypes(query == null ? null : query.types()))")
     @Mapping(source = "pageable.size", target = "rownums")
     @Mapping(source = "query.name", target = "searchNameStr")
     @Mapping(source = "query.mailinglistIds", target = "mailingLists")

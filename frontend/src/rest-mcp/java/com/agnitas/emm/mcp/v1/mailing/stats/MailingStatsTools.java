@@ -13,6 +13,7 @@ package com.agnitas.emm.mcp.v1.mailing.stats;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.mailing.stats.dto.MailingStatsResponse;
 import com.agnitas.emm.mcp.v1.mailing.stats.service.MailingStatsMcpService;
 import jakarta.validation.constraints.Positive;
@@ -44,6 +45,7 @@ public class MailingStatsTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.STATS_SHOW);
+        McpActivityContext.current().setObjectId(mailingId);
         return statsService.getStats(mailingId, admin);
     }
 

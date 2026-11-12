@@ -10,20 +10,35 @@
 
 package com.agnitas.emm.core.commons.database.fulltext.operator.factory;
 
-import java.util.HashMap;
 import java.util.Map;
 
+import com.agnitas.emm.core.commons.database.configuration.DatabaseConfiguration;
 import com.agnitas.emm.core.commons.database.fulltext.operator.Operator;
 import com.agnitas.emm.core.commons.database.fulltext.operator.impl.mariadb.MariaDBConjunction;
 import com.agnitas.emm.core.commons.database.fulltext.operator.impl.mariadb.MariaDBDisjunction;
+import com.agnitas.emm.core.commons.database.fulltext.operator.impl.postgresql.PostgreSQLConjunction;
+import com.agnitas.emm.core.commons.database.fulltext.operator.impl.postgresql.PostgreSQLDisjunction;
+import org.springframework.stereotype.Component;
 
+@Component("operatorFactory")
 public class OperatorFactoryImpl implements OperatorFactory {
+
+    private final DatabaseConfiguration databaseConfiguration;
+
+    public OperatorFactoryImpl(DatabaseConfiguration databaseConfiguration) {
+        this.databaseConfiguration = databaseConfiguration;
+    }
 
     @Override
     public Map<String, Operator> createOperators() {
-        Map<String, Operator> operators = new HashMap<>();
-        operators.put("+", new MariaDBConjunction());
-        operators.put(" ", new MariaDBDisjunction());
-        return operators;
+        return switch (databaseConfiguration.getDbVendor()) {
+            case MARIADB -> Map.of("+", new MariaDBConjunction(), " ", new MariaDBDisjunction());
+            case POSTGRES -> Map.of("+", new PostgreSQLConjunction(), " ", new PostgreSQLDisjunction());
+            case ORACLE -> createOracleOperators();
+        };
+    }
+
+    protected Map<String, Operator> createOracleOperators() {
+        throw new UnsupportedOperationException("Oracle is not supported");
     }
 }

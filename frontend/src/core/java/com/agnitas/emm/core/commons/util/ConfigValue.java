@@ -580,8 +580,9 @@ public class ConfigValue {
 	public static final ConfigValue TextGeneratorModel = new ConfigValue("TextGeneratorModel", "gpt-5-mini");
 
 	public static final ConfigValue AiSupportChatBotApiKey = new ConfigValue("system.AiSupportChatBotApiKey");
-	public static final ConfigValue AiSupportChatBotPromptId = new ConfigValue("system.AiSupportChatBotPromptId");
-	public static final ConfigValue AiSupportChatBotPromptVersion = new ConfigValue("system.AiSupportChatBotPromptVersion");
+	public static final ConfigValue AiSupportChatBotPrompt = new ConfigValue("system.AiSupportChatBotPrompt");
+	public static final ConfigValue AiSupportChatBotModel = new ConfigValue("system.AiSupportChatBotModel");
+	public static final ConfigValue AiSupportChatBotVectorStoreId = new ConfigValue("system.AiSupportChatBotVectorStoreId");
 	/**
 	 * Maximum number of messages to fetch from OpenAI when loading chat history.
 	 * Note: OpenAI API allows a maximum of 100 messages per request.

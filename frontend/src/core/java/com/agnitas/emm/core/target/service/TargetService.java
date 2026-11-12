@@ -229,6 +229,8 @@ public interface TargetService {
 
     boolean exist(int targetId, int companyId);
 
+	void validateExistsAndEnabled(int targetId, Admin admin);
+
     boolean isEqlContainsInvisibleFields(String eql, int companyId, int adminId);
 
 	boolean isValid(int companyId, int targetId);

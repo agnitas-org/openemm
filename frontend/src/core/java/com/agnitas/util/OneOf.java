@@ -16,16 +16,6 @@ public final class OneOf {
 
 	}
 
-	public static final boolean oneIntOf(final int value, final int... values) {
-		for(int i : values) {
-			if(value == i) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-
 	@SafeVarargs
 	public static final <T> boolean oneObjectOf(final T value, final T... values) {
 		for(final T t : values) {

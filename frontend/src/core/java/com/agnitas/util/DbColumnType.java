@@ -183,4 +183,21 @@ public class DbColumnType {
             default -> throw new IllegalArgumentException("Invalid dbtype:" + beanTypeString);
         };
 	}
+
+	public boolean isDateOrDateTime() {
+		SimpleDataType type = getSimpleDataType();
+		return type == SimpleDataType.Date || type == SimpleDataType.DateTime;
+	}
+
+	public static boolean isDate(String type) {
+		return GENERIC_TYPE_DATE.equals(type);
+	}
+
+	public static boolean isDateTime(String type) {
+		return GENERIC_TYPE_DATETIME.equals(type);
+	}
+
+	public static boolean isDateOrDateTime(String type) {
+		return isDate(type) || isDateTime(type);
+	}
 }

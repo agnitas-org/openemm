@@ -26,6 +26,7 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.impl.RecipientLiteImpl;
 import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.validation.DeleteCheck;
 import com.agnitas.emm.core.commons.validation.DeleteResult;
@@ -225,9 +226,13 @@ public interface RecipientService {
 
 	DeleteCheck canBeDeleted(int id, Admin admin);
 
-	List<Map<String, Object>> list(Map<String, String> fieldFilters, Admin admin);
+	PaginatedList<RecipientDto> list(
+			RecipientSearchParamsDto searchParams,
+			PaginatedFilter<String> pagination,
+			Admin admin
+	);
 
-	List<Integer> getRecipientIds(Map<String, String> fieldFilters, Admin admin);
+	List<Integer> listIds(RecipientSearchParamsDto searchParams, Admin admin);
 
     Map<String, Object> getVisibleFieldValues(String email, Admin admin);
 

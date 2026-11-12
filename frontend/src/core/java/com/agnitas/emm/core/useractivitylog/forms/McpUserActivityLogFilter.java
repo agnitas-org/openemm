@@ -18,6 +18,7 @@ public class McpUserActivityLogFilter extends UserActivityLogFilterBase {
 
     private String source;
     private String toolName;
+    private String objectId;
 
     public String getSource() {
         return source;
@@ -35,17 +36,26 @@ public class McpUserActivityLogFilter extends UserActivityLogFilterBase {
         this.toolName = toolName;
     }
 
+    public String getObjectId() {
+        return objectId;
+    }
+
+    public void setObjectId(String objectId) {
+        this.objectId = objectId;
+    }
+
     @Override
     public Map<String, Object> toMap() {
         Map<String, Object> map = super.toMap();
         map.put("toolName", toolName);
         map.put("source", source);
+        map.put("objectId", objectId);
 
         return map;
     }
 
     @Override
     public boolean isUiFiltersSet() {
-        return isNotBlank(source) || isNotBlank(toolName) || super.isUiFiltersSet();
+        return isNotBlank(source) || isNotBlank(toolName) || isNotBlank(objectId) || super.isUiFiltersSet();
     }
 }

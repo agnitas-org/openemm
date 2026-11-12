@@ -17,15 +17,18 @@ import java.util.regex.Pattern;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkDeleteRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkDeleteRecipientsResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkUpsertRecipientsResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.CreateRecipientRequest;
+import com.agnitas.emm.mcp.v1.recipient.dto.ListRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.UpdateRecipientRequest;
 import com.agnitas.emm.mcp.v1.recipient.service.RecipientMcpService;
 import jakarta.validation.Valid;
@@ -44,8 +47,8 @@ public class RecipientTools {
     // e.g. request.fields.email or request.recipients[0].email
     private static final Pattern RECIPIENT_FIELD_PATH = Pattern.compile("request\\.(?:fields|recipients\\[\\d+])\\.([^.\\[]+)");
     private static final String ID_DESCRIPTION = "Recipient ID. Provide exactly one of recipientId or email.";
+    private static final String LIST_FILTER_DESCRIPTION = "Search filters for recipients. All fields are optional; omit to list all recipients.";
     private static final String EMAIL_DESCRIPTION = "Recipient email. Provide exactly one of recipientId or email.";
-    private static final String LIST_FILTER_DESCRIPTION = "Filters recipients by exact field value, e.g. {\"email\": \"foo@example.com\"}";
 
     private final RecipientMcpService recipientMcpService;
     private final McpAdminProvider adminProvider;
@@ -61,31 +64,45 @@ public class RecipientTools {
     @McpTool(
             name = "get_recipients",
             annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
-            description = "Returns a paginated list of recipients. Supports filtering by exact field values (e.g. email)."
+            description =
+                    """
+                    Returns a paginated list of recipients. \
+                    All filters are optional and combined with AND: mailing list, target group, subscription status, \
+                    recipient types, and an EQL expression.
+                    """
     )
     public PageResponse<Map<String, Object>> getList(
+            @Valid
             @McpToolParam(description = LIST_FILTER_DESCRIPTION, required = false)
-            Map<String, String> filters,
+            ListRecipientsRequest request,
 
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
-        return recipientMcpService.list(filters, pageable, admin);
+        return recipientMcpService.list(request, McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
             name = "get_recipient_ids",
             annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false),
-            description = "Returns an array of recipient IDs. Supports filtering by exact field values (e.g. email)."
+            description =
+                    """
+                    Returns an array of recipient IDs. \
+                    All filters are optional and combined with AND: mailing list, target group, subscription status, \
+                    recipient types, and an EQL expression.
+                    """
     )
     public List<Integer> getIdsList(
+            @Valid
             @McpToolParam(description = LIST_FILTER_DESCRIPTION, required = false)
-            Map<String, String> filters,
+            ListRecipientsRequest request,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
-        return recipientMcpService.listIds(filters, admin);
+        return recipientMcpService.listIds(request, admin);
     }
 
     @McpTool(
@@ -99,6 +116,7 @@ public class RecipientTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_SHOW);
+        McpActivityContext.current().setObjectId(recipientId, email);
         return recipientMcpService.get(recipientId, email, admin);
     }
 
@@ -113,7 +131,12 @@ public class RecipientTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CREATE);
-        return recipientMcpService.create(request, admin);
+        Map<String, Object> response = recipientMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(
+                response.get(RecipientStandardField.CustomerID.getColumnName()),
+                request.fields().get(RecipientStandardField.Email.getColumnName())
+        );
+        return response;
     }
 
     @McpTool(
@@ -129,6 +152,7 @@ public class RecipientTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_CHANGE);
+        McpActivityContext.current().setObjectId(recipientId, email);
         return recipientMcpService.update(recipientId, email, request, admin);
     }
 
@@ -143,6 +167,7 @@ public class RecipientTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.RECIPIENT_DELETE);
+        McpActivityContext.current().setObjectId(recipientId, email);
         recipientMcpService.delete(recipientId, email, admin);
     }
 

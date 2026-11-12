@@ -19,22 +19,23 @@ import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Recipient;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.validation.DeleteResult;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.recipient.dto.BulkUpsertRecipientCommand;
 import com.agnitas.emm.core.recipient.dto.CreateRecipientCommand;
+import com.agnitas.emm.core.recipient.dto.RecipientDto;
+import com.agnitas.emm.core.recipient.dto.RecipientSearchParamsDto;
 import com.agnitas.emm.core.recipient.dto.Subscription;
 import com.agnitas.emm.core.recipient.dto.UpdateRecipientCommand;
 import com.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.BulkDeleteResult;
 import com.agnitas.emm.rest.v2.infrastructure.bulk.BulkOperationResponse;
 import com.agnitas.emm.rest.v2.infrastructure.exception.HttpStatusException;
 import com.agnitas.emm.rest.v2.infrastructure.search.PageResponse;
-import com.agnitas.emm.rest.v2.recipient.dto.BulkUpsertResponse;
-import com.agnitas.emm.rest.v2.recipient.dto.RecipientSubscribeRequest;
 import com.agnitas.util.AgnUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,15 +46,18 @@ class RecipientRestService {
     private final RecipientService recipientService;
     private final ConfigService configService;
     private final MailinglistService mailinglistService;
+    private final RecipientsRestMapper mapper;
 
     public RecipientRestService(
             RecipientService recipientService,
             ConfigService configService,
-            MailinglistService mailinglistService
+            MailinglistService mailinglistService,
+            RecipientsRestMapper mapper
     ) {
         this.recipientService = recipientService;
         this.configService = configService;
         this.mailinglistService = mailinglistService;
+        this.mapper = mapper;
     }
 
     public Map<String, Object> find(String email, Admin admin) {
@@ -150,9 +154,16 @@ class RecipientRestService {
         )));
     }
 
-    public PageResponse<Map<String, Object>> list(Pageable pageable, Map<String, String> fieldFilters, Admin admin) {
-        List<Map<String, Object>> fullList = recipientService.list(fieldFilters, admin);
-        return PageResponse.of(fullList, pageable.getPageNumber(), pageable.getPageSize());
+    public PageResponse<Map<String, Object>> list(ListRecipientsRequest request, Pageable pageable, Admin admin) {
+        RecipientSearchParamsDto searchParams = mapper.toDto(request);
+        PaginatedFilter<String> pagination = mapper.toPagination(pageable);
+        PaginatedList<RecipientDto> list = recipientService.list(searchParams, pagination, admin);
+        return mapper.toPageResponse(list, RecipientDto::getParameters);
+    }
+
+    public List<Integer> listIds(ListRecipientsRequest request, Admin admin) {
+        RecipientSearchParamsDto searchParams = mapper.toDto(request);
+        return recipientService.listIds(searchParams, admin);
     }
 
     private List<Integer> detectMailinglistsToSubscribe(RecipientSubscribeRequest request, Admin admin) {
@@ -173,13 +184,5 @@ class RecipientRestService {
                 includeStatus ? request.status() : null,
                 "Set by %s via restful".formatted(admin.getUsername())
         );
-    }
-
-    public List<Integer> listIds(Map<String, String> filters, Admin admin) {
-        List<Integer> ids = recipientService.getRecipientIds(filters, admin);
-        if (ids.size() > 1000) {
-            throw ValidationException.exact("Too many matching recipients found (%d). Add filter.".formatted(ids.size()));
-        }
-        return ids;
     }
 }

@@ -21,11 +21,12 @@ import com.agnitas.emm.mcp.v1.recipient.dto.BulkDeleteRecipientsResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkUpsertRecipientsResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.CreateRecipientRequest;
+import com.agnitas.emm.mcp.v1.recipient.dto.ListRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.UpdateRecipientRequest;
 
 public interface RecipientMcpService {
 
-    PageResponse<Map<String, Object>> list(Map<String, String> filters, McpPageable pageable, Admin admin);
+    PageResponse<Map<String, Object>> list(ListRecipientsRequest request, McpPageable pageable, Admin admin);
 
     Map<String, Object> get(Integer recipientId, String email, Admin admin);
 
@@ -43,5 +44,5 @@ public interface RecipientMcpService {
 
     boolean isAllowedToUseHtml(String columnName, Admin admin);
 
-    List<Integer> listIds(Map<String, String> filters, Admin admin);
+    List<Integer> listIds(ListRecipientsRequest request, Admin admin);
 }

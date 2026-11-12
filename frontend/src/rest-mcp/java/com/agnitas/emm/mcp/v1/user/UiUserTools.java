@@ -14,6 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.common.dto.McpPageable;
 import com.agnitas.emm.mcp.v1.common.dto.PageResponse;
 import com.agnitas.emm.mcp.v1.user.dto.CreateUiUserRequest;
@@ -50,11 +51,13 @@ public class UiUserTools {
             description = "Returns a paginated list of EMM UI users (administrators/operators of this EMM instance, not recipients)"
     )
     public PageResponse<UiUserLightResponse> getList(
-            @Valid McpPageable pageable,
+            @Valid
+            @McpToolParam(description = McpPageable.PARAM_DESCRIPTION, required = false)
+            McpPageable pageable,
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ADMIN_SHOW);
-        return uiUserMcpService.list(pageable, admin);
+        return uiUserMcpService.list(McpPageable.orDefault(pageable), admin);
     }
 
     @McpTool(
@@ -68,6 +71,7 @@ public class UiUserTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ADMIN_SHOW);
+        McpActivityContext.current().setObjectId(userId, username);
         return uiUserMcpService.get(userId, username, admin.getCompanyID());
     }
 
@@ -82,7 +86,9 @@ public class UiUserTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ADMIN_NEW);
-        return uiUserMcpService.create(request, admin);
+        UiUserResponse response = uiUserMcpService.create(request, admin);
+        McpActivityContext.current().setObjectId(response.id());
+        return response;
     }
 
     @McpTool(
@@ -98,6 +104,7 @@ public class UiUserTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ADMIN_CHANGE);
+        McpActivityContext.current().setObjectId(userId, username);
         return uiUserMcpService.patch(userId, username, request, admin);
     }
 
@@ -112,6 +119,7 @@ public class UiUserTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.ADMIN_DELETE);
+        McpActivityContext.current().setObjectId(userId, username);
         uiUserMcpService.delete(userId, username, admin.getCompanyID());
     }
 

@@ -477,7 +477,10 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 
 	protected void deleteReportParameters(BirtReport report, List<Integer> skipReportSettings) {
 		try {
-			String deletionSql = "DELETE FROM birtreport_parameter_tbl WHERE report_id = ?";
+			// Delete only known report types: parameters of report types added in newer versions
+			// (the same database can be shared by several versions) must be kept untouched
+			String deletionSql = "DELETE FROM birtreport_parameter_tbl WHERE report_id = ?"
+					+ " AND report_type IN (" + joinForIN(ReportSettingsType.keys()) + ")";
 			if (CollectionUtils.isNotEmpty(skipReportSettings)) {
 				deletionSql += " AND report_type NOT IN (" + joinForIN(skipReportSettings) + ")" ;
 			}
@@ -559,10 +562,12 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 
 		try {
 			for (Map<String, Object> row : list) {
-				String parameterName = (String) row.get("parameter_name");
-				Object parameterValue = row.get("parameter_value");
-				ReportSettingsType reportSettingsType = ReportSettingsType.getTypeByCode(((Number) row.get("report_type")).intValue());
-				report.setSettingParameter(reportSettingsType, parameterName, parameterValue);
+				ReportSettingsType.findByCode(((Number) row.get("report_type")).intValue())
+						.ifPresent(type -> {
+							String parameterName = (String) row.get("parameter_name");
+							Object parameterValue = row.get("parameter_value");
+							report.setSettingParameter(type, parameterName, parameterValue);
+						});
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);

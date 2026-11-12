@@ -538,7 +538,6 @@
 		<property name="bindingService" ref="bindingService"/>
 		<property name="bindingEntryFactory" ref="BindingEntryFactory"/>
 		<property name="conversionService" ref="conversionService"/>
-		<property name="mailinglistDao" ref="MailinglistDao"/>
 		<property name="subscriberLimitCheck" ref="SubscriberLimitCheck" />
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
         <property name="recipientModelValidator" ref="recipientModelValidator"/>
@@ -777,7 +776,7 @@
 <!-- ============================================================================================================================== Misc. -->
 
 	<bean id="linkcheckService" class="com.agnitas.service.LinkcheckService" >
-		<property name="configService" ref="ConfigService" />
+		<constructor-arg ref="ConfigService" />
 	</bean>
 
 	<bean id="MimeTypeService" class="com.agnitas.service.MimeTypeService" />
@@ -1028,9 +1027,7 @@
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
-	<bean id="ThumbnailService" class="com.agnitas.emm.core.thumbnails.service.ThumbnailServiceImpl">
-		<property name="mailingComponentDao" ref="MailingComponentDao" />
-	</bean>
+	<bean id="ThumbnailService" class="com.agnitas.emm.core.thumbnails.service.ThumbnailServiceImpl" />
 	
 	<bean id="RecipientFieldsCache" class="com.agnitas.emm.core.service.impl.RecipientFieldsCacheImpl">
 		<constructor-arg ref="ConfigService" />

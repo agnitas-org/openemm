@@ -8,9 +8,10 @@
 
 */
 
-package com.agnitas.emm.rest.v2.recipient.dto;
+ALTER TABLE mcp_usage_log_tbl ADD COLUMN object_id VARCHAR(1000);
+COMMENT ON COLUMN mcp_usage_log_tbl.object_id IS 'Identifier of the object the MCP tool was applied to (ID, name/email or composite key)';
 
-public interface Groups {
-    interface Single {}
-    interface Bulk {}
-}
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+VALUES ('26.10.199', CURRENT_USER, CURRENT_TIMESTAMP);
+
+COMMIT;

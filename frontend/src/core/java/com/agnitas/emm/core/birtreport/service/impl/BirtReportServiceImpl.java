@@ -427,9 +427,8 @@ public class BirtReportServiceImpl implements BirtReportService {
             return new ArrayList<>();
         }
 
-        final List<BirtReport> reportsList = birtReportDao.getReportsToSend(includedCompanyIds, excludedCompanyIds);
         List<BirtReport> reportsToSend = new ArrayList<>();
-        for (BirtReport birtReport : reportsList) {
+        for (BirtReport birtReport : birtReportDao.getReportsToSend(includedCompanyIds, excludedCompanyIds)) {
             if (reportsToSend.size() < maximumNumberOfReports) {
                 if (checkReportToSend(birtReport)) {
                     reportsToSend.add(birtReport);
@@ -492,8 +491,10 @@ public class BirtReportServiceImpl implements BirtReportService {
                 birtReport.setSettingParameter(ReportSettingsType.COMPARISON, BirtReportSettingsUtils.Properties.CONVERSION_RATE.getPropName(), false);
             }
 
-            if (!AgnUtils.isMailTrackingAvailable(admin) && ReportSettingsType.getTypeByCode(birtReport.getActiveTab()).isMailTrackingRequired()) {
-                birtReport.setActiveTab(ReportSettingsType.COMPARISON.getKey());
+            if (!AgnUtils.isMailTrackingAvailable(admin)) {
+                ReportSettingsType.findByCode(birtReport.getActiveTab())
+                        .filter(ReportSettingsType::isMailTrackingRequired)
+                        .ifPresent(t -> birtReport.setActiveTab(ReportSettingsType.COMPARISON.getKey()));
             }
         }
 
@@ -685,7 +686,8 @@ public class BirtReportServiceImpl implements BirtReportService {
 
         return conversionService.convert(values, Object.class, Boolean.class).stream()
                 .filter(BooleanUtils::isTrue)
-                .findFirst().orElse(false);
+                .findFirst()
+                .orElse(false);
     }
 
     @Override

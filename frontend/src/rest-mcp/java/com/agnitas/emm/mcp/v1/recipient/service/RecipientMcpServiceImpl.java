@@ -18,12 +18,16 @@ import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Recipient;
+import com.agnitas.emm.core.commons.pagination.PaginatedFilter;
 import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.validation.DeleteResult;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.recipient.dto.BulkUpsertRecipientCommand;
 import com.agnitas.emm.core.recipient.dto.CreateRecipientCommand;
+import com.agnitas.emm.core.recipient.dto.RecipientDto;
+import com.agnitas.emm.core.recipient.dto.RecipientSearchParamsDto;
 import com.agnitas.emm.core.recipient.dto.Subscription;
 import com.agnitas.emm.core.recipient.dto.UpdateRecipientCommand;
 import com.agnitas.emm.core.recipient.exception.RecipientNotExistException;
@@ -37,10 +41,12 @@ import com.agnitas.emm.mcp.v1.recipient.dto.BulkRecipientSubscriptionRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.BulkUpsertRecipientsResponse;
 import com.agnitas.emm.mcp.v1.recipient.dto.CreateRecipientRequest;
+import com.agnitas.emm.mcp.v1.recipient.dto.ListRecipientsRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.RecipientDeleteResult;
 import com.agnitas.emm.mcp.v1.recipient.dto.RecipientSubscriptionRequest;
 import com.agnitas.emm.mcp.v1.recipient.dto.UpdateRecipientRequest;
 import com.agnitas.emm.mcp.v1.recipient.exception.RecipientDeletionException;
+import com.agnitas.emm.mcp.v1.recipient.mapper.RecipientsMcpMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -49,32 +55,36 @@ public class RecipientMcpServiceImpl implements RecipientMcpService {
     private final RecipientService recipientService;
     private final MailinglistService mailinglistService;
     private final ConfigService configService;
+    private final RecipientsMcpMapper mapper;
 
     public RecipientMcpServiceImpl(
             RecipientService recipientService,
             MailinglistService mailinglistService,
-            ConfigService configService
+            ConfigService configService,
+            RecipientsMcpMapper mapper
     ) {
         this.recipientService = recipientService;
         this.mailinglistService = mailinglistService;
         this.configService = configService;
+        this.mapper = mapper;
     }
 
     @Override
-    public PageResponse<Map<String, Object>> list(Map<String, String> filters, McpPageable pageable, Admin admin) {
-        Map<String, String> fieldFilters = filters == null ? Map.of() : filters;
-        List<Map<String, Object>> fullList = recipientService.list(fieldFilters, admin);
-        return toPageResponse(fullList, pageable);
+    public PageResponse<Map<String, Object>> list(ListRecipientsRequest request, McpPageable pageable, Admin admin) {
+        RecipientSearchParamsDto searchParams = mapper.toDto(orEmpty(request));
+        PaginatedFilter<String> pagination = mapper.toPagination(pageable);
+        PaginatedList<RecipientDto> list = recipientService.list(searchParams, pagination, admin);
+        return mapper.toPageResponse(list, RecipientDto::getParameters);
     }
 
     @Override
-    public List<Integer> listIds(Map<String, String> filters, Admin admin) {
-        Map<String, String> fieldFilters = filters == null ? Map.of() : filters;
-        List<Integer> ids = recipientService.getRecipientIds(fieldFilters, admin);
-        if (ids.size() > 1000) {
-            throw ValidationException.exact("Too many matching recipients found (%d). Add filter.".formatted(ids.size()));
-        }
-        return ids;
+    public List<Integer> listIds(ListRecipientsRequest request, Admin admin) {
+        RecipientSearchParamsDto searchParams = mapper.toDto(orEmpty(request));
+        return recipientService.listIds(searchParams, admin);
+    }
+
+    private static ListRecipientsRequest orEmpty(ListRecipientsRequest request) {
+        return request != null ? request : new ListRecipientsRequest(null, null, null, null, null);
     }
 
     @Override

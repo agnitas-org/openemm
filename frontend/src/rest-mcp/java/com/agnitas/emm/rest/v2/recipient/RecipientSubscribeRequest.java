@@ -8,7 +8,7 @@
 
 */
 
-package com.agnitas.emm.rest.v2.recipient.dto;
+package com.agnitas.emm.rest.v2.recipient;
 
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;

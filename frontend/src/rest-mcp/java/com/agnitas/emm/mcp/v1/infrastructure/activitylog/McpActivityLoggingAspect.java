@@ -11,8 +11,11 @@
 package com.agnitas.emm.mcp.v1.infrastructure.activitylog;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.useractivitylog.bean.McpToolAction;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
 import com.agnitas.service.UserActivityLogService;
@@ -35,6 +38,8 @@ public class McpActivityLoggingAspect {
 
     private static final Logger logger = LogManager.getLogger(McpActivityLoggingAspect.class);
 
+    private static final int MAX_OBJECT_ID_LENGTH = 1000;
+
     private final McpAdminProvider adminProvider;
     private final UserActivityLogService userActivityLogService;
 
@@ -45,19 +50,42 @@ public class McpActivityLoggingAspect {
 
     @Around("@annotation(mcpTool)")
     public Object logToolInvocation(ProceedingJoinPoint pjp, McpTool mcpTool) throws Throwable {
+        Date invocationTime = new Date();
+        McpActivityContext context = McpActivityContext.open();
+
         try {
-            adminProvider.resolveCurrentAdmin()
-                    .ifPresent(admin ->
-                            userActivityLogService.writeMcpUserActivityLog(
-                                    new McpToolAction(mcpTool.name(), resolveSource(pjp)),
-                                    admin
-                            )
-                    );
+            return pjp.proceed();
+        } finally {
+            McpActivityContext.close();
+            resolveAdmin().ifPresent(admin -> writeActivityLog(pjp, mcpTool, context, invocationTime, admin));
+        }
+    }
+
+    private Optional<Admin> resolveAdmin() {
+        try {
+            return adminProvider.resolveCurrentAdmin();
+        } catch (Exception e) {
+            logger.warn("Failed to resolve admin for MCP activity log", e);
+            return Optional.empty();
+        }
+    }
+
+    private void writeActivityLog(
+            ProceedingJoinPoint pjp, McpTool mcpTool, McpActivityContext context, Date invocationTime, Admin admin
+    ) {
+        try {
+            userActivityLogService.writeMcpUserActivityLog(
+                    new McpToolAction(
+                            mcpTool.name(),
+                            resolveSource(pjp),
+                            StringUtils.abbreviate(context.getObjectId(), MAX_OBJECT_ID_LENGTH),
+                            invocationTime
+                    ),
+                    admin
+            );
         } catch (Exception e) {
             logger.warn("Failed to write MCP activity log", e);
         }
-
-        return pjp.proceed();
     }
 
     private String resolveSource(ProceedingJoinPoint pjp) {

@@ -16,6 +16,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.validator.ValidationException;
 import com.agnitas.emm.mcp.v1.McpAdminProvider;
+import com.agnitas.emm.mcp.v1.infrastructure.activitylog.McpActivityContext;
 import com.agnitas.emm.mcp.v1.infrastructure.security.xss.McpXssExclude;
 import com.agnitas.emm.mcp.v1.mailing.content.dto.PatchMailingContentRequest;
 import com.agnitas.emm.mcp.v1.mailing.content.service.MailingContentMcpService;
@@ -52,6 +53,7 @@ public class MailingContentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
+        McpActivityContext.current().setObjectId(mailingId);
         return contentService.list(mailingId, admin.getCompanyID());
     }
 
@@ -67,6 +69,7 @@ public class MailingContentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CONTENT_SHOW);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "contentId", contentId, "contentBlockName", contentBlockName);
         if (contentId != null) {
             return contentService.getById(contentId, mailingId, admin.getCompanyID());
         }
@@ -95,6 +98,7 @@ public class MailingContentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CHANGE);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "contentId", contentId, "contentBlockName", contentBlockName);
         if (contentId != null) {
             return contentService.patch(contentId, mailingId, request, admin);
         }
@@ -116,6 +120,7 @@ public class MailingContentTools {
             @SuppressWarnings("unused") McpSyncRequestContext requestContext
     ) {
         Admin admin = adminProvider.requireAdmin(Permission.MAILING_CHANGE);
+        McpActivityContext.current().setObjectIdParts("mailingId", mailingId, "contentId", contentId, "contentBlockName", contentBlockName);
         if (contentId != null) {
             contentService.delete(contentId, mailingId, admin.getCompanyID());
             return;
