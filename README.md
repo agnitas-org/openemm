@@ -28,8 +28,6 @@ Version 26.11 of OpenEMM provides lots of exciting new features:
 - all **visual statistics redesigned** and improved
 - support of **PostgreSQL** DBMS
 
-The source code of OpenEMM 26.11 is in beta right now and publication of the first release for general availability is planned for the middle of November 2026.
-
 For instructions on how to upgrade OpenEMM to version 26.11, have a look at [section 11.8 of the OpenEMM Install & Admin Guide](https://docs.agnitas.de/openemm-install-admin-guide/2611/updates/#98-special-advice-for-upgrades-to-version-2611).
 
 ## :dizzy: Features
