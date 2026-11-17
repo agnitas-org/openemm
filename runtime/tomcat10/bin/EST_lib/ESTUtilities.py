@@ -1,4 +1,5 @@
 import bisect
+import grp
 import inspect
 import itertools
 import shutil
@@ -194,6 +195,16 @@ def sslIsAvailable():
 		return False
 
 def chown(filePath, userName = None, groupName = None):
+	if groupName:
+		try:
+			grp.getgrnam(groupName)
+		except KeyError:
+			logger.exception(f"Provided group name '{groupName}' for chown operation does not exist.")
+			groupName=None
+	elif userName:
+		if Path(filePath).group() == Path(filePath).owner():
+			groupName = pwd.getpwnam(userName).pw_gid
+
 	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
 		shutil.chown(filePath, user=userName, group=groupName)
 
@@ -708,18 +719,17 @@ def getSingleFileByPattern(filePathPattern):
 		return None
 
 def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServerXml, applicationName, activateTls=None, useHttpPort=None):
-	with open(filePathServerXml, "r") as file:
-		serverXmlContent = file.read()
+	serverXmlContent = Path(filePathServerXml).read_text()
 
-	if activateTls is None and "TLS configuration start" in serverXmlContent and "TLS configuration end" in serverXmlContent:
+	TLSConfigurationPossible = "TLS configuration start" in serverXmlContent and "TLS configuration end" in serverXmlContent
+
+	if activateTls is None and TLSConfigurationPossible:
 		print("Do you want to activate a TLS certificate (https) for " + applicationName + "? (N/y, Blank => Cancel):")
 		answer = input(" > ").lower().strip()
-		if answer.startswith("y") or answer.startswith("j"):
-			activateTls = True
-		else:
-			activateTls = False
+		activateTls = answer.startswith(("y","j"))
+
 	if activateTls:
-		defaultCertificateFilePath = getSingleFileByPattern(defaultTlsCertificateDirectory + "/*.crt")
+		defaultCertificateFilePath = getSingleFileByPattern(str(defaultTlsCertificateDirectory) + "/*.crt")
 		while True:
 			if defaultCertificateFilePath is None:
 				print("Please enter path to TLS certificate file (.crt) (Blank => Cancel):")
@@ -734,12 +744,11 @@ def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServer
 			elif "cancel" == certificateFilePath.lower():
 				return
 			if not os.path.isfile(certificateFilePath):
-				print("File does not exist: " + certificateFilePath)
-				print()
+				print("File does not exist: ",certificateFilePath, "\n")
 			else:
 				break
 
-		defaultKeyFilePath = getSingleFileByPattern(defaultTlsCertificateDirectory + "/*.key")
+		defaultKeyFilePath = getSingleFileByPattern(str(defaultTlsCertificateDirectory) + "/*.key")
 		while True:
 			if defaultKeyFilePath is None:
 				print("Please enter path to TLS key file (.key) (Blank => Cancel):")
@@ -759,7 +768,7 @@ def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServer
 			else:
 				break
 
-		defaultChainFilePath = getSingleFileByPattern(defaultTlsCertificateDirectory + "/*.ca-bundle")
+		defaultChainFilePath = getSingleFileByPattern(str(defaultTlsCertificateDirectory) + "/*.ca-bundle")
 		while True:
 			if defaultChainFilePath is None:
 				print("Please enter path to TLS certificate CA chain file (.ca-bundle) (Blank => Cancel):")
@@ -797,6 +806,7 @@ def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServer
 		serverXmlContent = re.sub(r".*<!-- TLS configuration start.*", "\t\t<!-- TLS configuration start", serverXmlContent)
 		serverXmlContent = re.sub(r".*TLS configuration end -->.*", "\t\tTLS configuration end -->", serverXmlContent)
 
+
 	if "port=\"8080\"" in serverXmlContent:
 		if useHttpPort is None:
 			print("Do you want to use other port for the http protocol than 8080 ? (N/y, Blank => Cancel):")
@@ -808,13 +818,13 @@ def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServer
 		else:
 			serverXmlContent = re.sub(r".port=\"8080\"", "port=\"" + str(useHttpPort) + "\"", serverXmlContent)
 
-	with open(filePathServerXml, "w", encoding="UTF-8") as file:
-		file.write(serverXmlContent)
-		if activateTls:
-			print("Successfully configured TLS certificate")
-		else:
-			print("Using no TLS certificate")
-		print()
+	Path(filePathServerXml).write_text(serverXmlContent)
+
+	if activateTls:
+		print("Successfully configured TLS certificate")
+	else:
+		print("Using no TLS certificate")
+	print()
 
 def getMainLtsVersion(versionString):
 	if checkVersionInvalid(versionString):

@@ -20,7 +20,7 @@ class Environment:
 	# OpenEMM and EMM specific settings start here #
 	################################################
 
-	toolVersion = "26.11.136" #Dummy version number. This is going to be replaced by build tools.
+	toolVersion = "26.11.175" #Dummy version number. This is going to be replaced by build tools.
 	toolName = None
 
 	applicationName = None
@@ -241,10 +241,12 @@ class Environment:
 		if DbConnector.applicationDbcfgEntryName is None:
 			DbConnector.applicationDbcfgEntryName = Environment.applicationDbcfgEntryDefaultName
 
-		if not Path(DbConnector.dbcfgPropertiesFilePath).is_file():
+		dbcfgPropertyFile = Path(DbConnector.dbcfgPropertiesFilePath)
+		if not dbcfgPropertyFile.is_file():
 			if ESTUtilities.anyUserExists(("openemm",Environment.getFrontendApplicationUserName(),Environment.getRdirApplicationUserName(),"merger", "mailloop")):
-				with open(DbConnector.dbcfgPropertiesFilePath, "w", encoding="UTF-8") as propertiesFileHandle:
-					propertiesFileHandle.write(DbConnector.applicationDbcfgEntryName + ": dbms=, host=localhost, user=, password=, name=" + Environment.applicationName.lower())
+				dbcfgPropertyFile.parent.mkdir(parents=True, exist_ok=True)
+				dbcfgPropertyFile.write_text(DbConnector.applicationDbcfgEntryName + ": dbms=, host=localhost, user=, password=, name=" + Environment.applicationName.lower())
+
 				DbConnector.dbcfgProperties = DbConnector.readDbcfgPropertiesFile(DbConnector.dbcfgPropertiesFilePath)
 				if ESTUtilities.hasRootPermissions():
 					if "OpenEMM" in Environment.applicationName and ESTUtilities.userExists("openemm"):

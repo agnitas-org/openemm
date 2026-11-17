@@ -245,12 +245,12 @@ def _openOracleConnection():
 
 			if dbcfg.get("secure", "").lower().strip() == "true":
 				connectString = ("(description= (retry_count=20)(retry_delay=3)"
-								 f"(address=(protocol=tcps)(port={parameters.get('port', 2848)})(host={host}))"
+								 f"(address=(protocol=tcps)(port={parameters.get('port', 2848)})(host={parameters.get('host','')}))"
 								 f"(connect_data=(service_name={dbcfg.get('sid')})))"
 								)
 				parameters["dsn"] = connectString
 			elif parameters.get("host"):
-				parameters["dsn"] = oracledb.makedsn(host, parameters.get('port', 1521), service_name=dbcfg["sid"])
+				parameters["dsn"] = oracledb.makedsn(parameters.get("host"), parameters.get('port', 1521), service_name=dbcfg["sid"])
 			else:
 				parameters = {"dsn": parameters["user"] + "/" + parameters["password"] + "@" + dbcfg["sid"]}
 			try:
@@ -612,7 +612,7 @@ def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
 		else:
 			port = 5432
 
-		commandText = f'PGPASSWORD={dbcfgEntry["password"]} {getDbClientPath()} -h {host} -U {user} --dbname={dbcfgEntry["name"]} -p {str(port)} < {sqlScriptFilePath}'
+		commandText = f'PGPASSWORD={dbcfgEntry["password"]} {getDbClientPath()} -h {host} -U {dbcfgEntry["user"]} --dbname={dbcfgEntry["name"]} -p {str(port)} < {sqlScriptFilePath}'
 		if logFilePath is not None:
 			sqlUpdateReturnCode = os.system(
 				"/bin/bash -c '" + commandText + " 2>&1 | tee " + logFilePath + "; test ${PIPESTATUS[0]} -eq 0'")

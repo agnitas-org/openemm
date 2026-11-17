@@ -12,7 +12,7 @@ import tarfile
 import tempfile
 import time
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from itertools import chain
 from pathlib import Path
@@ -475,12 +475,36 @@ class BackendPackageHandler(PackageHandler):
 		self.startBackend(backendTool)
 
 	def postProcess(self) -> None:
+		currentDir = self.operationalHomeDirectory / "release/current"
 		backendBinDir = self.operationalHomeDirectory / "bin"
-		currentBinDir = self.operationalHomeDirectory / "release/current/bin"
+		currentBinDir = currentDir / "bin"
+		libDir = self.operationalHomeDirectory / "lib"
+		scriptsDir = self.operationalHomeDirectory / "scripts"
+		javaDir = self.operationalHomeDirectory / "JAVA"
 
 		if not Environment.isOpenEmmServer and not any(
 				(backendBinDir.is_symlink(), backendBinDir.is_dir(), currentBinDir.exists())):
 			backendBinDir.symlink_to(currentBinDir, target_is_directory=True)
+
+		if libDir.is_symlink():
+			libDir.unlink()
+		elif libDir.is_dir():
+			shutil.rmtree(libDir)
+		if not libDir.is_symlink() and not libDir.is_dir():
+			libDir.symlink_to(currentDir / "lib", target_is_directory=True)
+
+		if not scriptsDir.is_symlink() and not scriptsDir.is_dir():
+			scriptsDir.symlink_to(currentDir / "scripts")
+		if not javaDir.is_symlink() and not javaDir.is_dir():
+			javaDir.symlink_to(currentDir / "JAVA")
+
+			rel = Path(os.path.relpath(currentBinDir, backendBinDir))
+
+			for binElement in rel.glob("*"):
+				with suppress(OSError):
+					(backendBinDir / binElement.name).symlink_to(binElement)
+
+		logger.info("Created new initial backend symlinks\n")
 
 		self.promptRestartIfNecessary()
 
@@ -610,11 +634,11 @@ class RuntimePackageHandler(PackageHandler):
 		self.createMissingDirectories(applicationUserName, userHome)
 		self.promptBackup()
 		self.createTemporarySystemFileBackup()
-		self.cleanRuntimeData(userHome)
-
-		ESTUtilities.unTarGzFile(self.packageFile, userHome, applicationUserName)
-
-		self.restoreTemporarySystemFileBackup()
+		try:
+			self.cleanRuntimeData(userHome)
+			ESTUtilities.unTarGzFile(self.packageFile, userHome, applicationUserName)
+		finally:
+			self.restoreTemporarySystemFileBackup()
 
 		serverXML = userHome / "tomcat/conf/server.xml"
 		serverXMLTemplate = userHome / "tomcat/conf/server.xml.template"
@@ -631,6 +655,7 @@ class RuntimePackageHandler(PackageHandler):
 		logsPath = userHome / "logs"
 
 		optTomcatPath = userHome / "/opt/tomcat"
+
 		with self.changeUserAndGroupOperation(applicationUserName):
 			# Create needed links, if missing
 			if not newToolPath.is_file() and not newToolPath.is_symlink() and originalToolPath.is_file():

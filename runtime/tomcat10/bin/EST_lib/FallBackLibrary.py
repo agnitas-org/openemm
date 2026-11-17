@@ -11,7 +11,7 @@ class Version:
 
 	def __eq__(self, otherVersion):
 		if isinstance(otherVersion, Version):
-			return self.release == otherVersion.version
+			return self.release == otherVersion.release
 		elif isinstance(otherVersion, tuple) and all(isinstance(item, int) for item in otherVersion):
 			return self.release == otherVersion
 		elif isinstance(otherVersion, str):
